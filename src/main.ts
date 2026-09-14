@@ -1,10 +1,16 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import '@fontsource/fredoka/500.css';
+import '@fontsource/fredoka/600.css';
+import '@fontsource/fredoka/700.css';
+import '@fontsource/nunito/700.css';
+import '@fontsource/nunito/800.css';
 import './style.css';
+import { Assets } from './assets';
 import { LEVELS } from './levels';
 import { World } from './world';
 import { Slime } from './slime';
-import { Input } from './input';
+import { Input, type ControlMode } from './input';
 import { Fx } from './fx';
 import { sfx, unlockAudio } from './audio';
 
@@ -65,7 +71,7 @@ resize();
 
 const input = new Input();
 
-type Mode = 'menu' | 'play' | 'pause' | 'result';
+type Mode = 'menu' | 'play' | 'pause' | 'winning' | 'result';
 let mode: Mode = 'menu';
 let levelIndex = 0;
 let world: World | null = null;
@@ -73,17 +79,19 @@ let slime: Slime | null = null;
 let elapsed = 0;
 let tipIndex = 0;
 let lastAlive = 0;
+let winT = 0;
+let assets: Assets | null = null;
 const camTarget = new THREE.Vector3();
 const camPos = new THREE.Vector3();
 const tmpCenter = new THREE.Vector3();
 
-interface Save { unlocked: number; stars: number[]; best: number[] }
+interface Save { unlocked: number; stars: number[]; best: number[]; control?: ControlMode }
 function loadSave(): Save {
   try {
     const s = JSON.parse(localStorage.getItem('blub-save') ?? '');
     if (s && Array.isArray(s.stars)) return s;
   } catch { /* primera vez */ }
-  return { unlocked: 1, stars: [], best: [] };
+  return { unlocked: 2, stars: [], best: [] };
 }
 const save = loadSave();
 function writeSave() {
@@ -95,7 +103,7 @@ function writeSave() {
 const screens = ['screen-title', 'screen-levels', 'screen-pause', 'screen-result'];
 function show(id: string | null) {
   for (const s of screens) $(s).hidden = s !== id;
-  $('hud').hidden = !(mode === 'play' || mode === 'pause');
+  $('hud').hidden = !(mode === 'play' || mode === 'pause' || mode === 'winning');
 }
 
 function renderLevelList() {
@@ -104,10 +112,11 @@ function renderLevelList() {
   LEVELS.forEach((lv, k) => {
     const b = document.createElement('button');
     b.className = 'level-card';
-    const locked = k >= save.unlocked;
+    const locked = k >= save.unlocked && !lv.practice;
+    if (lv.practice) b.classList.add('practice');
     b.disabled = locked;
     const stars = save.stars[k] ?? 0;
-    b.innerHTML = `<span class="num">${k + 1}</span><span class="name">${locked ? 'Bloqueado' : lv.name}</span>` +
+    b.innerHTML = `<span class="num">${lv.practice ? 'PRUEBA' : k}</span><span class="name">${locked ? 'Bloqueado' : lv.name}</span>` +
       `<span class="stars" aria-label="${stars} estrellas">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</span>`;
     b.addEventListener('click', () => { sfx.click(); startLevel(k); });
     list.appendChild(b);
@@ -125,10 +134,25 @@ function toast(text: string, ms = 3200) {
 $('btn-start').addEventListener('click', () => {
   unlockAudio();
   sfx.click();
-  input.requestPermission();
+  if (input.mode === 'gyro') input.requestPermission();
+  input.requestFullscreen();
   renderLevelList();
   show('screen-levels');
 });
+function setControl(mode: ControlMode) {
+  input.setMode(mode);
+  if (mode === 'gyro') input.requestPermission();
+  document.querySelectorAll<HTMLButtonElement>('.pick-btn').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
+  });
+  save.control = mode;
+  writeSave();
+}
+document.querySelectorAll<HTMLButtonElement>('.pick-btn').forEach((b) => {
+  b.addEventListener('click', () => { sfx.click(); setControl(b.dataset.mode as ControlMode); });
+});
+setControl(save.control ?? 'joystick');
+
 $('btn-calib-menu').addEventListener('click', () => { input.calibrate(); sfx.click(); toast('Posición actual = plano'); });
 $('btn-pause').addEventListener('click', () => { if (mode === 'play') { mode = 'pause'; show('screen-pause'); } });
 $('btn-resume').addEventListener('click', () => { mode = 'play'; input.clearQueued(); show(null); });
@@ -163,18 +187,20 @@ function startLevel(k: number) {
   clearLevel();
   levelIndex = k;
   const def = LEVELS[k];
-  world = new World(def);
-  slime = new Slime(world, def.count, lowQuality);
+  world = new World(def, assets!);
+  slime = new Slime(world, def.count, lowQuality, assets!);
   content.add(world.group, slime.group);
   elapsed = 0;
   tipIndex = 0;
   lastAlive = def.count;
   camTarget.copy(world.start);
   camPos.set(0, 0, 0);
-  $('level-name').textContent = `${k + 1}. ${def.name}`;
+  $('level-name').textContent = def.practice ? def.name : `${k}. ${def.name}`;
+  $('life-min').hidden = def.minPct <= 0;
+  winT = 0;
   $('life-min').style.left = `${def.minPct * 100}%`;
   input.clearQueued();
-  input.calibrate();
+  if (input.mode === 'gyro') input.calibrate();
   mode = 'play';
   show(null);
   updateHud();
@@ -196,6 +222,7 @@ function finish(win: boolean) {
   const pct = slime.aliveCount / slime.n;
   const stars = win ? (pct >= 0.9 ? 3 : pct >= 0.6 ? 2 : 1) : 0;
   $('result-title').textContent = win ? '¡Tesoro conseguido!' : 'El limo se ha deshecho';
+  mode = 'result';
   $('result-stars').innerHTML = win
     ? `${'★'.repeat(stars)}<span class="off">${'★'.repeat(3 - stars)}</span>`
     : '';
@@ -209,7 +236,6 @@ function finish(win: boolean) {
     save.stars[levelIndex] = Math.max(save.stars[levelIndex] ?? 0, stars);
     save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, levelIndex + 2));
     writeSave();
-    sfx.win();
     navigator.vibrate?.([30, 60, 30]);
   } else {
     sfx.lose();
@@ -242,7 +268,7 @@ function tick(dt: number) {
   slime.events.length = 0;
 
   const alive = slime.aliveCount;
-  if (alive < lastAlive) navigator.vibrate?.(15);
+  if (alive < lastAlive) navigator.vibrate?.(30);
   lastAlive = alive;
 
   // pistas por avance
@@ -254,8 +280,13 @@ function tick(dt: number) {
   }
 
   updateHud();
-  if (slime.touchedTreasure) finish(true);
-  else if (alive / slime.n < world.def.minPct) finish(false);
+  if (slime.touchedTreasure) {
+    // pequeña celebración: el cofre se abre y el limo sonríe antes del resultado
+    mode = 'winning';
+    winT = 0;
+    slime.celebrate();
+    sfx.win();
+  } else if (alive / slime.n < world.def.minPct) finish(false);
 }
 
 function updateCamera(dt: number) {
@@ -268,7 +299,7 @@ function updateCamera(dt: number) {
   }
   const portrait = camera.aspect < 1;
   const dist = portrait ? 1.5 : 1;
-  const want = new THREE.Vector3(camTarget.x, camTarget.y + 10.5 * dist, camTarget.z + 4.4 * dist);
+  const want = new THREE.Vector3(camTarget.x, camTarget.y + 8.6 * dist, camTarget.z + 4.6 * dist);
   if (camPos.lengthSq() === 0) camPos.copy(want);
   else camPos.lerp(want, 1 - Math.exp(-dt * 5));
   camera.position.copy(camPos);
@@ -301,7 +332,14 @@ function frame(dt: number) {
     }
     if (steps === 3) acc = 0;
   }
-  if (world && mode !== 'play') world.update(dt * 0.3, slime?.switchCounts ?? { A: 0, B: 0 });
+  if (mode === 'winning' && world && slime) {
+    winT += dt;
+    world.opening = Math.min(1, winT / 0.6);
+    world.update(dt, slime.switchCounts);
+    slime.step(dt, 0, 0, false);
+    slime.events.length = 0;
+    if (winT > 1.4) finish(true);
+  } else if (world && mode !== 'play') world.update(dt * 0.3, slime?.switchCounts ?? { A: 0, B: 0 });
   fx.update(dt);
   updateCamera(dt);
   slime?.render(dt, input.tiltX, input.tiltZ);
@@ -316,12 +354,24 @@ if (import.meta.env.DEV) {
     __blub: {
       advance(seconds: number) { for (let t = 0; t < seconds; t += FIXED) frame(FIXED); },
       start: (k: number) => startLevel(k),
+      hurt: () => { const g = slime?.groups[0]; if (g) slime!.hurts.push({ x: g.cx, z: g.cz }); },
       state: () => ({ mode, alive: slime?.aliveCount, groups: slime?.groups.map((g) => g.ids.length), lead: slime?.groups[0] && { x: slime.groups[0].cx.toFixed(2), y: slime.groups[0].cy.toFixed(2), z: slime.groups[0].cz.toFixed(2) } }),
     },
   });
 }
 
-// menú con nivel 1 de fondo
-startLevel(0);
-mode = 'menu';
+// arranque: cargar modelos de Blender y dejar un nivel de fondo en el menú
 show('screen-title');
+Assets.load((p) => { $('load-hint').textContent = `Cargando modelos… ${Math.round(p * 100)}%`; })
+  .then((a) => {
+    assets = a;
+    startLevel(1);
+    mode = 'menu';
+    show('screen-title');
+    $('load-hint').textContent = 'Desliza, divide y reúne al limo hasta el tesoro';
+    $<HTMLButtonElement>('btn-start').disabled = false;
+  })
+  .catch((err) => {
+    console.error(err);
+    $('load-hint').textContent = 'No se pudieron cargar los modelos. Reinicia el juego.';
+  });

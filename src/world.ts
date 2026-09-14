@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Channel, LevelDef } from './levels';
+import { Assets } from './assets';
 
 export type CellKind =
   | 'void' | 'floor' | 'wall' | 'fire' | 'firet' | 'ice' | 'jump' | 'switch' | 'door' | 'start' | 'treasure';
@@ -13,29 +14,10 @@ export interface Cell {
 
 const WALL_H = 1.5;
 const DOOR_H = 1.5;
+const SLAB_H = 0.5;   // alto de la losa biselada (block_top)
+const BOTTOM = -1.2;  // fondo de las columnas
 
 export const FRICTION: Partial<Record<CellKind, number>> = { ice: 0.25 };
-
-function blockTexture(): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = c.height = 64;
-  const g = c.getContext('2d')!;
-  g.fillStyle = '#ffffff';
-  g.fillRect(0, 0, 64, 64);
-  g.fillStyle = 'rgba(0,0,0,0.10)';
-  g.fillRect(0, 0, 64, 4);
-  g.fillRect(0, 60, 64, 4);
-  g.fillRect(0, 0, 4, 64);
-  g.fillRect(60, 0, 4, 64);
-  g.fillStyle = 'rgba(255,255,255,0.0)';
-  g.strokeStyle = 'rgba(0,0,0,0.05)';
-  g.lineWidth = 2;
-  g.strokeRect(10, 10, 44, 44);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.magFilter = THREE.NearestFilter;
-  return t;
-}
 
 function drawLabel(c: HTMLCanvasElement, text: string, color: string) {
   const g = c.getContext('2d')!;
@@ -63,7 +45,7 @@ interface SwitchState {
   label: THREE.Sprite;
   labelCanvas: HTMLCanvasElement;
   lastText: string;
-  plates: THREE.Mesh[];
+  buttons: THREE.Object3D[];
 }
 
 interface DoorState {
@@ -71,7 +53,7 @@ interface DoorState {
   i: number;
   j: number;
   open: number;
-  mesh: THREE.Mesh;
+  obj: THREE.Object3D;
 }
 
 const CHANNEL_COLOR: Record<Channel, number> = { A: 0xf59e0b, B: 0x22c55e };
@@ -86,20 +68,23 @@ export class World {
   treasure = new THREE.Vector3();
   private switches = new Map<Channel, SwitchState>();
   private doors: DoorState[] = [];
+  private pads: THREE.Object3D[] = [];
   private flames: { mesh: THREE.InstancedMesh; cells: { i: number; j: number; base: number; timed: boolean }[] } | null = null;
-  private chest!: THREE.Group;
-  private sparkles!: THREE.Points;
+  private chest: THREE.Object3D | null = null;
+  private chestLid: THREE.Object3D | null = null;
+  private sparkles: THREE.Points | null = null;
+  private ownedMaterials: THREE.Material[] = [];
   private time = 0;
+  opening = 0; // animación de cofre abierto (0..1)
 
-  constructor(readonly def: LevelDef) {
+  constructor(readonly def: LevelDef, private assets: Assets) {
     this.d = def.map.length;
     this.w = Math.max(...def.map.map((r) => r.length));
     this.cells = [];
     for (let j = 0; j < this.d; j++) {
-      for (let i = 0; i < this.w; i++) {
-        this.cells.push(this.parse(i, j));
-      }
+      for (let i = 0; i < this.w; i++) this.cells.push(this.parse(i, j));
     }
+    if (!def.h) this.raiseWalls();
     this.build();
   }
 
@@ -128,6 +113,25 @@ export class World {
     }
   }
 
+  /** Sin capa de alturas: cada muro se apoya en el suelo más alto que toca. */
+  private raiseWalls() {
+    for (let j = 0; j < this.d; j++) {
+      for (let i = 0; i < this.w; i++) {
+        const c = this.cells[j * this.w + i];
+        if (c.kind !== 'wall') continue;
+        let base = 0;
+        for (let dj = -1; dj <= 1; dj++) {
+          for (let di = -1; di <= 1; di++) {
+            const n = this.cell(i + di, j + dj);
+            if (n && n.kind !== 'wall' && n.kind !== 'void') base = Math.max(base, n.base);
+          }
+        }
+        c.base = base;
+        c.top = base + WALL_H;
+      }
+    }
+  }
+
   cell(i: number, j: number): Cell | null {
     if (i < 0 || j < 0 || i >= this.w || j >= this.d) return null;
     return this.cells[j * this.w + i];
@@ -143,29 +147,30 @@ export class World {
     const c = this.cell(i, j);
     if (!c) return false;
     if (c.kind === 'fire') return true;
-    if (c.kind !== 'firet') return false;
-    return this.timedFire(i, j);
+    return c.kind === 'firet' && this.timedFire(i, j);
   }
 
   private timedFire(i: number, j: number): boolean {
-    const phase = (this.time + (i + j) * 0.25) % 3.2;
-    return phase < 1.7;
+    return (this.time + (i + j) * 0.25) % 3.2 < 1.7;
+  }
+
+  private add(name: string, x: number, y: number, z: number, opts?: { cloneMaterials?: boolean }): THREE.Object3D {
+    const o = this.assets.clone(name, opts);
+    o.position.set(x, y, z);
+    this.group.add(o);
+    return o;
   }
 
   private build() {
-    const tex = blockTexture();
-    const boxGeo = new THREE.BoxGeometry(1, 1, 1);
-    boxGeo.translate(0, -0.5, 0); // origen en la cara superior
-
     const solids: { i: number; j: number; top: number; color: THREE.Color }[] = [];
     const cFloorA = new THREE.Color(0xe9d7ad);
     const cFloorB = new THREE.Color(0xdcc594);
     const cWall = new THREE.Color(0x6f6798);
+    const cWallB = new THREE.Color(0x675f8f);
     const cFire = new THREE.Color(0x6b2a2a);
     const cIce = new THREE.Color(0xbfeaff);
     const cJump = new THREE.Color(0xf9a8d4);
     const cSwitch = new THREE.Color(0x7b7394);
-
     const fireCells: { i: number; j: number; base: number; timed: boolean }[] = [];
 
     for (let j = 0; j < this.d; j++) {
@@ -173,20 +178,24 @@ export class World {
         const c = this.cells[j * this.w + i];
         if (c.kind === 'void') continue;
         const checker = (i + j) % 2 === 0 ? cFloorA : cFloorB;
+        const x = i + 0.5, z = j + 0.5;
         switch (c.kind) {
-          case 'wall': solids.push({ i, j, top: c.top, color: cWall }); break;
+          case 'wall':
+            solids.push({ i, j, top: c.top, color: (i + j) % 2 === 0 ? cWall : cWallB });
+            break;
           case 'fire': case 'firet':
             solids.push({ i, j, top: c.base, color: cFire });
             fireCells.push({ i, j, base: c.base, timed: c.kind === 'firet' });
+            this.add('fire_grate', x, c.base, z);
             break;
           case 'ice': solids.push({ i, j, top: c.base, color: cIce }); break;
           case 'jump':
             solids.push({ i, j, top: c.base, color: cJump });
-            this.addJumpPad(i, j, c.base);
+            this.pads.push(this.add('jump_pad', x, c.base, z));
             break;
           case 'switch':
             solids.push({ i, j, top: c.base, color: cSwitch });
-            this.addSwitchPlate(i, j, c);
+            this.addSwitch(i, j, c);
             break;
           case 'door':
             solids.push({ i, j, top: c.base, color: checker });
@@ -194,67 +203,62 @@ export class World {
             break;
           case 'start':
             solids.push({ i, j, top: c.base, color: checker });
-            this.start.set(i + 0.5, c.base, j + 0.5);
+            this.start.set(x, c.base, z);
             break;
           case 'treasure':
             solids.push({ i, j, top: c.base, color: checker });
-            this.treasure.set(i + 0.5, c.base, j + 0.5);
-            this.addChest(i, j, c.base);
+            this.treasure.set(x, c.base, z);
+            this.addChest(x, c.base, z);
             break;
           default: solids.push({ i, j, top: c.top, color: checker });
         }
       }
     }
 
-    const mat = new THREE.MeshLambertMaterial({ map: tex });
-    const inst = new THREE.InstancedMesh(boxGeo, mat, solids.length);
+    // bloques: losa biselada arriba + columna estirada debajo (2 draw calls para todo el nivel)
+    const mat = new THREE.MeshLambertMaterial();
+    this.ownedMaterials.push(mat);
+    const tops = new THREE.InstancedMesh(this.assets.geometry('block_top'), mat, solids.length);
+    const cols = new THREE.InstancedMesh(this.assets.geometry('block_column'), mat, solids.length);
     const m = new THREE.Matrix4();
     solids.forEach((s, k) => {
-      const height = s.top + 1.2;
-      m.makeScale(1, height, 1);
-      m.setPosition(s.i + 0.5, s.top, s.j + 0.5);
-      inst.setMatrixAt(k, m);
-      inst.setColorAt(k, s.color);
+      m.makeTranslation(s.i + 0.5, s.top, s.j + 0.5);
+      tops.setMatrixAt(k, m);
+      tops.setColorAt(k, s.color);
+      const h = Math.max(0.01, s.top - SLAB_H - BOTTOM);
+      m.makeScale(1, h, 1);
+      m.setPosition(s.i + 0.5, s.top - SLAB_H, s.j + 0.5);
+      cols.setMatrixAt(k, m);
+      cols.setColorAt(k, s.color.clone().multiplyScalar(0.82));
     });
-    inst.receiveShadow = true;
-    inst.castShadow = true;
-    this.group.add(inst);
+    for (const im of [tops, cols]) {
+      im.receiveShadow = true;
+      im.castShadow = true;
+      this.group.add(im);
+    }
 
     if (fireCells.length) {
-      const coneGeo = new THREE.ConeGeometry(0.22, 0.7, 6, 1, true);
-      coneGeo.translate(0, 0.35, 0);
-      const fireMat = new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: 0.9, depthWrite: false });
-      const perCell = 3;
-      const mesh = new THREE.InstancedMesh(coneGeo, fireMat, fireCells.length * perCell);
+      const fireMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.92, depthWrite: false });
+      this.ownedMaterials.push(fireMat);
+      const mesh = new THREE.InstancedMesh(this.assets.geometry('flame'), fireMat, fireCells.length * 3);
       const colors = [new THREE.Color(0xff5a1f), new THREE.Color(0xffb020), new THREE.Color(0xff7a1a)];
-      for (let k = 0; k < fireCells.length * perCell; k++) mesh.setColorAt(k, colors[k % 3]);
+      for (let k = 0; k < fireCells.length * 3; k++) mesh.setColorAt(k, colors[k % 3]);
+      mesh.frustumCulled = false;
       this.flames = { mesh, cells: fireCells };
       this.group.add(mesh);
     }
 
-    // interruptores: etiqueta con peso necesario
     for (const [ch, sw] of this.switches) {
-      const need = this.def.need?.[ch] ?? 1;
-      sw.need = need;
+      sw.need = this.def.need?.[ch] ?? 1;
       sw.latch = !!this.def.latch?.[ch];
-      const cx = sw.plates.reduce((a, p) => a + p.position.x, 0) / sw.plates.length;
-      const cz = sw.plates.reduce((a, p) => a + p.position.z, 0) / sw.plates.length;
-      const y = sw.plates[0].position.y;
-      sw.label.position.set(cx, y + 1.6, cz);
+      const cx = sw.buttons.reduce((a, p) => a + p.parent!.position.x, 0) / sw.buttons.length;
+      const cz = sw.buttons.reduce((a, p) => a + p.parent!.position.z, 0) / sw.buttons.length;
+      sw.label.position.set(cx, sw.buttons[0].parent!.position.y + 1.6, cz);
       this.updateLabel(sw);
     }
   }
 
-  private addJumpPad(i: number, j: number, base: number) {
-    const pad = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.36, 0.4, 0.12, 12),
-      new THREE.MeshLambertMaterial({ color: 0xec4899, emissive: 0x5a0f35 }),
-    );
-    pad.position.set(i + 0.5, base + 0.06, j + 0.5);
-    this.group.add(pad);
-  }
-
-  private addSwitchPlate(i: number, j: number, c: Cell) {
+  private addSwitch(i: number, j: number, c: Cell) {
     const ch = c.channel!;
     let sw = this.switches.get(ch);
     if (!sw) {
@@ -263,55 +267,41 @@ export class World {
       canvas.height = 128;
       const tex = new THREE.CanvasTexture(canvas);
       tex.colorSpace = THREE.SRGBColorSpace;
-      const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+      const spriteMat = new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true });
+      this.ownedMaterials.push(spriteMat);
+      const label = new THREE.Sprite(spriteMat);
       label.scale.set(1.2, 0.6, 1);
       label.renderOrder = 10;
       this.group.add(label);
-      sw = { channel: ch, need: 1, latch: false, count: 0, pressed: false, label, labelCanvas: canvas, lastText: '', plates: [] };
+      sw = { channel: ch, need: 1, latch: false, count: 0, pressed: false, label, labelCanvas: canvas, lastText: '', buttons: [] };
       this.switches.set(ch, sw);
     }
-    const plate = new THREE.Mesh(
-      new THREE.BoxGeometry(0.86, 0.1, 0.86),
-      new THREE.MeshLambertMaterial({ color: CHANNEL_COLOR[ch], emissive: CHANNEL_COLOR[ch], emissiveIntensity: 0.15 }),
-    );
-    plate.position.set(i + 0.5, c.base + 0.05, j + 0.5);
-    plate.receiveShadow = true;
-    sw.plates.push(plate);
-    this.group.add(plate);
+    const obj = this.add('switch', i + 0.5, c.base, j + 0.5, { cloneMaterials: true });
+    const button = Assets.child(obj, 'switch_button');
+    this.tint(button, CHANNEL_COLOR[ch]);
+    button.userData.restY = button.position.y;
+    sw.buttons.push(button);
   }
 
   private addDoor(i: number, j: number, c: Cell) {
     const ch = c.channel!;
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(0.98, DOOR_H, 0.98),
-      new THREE.MeshLambertMaterial({ color: CHANNEL_COLOR[ch], emissive: CHANNEL_COLOR[ch], emissiveIntensity: 0.1 }),
-    );
-    mesh.geometry.translate(0, -DOOR_H / 2, 0);
-    mesh.position.set(i + 0.5, c.base + DOOR_H, j + 0.5);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    this.group.add(mesh);
-    this.doors.push({ channel: ch, i, j, open: 0, mesh });
+    const obj = this.add('door', i + 0.5, c.base + DOOR_H, j + 0.5, { cloneMaterials: true });
+    this.tint(Assets.child(obj, 'door_core'), CHANNEL_COLOR[ch]);
+    this.doors.push({ channel: ch, i, j, open: 0, obj });
   }
 
-  private addChest(i: number, j: number, base: number) {
-    const g = new THREE.Group();
-    const wood = new THREE.MeshLambertMaterial({ color: 0x9a5b2e });
-    const gold = new THREE.MeshLambertMaterial({ color: 0xf5b301, emissive: 0x7a4a00, emissiveIntensity: 0.6 });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.42, 0.5), wood);
-    body.position.y = 0.21;
-    const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.7, 12, 1, false, 0, Math.PI), wood);
-    lid.rotation.z = Math.PI / 2;
-    lid.position.y = 0.42;
-    const band = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.08, 0.52), gold);
-    band.position.y = 0.36;
-    const lock = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.16, 0.06), gold);
-    lock.position.set(0, 0.34, 0.27);
-    for (const part of [body, lid, band, lock]) { part.castShadow = true; g.add(part); }
-    g.position.set(i + 0.5, base, j + 0.5);
-    this.chest = g;
-    this.group.add(g);
+  private tint(o: THREE.Object3D, color: number) {
+    const mesh = o as THREE.Mesh;
+    const mat = mesh.material as THREE.MeshStandardMaterial;
+    mat.color.setHex(color);
+    mat.emissive?.setHex(color);
+    mat.emissiveIntensity = 0.12;
+    this.ownedMaterials.push(mat);
+  }
 
+  private addChest(x: number, y: number, z: number) {
+    this.chest = this.add('chest', x, y, z);
+    this.chestLid = Assets.child(this.chest, 'chest_lid');
     const n = 24;
     const pos = new Float32Array(n * 3);
     for (let k = 0; k < n; k++) {
@@ -321,8 +311,10 @@ export class World {
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    this.sparkles = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffe27a, size: 0.09, transparent: true, opacity: 0.9, depthWrite: false }));
-    this.sparkles.position.copy(g.position);
+    const pm = new THREE.PointsMaterial({ color: 0xffe27a, size: 0.09, transparent: true, opacity: 0.9, depthWrite: false });
+    this.ownedMaterials.push(pm);
+    this.sparkles = new THREE.Points(geo, pm);
+    this.sparkles.position.set(x, y, z);
     this.group.add(this.sparkles);
   }
 
@@ -334,16 +326,18 @@ export class World {
     (sw.label.material.map as THREE.Texture).needsUpdate = true;
   }
 
-  /** counts: partículas apoyadas en interruptores por canal este frame */
+  /** counts: limitos apoyados en interruptores por canal este frame */
   update(dt: number, counts: Record<Channel, number>) {
     this.time += dt;
 
     for (const sw of this.switches.values()) {
       sw.count = counts[sw.channel];
       const now = sw.count >= sw.need;
-      if (sw.latch) sw.pressed = sw.pressed || now;
-      else sw.pressed = now;
-      for (const p of sw.plates) p.scale.y = sw.pressed ? 0.3 : 1;
+      sw.pressed = sw.latch ? sw.pressed || now : now;
+      for (const b of sw.buttons) {
+        const target = b.userData.restY - (sw.pressed ? 0.07 : Math.min(sw.count / sw.need, 1) * 0.03);
+        b.position.y += (target - b.position.y) * Math.min(1, dt * 12);
+      }
       this.updateLabel(sw);
     }
 
@@ -353,8 +347,13 @@ export class World {
       door.open += Math.sign(target - door.open) * Math.min(Math.abs(target - door.open), dt * 2.5);
       const c = this.cell(door.i, door.j)!;
       c.top = c.base + DOOR_H * (1 - door.open);
-      door.mesh.position.y = c.top;
-      door.mesh.visible = door.open < 0.99;
+      door.obj.position.y = c.top;
+      door.obj.visible = door.open < 0.99;
+    }
+
+    for (const p of this.pads) {
+      const s = 1 + Math.sin(this.time * 6 + p.position.x) * 0.04;
+      p.scale.set(1, s, 1);
     }
 
     if (this.flames) {
@@ -367,10 +366,10 @@ export class World {
         const on = !f.timed || this.timedFire(f.i, f.j);
         for (let n = 0; n < 3; n++) {
           const flick = 0.75 + 0.35 * Math.sin(this.time * 14 + f.i * 3.1 + f.j * 1.7 + n * 2.2);
-          const scale = on ? flick * (n === 0 ? 1 : 0.7) : 0.12;
-          s.set(scale, scale * (n === 0 ? 1.2 : 1), scale);
+          const scale = on ? flick * (n === 0 ? 1 : 0.65) : 0.1;
+          s.set(scale, scale * (n === 0 ? 1.15 : 1), scale);
           const ang = n * 2.1 + f.i;
-          p.set(f.i + 0.5 + (n === 0 ? 0 : Math.cos(ang) * 0.2), f.base, f.j + 0.5 + (n === 0 ? 0 : Math.sin(ang) * 0.2));
+          p.set(f.i + 0.5 + (n === 0 ? 0 : Math.cos(ang) * 0.22), f.base, f.j + 0.5 + (n === 0 ? 0 : Math.sin(ang) * 0.22));
           m.compose(p, q, s);
           this.flames.mesh.setMatrixAt(k++, m);
         }
@@ -378,24 +377,22 @@ export class World {
       this.flames.mesh.instanceMatrix.needsUpdate = true;
     }
 
-    if (this.chest) {
-      this.chest.rotation.y = Math.sin(this.time * 1.5) * 0.25;
-      this.chest.position.y = this.treasure.y + Math.abs(Math.sin(this.time * 3)) * 0.08;
-      this.sparkles.rotation.y += dt * 0.8;
+    if (this.chest && this.chestLid && this.sparkles) {
+      const idle = 1 - this.opening;
+      this.chest.rotation.y = Math.sin(this.time * 1.5) * 0.25 * idle;
+      this.chest.position.y = this.treasure.y + Math.abs(Math.sin(this.time * 3)) * 0.08 * idle;
+      this.chestLid.rotation.x = -this.opening * 1.9;
+      this.sparkles.rotation.y += dt * (0.8 + this.opening * 4);
+      this.sparkles.scale.setScalar(1 + this.opening * 0.8);
     }
   }
 
   dispose() {
-    this.group.traverse((o) => {
-      const mesh = o as THREE.Mesh;
-      if (mesh.geometry) mesh.geometry.dispose();
-      const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
-      if (Array.isArray(mat)) mat.forEach((x) => x.dispose());
-      else if (mat) {
-        const map = (mat as THREE.MeshBasicMaterial).map;
-        if (map) map.dispose();
-        mat.dispose();
-      }
-    });
+    // las geometrías de assets.glb se comparten entre niveles: solo liberar lo propio
+    for (const m of this.ownedMaterials) {
+      (m as THREE.SpriteMaterial).map?.dispose();
+      m.dispose();
+    }
+    this.sparkles?.geometry.dispose();
   }
 }

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { MarchingCubes } from 'three/examples/jsm/objects/MarchingCubes.js';
 import { FRICTION, World } from './world';
 import type { Channel } from './levels';
+import { Assets } from './assets';
 
 // --- física ---
 const R = 0.2;            // radio de colisión de cada limito
@@ -70,10 +71,13 @@ export class Slime {
   readonly group = new THREE.Group();
   private mcs: MarchingCubes[] = [];
   private spheres: THREE.InstancedMesh;
-  private eyes: Eyes[] = [];
+  private faces: Face[] = [];
+  private fell: Uint8Array;
+  /** posiciones (x, z) donde el limo ha recibido daño este frame */
+  hurts: { x: number; z: number }[] = [];
   private usedInMc: Uint8Array;
 
-  constructor(private world: World, count: number, lowQuality: boolean) {
+  constructor(private world: World, count: number, lowQuality: boolean, assets: Assets) {
     const n = (this.n = count);
     const f = () => new Float32Array(n);
     this.px = f(); this.py = f(); this.pz = f();
@@ -87,6 +91,7 @@ export class Slime {
     this.parent = new Int32Array(n);
     this.gid = new Int32Array(n).fill(-1);
     this.usedInMc = new Uint8Array(n);
+    this.fell = new Uint8Array(n);
 
     const s = world.start;
     for (let k = 0; k < n; k++) {
@@ -115,9 +120,9 @@ export class Slime {
       mc.visible = false;
       this.mcs.push(mc);
       this.group.add(mc);
-      const eyes = new Eyes();
-      this.eyes.push(eyes);
-      this.group.add(eyes.root);
+      const face = new Face(assets);
+      this.faces.push(face);
+      this.group.add(face.root);
     }
     this.spheres = new THREE.InstancedMesh(new THREE.SphereGeometry(0.25, 12, 9), material, n);
     this.spheres.castShadow = true;
@@ -156,7 +161,10 @@ export class Slime {
       this.air[i] = 1;
       any = true;
     }
-    if (any) this.events.push({ type: 'jump' });
+    if (any) {
+      this.events.push({ type: 'jump' });
+      for (const f of this.faces) f.cheer(0.45);
+    }
     return any;
   }
 
@@ -182,6 +190,8 @@ export class Slime {
     if (any) this.events.push({ type: 'split' });
     return any;
   }
+
+  celebrate() { for (const f of this.faces) f.cheer(10); }
 
   // ---------------------------------------------------------------- simulación
 
@@ -376,7 +386,12 @@ export class Slime {
       const under = w.cell(ci, cj);
       if (under && w.fireActive(ci, cj) && y < under.base + 0.8) {
         this.dying[i] = 1e-4;
+        this.hurts.push({ x, z });
         continue;
+      }
+      if (!this.fell[i] && y < -0.8) {
+        this.fell[i] = 1;
+        this.hurts.push({ x, z });
       }
 
       if (this.air[i] < 0.06 && this.groundCell[i] >= 0) {
@@ -457,10 +472,10 @@ export class Slime {
     for (let k = 0; k < MC_GROUPS; k++) {
       const mc = this.mcs[k];
       const g = this.groups[k];
-      const eyes = this.eyes[k];
+      const face = this.faces[k];
       if (!g || g.ids.length < MC_MIN_SIZE) {
         mc.visible = false;
-        eyes.hide();
+        face.hide();
         continue;
       }
       const cx = Math.round(g.cx / cell) * cell;
@@ -470,7 +485,9 @@ export class Slime {
       mc.reset();
       const inv = 1 / (2 * MC_SCALE);
       let added = 0;
+      let airborne = 0;
       for (const i of g.ids) {
+        if (this.air[i] > 0.15) airborne++;
         const bx = (this.px[i] - cx) * inv + 0.5;
         const by = (this.py[i] - cy) * inv + 0.5;
         const bz = (this.pz[i] - cz) * inv + 0.5;
@@ -482,8 +499,22 @@ export class Slime {
       }
       mc.visible = added > 0;
       if (added > 0) mc.update();
-      eyes.show(g, dt, lookX, lookZ);
+      face.update(g, dt, lookX, lookZ, airborne / g.ids.length);
     }
+
+    // daño → cara de dolor en el trozo más cercano
+    for (const h of this.hurts) {
+      let best = -1;
+      let bestD = 16;
+      for (let k = 0; k < this.faces.length; k++) {
+        const g = this.groups[k];
+        if (!g || !this.faces[k].root.visible) continue;
+        const d = (g.cx - h.x) ** 2 + (g.cz - h.z) ** 2;
+        if (d < bestD) { bestD = d; best = k; }
+      }
+      this.faces[Math.max(best, 0)].hurt();
+    }
+    this.hurts.length = 0;
 
     const m = new THREE.Matrix4();
     let c = 0;
@@ -503,69 +534,135 @@ export class Slime {
     for (const mc of this.mcs) mc.geometry.dispose();
     this.spheres.geometry.dispose();
     (this.spheres.material as THREE.Material).dispose();
-    for (const e of this.eyes) e.dispose();
+    for (const f of this.faces) f.dispose();
   }
 }
 
-// ------------------------------------------------------------------ ojos
+// ------------------------------------------------------------------ cara
 
-const eyeGeo = new THREE.SphereGeometry(0.1, 14, 10);
-const pupilGeo = new THREE.SphereGeometry(0.055, 10, 8);
-const shineGeo = new THREE.SphereGeometry(0.018, 6, 4);
-const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-const blackMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+type Expr = 'idle' | 'wee' | 'air' | 'happy' | 'pain';
 
-class Eyes {
+/** Cara modelada en Blender: ojos, boca y extras que cambian según lo que le pasa al limo. */
+class Face {
   readonly root = new THREE.Group();
-  private eyes: THREE.Group[] = [];
-  private pupils: THREE.Mesh[] = [];
+  private eyesOpen: THREE.Object3D[] = [];
+  private eyesPain: THREE.Object3D[] = [];
+  private eyesHappy: THREE.Object3D[] = [];
+  private pupils: THREE.Object3D[] = [];
+  private mouths: Record<'smile' | 'open' | 'o' | 'pain', THREE.Object3D>;
+  private blush: THREE.Object3D[] = [];
+  private sweat: THREE.Object3D;
+  private materials: THREE.Material[] = [];
   private pos = new THREE.Vector3();
+  private target = new THREE.Vector3();
   private initialized = false;
   private blinkT = 2 + Math.random() * 2;
+  private painT = 0;
+  private happyT = 0;
   private scale = 1;
+  private t = 0;
 
-  constructor() {
+  constructor(assets: Assets) {
+    const part = (name: string, x: number, y: number, z: number, mirror = false) => {
+      const o = assets.clone(name, { unlit: true });
+      o.position.set(x, y, z);
+      if (mirror) o.scale.x = -1;
+      o.traverse((c) => {
+        const m = c as THREE.Mesh;
+        if (!m.isMesh) return;
+        this.materials.push(m.material as THREE.Material);
+        m.renderOrder = 5;
+      });
+      this.root.add(o);
+      return o;
+    };
     for (const side of [-1, 1]) {
-      const eye = new THREE.Group();
-      const white = new THREE.Mesh(eyeGeo, whiteMat);
-      white.scale.set(1, 1.4, 0.55);
-      const pupil = new THREE.Mesh(pupilGeo, blackMat);
-      pupil.scale.set(1, 1.35, 0.5);
-      pupil.position.z = 0.045;
-      const shine = new THREE.Mesh(shineGeo, whiteMat);
-      shine.position.set(0.018, 0.035, 0.03);
-      pupil.add(shine);
-      eye.add(white, pupil);
-      eye.position.x = side * 0.13;
-      eye.renderOrder = 5;
-      this.eyes.push(eye);
+      const eye = part('face_eye_open', side * 0.13, 0.06, 0);
+      this.eyesOpen.push(eye);
+      const pupil = Assets.child(eye, 'face_eye_pupil');
+      pupil.userData.rest = pupil.position.clone();
       this.pupils.push(pupil);
-      this.root.add(eye);
+      this.eyesPain.push(part('face_eye_pain', side * 0.13, 0.06, 0.02, side > 0));
+      this.eyesHappy.push(part('face_eye_happy', side * 0.13, 0.08, 0.02));
+      this.blush.push(part('face_blush', side * 0.23, -0.07, -0.01));
     }
+    this.mouths = {
+      smile: part('face_mouth_smile', 0, -0.13, 0.03),
+      open: part('face_mouth_open', 0, -0.12, 0.02),
+      o: part('face_mouth_o', 0, -0.14, 0.02),
+      pain: part('face_mouth_pain', 0, -0.14, 0.03),
+    };
+    this.sweat = part('face_sweat', 0.27, 0.2, 0.02);
     this.root.visible = false;
   }
 
-  show(g: Group, dt: number, lookX: number, lookZ: number) {
-    const target = new THREE.Vector3(g.cx, (g.cy + g.maxY) * 0.5 + 0.16, g.maxZ + 0.1);
-    const k = 1 - Math.exp(-dt * 16);
-    if (!this.initialized) { this.pos.copy(target); this.initialized = true; }
-    else this.pos.lerp(target, k);
-    this.root.position.copy(this.pos);
+  hurt() { this.painT = 0.9; this.happyT = 0; }
+  cheer(t: number) { if (this.painT <= 0) this.happyT = Math.max(this.happyT, t); }
 
-    const want = Math.min(1.3, Math.max(0.55, 0.5 + g.ids.length / 45));
+  update(g: Group, dt: number, lookX: number, lookZ: number, airFrac: number) {
+    this.t += dt;
+    this.painT -= dt;
+    this.happyT -= dt;
+
+    // arriba y hacia delante del trozo, inclinada hacia la cámara cenital
+    this.target.set(g.cx, g.maxY * 0.7 + g.cy * 0.3 + 0.12, g.cz + (g.maxZ - g.cz) * 0.75 + 0.12);
+    const k = 1 - Math.exp(-dt * 16);
+    if (!this.initialized) { this.pos.copy(this.target); this.initialized = true; }
+    else this.pos.lerp(this.target, k);
+
+    const speed = Math.hypot(g.vx, g.vz);
+    let expr: Expr = 'idle';
+    if (this.painT > 0) expr = 'pain';
+    else if (this.happyT > 0) expr = 'happy';
+    else if (airFrac > 0.6) expr = 'air';
+    else if (speed > 3.2) expr = 'wee';
+
+    const want = Math.min(2.2, Math.max(0.9, 0.8 + g.ids.length / 40));
     this.scale += (want - this.scale) * k;
 
     this.blinkT -= dt;
     let open = 1;
     if (this.blinkT < 0) {
-      open = 0.12;
+      open = 0.1;
       if (this.blinkT < -0.12) this.blinkT = 2.2 + Math.random() * 2.5;
     }
-    this.root.scale.set(this.scale, this.scale * open, this.scale);
 
+    const normalEyes = expr === 'idle' || expr === 'wee' || expr === 'air';
+    const big = expr === 'air' ? 1.2 : 1;
+    for (const e of this.eyesOpen) {
+      e.visible = normalEyes;
+      e.scale.set(big, big * (expr === 'idle' ? open : 1), big);
+    }
+    for (const e of this.eyesPain) e.visible = expr === 'pain';
+    for (const e of this.eyesHappy) e.visible = expr === 'happy';
+    this.mouths.smile.visible = expr === 'idle';
+    this.mouths.open.visible = expr === 'wee' || expr === 'happy';
+    this.mouths.o.visible = expr === 'air';
+    this.mouths.pain.visible = expr === 'pain';
+    this.sweat.visible = expr === 'pain';
+    for (const b of this.blush) b.visible = expr !== 'air';
+
+    // mirada hacia donde se mueve; en el aire, hacia arriba
     const lx = Math.max(-1, Math.min(1, g.vx * 0.25 + lookX * 0.5));
-    const ly = Math.max(-1, Math.min(1, -g.vz * 0.15 - lookZ * 0.3));
-    for (const p of this.pupils) p.position.set(lx * 0.03, ly * 0.04, 0.045);
+    const ly = expr === 'air' ? 0.8 : Math.max(-1, Math.min(1, -g.vz * 0.15 - lookZ * 0.3));
+    for (const p of this.pupils) {
+      const r = p.userData.rest as THREE.Vector3;
+      p.position.set(r.x + lx * 0.03, r.y + ly * 0.04, r.z);
+    }
+
+    // gracia: balanceo al moverse, tembleque con dolor, boca que late al gritar
+    let wobble = Math.sin(this.t * 9) * Math.min(speed, 4) * 0.02;
+    let shakeX = 0;
+    if (expr === 'pain') {
+      shakeX = Math.sin(this.t * 70) * 0.025;
+      wobble = Math.sin(this.t * 35) * 0.12;
+    }
+    this.mouths.open.scale.set(1, 1 + Math.sin(this.t * 18) * 0.15, 1);
+    this.sweat.position.y = 0.2 - ((this.t * 0.6) % 0.12);
+
+    this.root.position.set(this.pos.x + shakeX, this.pos.y, this.pos.z);
+    this.root.rotation.set(-0.75, 0, wobble);
+    this.root.scale.setScalar(this.scale);
     this.root.visible = true;
   }
 
@@ -574,5 +671,7 @@ class Eyes {
     this.initialized = false;
   }
 
-  dispose() { /* geometrías compartidas */ }
+  dispose() {
+    for (const m of this.materials) m.dispose();
+  }
 }

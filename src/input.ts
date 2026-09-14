@@ -1,13 +1,17 @@
 /*
-  Inclinación normalizada en [-1, 1]:
+  Dirección normalizada en [-1, 1]:
     x > 0  → deslizar a la derecha de la pantalla
     z < 0  → deslizar hacia el fondo (lejos de la cámara)
-  Fuente principal: DeviceOrientationEvent (giroscopio). Respaldo para
-  pruebas en ordenador: flechas/WASD, espacio, Q/E.
+  Modos: joystick virtual (por defecto) o giroscopio.
+  En ordenador, para pruebas: flechas/WASD, espacio, Q/E.
 */
 
+export type ControlMode = 'joystick' | 'gyro';
+
 const RANGE_DEG = 22;
-const DEAD = 0.06;
+const GYRO_DEAD = 0.06;
+const JOY_DEAD = 0.12;
+const JOY_RADIUS = 56; // px de recorrido del mando
 
 type Pair = { roll: number; pitch: number };
 
@@ -16,6 +20,7 @@ export class Input {
   tiltZ = 0;
   mergeHeld = false;
   hasGyro = false;
+  mode: ControlMode = 'joystick';
 
   private raw: Pair | null = null;
   private neutral: Pair | null = null;
@@ -23,6 +28,14 @@ export class Input {
   private mergeBtn = false;
   private jumpQueued = false;
   private splitQueued = false;
+
+  private joyX = 0;
+  private joyY = 0;
+  private joyPointer: number | null = null;
+  private joyOrigin = { x: 0, y: 0 };
+  private zone = document.getElementById('joy-zone')!;
+  private base = document.getElementById('joy-base')!;
+  private knob = document.getElementById('joy-knob')!;
 
   constructor() {
     window.addEventListener('deviceorientation', (e) => this.onOrientation(e));
@@ -38,20 +51,28 @@ export class Input {
     this.bindButton('btn-jump', () => (this.jumpQueued = true));
     this.bindButton('btn-split', () => (this.splitQueued = true));
     const merge = document.getElementById('btn-merge')!;
-    const down = (e: PointerEvent) => {
+    merge.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       merge.setPointerCapture(e.pointerId);
       this.mergeBtn = true;
       merge.classList.add('held');
-    };
+    });
     const up = () => {
       this.mergeBtn = false;
       merge.classList.remove('held');
     };
-    merge.addEventListener('pointerdown', down);
     merge.addEventListener('pointerup', up);
     merge.addEventListener('pointercancel', up);
     merge.addEventListener('lostpointercapture', up);
+
+    this.bindJoystick();
+  }
+
+  setMode(mode: ControlMode) {
+    this.mode = mode;
+    document.body.dataset.control = mode;
+    this.releaseJoystick();
+    if (mode === 'gyro') this.calibrate();
   }
 
   private bindButton(id: string, fn: () => void) {
@@ -63,11 +84,68 @@ export class Input {
     });
   }
 
-  /** iOS exige pedir permiso tras un toque del usuario. No bloquea: nada de esto es obligatorio. */
+  // ---------------------------------------------------------------- joystick flotante
+
+  private bindJoystick() {
+    this.zone.addEventListener('pointerdown', (e) => {
+      if (this.mode !== 'joystick' || this.joyPointer !== null) return;
+      e.preventDefault();
+      this.zone.setPointerCapture(e.pointerId);
+      this.joyPointer = e.pointerId;
+      const r = this.zone.getBoundingClientRect();
+      // el mando aparece donde pones el dedo (sin salirse de la zona)
+      const x = Math.min(Math.max(e.clientX - r.left, JOY_RADIUS + 12), r.width - JOY_RADIUS - 12);
+      const y = Math.min(Math.max(e.clientY - r.top, JOY_RADIUS + 12), r.height - JOY_RADIUS - 12);
+      this.joyOrigin = { x: r.left + x, y: r.top + y };
+      this.base.style.left = `${x}px`;
+      this.base.style.top = `${y}px`;
+      this.base.classList.add('active');
+      this.moveJoystick(e.clientX, e.clientY);
+    });
+    this.zone.addEventListener('pointermove', (e) => {
+      if (e.pointerId === this.joyPointer) this.moveJoystick(e.clientX, e.clientY);
+    });
+    const end = (e: PointerEvent) => {
+      if (e.pointerId === this.joyPointer) this.releaseJoystick();
+    };
+    this.zone.addEventListener('pointerup', end);
+    this.zone.addEventListener('pointercancel', end);
+    this.zone.addEventListener('lostpointercapture', end);
+  }
+
+  private moveJoystick(cx: number, cy: number) {
+    let dx = cx - this.joyOrigin.x;
+    let dy = cy - this.joyOrigin.y;
+    const len = Math.hypot(dx, dy);
+    if (len > JOY_RADIUS) {
+      dx = (dx / len) * JOY_RADIUS;
+      dy = (dy / len) * JOY_RADIUS;
+    }
+    this.knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    this.joyX = dx / JOY_RADIUS;
+    this.joyY = dy / JOY_RADIUS;
+  }
+
+  private releaseJoystick() {
+    this.joyPointer = null;
+    this.joyX = 0;
+    this.joyY = 0;
+    this.knob.style.transform = 'translate(-50%, -50%)';
+    this.base.classList.remove('active');
+    this.base.style.left = '';
+    this.base.style.top = '';
+  }
+
+  // ---------------------------------------------------------------- giroscopio
+
+  /** iOS exige pedir permiso tras un toque del usuario. No bloquea. */
   requestPermission() {
     const DOE = (window as unknown as { DeviceOrientationEvent?: { requestPermission?: () => Promise<string> } })
       .DeviceOrientationEvent;
     DOE?.requestPermission?.().catch(() => { /* sin giroscopio */ });
+  }
+
+  requestFullscreen() {
     const el = document.documentElement;
     if (!document.fullscreenElement && el.requestFullscreen) {
       el.requestFullscreen()
@@ -94,11 +172,20 @@ export class Input {
     if (!this.neutral) this.calibrate();
   }
 
+  // ---------------------------------------------------------------- por frame
+
   update() {
     let x = 0, z = 0;
-    if (this.raw && this.neutral) {
-      x = wrap(this.raw.roll - this.neutral.roll) / RANGE_DEG;
-      z = wrap(this.raw.pitch - this.neutral.pitch) / RANGE_DEG;
+    if (this.mode === 'gyro' && this.raw && this.neutral) {
+      x = shape(wrap(this.raw.roll - this.neutral.roll) / RANGE_DEG, GYRO_DEAD);
+      z = shape(wrap(this.raw.pitch - this.neutral.pitch) / RANGE_DEG, GYRO_DEAD);
+    } else if (this.mode === 'joystick') {
+      const len = Math.hypot(this.joyX, this.joyY);
+      if (len > JOY_DEAD) {
+        const k = Math.min(1, (len - JOY_DEAD) / (1 - JOY_DEAD)) / len;
+        x = this.joyX * k;
+        z = this.joyY * k;
+      }
     }
     if (this.keys.has('ArrowLeft') || this.keys.has('KeyA')) x = -1;
     if (this.keys.has('ArrowRight') || this.keys.has('KeyD')) x = 1;
@@ -106,16 +193,15 @@ export class Input {
     if (this.keys.has('ArrowDown') || this.keys.has('KeyS')) z = 1;
     this.mergeHeld = this.mergeBtn || this.keys.has('KeyE');
 
-    x = shape(x);
-    z = shape(z);
-    // suavizado ligero para quitar temblor del sensor
-    this.tiltX += (x - this.tiltX) * 0.35;
-    this.tiltZ += (z - this.tiltZ) * 0.35;
+    // suavizado: quita temblor del sensor y da algo de inercia al joystick
+    const smooth = this.mode === 'gyro' ? 0.35 : 0.5;
+    this.tiltX += (x - this.tiltX) * smooth;
+    this.tiltZ += (z - this.tiltZ) * smooth;
   }
 
   consumeJump() { const v = this.jumpQueued; this.jumpQueued = false; return v; }
   consumeSplit() { const v = this.splitQueued; this.splitQueued = false; return v; }
-  clearQueued() { this.jumpQueued = false; this.splitQueued = false; }
+  clearQueued() { this.jumpQueued = false; this.splitQueued = false; this.releaseJoystick(); }
 }
 
 function wrap(deg: number): number {
@@ -124,9 +210,9 @@ function wrap(deg: number): number {
   return deg;
 }
 
-function shape(v: number): number {
+function shape(v: number, dead: number): number {
   v = Math.max(-1, Math.min(1, v));
   const a = Math.abs(v);
-  if (a < DEAD) return 0;
-  return Math.sign(v) * ((a - DEAD) / (1 - DEAD));
+  if (a < dead) return 0;
+  return Math.sign(v) * ((a - dead) / (1 - dead));
 }
