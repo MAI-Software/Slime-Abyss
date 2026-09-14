@@ -5,17 +5,14 @@
   "count": 80,
   "minPct": 0.35,
   "keepPct": 0.75,
-  "need": {
-    "A": 16
-  },
   "tips": [
     {
       "z": 12,
-      "text": "La puerta necesita peso sobre el interruptor"
+      "text": "La puerta se abre mientras algo de limo pise el interruptor"
     },
     {
       "z": 8.8,
-      "text": "La cuchilla manda una mitad al foso y la otra a la puerta"
+      "text": "La cuchilla manda una parte al foso y la otra a la puerta"
     }
   ],
   "tiles": [

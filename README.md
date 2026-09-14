@@ -44,7 +44,11 @@ se hacen en Blender. El cuerpo del limo es procedural (metaballs) porque tiene q
 - Cuchillas (`K` izquierda/derecha, `k` delante/detrás) y pinchos (`Y`) lo dividen; los trozos se reúnen al tocarse.
 - Niveles lisos con caminos largos: los cambios de altura son solo bajadas.
 - Cada piso da hasta 3 estrellas: llegar al tesoro, todas las monedas (`C`) y conservar el % de limo del nivel.
-- Al terminar el último piso de un capítulo se muestra el desglose (estrellas, monedas, limo, tiempo y rango).
+- Al terminar el último piso de un capítulo se muestra el desglose (estrellas, monedas, secretos, limo, tiempo y rango).
+- Puertas: las del camino principal se abren con cualquier cantidad de limo sobre el interruptor.
+  Solo las puertas secretas piden peso (`need`) y guardan un tesoro secreto (`G`, gema) opcional que no da estrella.
+- Plataformas de salto: lanzan todo el trozo que está sobre la tapa o pegado a ella; solo se quedan gotas lejanas.
+- Si el jugador agita mucho el mando, el limo se marea (ojos en espiral).
 
 ## Camino a Play Store
 - Todo va empaquetado (fuentes con @fontsource, modelos locales): funciona sin conexión.

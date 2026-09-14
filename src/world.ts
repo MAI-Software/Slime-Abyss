@@ -37,6 +37,7 @@ interface Pad {
 }
 
 interface Coin {
+  gem: boolean;
   i: number;
   j: number;
   obj: THREE.Object3D;
@@ -112,7 +113,9 @@ export class World {
   /** índice de casilla → obstáculo (-1 si no hay) */
   private obstacleAt: Int32Array;
   coinsCollected = 0;
-  get coinsTotal() { return this.coins.length; }
+  gemsCollected = 0;
+  get coinsTotal() { return this.coins.filter((c) => !c.gem).length; }
+  get gemsTotal() { return this.coins.filter((c) => c.gem).length; }
   private fire: FireFx | null = null;
   private chest: THREE.Object3D | null = null;
   private chestLid: THREE.Object3D | null = null;
@@ -177,13 +180,15 @@ export class World {
   }
 
   /** Moneda en la casilla (i, j) sin recoger; la marca como recogida. */
-  collectCoin(i: number, j: number): boolean {
+  /** Recoge la moneda o gema de la casilla. Devuelve qué era, o null si no había nada. */
+  collectCoin(i: number, j: number): 'coin' | 'gem' | null {
     const c = this.coinAt.get(j * this.w + i);
-    if (!c || c.collected) return false;
+    if (!c || c.collected) return null;
     c.collected = true;
     c.t = 0;
-    this.coinsCollected++;
-    return true;
+    if (c.gem) this.gemsCollected++;
+    else this.coinsCollected++;
+    return c.gem ? 'gem' : 'coin';
   }
 
   /** Dispara la animación del muelle. Devuelve true si no se había disparado hace nada (para sonido). */
@@ -268,9 +273,9 @@ export class World {
             this.treasure.set(x, c.base, z);
             this.addChest(x, c.base, z);
             break;
-          case 'coin':
+          case 'coin': case 'gem':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
-            this.addCoin(i, j, c.base);
+            this.addCoin(i, j, c.base, c.kind === 'gem');
             break;
           case 'blade': case 'spike':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
@@ -344,9 +349,21 @@ export class World {
     make('wall', wallMat, wallMat);
   }
 
-  private addCoin(i: number, j: number, base: number) {
-    const obj = this.add('coin', i + 0.5, base + 0.55, j + 0.5);
-    const coin: Coin = { i, j, obj, baseY: base + 0.55, collected: false, t: 0 };
+  private addCoin(i: number, j: number, base: number, gem: boolean) {
+    const y = base + (gem ? 0.35 : 0.55);
+    const obj = this.add(gem ? 'gem' : 'coin', i + 0.5, y, j + 0.5);
+    if (gem) {
+      // halo violeta bajo la gema para que se vea desde lejos
+      const glowMat = createGlowMaterial(0xa855f7, this.timeUniform, 0.8);
+      this.ownedMaterials.push(glowMat);
+      const glow = new THREE.Mesh(this.assets.geometry('fire_glow'), glowMat);
+      glow.position.set(i + 0.5, base + 0.02, j + 0.5);
+      glow.scale.set(1.8, 1, 1.8);
+      glow.renderOrder = 2;
+      this.group.add(glow);
+      obj.userData.glow = glow;
+    }
+    const coin: Coin = { gem, i, j, obj, baseY: y, collected: false, t: 0 };
     this.coins.push(coin);
     this.coinAt.set(j * this.w + i, coin);
   }
@@ -491,8 +508,8 @@ export class World {
     for (const c of this.coins) {
       if (!c.obj.visible) continue;
       if (!c.collected) {
-        c.obj.rotation.y = this.time * 2.6 + c.i * 0.7;
-        c.obj.position.y = c.baseY + Math.sin(this.time * 3 + c.j) * 0.06;
+        c.obj.rotation.y = this.time * (c.gem ? 1.6 : 2.6) + c.i * 0.7;
+        c.obj.position.y = c.baseY + Math.sin(this.time * 3 + c.j) * (c.gem ? 0.1 : 0.06);
       } else {
         // recogida: salta, gira rápido, crece y se desvanece
         c.t += dt;
@@ -500,7 +517,10 @@ export class World {
         c.obj.rotation.y += dt * 22;
         c.obj.position.y = c.baseY + k * 1.1;
         c.obj.scale.setScalar(1 + Math.sin(k * Math.PI) * 0.6 - k * 0.6);
-        if (k >= 1) c.obj.visible = false;
+        if (k >= 1) {
+          c.obj.visible = false;
+          if (c.obj.userData.glow) (c.obj.userData.glow as THREE.Object3D).visible = false;
+        }
       }
     }
 

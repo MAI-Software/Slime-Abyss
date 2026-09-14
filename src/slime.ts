@@ -39,7 +39,9 @@ const SLOPE_ACC = 7;
 const CORNER_LOOSE_T = 0.32;
 const CORNER_GRIP = 0.12;
 const WALL_DRAG = 5;
-const PAD_CUT_T = 0.45;
+// Radio alrededor de la plataforma dentro del que el trozo sale lanzado entero:
+// solo las gotas que van muy separadas se quedan atrás.
+const PAD_REACH = 1.3;
 const DIE_TIME = 0.35;
 const SUBSTEPS = 3;
 const STEP_UP = 0.56;       // escalón que el limo sube solo (0.5 de altura de losa)
@@ -52,7 +54,7 @@ const FACE_MIN_SIZE = 6;
 
 export type SlimeEvent =
   | { type: 'fall' | 'evaporate' | 'pad'; x: number; y: number; z: number }
-  | { type: 'coin'; x: number; y: number; z: number }
+  | { type: 'coin' | 'gem'; x: number; y: number; z: number }
   | { type: 'cut'; x: number; z: number };
 
 export interface Group {
@@ -86,6 +88,7 @@ export class Slime {
   private grip: Float32Array;
   private loose: Float32Array;
   private gvx: Float32Array; private gvz: Float32Array; private gcnt: Float32Array;
+  private padX: Float32Array; private padZ: Float32Array; private padTop: Float32Array;
   private lastCutEvent = -1;
   private time = 0;
   private readonly uniforms = { uTime: { value: 0 } };
@@ -125,6 +128,7 @@ export class Slime {
     this.grip = new Float32Array(n).fill(1);
     this.loose = new Float32Array(n);
     this.gvx = new Float32Array(n); this.gvz = new Float32Array(n); this.gcnt = new Float32Array(n);
+    this.padX = new Float32Array(n); this.padZ = new Float32Array(n); this.padTop = new Float32Array(n);
     for (let k = 0; k < n; k++) this.groupPool.push({ ids: [], cx: 0, cy: 0, cz: 0, maxY: 0, maxZ: 0, vx: 0, vz: 0 });
 
     // aparición: espiral compacta en 3 capas, sin salirse a casillas de otra altura (muros, vacío)
@@ -525,10 +529,13 @@ export class Slime {
 
       const ci = Math.floor(x), cj = Math.floor(z);
       const under = w.cell(ci, cj);
-      if (under && under.kind === 'coin' && y < under.base + 1.3 && w.collectCoin(ci, cj)) {
-        const c = w.coinPosition(ci, cj, this.tmpCoin);
-        this.events.push({ type: 'coin', x: c.x, y: c.y, z: c.z });
-        for (const f of this.faces) f.cheer(0.5);
+      if (under && (under.kind === 'coin' || under.kind === 'gem') && y < under.base + 1.3) {
+        const got = w.collectCoin(ci, cj);
+        if (got) {
+          const c = w.coinPosition(ci, cj, this.tmpCoin);
+          this.events.push({ type: got, x: c.x, y: c.y, z: c.z });
+          for (const f of this.faces) f.cheer(got === 'gem' ? 1.2 : 0.5);
+        }
       }
       if (under && w.fireActive(ci, cj) && y < under.base + 0.8) {
         this.dying[i] = 1e-4;
@@ -540,18 +547,17 @@ export class Slime {
         this.hurts.push({ x, z });
       }
 
-      // plataforma de salto: salen disparados solo los limitos que están ENCIMA de la tapa
-      // (también los apilados); lo que queda fuera se despega y se queda atrás como gotitas
-      if (under && under.kind === 'jump' && this.vy[i] < PAD_V * 0.5 && y < under.top + 1.1
-        && (this.air[i] < 0.06 || this.gid[i] >= 0 && pad[this.gid[i]] === 2)) {
+      // plataforma de salto: si un limito pisa la tapa, se lanza su trozo (ver abajo)
+      if (under && under.kind === 'jump' && this.air[i] < 0.06 && this.vy[i] < PAD_V * 0.5 && this.gid[i] >= 0) {
         const fx = x - ci, fz = z - cj;
-        // solo sobre la tapa (0.68 de lado): quien pisa el borde se queda
-        if (Math.abs(fx - 0.5) < 0.38 && Math.abs(fz - 0.5) < 0.38) {
-          this.vy[i] = PAD_V;
-          this.air[i] = 1;
-          this.tag[i] = CUT_TAG_BASE + (w.w * w.d + cj * w.w + ci) * 2;
-          this.noAttr[i] = this.time + PAD_CUT_T;
-          if (this.gid[i] >= 0) pad[this.gid[i]] = 2;
+        if (Math.abs(fx - 0.5) < 0.4 && Math.abs(fz - 0.5) < 0.4) {
+          const g = this.gid[i];
+          if (!pad[g]) {
+            pad[g] = 1;
+            this.padX[g] = ci + 0.5;
+            this.padZ[g] = cj + 0.5;
+            this.padTop[g] = under.top;
+          }
           anyPad = true;
           if (w.triggerPad(ci, cj)) this.events.push({ type: 'pad', x, y, z });
         }
@@ -565,10 +571,17 @@ export class Slime {
       if (dx * dx + dz * dz < 0.55 && y < t.y + 1.2) this.touchedTreasure = true;
     }
     if (!anyPad) return;
-    // los que se quedan en el mismo trozo pierden el agarre un instante para que se note el tirón
+    // sale lanzado todo el trozo que está sobre la plataforma o pegado a ella;
+    // solo las gotas que van lejos (cola larga, restos sueltos) se quedan
+    const reach2 = PAD_REACH * PAD_REACH;
     for (let k = 0; k < this.groups.length; k++) {
-      if (pad[k] !== 2) continue;
-      for (const i of this.groups[k].ids) if (this.air[i] < 0.06) this.noAttr[i] = this.time + PAD_CUT_T;
+      if (!pad[k]) continue;
+      for (const i of this.groups[k].ids) {
+        const dx = this.px[i] - this.padX[k], dz = this.pz[i] - this.padZ[k];
+        if (dx * dx + dz * dz > reach2 || this.py[i] > this.padTop[k] + 1.6 || this.vy[i] >= PAD_V * 0.5) continue;
+        this.vy[i] = PAD_V;
+        this.air[i] = 1;
+      }
     }
   }
 
@@ -706,7 +719,7 @@ export class Slime {
 
 // ------------------------------------------------------------------ cara
 
-type Expr = 'idle' | 'wee' | 'air' | 'happy' | 'pain';
+type Expr = 'idle' | 'wee' | 'air' | 'happy' | 'pain' | 'dizzy';
 
 /**
   Cara kawaii modelada en Blender (face_*): ojos negros brillantes, boquita y mofletes.
@@ -718,6 +731,7 @@ class Face {
   private eyes: THREE.Object3D[] = [];
   private eyesPain: THREE.Object3D[] = [];
   private eyesHappy: THREE.Object3D[] = [];
+  private eyesDizzy: THREE.Object3D[] = [];
   private mouths: Record<'smile' | 'open' | 'o' | 'pain', THREE.Object3D>;
   private blush: THREE.Object3D[] = [];
   private tears: THREE.Object3D[] = [];
@@ -727,6 +741,14 @@ class Face {
   private initialized = false;
   private blinkT = 2 + Math.random() * 2;
   private painT = 0;
+  // mareo: se acumula con los cambios bruscos de velocidad y se va pasando solo
+  private dizzyT = 0;
+  private agitation = 0;
+  private prevVx = 0;
+  private prevVz = 0;
+  private prevSize = 0;
+  private lastDirX = 0;
+  private lastDirZ = 0;
   private happyT = 0;
   private scale = 1;
   private bounce = 0;
@@ -751,6 +773,7 @@ class Face {
       this.eyes.push(part('face_eye', side * 0.1, 0.035, 0));
       this.eyesPain.push(part('face_eye_pain', side * 0.1, 0.035, 0.01, side > 0));
       this.eyesHappy.push(part('face_eye_happy', side * 0.1, 0.045, 0.01));
+      this.eyesDizzy.push(part('face_eye_dizzy', side * 0.1, 0.035, 0.012, side > 0));
       this.blush.push(part('face_blush', side * 0.175, -0.035, -0.005));
       this.tears.push(part('face_tear', side * 0.155, 0.0, 0.01));
     }
@@ -775,7 +798,32 @@ class Face {
     this.t += dt;
     this.painT -= dt;
     this.happyT -= dt;
+    this.dizzyT -= dt;
     this.bounce = Math.max(0, this.bounce - dt * 4);
+
+    // agitación: aceleración del trozo (ignora cambios de trozo, que dan saltos falsos)
+    const size = g.ids.length;
+    if (Math.abs(size - this.prevSize) <= Math.max(3, this.prevSize * 0.2)) {
+      const accel = Math.hypot(g.vx - this.prevVx, g.vz - this.prevVz) / Math.max(dt, 1e-3);
+      if (accel > 14) this.agitation += (accel - 14) * dt * 0.04;
+    }
+    this.prevVx = g.vx;
+    this.prevVz = g.vz;
+    this.prevSize = size;
+    // lo que de verdad marea: que el jugador invierta el mando una y otra vez (agitar)
+    const im = Math.hypot(lookX, lookZ);
+    if (im > 0.55) {
+      const nx = lookX / im, nz = lookZ / im;
+      if (this.lastDirX * nx + this.lastDirZ * nz < -0.3) this.agitation += 0.4;
+      this.lastDirX = nx;
+      this.lastDirZ = nz;
+    }
+    this.agitation = Math.max(0, this.agitation - dt * 0.7);
+    if (this.agitation > 1.1 && this.painT <= 0) {
+      if (this.dizzyT <= 0) this.bounce = 1;
+      this.dizzyT = 2;
+      this.agitation = 0.8;
+    }
 
     // arriba y hacia delante del trozo, inclinada hacia la cámara cenital
     const tx = g.cx;
@@ -793,6 +841,7 @@ class Face {
     let expr: Expr = 'idle';
     if (this.painT > 0) expr = 'pain';
     else if (this.happyT > 0) expr = 'happy';
+    else if (this.dizzyT > 0) expr = 'dizzy';
     else if (airFrac > 0.6) expr = 'air';
     else if (speed > 4.4) expr = 'wee';
 
@@ -820,10 +869,14 @@ class Face {
     }
     for (const e of this.eyesPain) e.visible = expr === 'pain';
     for (const e of this.eyesHappy) e.visible = expr === 'happy';
+    this.eyesDizzy.forEach((e, k) => {
+      e.visible = expr === 'dizzy';
+      e.rotation.z = this.t * (k === 0 ? 7 : -7);
+    });
     this.mouths.smile.visible = expr === 'idle';
     this.mouths.open.visible = expr === 'wee' || expr === 'happy';
     this.mouths.o.visible = expr === 'air';
-    this.mouths.pain.visible = expr === 'pain';
+    this.mouths.pain.visible = expr === 'pain' || expr === 'dizzy';
     this.sweat.visible = expr === 'pain';
     for (const b of this.blush) {
       b.visible = expr !== 'air';
@@ -847,6 +900,10 @@ class Face {
     if (expr === 'pain') {
       shakeX = Math.sin(this.t * 70) * 0.02;
       wobble = Math.sin(this.t * 30) * 0.08;
+    } else if (expr === 'dizzy') {
+      // balanceo lento y amplio, como quien ha dado vueltas
+      shakeX = Math.sin(this.t * 3.2) * 0.05;
+      wobble = Math.sin(this.t * 3.2 + 1) * 0.22;
     }
     this.mouths.open.scale.set(1, 1 + Math.sin(this.t * (expr === 'wee' ? 20 : 10)) * 0.12, 1);
     this.sweat.position.y = 0.13 - ((this.t * 0.5) % 0.08);

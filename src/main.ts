@@ -140,7 +140,7 @@ applyQuality(quality);
 
 // ------------------------------------------------------------------ guardado
 
-interface FloorSave { done: boolean; allCoins: boolean; kept: boolean; bestCoins: number; bestPct: number; bestTime: number }
+interface FloorSave { done: boolean; allCoins: boolean; kept: boolean; bestCoins: number; bestPct: number; bestTime: number; secret?: boolean }
 interface Save { v: 2; control: ControlMode; sound: boolean; floors: Record<string, FloorSave> }
 
 function loadSave(): Save {
@@ -196,6 +196,8 @@ const checkSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 1
 const crossSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 const fmtTime = (t: number) => { const s = Math.floor(t); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const coinsTotalOf = (lv: LevelData) => lv.tiles.join('').split('C').length - 1;
+const gemsTotalOf = (lv: LevelData) => lv.tiles.join('').split('G').length - 1;
+const gemSvg = '<svg class="gem-ico" viewBox="0 0 24 24" aria-label="Tesoro secreto"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20"/></svg>';
 
 // ------------------------------------------------------------------ pantallas
 
@@ -448,6 +450,8 @@ function finish(win: boolean) {
     time: elapsed,
   };
   const earned = starsOf(r);
+  const gemsTotal = world.gemsTotal;
+  const gotGem = win && world.gemsCollected > 0;
 
   if (win && chapter) {
     const prev = save.floors[def.id];
@@ -458,6 +462,7 @@ function finish(win: boolean) {
       bestCoins: Math.max(prev?.bestCoins ?? 0, r.coins),
       bestPct: Math.max(prev?.bestPct ?? 0, pct),
       bestTime: prev?.done ? Math.min(prev.bestTime, elapsed) : elapsed,
+      secret: gotGem || !!prev?.secret,
     };
     writeSave();
   }
@@ -472,8 +477,11 @@ function finish(win: boolean) {
       { ok: r.kept, label: `Conservar el ${Math.round(keepPct * 100)}% del limo`, val: `${Math.round(pct * 100)}%` },
     ]
     : [{ ok: false, label: `Necesitas al menos el ${Math.round(def.minPct * 100)}% del limo`, val: `${Math.round(pct * 100)}%` }];
-  $('result-goals').innerHTML = goals.map((g, k) =>
-    `<li class="${g.ok ? 'ok' : ''}" style="animation-delay:${150 + k * 120}ms"><span class="goal-mark">${g.ok ? checkSvg : crossSvg}</span>${g.label}<span class="val">${g.val}</span></li>`).join('');
+  const goalRows: { ok: boolean; label: string; val: string; secret?: boolean }[] = goals;
+  // el tesoro secreto no da estrella: solo se muestra si el piso tiene uno
+  if (win && gemsTotal > 0) goalRows.push({ ok: gotGem, label: 'Tesoro secreto', val: gotGem ? '¡Encontrado!' : '', secret: true });
+  $('result-goals').innerHTML = goalRows.map((g, k) =>
+    `<li class="${g.ok ? 'ok' : ''}${g.secret ? ' secret' : ''}" style="animation-delay:${150 + k * 120}ms"><span class="goal-mark">${g.ok ? checkSvg : crossSvg}</span>${g.label}<span class="val">${g.val}</span></li>`).join('');
 
   // estrellas una a una
   if (win) {
@@ -509,7 +517,7 @@ function showBreakdown(ch: ChapterDef) {
   chapter = ch;
   $('bd-title').textContent = chapterDone(ch) ? `${ch.name} completado` : `${ch.name} · progreso`;
   $('bd-sub').textContent = ch.subtitle;
-  let stars = 0, coins = 0, coinsTotal = 0, pctSum = 0, time = 0;
+  let stars = 0, coins = 0, coinsTotal = 0, pctSum = 0, time = 0, secrets = 0, secretsTotal = 0;
   $('bd-rows').innerHTML = ch.floors.map((f, k) => {
     const s = floorSave(f.id);
     const st = floorStars(f.id);
@@ -519,14 +527,18 @@ function showBreakdown(ch: ChapterDef) {
     coinsTotal += total;
     pctSum += s?.bestPct ?? 0;
     time += s?.bestTime ?? 0;
+    const hasGem = gemsTotalOf(f) > 0;
+    if (hasGem) { secretsTotal++; if (s?.secret) secrets++; }
+    const secretCell = hasGem ? (s?.secret ? gemSvg : '—') : '';
     return `<tr style="animation-delay:${120 + k * 110}ms"><th>${k + 1}. ${f.name}</th><td>${starsHtml(st)}</td>
-      <td>${s?.bestCoins ?? 0}/${total}</td><td>${s ? Math.round(s.bestPct * 100) + '%' : '—'}</td><td>${s ? fmtTime(s.bestTime) : '—'}</td></tr>`;
+      <td>${s?.bestCoins ?? 0}/${total}</td><td>${secretCell}</td><td>${s ? Math.round(s.bestPct * 100) + '%' : '—'}</td><td>${s ? fmtTime(s.bestTime) : '—'}</td></tr>`;
   }).join('');
   const maxStars = ch.floors.length * 3;
   countUp($('bd-stars'), stars, (v) => `${v}/${maxStars}`);
   countUp($('bd-coins'), coins, (v) => `${v}/${coinsTotal}`);
   countUp($('bd-pct'), Math.round((pctSum / ch.floors.length) * 100), (v) => `${v}%`);
   $('bd-time').textContent = fmtTime(time);
+  $('bd-secrets').textContent = secretsTotal ? `${secrets}/${secretsTotal}` : '—';
   const ratio = stars / maxStars;
   const [medal, label] = ratio >= 0.9 ? ['gold', 'Rango Oro'] : ratio >= 0.6 ? ['silver', 'Rango Plata'] : ['bronze', 'Rango Bronce'];
   $('bd-rank').innerHTML = `<span class="medal ${medal}" aria-hidden="true"></span>${label}`;
@@ -570,6 +582,12 @@ function tick(dt: number) {
       case 'evaporate': sfx.sizzle(); fx.steam(e.x, e.y, e.z); break;
       case 'pad': sfx.pad(); fx.splat(e.x, e.y, e.z); break;
       case 'coin': sfx.coin(); fx.sparkle(e.x, e.y + 0.4, e.z); buzz(15); break;
+      case 'gem':
+        sfx.gem();
+        for (let k = 0; k < 3; k++) fx.sparkle(e.x, e.y + 0.3 + k * 0.25, e.z, 0xc4b5fd);
+        toast('¡Tesoro secreto encontrado!');
+        buzz([20, 40, 20]);
+        break;
       case 'cut': sfx.cut(); buzz(8); break;
     }
   }
@@ -708,6 +726,7 @@ if (import.meta.env.DEV) {
       hurt: () => { const g = slime?.groups[0]; if (g) slime!.hurts.push({ x: g.cx, z: g.cz }); },
       quality: () => ({ quality, fps: Math.round(1 / frameAvg) }),
       slime: () => slime,
+      world: () => world,
       state: () => ({ mode, alive: slime?.aliveCount, groups: slime?.groups.map((g) => g.ids.length), coins: world && `${world.coinsCollected}/${world.coinsTotal}`, lead: slime?.groups[0] && { x: slime.groups[0].cx.toFixed(2), y: slime.groups[0].cy.toFixed(2), z: slime.groups[0].cz.toFixed(2) } }),
     },
   });

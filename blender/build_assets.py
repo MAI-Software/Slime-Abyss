@@ -461,6 +461,30 @@ caps = [f for f in bm.faces if abs(f.normal.y) > 0.99 and f.calc_area() > 0.03]
 bmesh.ops.inset_individual(bm, faces=caps, thickness=0.03, depth=0.01)
 mesh_object("coin", bm, M["coin"], smooth=False)
 
+# ================================================================== SECRETOS Y MAREO
+
+# Gema secreta: cristal facetado alargado con un halo de color.
+M["gem"] = material("GemCrystal", "8b5cf6", 0.12, 0.2, emit="5b21b6", strength=1.2)
+bm = bmesh.new()
+top = bm.verts.new((0, 0, 0.42))
+bottom = bm.verts.new((0, 0, 0.0))
+ring = [bm.verts.new((0.15 * math.cos(a * math.tau / 6), 0.15 * math.sin(a * math.tau / 6), 0.26)) for a in range(6)]
+for k in range(6):
+    a, b = ring[k], ring[(k + 1) % 6]
+    bm.faces.new((a, b, top))
+    bm.faces.new((b, a, bottom))
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+mesh_object("gem", bm, M["gem"], smooth=False)
+
+# Ojo mareado: espiral dibujada (el juego la hace girar).
+spiral = []
+for k in range(46):
+    t = k / 45
+    ang = t * math.tau * 2.4
+    r = 0.008 + 0.05 * t
+    spiral.append((r * math.cos(ang), r * math.sin(ang)))
+tube("face_eye_dizzy", spiral, 0.011, M["black"])
+
 # ================================================================== guardar y exportar
 
 os.makedirs(os.path.dirname(OUT_GLB), exist_ok=True)

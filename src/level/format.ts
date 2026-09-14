@@ -15,7 +15,7 @@ export type Channel = 'A' | 'B';
 
 export type CellKind =
   | 'void' | 'floor' | 'wall' | 'fire' | 'firet' | 'ice' | 'jump' | 'switch' | 'door' | 'start' | 'treasure'
-  | 'coin' | 'blade' | 'spike';
+  | 'coin' | 'blade' | 'spike' | 'gem';
 
 export interface TileDef {
   char: string;
@@ -55,6 +55,7 @@ export const TILES: readonly TileDef[] = [
   { char: 'K', kind: 'blade', label: 'Cuchilla (divide izquierda / derecha)', axis: 'z', divider: true, color: '#d7dfea' },
   { char: 'k', kind: 'blade', label: 'Cuchilla (divide delante / detrás)', axis: 'x', divider: true, color: '#c3ccd8' },
   { char: 'Y', kind: 'spike', label: 'Pincho divisor', divider: true, color: '#9aa4b4' },
+  { char: 'G', kind: 'gem', label: 'Tesoro secreto (gema)', color: '#8b5cf6' },
 ];
 
 export const TILE_BY_CHAR: ReadonlyMap<string, TileDef> = new Map(TILES.map((t) => [t.char, t]));
@@ -76,7 +77,10 @@ export interface LevelData {
   minPct: number;
   tiles: string[];
   heights: string[];
-  /** Peso necesario por canal de interruptor. */
+  /**
+    Peso necesario por canal de interruptor (por defecto 1: basta con tocarlo).
+    Norma de diseño: las puertas del camino principal NO piden peso; solo las puertas secretas.
+  */
   need?: Partial<Record<Channel, number>>;
   /** Canales cuyo interruptor se queda pulsado. */
   latch?: Partial<Record<Channel, boolean>>;

@@ -293,6 +293,10 @@ body[data-control="joystick"] .gyro-only { display: none !important; }
 }
 .goals li .val { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted); }
 .goals li.ok .val { color: var(--ok); }
+.goals li.secret { background: #ede4fb; }
+.goals li.secret.ok .goal-mark { background: var(--secondary); }
+.goals li.secret.ok .val { color: var(--secondary); }
+.gem-ico { width: 18px; height: 18px; fill: #a78bfa; stroke: #4c1d95; stroke-width: 1.6; stroke-linejoin: round; }
 .goal-mark {
   width: 26px; height: 26px; flex: none;
   display: grid; place-items: center;

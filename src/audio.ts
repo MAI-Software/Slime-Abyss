@@ -61,6 +61,7 @@ export const sfx = {
     tone('sine', 900, 300, 0.14, 0.06);
   },
   star: (k: number) => tone('triangle', 660 * 2 ** (k * 4 / 12), 880 * 2 ** (k * 4 / 12), 0.25, 0.14),
+  gem: () => [784, 988, 1175, 1568].forEach((f, k) => tone('sine', f, f * 1.01, 0.3, 0.1, k * 0.07)),
   tick: () => tone('sine', 1200, 1200, 0.03, 0.04),
   win: () => [523, 659, 784, 1046].forEach((f, k) => tone('triangle', f, f, 0.22, 0.16, k * 0.12)),
   lose: () => [392, 330, 262].forEach((f, k) => tone('triangle', f, f * 0.97, 0.3, 0.14, k * 0.18)),
