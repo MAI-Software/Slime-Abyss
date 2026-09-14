@@ -371,6 +371,7 @@ function startLevel(def: LevelData, ch: ChapterDef | null, k: number) {
   acc = 0;
   lastAlive = def.count;
   hudCache.alive = hudCache.seconds = hudCache.coins = -1;
+  $('toast').hidden = true;
   gauge.reset();
   $('level-name').textContent = ch ? `Piso ${k + 1} · ${def.name}` : def.name;
   $('hud-coins').hidden = world!.coinsTotal === 0;
@@ -632,11 +633,13 @@ function updateCamera(dt: number) {
 
   tiltRoot.position.copy(camTarget);
   content.position.copy(camTarget).negate();
-  // balanceo del escenario: fuerte con giroscopio (sensación Mercury), sutil con joystick
-  const sway = mode !== 'play' ? 0 : input.mode === 'gyro' ? 0.1 : 0.03;
+  // inclinación del escenario: suave con el mando a medias y muy marcada a fondo (hasta ~19°),
+  // a juego con la pendiente que la física aplica al líquido
+  const mag2 = input.tiltX * input.tiltX + input.tiltZ * input.tiltZ;
+  const sway = mode !== 'play' ? 0 : 0.04 + 0.3 * mag2;
   const rx = input.tiltZ * sway;
   const rz = -input.tiltX * sway;
-  const tk = 1 - Math.exp(-dt * 12);
+  const tk = 1 - Math.exp(-dt * 7);
   tiltRoot.rotation.x += (rx - tiltRoot.rotation.x) * tk;
   tiltRoot.rotation.z += (rz - tiltRoot.rotation.z) * tk;
 

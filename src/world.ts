@@ -27,6 +27,15 @@ export interface Obstacle {
   id: number;
 }
 
+/** Plataforma de salto: tapa y muelle animados con un muelle amortiguado. */
+interface Pad {
+  plate: THREE.Object3D;
+  spring: THREE.Object3D;
+  offset: number;
+  vel: number;
+  cooldown: number;
+}
+
 interface Coin {
   i: number;
   j: number;
@@ -96,7 +105,7 @@ export class World {
   treasure = new THREE.Vector3();
   private switches = new Map<Channel, SwitchState>();
   private doors: DoorState[] = [];
-  private pads: THREE.Object3D[] = [];
+  private pads = new Map<number, Pad>();
   private coins: Coin[] = [];
   private coinAt = new Map<number, Coin>();
   readonly obstacles: Obstacle[] = [];
@@ -177,6 +186,19 @@ export class World {
     return true;
   }
 
+  /** Dispara la animación del muelle. Devuelve true si no se había disparado hace nada (para sonido). */
+  triggerPad(i: number, j: number): boolean {
+    const p = this.pads.get(j * this.w + i);
+    if (!p) return false;
+    const fresh = p.cooldown <= 0;
+    if (fresh) {
+      p.offset = -0.16;
+      p.vel = 0;
+      p.cooldown = 0.35;
+    }
+    return fresh;
+  }
+
   coinPosition(i: number, j: number, out: THREE.Vector3): THREE.Vector3 {
     const c = this.coinAt.get(j * this.w + i);
     return c ? out.copy(c.obj.position) : out.set(i + 0.5, 0, j + 0.5);
@@ -198,7 +220,7 @@ export class World {
     const cWallB = new THREE.Color(0xeeebf5);
     const cFire = new THREE.Color(0x8a4a40);
     const cIce = new THREE.Color(0xffffff);
-    const cJump = new THREE.Color(0xffc9e2);
+    const cJump = new THREE.Color(0xf2e9f4);
     const cSwitch = new THREE.Color(0xc4bed6);
     const fireCells: FireCell[] = [];
 
@@ -218,10 +240,17 @@ export class World {
             this.add('fire_grate', x, c.base, z);
             break;
           case 'ice': solids.push({ i, j, top: c.base, color: cIce, set: 'ice' }); break;
-          case 'jump':
+          case 'jump': {
+            // suelo normal debajo; la tapa queda elevada sobre el muelle (la física usa c.top)
             solids.push({ i, j, top: c.base, color: cJump, set: 'floor' });
-            this.pads.push(this.add('jump_pad', x, c.base, z));
+            const obj = this.add('jump_pad', x, c.top, z);
+            this.pads.set(j * this.w + i, {
+              plate: Assets.child(obj, 'jump_pad_plate'),
+              spring: Assets.child(obj, 'jump_pad_spring'),
+              offset: 0, vel: 0, cooldown: 0,
+            });
             break;
+          }
           case 'switch':
             solids.push({ i, j, top: c.base, color: cSwitch, set: 'floor' });
             this.addSwitch(i, j, c);
@@ -475,9 +504,14 @@ export class World {
       }
     }
 
-    for (const p of this.pads) {
-      const s = 1 + Math.sin(this.time * 6 + p.position.x) * 0.04;
-      p.scale.set(1, s, 1);
+    for (const p of this.pads.values()) {
+      // muelle amortiguado: la tapa rebota tras cada lanzamiento
+      p.vel += (-p.offset * 180 - p.vel * 9) * dt;
+      p.offset += p.vel * dt;
+      p.cooldown = Math.max(0, p.cooldown - dt);
+      const y = p.offset + Math.sin(this.time * 5) * 0.006;
+      p.plate.position.y = y;
+      p.spring.scale.y = Math.max(0.3, 1 + y / 0.32);
     }
 
     this.fire?.update(this.time, this.fireState);

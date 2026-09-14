@@ -12,10 +12,10 @@ const REST = 0.24;        // distancia de reposo entre vecinos
 const LINK = 0.58;        // alcance de la cohesión
 const GROUP_LINK = 0.48;  // distancia para considerar mismo grupo
 const K_REP = 330;
-const K_ATT = 52;
+const K_ATT = 34;          // cohesión suave: se comporta como líquido, no como gelatina
 // Borde: un limito que asoma sobre el vacío apenas se agarra al resto y se descuelga.
 const OVERHANG_GRIP = 0.1;
-const VISC = 4.5;
+const VISC = 2.2;
 const GRAVITY = 20;
 const MAX_V = 11;
 const MAX_A = 140;
@@ -25,9 +25,21 @@ const DRAG = 0.15;
 // Control: el mando fija una velocidad objetivo y cada limito se acerca a ella.
 // Arranca y frena rápido en suelo normal; en hielo apenas agarra; en el aire casi nada.
 const MAX_SPEED = 4.6;
-const DRIVE_GROUND = 12;
+// El mando empuja sobre todo al CONJUNTO (velocidad media del trozo): por dentro el líquido
+// sigue moviéndose, se agita al frenar y se desparrama. Un poco de empuje individual mantiene
+// controlables las gotas sueltas.
+const DRIVE_GROUP = 9;
+const DRIVE_SELF = 2.2;
 const DRIVE_ICE = 0.9;
-const DRIVE_AIR = 1.2;
+const DRIVE_AIR = 1.0;
+const FLOOR_FRICTION = 1.1;
+// Inclinación: con el mando a fondo el suelo "se inclina" y el líquido corre hacia el lado bajo.
+const SLOPE_ACC = 7;
+// Esquinas de muro: la gota que roza la arista se frena y se suelta un momento.
+const CORNER_LOOSE_T = 0.32;
+const CORNER_GRIP = 0.12;
+const WALL_DRAG = 5;
+const PAD_CUT_T = 0.45;
 const DIE_TIME = 0.35;
 const SUBSTEPS = 3;
 const STEP_UP = 0.56;       // escalón que el limo sube solo (0.5 de altura de losa)
@@ -72,6 +84,8 @@ export class Slime {
   private fell: Uint8Array;
   /** agarre de cada limito a sus vecinos (1 normal, OVERHANG_GRIP si asoma al vacío) */
   private grip: Float32Array;
+  private loose: Float32Array;
+  private gvx: Float32Array; private gvz: Float32Array; private gcnt: Float32Array;
   private lastCutEvent = -1;
   private time = 0;
   private readonly uniforms = { uTime: { value: 0 } };
@@ -109,6 +123,8 @@ export class Slime {
     this.padFlags = new Uint8Array(n);
     this.fell = new Uint8Array(n);
     this.grip = new Float32Array(n).fill(1);
+    this.loose = new Float32Array(n);
+    this.gvx = new Float32Array(n); this.gvz = new Float32Array(n); this.gcnt = new Float32Array(n);
     for (let k = 0; k < n; k++) this.groupPool.push({ ids: [], cx: 0, cy: 0, cz: 0, maxY: 0, maxZ: 0, vx: 0, vz: 0 });
 
     // aparición: espiral compacta en 3 capas, sin salirse a casillas de otra altura (muros, vacío)
@@ -268,9 +284,24 @@ export class Slime {
     const dragK = 1 - DRAG * h;
     const cells = this.world.cells;
     const tvx = tiltX * MAX_SPEED, tvz = tiltZ * MAX_SPEED;
-    const kGround = 1 - Math.exp(-DRIVE_GROUND * h);
+    const kGroup = 1 - Math.exp(-DRIVE_GROUP * h);
+    const kSelf = 1 - Math.exp(-DRIVE_SELF * h);
     const kIce = 1 - Math.exp(-DRIVE_ICE * h);
     const kAir = 1 - Math.exp(-DRIVE_AIR * h);
+    const fric = 1 - FLOOR_FRICTION * h;
+    const mag2 = tiltX * tiltX + tiltZ * tiltZ;
+    const slopeX = tiltX * mag2 * SLOPE_ACC, slopeZ = tiltZ * mag2 * SLOPE_ACC;
+
+    // velocidad media de cada trozo (agrupación del último paso)
+    const { gid, gvx, gvz, gcnt } = this;
+    gvx.fill(0); gvz.fill(0); gcnt.fill(0);
+    for (let i = 0; i < n; i++) {
+      const g = gid[i];
+      if (!alive[i] || g < 0) continue;
+      gvx[g] += vx[i]; gvz[g] += vz[i]; gcnt[g]++;
+    }
+    for (let g = 0; g < n; g++) if (gcnt[g] > 0) { gvx[g] /= gcnt[g]; gvz[g] /= gcnt[g]; }
+
     for (let i = 0; i < n; i++) {
       if (!alive[i]) continue;
       const a2 = ax[i] * ax[i] + ay[i] * ay[i] + az[i] * az[i];
@@ -278,6 +309,8 @@ export class Slime {
         const k = MAX_A / Math.sqrt(a2);
         ax[i] *= k; ay[i] *= k; az[i] *= k;
       }
+      const onGround = this.air[i] < 0.08;
+      if (onGround) { ax[i] += slopeX; az[i] += slopeZ; }
       vx[i] = (vx[i] + ax[i] * h) * dragK;
       vy[i] = (vy[i] + ay[i] * h) * dragK;
       vz[i] = (vz[i] + az[i] * h) * dragK;
@@ -292,9 +325,21 @@ export class Slime {
       this.air[i] += h;
       this.collide(i);
       const cell = this.groundCell[i];
-      const k = this.air[i] > 0.08 ? kAir : cell >= 0 && cells[cell].kind === 'ice' ? kIce : kGround;
-      vx[i] += (tvx - vx[i]) * k;
-      vz[i] += (tvz - vz[i]) * k;
+      const g = gid[i];
+      const avx = g >= 0 && gcnt[g] > 0 ? gvx[g] : vx[i];
+      const avz = g >= 0 && gcnt[g] > 0 ? gvz[g] : vz[i];
+      if (this.air[i] > 0.08) {
+        vx[i] += (tvx - vx[i]) * kAir;
+        vz[i] += (tvz - vz[i]) * kAir;
+      } else if (cell >= 0 && cells[cell].kind === 'ice') {
+        vx[i] += (tvx - avx) * kIce;
+        vz[i] += (tvz - avz) * kIce;
+      } else {
+        // la gota suelta (esquina, borde) apenas recibe el empuje del conjunto: se queda atrás
+        const gk = kGroup * grip[i];
+        vx[i] = (vx[i] + (tvx - avx) * gk + (tvx - vx[i]) * kSelf) * fric;
+        vz[i] = (vz[i] + (tvz - avz) * gk + (tvz - vz[i]) * kSelf) * fric;
+      }
     }
   }
 
@@ -345,6 +390,16 @@ export class Slime {
           this.vx[i] -= nx * vn;
           this.vy[i] -= ny * vn;
           this.vz[i] -= nz * vn;
+        }
+        if (ny < 0.5) {
+          // contra un muro: el líquido se pega un poco; en la arista vertical, se suelta una gota
+          const drag = 1 - WALL_DRAG / 180;
+          this.vx[i] *= drag;
+          this.vz[i] *= drag;
+          if (qx !== x - nx * pen && qz !== z - nz * pen && y < top) {
+            if (this.loose[i] <= 0) { this.vx[i] *= 0.55; this.vz[i] *= 0.55; }
+            this.loose[i] = CORNER_LOOSE_T;
+          }
         }
         if (ny > 0.5) {
           this.air[i] = 0;
@@ -465,7 +520,8 @@ export class Slime {
       }
 
       this.applyDividers(i);
-      this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : 1;
+      this.loose[i] = Math.max(0, this.loose[i] - dt);
+      this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : this.loose[i] > 0 ? CORNER_GRIP : 1;
 
       const ci = Math.floor(x), cj = Math.floor(z);
       const under = w.cell(ci, cj);
@@ -484,28 +540,35 @@ export class Slime {
         this.hurts.push({ x, z });
       }
 
+      // plataforma de salto: salen disparados solo los limitos que están ENCIMA de la tapa
+      // (también los apilados); lo que queda fuera se despega y se queda atrás como gotitas
+      if (under && under.kind === 'jump' && this.vy[i] < PAD_V * 0.5 && y < under.top + 1.1
+        && (this.air[i] < 0.06 || this.gid[i] >= 0 && pad[this.gid[i]] === 2)) {
+        const fx = x - ci, fz = z - cj;
+        // solo sobre la tapa (0.68 de lado): quien pisa el borde se queda
+        if (Math.abs(fx - 0.5) < 0.38 && Math.abs(fz - 0.5) < 0.38) {
+          this.vy[i] = PAD_V;
+          this.air[i] = 1;
+          this.tag[i] = CUT_TAG_BASE + (w.w * w.d + cj * w.w + ci) * 2;
+          this.noAttr[i] = this.time + PAD_CUT_T;
+          if (this.gid[i] >= 0) pad[this.gid[i]] = 2;
+          anyPad = true;
+          if (w.triggerPad(ci, cj)) this.events.push({ type: 'pad', x, y, z });
+        }
+      }
       if (this.air[i] < 0.06 && this.groundCell[i] >= 0) {
         const gc = w.cells[this.groundCell[i]];
-        if (gc.kind === 'jump' && this.vy[i] < PAD_V * 0.5 && this.gid[i] >= 0) {
-          if (!pad[this.gid[i]]) this.events.push({ type: 'pad', x, y, z });
-          pad[this.gid[i]] = 1;
-          anyPad = true;
-        } else if (gc.kind === 'switch' && gc.channel) {
-          this.switchCounts[gc.channel]++;
-        }
+        if (gc.kind === 'switch' && gc.channel) this.switchCounts[gc.channel]++;
       }
 
       const dx = x - t.x, dz = z - t.z;
       if (dx * dx + dz * dz < 0.55 && y < t.y + 1.2) this.touchedTreasure = true;
     }
     if (!anyPad) return;
-    // la plataforma lanza el trozo entero, no solo los limitos que la tocan
+    // los que se quedan en el mismo trozo pierden el agarre un instante para que se note el tirón
     for (let k = 0; k < this.groups.length; k++) {
-      if (!pad[k]) continue;
-      for (const i of this.groups[k].ids) {
-        if (this.vy[i] < PAD_V * 0.5) this.vy[i] = PAD_V;
-        this.air[i] = 1;
-      }
+      if (pad[k] !== 2) continue;
+      for (const i of this.groups[k].ids) if (this.air[i] < 0.06) this.noAttr[i] = this.time + PAD_CUT_T;
     }
   }
 

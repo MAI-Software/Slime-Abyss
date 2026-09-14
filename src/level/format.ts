@@ -46,7 +46,7 @@ export const TILES: readonly TileDef[] = [
   { char: 'F', kind: 'fire', label: 'Fuego', color: '#ff5a1f', hazard: true },
   { char: 'X', kind: 'firet', label: 'Fuego intermitente', color: '#ff9a3c', hazard: true },
   { char: 'I', kind: 'ice', label: 'Hielo', friction: 0.25, color: '#bfeaff' },
-  { char: 'J', kind: 'jump', label: 'Plataforma de salto', color: '#ec4899' },
+  { char: 'J', kind: 'jump', label: 'Plataforma de salto', raise: 0.38, color: '#ec4899' },
   { char: 'S', kind: 'switch', label: 'Interruptor A', channel: 'A', color: '#f59e0b' },
   { char: 's', kind: 'switch', label: 'Interruptor B', channel: 'B', color: '#22c55e' },
   { char: 'D', kind: 'door', label: 'Puerta A', channel: 'A', raise: 1.5, color: '#b45309' },

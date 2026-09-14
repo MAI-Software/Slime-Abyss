@@ -224,15 +224,60 @@ bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.008, segments=1, affect="EDGES
 mesh_object("fire_grate", bm, M["iron"])
 
 # ================================================================== PLATAFORMA DE SALTO
+# Tapa elevada 0.38 sobre el suelo (origen = cara de arriba de la tapa) y muelle a la vista debajo.
+# El juego comprime el muelle (escala Z de jump_pad_spring) y hunde la tapa (jump_pad_plate).
+
+M["steel_spring"] = material("SpringSteel", "e2e8f0", 0.2, 0.6, emit="8a96aa", strength=0.6)
+M["pad_plate"] = material("PadPlate", "ff5fae", 0.35)
+M["pad_rim"] = material("PadRim", "7a1f52", 0.5)
 
 pad = empty("jump_pad")
 bm = bmesh.new()
-cylinder(bm, 0.42, 0.1, (0, 0, 0.05), 24)
-mesh_object("jump_pad_base", bm, M["pink_dark"], parent=pad)
+cylinder(bm, 0.36, 0.05, (0, 0, 0.025), 24)
+mesh_object("jump_pad_base", bm, M["iron"], parent=pad, loc=(0, 0, -0.38))
+
+# muelle: hélice de tubo; su origen está abajo para poder comprimirlo escalando
+cu = bpy.data.curves.new("jump_pad_spring_curve", "CURVE")
+cu.dimensions = "3D"
+cu.bevel_depth = 0.036
+cu.bevel_resolution = 2
+sp = cu.splines.new("POLY")
+turns, per_turn, radius, height = 4, 18, 0.21, 0.28
+count = turns * per_turn + 1
+sp.points.add(count - 1)
+for k in range(count):
+    t = k / per_turn
+    ang = t * math.tau
+    sp.points[k].co = (radius * math.cos(ang), radius * math.sin(ang), 0.04 + height * k / (count - 1), 1.0)
+tmp = bpy.data.objects.new("jump_pad_spring_tmp", cu)
+SCENE.objects.link(tmp)
+dg = bpy.context.evaluated_depsgraph_get()
+dg.update()
+spring_mesh = bpy.data.meshes.new_from_object(tmp.evaluated_get(dg))
+bpy.data.objects.remove(tmp, do_unlink=True)
+bpy.data.curves.remove(cu)
+spring_mesh.name = "jump_pad_spring"
+for poly in spring_mesh.polygons:
+    poly.use_smooth = True
+spring_mesh.materials.clear()
+spring_mesh.materials.append(M["steel_spring"])
+spring = bpy.data.objects.new("jump_pad_spring", spring_mesh)
+SCENE.objects.link(spring)
+spring.parent = pad
+spring.location = (0, 0, -0.38)
+
+# tapa: losa rosa biselada con un marco oscuro y el centro hundido
+plate = empty("jump_pad_plate", parent=pad, loc=(0, 0, 0))
 bm = bmesh.new()
-verts = ellipsoid(bm, (0.33, 0.33, 0.14), (0, 0, 0), 20, 12)
-bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < -1e-4], context="VERTS")
-mesh_object("jump_pad_top", bm, M["pink"], smooth=True, parent=pad, loc=(0, 0, 0.1))
+box(bm, (0.68, 0.68, 0.08), (0, 0, -0.04))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.025, segments=2, affect="EDGES")
+bm.normal_update()
+top = max((f for f in bm.faces if f.normal.z > 0.99), key=lambda f: f.calc_area())
+bmesh.ops.inset_individual(bm, faces=[top], thickness=0.09, depth=-0.018)
+mesh_object("jump_pad_plate_body", bm, M["pad_plate"], parent=plate)
+bm = bmesh.new()
+box(bm, (0.72, 0.72, 0.035), (0, 0, -0.095))
+mesh_object("jump_pad_plate_rim", bm, M["pad_rim"], parent=plate)
 
 # ================================================================== INTERRUPTOR
 
