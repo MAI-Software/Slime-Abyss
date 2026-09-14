@@ -4,52 +4,112 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#140f2b" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="./manifest.webmanifest" />
   <title>Blub! Mazmorras de Limo</title>
 </head>
 <body>
   <canvas id="game"></canvas>
 
+  <!-- ====================================================== HUD -->
   <div id="hud" hidden>
     <div class="hud-top">
-      <div class="life">
-        <div class="life-blob"></div>
-        <div class="life-bar"><div id="life-fill"></div><div id="life-min"></div></div>
+      <div class="hud-chip life">
+        <canvas id="life-flask" aria-hidden="true"></canvas>
         <span id="life-pct">100%</span>
       </div>
       <div id="level-name"></div>
       <div class="hud-right">
+        <div class="hud-chip coins" id="hud-coins">
+          <svg class="ico coin-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/></svg>
+          <span id="coins-count">0/0</span>
+        </div>
         <span id="timer">0:00</span>
-        <button id="btn-pause" class="icon-btn" aria-label="Pausa">II</button>
+        <button id="btn-pause" class="icon-btn" aria-label="Pausa">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>
+        </button>
       </div>
     </div>
-    <div id="toast" hidden></div>
+    <div id="toast" role="status" aria-live="polite" hidden></div>
     <div id="joy-zone" aria-label="Joystick">
       <div id="joy-base"><div id="joy-knob"></div></div>
     </div>
-    <div class="controls">
-      <button id="btn-merge" class="ctl ctl-merge">UNIR</button>
-      <button id="btn-split" class="ctl ctl-split">DIVIDIR</button>
-      <button id="btn-jump" class="ctl ctl-jump">SALTAR</button>
+  </div>
+
+  <!-- ====================================================== MENÚ PRINCIPAL -->
+  <div id="screen-main" class="screen screen-main">
+    <div class="main-brand">
+      <h1 class="logo">Blub!</h1>
+      <p class="subtitle">Mazmorras de Limo</p>
+    </div>
+    <div class="main-actions">
+      <button id="btn-story" class="big-btn" disabled>Modo Historia</button>
+      <button id="btn-settings" class="small-btn with-icon">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+        Ajustes
+      </button>
+      <p id="load-hint" class="hint">Cargando…</p>
     </div>
   </div>
 
-  <div id="screen-title" class="screen">
-    <h1 class="logo">Blub!</h1>
-    <p class="subtitle">Mazmorras de Limo</p>
-    <button id="btn-start" class="big-btn" disabled>Tocar para jugar</button>
-    <p id="load-hint" class="hint">Cargando modelos…</p>
+  <!-- ====================================================== HISTORIA: CAPÍTULOS -->
+  <div id="screen-story" class="screen" hidden>
+    <header class="screen-head">
+      <button class="icon-btn back-btn" data-back="main" aria-label="Volver">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      </button>
+      <h2>Modo Historia</h2>
+    </header>
+    <div id="chapter-list" class="card-row"></div>
   </div>
 
-  <div id="screen-levels" class="screen" hidden>
-    <h2>Elige mazmorra</h2>
-    <div id="level-list"></div>
-    <div class="control-pick" role="group" aria-label="Control">
-      <button class="pick-btn" data-mode="joystick">Joystick</button>
-      <button class="pick-btn" data-mode="gyro">Giroscopio</button>
+  <!-- ====================================================== CAPÍTULO: PISOS -->
+  <div id="screen-chapter" class="screen" hidden>
+    <header class="screen-head">
+      <button class="icon-btn back-btn" data-back="story" aria-label="Volver">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      </button>
+      <div>
+        <h2 id="chapter-title"></h2>
+        <p id="chapter-sub" class="head-sub"></p>
+      </div>
+    </header>
+    <div id="floor-list" class="floor-grid"></div>
+    <button id="btn-chapter-breakdown" class="small-btn" hidden>Ver desglose del capítulo</button>
+  </div>
+
+  <!-- ====================================================== AJUSTES -->
+  <div id="screen-settings" class="screen" hidden>
+    <header class="screen-head">
+      <button class="icon-btn back-btn" data-back="main" aria-label="Volver">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      </button>
+      <h2>Ajustes</h2>
+    </header>
+    <div class="settings-panel">
+      <div class="setting-row">
+        <span>Control</span>
+        <div class="control-pick" role="group" aria-label="Control">
+          <button class="pick-btn" data-mode="joystick">Joystick</button>
+          <button class="pick-btn" data-mode="gyro">Giroscopio</button>
+        </div>
+      </div>
+      <div class="setting-row gyro-only">
+        <span>Posición neutra</span>
+        <button id="btn-calib" class="small-btn">Calibrar</button>
+      </div>
+      <div class="setting-row">
+        <span>Sonido</span>
+        <button id="btn-sound" class="small-btn" aria-pressed="true">Activado</button>
+      </div>
+      <div class="setting-row">
+        <span>Nivel de pruebas</span>
+        <button id="btn-practice" class="small-btn">Jugar</button>
+      </div>
     </div>
-    <button id="btn-calib-menu" class="small-btn gyro-only">Calibrar inclinación</button>
   </div>
 
+  <!-- ====================================================== PAUSA -->
   <div id="screen-pause" class="screen" hidden>
     <h2>Pausa</h2>
     <button id="btn-resume" class="big-btn">Seguir</button>
@@ -57,18 +117,57 @@
       <button class="pick-btn" data-mode="joystick">Joystick</button>
       <button class="pick-btn" data-mode="gyro">Giroscopio</button>
     </div>
-    <button id="btn-calib" class="small-btn gyro-only">Calibrar inclinación</button>
-    <button id="btn-restart" class="small-btn">Reiniciar</button>
-    <button id="btn-menu" class="small-btn">Salir al menú</button>
+    <button id="btn-pause-calib" class="small-btn gyro-only">Calibrar inclinación</button>
+    <div class="btn-row">
+      <button id="btn-restart" class="small-btn">Reiniciar</button>
+      <button id="btn-quit" class="small-btn">Salir</button>
+    </div>
   </div>
 
+  <!-- ====================================================== RESULTADO DEL PISO -->
   <div id="screen-result" class="screen" hidden>
-    <h2 id="result-title"></h2>
-    <div id="result-stars"></div>
-    <p id="result-info"></p>
-    <button id="btn-next" class="big-btn">Siguiente</button>
-    <button id="btn-retry" class="small-btn">Repetir</button>
-    <button id="btn-result-menu" class="small-btn">Menú</button>
+    <div class="result-card">
+      <h2 id="result-title"></h2>
+      <div id="result-stars" class="stars-big" aria-live="polite"></div>
+      <ul id="result-goals" class="goals"></ul>
+      <div class="btn-row">
+        <button id="btn-next" class="big-btn">Siguiente piso</button>
+      </div>
+      <div class="btn-row">
+        <button id="btn-retry" class="small-btn">Repetir</button>
+        <button id="btn-result-back" class="small-btn">Capítulo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================== DESGLOSE DEL CAPÍTULO -->
+  <div id="screen-breakdown" class="screen" hidden>
+    <div class="breakdown-card">
+      <h2 id="bd-title"></h2>
+      <p id="bd-sub" class="head-sub"></p>
+      <div class="table-wrap">
+        <table class="bd-table">
+          <thead>
+            <tr><th>Piso</th><th>Estrellas</th><th>Monedas</th><th>Limo</th><th>Tiempo</th></tr>
+          </thead>
+          <tbody id="bd-rows"></tbody>
+          <tfoot>
+            <tr><th>Total</th><td id="bd-stars"></td><td id="bd-coins"></td><td id="bd-pct"></td><td id="bd-time"></td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="btn-row bd-actions">
+        <div id="bd-rank" class="rank"></div>
+        <button id="btn-bd-chapter" class="small-btn">Volver al capítulo</button>
+        <button id="btn-bd-menu" class="big-btn">Menú principal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================== GIRAR EL MÓVIL -->
+  <div id="rotate-overlay" role="alert">
+    <svg class="rotate-phone" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+    <p>Gira el móvil para jugar en horizontal</p>
   </div>
 
   <script type="module" src="/src/main.ts"></script>

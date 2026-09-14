@@ -1,21 +1,32 @@
 {
   "format": 1,
-  "id": "salto-al-abismo",
+  "id": "c1-salto-al-abismo",
   "name": "Salto al abismo",
-  "count": 50,
+  "count": 80,
   "minPct": 0.35,
+  "keepPct": 0.7,
   "need": {
-    "B": 25
+    "B": 40
   },
   "latch": {
     "B": true
   },
+  "tips": [
+    {
+      "z": 13,
+      "text": "Las plataformas rosas te lanzan por los aires"
+    },
+    {
+      "z": 8,
+      "text": "El interruptor pide 40: llega con el limo unido"
+    }
+  ],
   "tiles": [
     "..#########..",
-    "..#000T000#..",
+    "..#0C0T000#..",
     "..#0000000#..",
     "..####d####..",
-    "..#0000000#..",
+    "..#C00000C#..",
     "..#XX000XX#..",
     "..#0000000#..",
     "..#000s000#..",
@@ -23,7 +34,7 @@
     ".............",
     ".............",
     "..#JJJJJJJ#..",
-    "..#0000000#..",
+    "..#00C0000#..",
     "..#000P000#..",
     "..#########.."
   ],
@@ -43,15 +54,5 @@
     "0000000000000",
     "0000000000000",
     "0000000000000"
-  ],
-  "tips": [
-    {
-      "z": 13,
-      "text": "Las plataformas rosas te lanzan por los aires"
-    },
-    {
-      "z": 8,
-      "text": "Reúnete con UNIR: el interruptor pide 25"
-    }
   ]
 }

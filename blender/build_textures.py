@@ -1,12 +1,13 @@
 """
-Genera las texturas de la mazmorra (PNG repetibles 256x256) en src/textures/.
+Genera las texturas de la mazmorra en src/textures/ (512x512, repetibles):
+  <nombre>.jpg     color
+  <nombre>_n.jpg   mapa de normales (relieve: juntas, grietas, desconchones)
 
 Uso:
   "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --factory-startup -P blender/build_textures.py
 
-Son en escala de grises cálida: el juego las multiplica por el color de cada bloque
-(así una misma textura sirve para suelo, hielo, plataformas...). Se pueden repintar
-a mano en Blender o en cualquier editor; mantén el tamaño potencia de 2 y que sean repetibles.
+El juego saca el brillo especular del propio color (piedra clara brilla, juntas oscuras no)
+y tiñe suavemente cada bloque. Se pueden repintar a mano: mantener 512 px y que repitan.
 """
 
 import os
@@ -16,12 +17,18 @@ import numpy as np
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.normpath(os.path.join(ROOT, "..", "src", "textures"))
-SIZE = 256
+SIZE = 512
 os.makedirs(OUT, exist_ok=True)
+for f in os.listdir(OUT):
+    if f.endswith(".png"):
+        os.remove(os.path.join(OUT, f))  # formato antiguo
 
+YY, XX = np.mgrid[0:SIZE, 0:SIZE].astype(np.float32)
+
+
+# ------------------------------------------------------------------ utilidades
 
 def value_noise(cells, rng):
-    """Ruido de valor repetible (se repite cada SIZE píxeles)."""
     g = rng.random((cells, cells)).astype(np.float32)
     t = np.arange(SIZE, dtype=np.float32) * cells / SIZE
     i0 = np.floor(t).astype(np.int32)
@@ -29,40 +36,19 @@ def value_noise(cells, rng):
     f = f * f * (3 - 2 * f)
     i1 = (i0 + 1) % cells
     i0 = i0 % cells
-    a = g[i0][:, i0]
-    b = g[i0][:, i1]
-    c = g[i1][:, i0]
-    d = g[i1][:, i1]
-    fx = f[None, :]
-    fy = f[:, None]
+    a, b, c, d = g[i0][:, i0], g[i0][:, i1], g[i1][:, i0], g[i1][:, i1]
+    fx, fy = f[None, :], f[:, None]
     return (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy
 
 
-def fbm(base, octaves, rng):
+def fbm(base, octaves, rng, gain=0.5):
     out = np.zeros((SIZE, SIZE), np.float32)
-    amp, total = 0.5, 0.0
+    amp, total = 1.0, 0.0
     for o in range(octaves):
         out += value_noise(base * 2 ** o, rng) * amp
         total += amp
-        amp *= 0.5
+        amp *= gain
     return out / total
-
-
-def voronoi(points):
-    """Distancias al 1er y 2º punto más cercano (con repetición en los bordes) y id de celda."""
-    yy, xx = np.mgrid[0:SIZE, 0:SIZE].astype(np.float32) / SIZE
-    d1 = np.full((SIZE, SIZE), 9.0, np.float32)
-    d2 = np.full((SIZE, SIZE), 9.0, np.float32)
-    cell = np.zeros((SIZE, SIZE), np.int32)
-    for k, (px, py) in enumerate(points):
-        for ox in (-1, 0, 1):
-            for oy in (-1, 0, 1):
-                d = np.hypot(xx - (px + ox), yy - (py + oy))
-                closer = d < d1
-                d2 = np.where(closer, d1, np.minimum(d2, d))
-                cell = np.where(closer, k, cell)
-                d1 = np.where(closer, d, d1)
-    return d1, d2, cell
 
 
 def smoothstep(e0, e1, x):
@@ -70,60 +56,145 @@ def smoothstep(e0, e1, x):
     return t * t * (3 - 2 * t)
 
 
-def save(name, gray, tint=(1.0, 0.97, 0.92)):
-    gray = np.clip(gray, 0, 1)
+def blur(a, passes=3):
+    for _ in range(passes):
+        a = (a + np.roll(a, 1, 0) + np.roll(a, -1, 0)) / 3
+        a = (a + np.roll(a, 1, 1) + np.roll(a, -1, 1)) / 3
+    return a
+
+
+def voronoi(points):
+    """Distancia al 1º y 2º punto (repetible) e índice de celda. Coordenadas en píxeles."""
+    d1 = np.full((SIZE, SIZE), 1e9, np.float32)
+    d2 = np.full((SIZE, SIZE), 1e9, np.float32)
+    cell = np.zeros((SIZE, SIZE), np.int32)
+    for k, (px, py) in enumerate(points):
+        for ox in (-SIZE, 0, SIZE):
+            for oy in (-SIZE, 0, SIZE):
+                d = np.hypot(XX - (px + ox), YY - (py + oy))
+                closer = d < d1
+                d2 = np.where(closer, d1, np.minimum(d2, d))
+                cell = np.where(closer, k, cell)
+                d1 = np.where(closer, d, d1)
+    return d1, d2, cell
+
+
+def jittered(n, rng, jitter=0.32):
+    return [((i + 0.5 + rng.uniform(-jitter, jitter)) * SIZE / n, (j + 0.5 + rng.uniform(-jitter, jitter)) * SIZE / n)
+            for i in range(n) for j in range(n)]
+
+
+def palette_pick(pal, n, rng, spread=0.06):
+    base = np.array(pal, np.float32)[rng.integers(0, len(pal), n)]
+    return np.clip(base * rng.uniform(1 - spread, 1 + spread, (n, 1)), 0, 1)
+
+
+def normals_from_height(h, strength):
+    dx = (np.roll(h, -1, 1) - np.roll(h, 1, 1)) * strength
+    dy = (np.roll(h, -1, 0) - np.roll(h, 1, 0)) * strength
+    n = np.stack([-dx, -dy, np.ones_like(h)], -1)
+    n /= np.linalg.norm(n, axis=-1, keepdims=True)
+    return n * 0.5 + 0.5
+
+
+def save(name, rgb, colorspace="sRGB"):
     rgba = np.ones((SIZE, SIZE, 4), np.float32)
-    for c in range(3):
-        rgba[:, :, c] = np.clip(gray * tint[c], 0, 1)
+    rgba[:, :, :3] = np.clip(rgb, 0, 1)
     img = bpy.data.images.new(name, SIZE, SIZE, alpha=False)
+    img.colorspace_settings.name = colorspace
     img.pixels.foreach_set(rgba.ravel())
-    img.filepath_raw = os.path.join(OUT, name + ".png")
-    img.file_format = "PNG"
+    img.filepath_raw = os.path.join(OUT, name + ".jpg")
+    img.file_format = "JPEG"
     img.save()
     print("OK ->", img.filepath_raw)
 
 
-def flagstones(seed, stones, contrast):
-    """Losas irregulares con juntas, grano y algún desconchón."""
+def save_pair(name, color, height, strength):
+    save(name, color)
+    save(name + "_n", normals_from_height(height, strength), "Non-Color")
+
+
+# ------------------------------------------------------------------ materiales
+
+def flagstones(seed, per_side, palette, mortar_col, crack_amount):
+    """Losas irregulares con juntas hundidas, grano, grietas y suciedad en los huecos."""
     rng = np.random.default_rng(seed)
-    # puntos en rejilla con desplazamiento aleatorio: losas de tamaño parecido
-    pts = [((i + 0.5 + rng.uniform(-0.3, 0.3)) / stones, (j + 0.5 + rng.uniform(-0.3, 0.3)) / stones)
-           for i in range(stones) for j in range(stones)]
+    pts = jittered(per_side, rng)
     d1, d2, cell = voronoi(pts)
     edge = d2 - d1
-    mortar = smoothstep(0.004, 0.02, edge)              # 0 en la junta
-    shade = rng.uniform(0.74, 1.0, len(pts))[cell]      # cada losa con su tono
-    grain = fbm(8, 5, rng)
-    pits = smoothstep(0.62, 0.78, fbm(24, 3, rng))       # puntitos oscuros
-    bevel = 0.86 + 0.14 * smoothstep(0.0, 0.06, edge)      # bordes de losa algo más oscuros
-    v = shade * bevel * (0.72 + 0.4 * grain) - pits * 0.14
-    v = v * (0.5 + 0.5 * mortar)
-    return 0.5 + (v - 0.5) * contrast + 0.12
+    gap = smoothstep(2.0, 9.0, edge)                       # 0 en la junta
+    rim = smoothstep(0.0, 26.0, edge)                      # borde redondeado de la losa
+    grain = fbm(16, 5, rng)
+    big = fbm(4, 3, rng)
+    # grietas: bordes de un voronoi pequeño, solo en algunas zonas
+    c1, c2, _ = voronoi(jittered(7, rng, 0.45))
+    crack_mask = smoothstep(0.55, 0.7, fbm(6, 3, rng)) * crack_amount
+    cracks = (1 - smoothstep(0.5, 2.2, c2 - c1)) * crack_mask
+    pits = smoothstep(0.66, 0.8, fbm(48, 2, rng))
+
+    height = 0.35 + 0.55 * gap * (0.6 + 0.4 * rim) + grain * 0.12 - cracks * 0.3 - pits * 0.08
+    cols = palette_pick(palette, len(pts), rng)[cell]
+    tone = (0.82 + 0.3 * grain + 0.12 * (big - 0.5))[..., None]
+    stone = cols * tone * (0.92 + 0.08 * rim[..., None])
+    dirt = blur(1 - height, 4)[..., None]                   # huecos más oscuros
+    color = stone * (1 - 0.35 * np.clip(dirt - 0.3, 0, 1)) - (cracks * 0.25)[..., None] - (pits * 0.08)[..., None]
+    mortar = np.array(mortar_col, np.float32) * (0.8 + 0.3 * grain[..., None])
+    color = color * gap[..., None] + mortar * (1 - gap[..., None])
+    return color, height
 
 
-def bricks(seed, cols, rows, mortar_px, rough):
-    """Ladrillos en hileras alternas: cols por unidad a lo ancho, rows a lo alto."""
+def masonry(seed, cols_n, rows_n, palette, mortar_col, mortar_px, moss):
+    """Sillares/ladrillos en hileras alternas con cantos gastados y algo de musgo en las juntas."""
     rng = np.random.default_rng(seed)
-    yy, xx = np.mgrid[0:SIZE, 0:SIZE].astype(np.float32)
-    bh = SIZE / rows
-    bw = SIZE / cols
-    row = np.floor(yy / bh).astype(np.int32)
+    bh, bw = SIZE / rows_n, SIZE / cols_n
+    row = np.floor(YY / bh).astype(np.int32)
     shift = (row % 2) * bw * 0.5
-    col = np.floor((xx + shift) / bw).astype(np.int32) % cols
-    fx = ((xx + shift) % bw)
-    fy = (yy % bh)
+    col = np.floor((XX + shift) / bw).astype(np.int32) % cols_n
+    fx, fy = (XX + shift) % bw, YY % bh
     dist = np.minimum.reduce([fx, bw - fx, fy, bh - fy])
-    wobble = fbm(16, 3, rng) * rough * 3
-    mortar = smoothstep(mortar_px * 0.5, mortar_px + 1.5, dist - wobble)
-    shade = rng.uniform(0.7, 1.0, (rows, cols))[row % rows, col]
-    grain = fbm(6, 5, rng)
-    chips = smoothstep(0.7, 0.85, fbm(20, 3, rng)) * 0.18
-    face = 0.9 + 0.1 * smoothstep(0, 10, dist)
-    v = shade * face * (0.72 + 0.4 * grain) - chips
-    return v * (0.55 + 0.45 * mortar) + 0.04
+    wobble = (fbm(12, 4, rng) - 0.5) * mortar_px * 1.6
+    gap = smoothstep(mortar_px * 0.4, mortar_px * 1.4, dist + wobble)
+    rim = smoothstep(0, mortar_px * 6, dist + wobble)
+    grain = fbm(14, 5, rng)
+    chips = smoothstep(0.68, 0.82, fbm(18, 3, rng)) * (1 - rim * 0.6)
+
+    height = 0.3 + 0.6 * gap * (0.55 + 0.45 * rim) + grain * 0.14 - chips * 0.35
+    ids = (row % rows_n) * cols_n + col
+    cols = palette_pick(palette, rows_n * cols_n, rng, 0.08)[ids]
+    tone = (0.8 + 0.34 * grain)[..., None]
+    color = cols * tone * (0.9 + 0.1 * rim[..., None]) - (chips * 0.2)[..., None]
+    mortar = np.array(mortar_col, np.float32) * (0.75 + 0.35 * grain[..., None])
+    if moss:
+        m = smoothstep(0.55, 0.75, fbm(5, 4, rng))[..., None] * moss
+        mortar = mortar * (1 - m) + np.array((0.28, 0.42, 0.22), np.float32) * m
+    color = color * gap[..., None] + mortar * (1 - gap[..., None])
+    return color, height
 
 
-save("floor", flagstones(seed=7, stones=2, contrast=1.0))
-save("wall_top", flagstones(seed=21, stones=3, contrast=1.1), tint=(0.96, 0.96, 1.0))
-save("brick", bricks(seed=3, cols=2, rows=4, mortar_px=3, rough=0.6), tint=(0.97, 0.96, 1.0))
-save("stone_side", bricks(seed=11, cols=1, rows=2, mortar_px=4, rough=1.0))
+def ice(seed):
+    rng = np.random.default_rng(seed)
+    d1, d2, cell = voronoi(jittered(3, rng, 0.4))
+    cracks = 1 - smoothstep(0.6, 3.5, d2 - d1)
+    c1, c2, _ = voronoi(jittered(8, rng, 0.45))
+    fine = (1 - smoothstep(0.4, 1.6, c2 - c1)) * smoothstep(0.5, 0.65, fbm(5, 3, rng))
+    cloud = fbm(6, 5, rng)
+    height = 0.8 - cracks * 0.35 - fine * 0.12 + cloud * 0.06
+    deep = np.array((0.42, 0.68, 0.9), np.float32)
+    light = np.array((0.82, 0.94, 1.0), np.float32)
+    t = (0.35 + 0.65 * cloud)[..., None]
+    color = deep * (1 - t) + light * t
+    color = color + (cracks * 0.3 + fine * 0.18)[..., None]
+    return color, height
+
+
+# ------------------------------------------------------------------ generar
+
+save_pair("floor", *flagstones(7, 2, [(0.93, 0.82, 0.62), (0.86, 0.75, 0.57), (0.95, 0.86, 0.68), (0.82, 0.73, 0.6)],
+                                (0.36, 0.29, 0.24), 1.0), strength=5.0)
+save_pair("wall_top", *flagstones(21, 3, [(0.6, 0.57, 0.72), (0.54, 0.51, 0.66), (0.64, 0.61, 0.76)],
+                                   (0.22, 0.2, 0.28), 0.6), strength=5.0)
+save_pair("brick", *masonry(3, 2, 4, [(0.6, 0.56, 0.72), (0.54, 0.5, 0.66), (0.66, 0.62, 0.78), (0.5, 0.47, 0.62)],
+                             (0.2, 0.18, 0.26), 5, 0.7), strength=6.0)
+save_pair("stone_side", *masonry(11, 1, 2, [(0.7, 0.62, 0.52), (0.64, 0.57, 0.48), (0.74, 0.66, 0.56)],
+                                  (0.28, 0.23, 0.2), 6, 0.35), strength=6.0)
+save_pair("ice", *ice(5), strength=3.0)

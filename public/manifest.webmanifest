@@ -1,0 +1,10 @@
+{
+  "name": "Blub! Mazmorras de Limo",
+  "short_name": "Blub!",
+  "lang": "es",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#140f2b",
+  "theme_color": "#140f2b"
+}

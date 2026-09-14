@@ -17,7 +17,8 @@ Controles de prueba en ordenador: flechas/WASD inclinar, espacio saltar, Q divid
 
 ## Estructura
 - `src/level/format.ts` formato de nivel (JSON versionado), paleta de casillas `TILES`, validación, códigos para compartir
-- `src/level/campaign/*.json` niveles del juego
+- `src/level/campaign/chapter1/*.json` pisos del Capítulo 1 · `src/level/campaign.ts` capítulos
+- `src/hud-liquid.ts` vida como líquido en un frasco
 - `src/blob-mesh.ts` superficie del limo (metaballs que solo procesan celdas cercanas)
 - `src/fire.ts` fuego con shader, resplandor y chispas
 - `src/world.ts` bloques, colisiones, fuego, interruptores, puertas, tesoro
@@ -36,8 +37,13 @@ se hacen en Blender. El cuerpo del limo es procedural (metaballs) porque tiene q
 - Texturas (losas, ladrillo, piedra): `"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --factory-startup -P blender/build_textures.py`
   → `src/textures/*.png` (256 px, repetibles, en gris: el juego las tiñe con el color de cada bloque). Se pueden repintar a mano.
 
-## Controles
-Joystick virtual (por defecto) o giroscopio; se elige en el menú de niveles o en pausa.
+## Cómo se juega
+- Solo en horizontal. Joystick virtual (por defecto) o giroscopio, sin botones de acción.
+- El limo es un montón de limitos pequeños: lo que asoma por un borde se descuelga y cae, y el limo encoge.
+- Cuchillas (`K` izquierda/derecha, `k` delante/detrás) y pinchos (`Y`) lo dividen; los trozos se reúnen al tocarse.
+- Los escalones bajos (0,5) se suben solos.
+- Cada piso da hasta 3 estrellas: llegar al tesoro, todas las monedas (`C`) y conservar el % de limo del nivel.
+- Al terminar el último piso de un capítulo se muestra el desglose (estrellas, monedas, limo, tiempo y rango).
 
 ## Camino a Play Store
 - Todo va empaquetado (fuentes con @fontsource, modelos locales): funciona sin conexión.

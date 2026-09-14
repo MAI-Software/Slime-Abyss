@@ -11,7 +11,33 @@ export interface Cell {
   base: number;
   top: number;
   channel?: Channel;
+  axis?: 'x' | 'z';
 }
+
+/** Obstáculo que no ocupa toda la casilla (cuchillas, pinchos): caja para colisión y zona de corte. */
+export interface Obstacle {
+  kind: 'blade' | 'spike';
+  axis?: 'x' | 'z';
+  cx: number;
+  cz: number;
+  minX: number; maxX: number;
+  minY: number; maxY: number;
+  minZ: number; maxZ: number;
+  /** identificador estable para las etiquetas de corte del limo */
+  id: number;
+}
+
+interface Coin {
+  i: number;
+  j: number;
+  obj: THREE.Object3D;
+  baseY: number;
+  collected: boolean;
+  t: number;
+}
+
+type BlockSet = 'floor' | 'ice' | 'wall';
+interface Solid { i: number; j: number; top: number; color: THREE.Color; set: BlockSet }
 
 const DOOR_H = TILE_BY_CHAR.get('D')!.raise!;
 const SLAB_H = 0.5;   // alto de la losa biselada (block_top)
@@ -71,6 +97,13 @@ export class World {
   private switches = new Map<Channel, SwitchState>();
   private doors: DoorState[] = [];
   private pads: THREE.Object3D[] = [];
+  private coins: Coin[] = [];
+  private coinAt = new Map<number, Coin>();
+  readonly obstacles: Obstacle[] = [];
+  /** índice de casilla → obstáculo (-1 si no hay) */
+  private obstacleAt: Int32Array;
+  coinsCollected = 0;
+  get coinsTotal() { return this.coins.length; }
   private fire: FireFx | null = null;
   private chest: THREE.Object3D | null = null;
   private chestLid: THREE.Object3D | null = null;
@@ -88,6 +121,7 @@ export class World {
     for (let j = 0; j < this.d; j++) {
       for (let i = 0; i < this.w; i++) this.cells.push(this.parse(i, j));
     }
+    this.obstacleAt = new Int32Array(this.w * this.d).fill(-1);
     this.build();
   }
 
@@ -95,7 +129,7 @@ export class World {
     const tile = TILE_BY_CHAR.get(this.def.tiles[j][i]) ?? TILE_BY_CHAR.get('.')!;
     if (tile.kind === 'void') return { kind: 'void', base: 0, top: -Infinity };
     const base = Number(this.def.heights[j][i]) * HEIGHT_STEP;
-    return { kind: tile.kind, base, top: base + (tile.raise ?? 0), channel: tile.channel };
+    return { kind: tile.kind, base, top: base + (tile.raise ?? 0), channel: tile.channel, axis: tile.axis };
   }
 
   cell(i: number, j: number): Cell | null {
@@ -127,6 +161,27 @@ export class World {
     return p < 1.7 ? 2 : p > 2.75 ? 1 : 0;
   };
 
+  obstacle(i: number, j: number): Obstacle | null {
+    if (i < 0 || j < 0 || i >= this.w || j >= this.d) return null;
+    const k = this.obstacleAt[j * this.w + i];
+    return k < 0 ? null : this.obstacles[k];
+  }
+
+  /** Moneda en la casilla (i, j) sin recoger; la marca como recogida. */
+  collectCoin(i: number, j: number): boolean {
+    const c = this.coinAt.get(j * this.w + i);
+    if (!c || c.collected) return false;
+    c.collected = true;
+    c.t = 0;
+    this.coinsCollected++;
+    return true;
+  }
+
+  coinPosition(i: number, j: number, out: THREE.Vector3): THREE.Vector3 {
+    const c = this.coinAt.get(j * this.w + i);
+    return c ? out.copy(c.obj.position) : out.set(i + 0.5, 0, j + 0.5);
+  }
+
   private add(name: string, x: number, y: number, z: number, opts?: { cloneMaterials?: boolean }): THREE.Object3D {
     const o = this.assets.clone(name, opts);
     o.position.set(x, y, z);
@@ -135,15 +190,16 @@ export class World {
   }
 
   private build() {
-    const solids: { i: number; j: number; top: number; color: THREE.Color; wall: boolean }[] = [];
-    const cFloorA = new THREE.Color(0xf6e6c2);
-    const cFloorB = new THREE.Color(0xeddab0);
-    const cWall = new THREE.Color(0x857db3);
-    const cWallB = new THREE.Color(0x7c74a8);
-    const cFire = new THREE.Color(0x6b2a2a);
-    const cIce = new THREE.Color(0xbfeaff);
-    const cJump = new THREE.Color(0xf9a8d4);
-    const cSwitch = new THREE.Color(0x7b7394);
+    const solids: Solid[] = [];
+    // las texturas ya llevan color: aquí solo tintes suaves
+    const cFloorA = new THREE.Color(0xffffff);
+    const cFloorB = new THREE.Color(0xf2ebe0);
+    const cWall = new THREE.Color(0xffffff);
+    const cWallB = new THREE.Color(0xeeebf5);
+    const cFire = new THREE.Color(0x8a4a40);
+    const cIce = new THREE.Color(0xffffff);
+    const cJump = new THREE.Color(0xffc9e2);
+    const cSwitch = new THREE.Color(0xc4bed6);
     const fireCells: FireCell[] = [];
 
     for (let j = 0; j < this.d; j++) {
@@ -154,36 +210,44 @@ export class World {
         const x = i + 0.5, z = j + 0.5;
         switch (c.kind) {
           case 'wall':
-            solids.push({ i, j, top: c.top, color: (i + j) % 2 === 0 ? cWall : cWallB, wall: true });
+            solids.push({ i, j, top: c.top, color: (i + j) % 2 === 0 ? cWall : cWallB, set: 'wall' });
             break;
           case 'fire': case 'firet':
-            solids.push({ i, j, top: c.base, color: cFire, wall: false });
+            solids.push({ i, j, top: c.base, color: cFire, set: 'floor' });
             fireCells.push({ i, j, base: c.base, timed: c.kind === 'firet' });
             this.add('fire_grate', x, c.base, z);
             break;
-          case 'ice': solids.push({ i, j, top: c.base, color: cIce, wall: false }); break;
+          case 'ice': solids.push({ i, j, top: c.base, color: cIce, set: 'ice' }); break;
           case 'jump':
-            solids.push({ i, j, top: c.base, color: cJump, wall: false });
+            solids.push({ i, j, top: c.base, color: cJump, set: 'floor' });
             this.pads.push(this.add('jump_pad', x, c.base, z));
             break;
           case 'switch':
-            solids.push({ i, j, top: c.base, color: cSwitch, wall: false });
+            solids.push({ i, j, top: c.base, color: cSwitch, set: 'floor' });
             this.addSwitch(i, j, c);
             break;
           case 'door':
-            solids.push({ i, j, top: c.base, color: checker, wall: false });
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.addDoor(i, j, c);
             break;
           case 'start':
-            solids.push({ i, j, top: c.base, color: checker, wall: false });
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.start.set(x, c.base, z);
             break;
           case 'treasure':
-            solids.push({ i, j, top: c.base, color: checker, wall: false });
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.treasure.set(x, c.base, z);
             this.addChest(x, c.base, z);
             break;
-          default: solids.push({ i, j, top: c.top, color: checker, wall: false });
+          case 'coin':
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            this.addCoin(i, j, c.base);
+            break;
+          case 'blade': case 'spike':
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            this.addDivider(i, j, c);
+            break;
+          default: solids.push({ i, j, top: c.top, color: checker, set: 'floor' });
         }
       }
     }
@@ -206,23 +270,25 @@ export class World {
   }
 
   /**
-    Bloques en 4 draw calls: losas y columnas, separando suelos (textura de losas + oclusión
-    junto a paredes) y muros (ladrillo). Solo proyectan sombra los muros y los suelos elevados.
+    Bloques en pocos draw calls (losa + columna por grupo): suelo con losas y oclusión junto a paredes,
+    hielo brillante y muros de ladrillo. Solo proyectan sombra los muros y los suelos elevados.
   */
-  private buildBlocks(solids: { i: number; j: number; top: number; color: THREE.Color; wall: boolean }[]) {
-    const tex = this.assets.textures;
-    const floorTopMat = createBlockMaterial({ top: tex.floor, side: tex.stone_side, ao: true });
-    const floorColMat = createBlockMaterial({ top: tex.floor, side: tex.stone_side });
-    const wallMat = createBlockMaterial({ top: tex.wall_top, side: tex.brick });
-    this.ownedMaterials.push(floorTopMat, floorColMat, wallMat);
-    const raised = solids.some((s) => !s.wall && s.top > 0);
+  private buildBlocks(solids: Solid[]) {
+    const a = this.assets;
+    const floorTop = createBlockMaterial({ top: a.surface('floor'), side: a.surface('stone_side'), ao: true, shininess: 28, specular: 0x6a5c4c });
+    const floorCol = createBlockMaterial({ top: a.surface('floor'), side: a.surface('stone_side'), shininess: 18, specular: 0x3a3028 });
+    const iceTop = createBlockMaterial({ top: a.surface('ice'), side: a.surface('ice'), ao: true, shininess: 110, specular: 0xd8f0ff, bump: 0.6 });
+    const wallMat = createBlockMaterial({ top: a.surface('wall_top'), side: a.surface('brick'), shininess: 22, specular: 0x4a4658, bump: 1.2 });
+    this.ownedMaterials.push(floorTop, floorCol, iceTop, wallMat);
+    const raised = solids.some((s) => s.set !== 'wall' && s.top > 0);
 
-    const make = (list: typeof solids, wall: boolean) => {
+    const make = (set: BlockSet, topMat: THREE.Material, colMat: THREE.Material) => {
+      const list = solids.filter((s) => s.set === set);
       if (!list.length) return;
-      const topGeo = this.assets.geometry('block_top').clone();
+      const topGeo = a.geometry('block_top').clone();
       const ao = new Float32Array(list.length);
-      const tops = new THREE.InstancedMesh(topGeo, wall ? wallMat : floorTopMat, list.length);
-      const cols = new THREE.InstancedMesh(this.assets.geometry('block_column'), wall ? wallMat : floorColMat, list.length);
+      const tops = new THREE.InstancedMesh(topGeo, topMat, list.length);
+      const cols = new THREE.InstancedMesh(a.geometry('block_column'), colMat, list.length);
       const m = new THREE.Matrix4();
       const colColor = new THREE.Color();
       list.forEach((s, k) => {
@@ -233,19 +299,47 @@ export class World {
         m.makeScale(1, h, 1);
         m.setPosition(s.i + 0.5, s.top - SLAB_H, s.j + 0.5);
         cols.setMatrixAt(k, m);
-        cols.setColorAt(k, colColor.copy(s.color).multiplyScalar(0.85));
-        if (!wall) ao[k] = this.aoMask(s.i, s.j, s.top);
+        cols.setColorAt(k, colColor.copy(s.color).multiplyScalar(0.9));
+        if (set !== 'wall') ao[k] = this.aoMask(s.i, s.j, s.top);
       });
       topGeo.setAttribute('aAO', new THREE.InstancedBufferAttribute(ao, 1));
       this.ownedGeometries.push(topGeo);
       for (const im of [tops, cols]) {
         im.receiveShadow = true;
-        im.castShadow = wall || raised;
+        im.castShadow = set === 'wall' || raised;
         this.group.add(im);
       }
     };
-    make(solids.filter((s) => !s.wall), false);
-    make(solids.filter((s) => s.wall), true);
+    make('floor', floorTop, floorCol);
+    make('ice', iceTop, floorCol);
+    make('wall', wallMat, wallMat);
+  }
+
+  private addCoin(i: number, j: number, base: number) {
+    const obj = this.add('coin', i + 0.5, base + 0.55, j + 0.5);
+    const coin: Coin = { i, j, obj, baseY: base + 0.55, collected: false, t: 0 };
+    this.coins.push(coin);
+    this.coinAt.set(j * this.w + i, coin);
+  }
+
+  private addDivider(i: number, j: number, c: Cell) {
+    const x = i + 0.5, z = j + 0.5;
+    let o: Obstacle;
+    if (c.kind === 'blade') {
+      const obj = this.add('blade', x, c.base, z);
+      // el modelo corre a lo largo de Z; la variante 'x' se gira
+      if (c.axis === 'x') obj.rotation.y = Math.PI / 2;
+      const half = 0.47, thick = 0.05;
+      o = c.axis === 'x'
+        ? { kind: 'blade', axis: 'x', cx: x, cz: z, minX: x - half, maxX: x + half, minZ: z - thick, maxZ: z + thick, minY: c.base, maxY: c.base + 0.72, id: 0 }
+        : { kind: 'blade', axis: 'z', cx: x, cz: z, minX: x - thick, maxX: x + thick, minZ: z - half, maxZ: z + half, minY: c.base, maxY: c.base + 0.72, id: 0 };
+    } else {
+      this.add('spike', x, c.base, z);
+      o = { kind: 'spike', cx: x, cz: z, minX: x - 0.12, maxX: x + 0.12, minZ: z - 0.12, maxZ: z + 0.12, minY: c.base, maxY: c.base + 0.85, id: 0 };
+    }
+    o.id = j * this.w + i;
+    this.obstacleAt[o.id] = this.obstacles.length;
+    this.obstacles.push(o);
   }
 
   /** Bits de vecinos más altos que esta losa (oclusión ambiental). */
@@ -363,6 +457,22 @@ export class World {
       c.top = c.base + DOOR_H * (1 - door.open);
       door.obj.position.y = c.top;
       door.obj.visible = door.open < 0.99;
+    }
+
+    for (const c of this.coins) {
+      if (!c.obj.visible) continue;
+      if (!c.collected) {
+        c.obj.rotation.y = this.time * 2.6 + c.i * 0.7;
+        c.obj.position.y = c.baseY + Math.sin(this.time * 3 + c.j) * 0.06;
+      } else {
+        // recogida: salta, gira rápido, crece y se desvanece
+        c.t += dt;
+        const k = Math.min(c.t / 0.45, 1);
+        c.obj.rotation.y += dt * 22;
+        c.obj.position.y = c.baseY + k * 1.1;
+        c.obj.scale.setScalar(1 + Math.sin(k * Math.PI) * 0.6 - k * 0.6);
+        if (k >= 1) c.obj.visible = false;
+      }
     }
 
     for (const p of this.pads) {

@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 
 /*
-  Material de bloques de la mazmorra (barato para móvil: Lambert + 1 textura por píxel).
+  Material de bloques de la mazmorra (Phong: color + relieve + brillo, 2 texturas por píxel).
   - Proyección plana en coordenadas del nivel: arriba usa XZ, los lados XY o ZY.
     No depende de UVs y la textura no se desliza cuando la escena se inclina.
-  - Color por instancia (instanceColor) multiplicado por la textura en gris.
+  - Color por instancia (instanceColor) como tinte suave sobre la textura.
+  - Mapa de normales orientado con los ejes del nivel y brillo especular sacado del color.
   - Lados más oscuros cuanto más bajan hacia el vacío.
   - Oclusión ambiental opcional en la cara de arriba: atributo por instancia `aAO`
     con 8 bits de vecinos más altos (W, E, N, S, NW, NE, SW, SE).
@@ -12,21 +13,35 @@ import * as THREE from 'three';
 
 export const AO_W = 1, AO_E = 2, AO_N = 4, AO_S = 8, AO_NW = 16, AO_NE = 32, AO_SW = 64, AO_SE = 128;
 
+export interface SurfaceMaps { color: THREE.Texture; normal: THREE.Texture }
+
 export interface BlockMaterialOptions {
-  top: THREE.Texture;
-  side: THREE.Texture;
+  top: SurfaceMaps;
+  side: SurfaceMaps;
   ao?: boolean;
+  /** Brillo especular (Phong). */
+  shininess?: number;
+  specular?: number;
+  /** Intensidad del relieve de los mapas de normales. */
+  bump?: number;
 }
 
-export function createBlockMaterial({ top, side, ao = false }: BlockMaterialOptions): THREE.MeshLambertMaterial {
-  const mat = new THREE.MeshLambertMaterial();
+export function createBlockMaterial(o: BlockMaterialOptions): THREE.MeshPhongMaterial {
+  const { top, side, ao = false, shininess = 40, specular = 0x5a5048, bump = 1 } = o;
+  const mat = new THREE.MeshPhongMaterial({ shininess, specular });
   if (ao) mat.defines = { USE_BLOCK_AO: '' };
   mat.onBeforeCompile = (shader) => {
-    shader.uniforms.uTopMap = { value: top };
-    shader.uniforms.uSideMap = { value: side };
+    shader.uniforms.uTopMap = { value: top.color };
+    shader.uniforms.uTopNormal = { value: top.normal };
+    shader.uniforms.uSideMap = { value: side.color };
+    shader.uniforms.uSideNormal = { value: side.normal };
+    shader.uniforms.uBump = { value: bump };
     shader.vertexShader = `
       varying vec3 vLevelPos;
       varying vec3 vLevelNormal;
+      varying vec3 vViewX;
+      varying vec3 vViewY;
+      varying vec3 vViewZ;
       #ifdef USE_BLOCK_AO
         attribute float aAO;
         varying float vAO;
@@ -40,6 +55,10 @@ export function createBlockMaterial({ top, side, ao = false }: BlockMaterialOpti
         vLevelPos = position;
         vLevelNormal = normal;
       #endif
+      // ejes del nivel en espacio de vista (para orientar el relieve)
+      vViewX = normalize(normalMatrix * vec3(1.0, 0.0, 0.0));
+      vViewY = normalize(normalMatrix * vec3(0.0, 1.0, 0.0));
+      vViewZ = normalize(normalMatrix * vec3(0.0, 0.0, 1.0));
       #ifdef USE_BLOCK_AO
         vAO = aAO;
         vCellOrigin = vLevelPos.xz - position.xz - 0.5;
@@ -47,16 +66,28 @@ export function createBlockMaterial({ top, side, ao = false }: BlockMaterialOpti
 
     shader.fragmentShader = `
       uniform sampler2D uTopMap;
+      uniform sampler2D uTopNormal;
       uniform sampler2D uSideMap;
+      uniform sampler2D uSideNormal;
+      uniform float uBump;
       varying vec3 vLevelPos;
       varying vec3 vLevelNormal;
+      varying vec3 vViewX;
+      varying vec3 vViewY;
+      varying vec3 vViewZ;
+      vec3 blockNormalSample;
+      vec3 blockTan;
+      vec3 blockBit;
+      float blockGloss;
+      vec3 levelToView(vec3 l) { return l.x * vViewX + l.y * vViewY + l.z * vViewZ; }
       #ifdef USE_BLOCK_AO
         varying float vAO;
         varying vec2 vCellOrigin;
         float aoEdge(float d) { return mix(0.5, 1.0, smoothstep(0.0, 0.45, d)); }
         float aoCorner(float d) { return mix(0.62, 1.0, smoothstep(0.0, 0.5, d)); }
       #endif
-      ${shader.fragmentShader}`.replace('#include <map_fragment>', `
+      ${shader.fragmentShader}`
+      .replace('#include <map_fragment>', `
       vec3 bn = normalize(vLevelNormal);
       vec3 texel;
       if (bn.y > 0.5) {
@@ -64,17 +95,26 @@ export function createBlockMaterial({ top, side, ao = false }: BlockMaterialOpti
         vec2 cellId = floor(vLevelPos.xz);
         vec2 lp = vLevelPos.xz - cellId;
         int rot = int(fract(sin(dot(cellId, vec2(12.9898, 78.233))) * 43758.5453) * 4.0);
-        if (rot == 1) lp = vec2(1.0 - lp.y, lp.x);
-        else if (rot == 2) lp = 1.0 - lp;
-        else if (rot == 3) lp = vec2(lp.y, 1.0 - lp.x);
-        // derivadas de la coordenada continua: sin costuras de mipmap en los bordes
-        texel = textureGrad(uTopMap, lp, dFdx(vLevelPos.xz), dFdy(vLevelPos.xz)).rgb;
+        vec3 tl = vec3(1.0, 0.0, 0.0), bl = vec3(0.0, 0.0, 1.0);
+        if (rot == 1) { lp = vec2(1.0 - lp.y, lp.x); tl = vec3(0.0, 0.0, -1.0); bl = vec3(1.0, 0.0, 0.0); }
+        else if (rot == 2) { lp = 1.0 - lp; tl = vec3(-1.0, 0.0, 0.0); bl = vec3(0.0, 0.0, -1.0); }
+        else if (rot == 3) { lp = vec2(lp.y, 1.0 - lp.x); tl = vec3(0.0, 0.0, 1.0); bl = vec3(-1.0, 0.0, 0.0); }
+        vec2 gx = dFdx(vLevelPos.xz), gy = dFdy(vLevelPos.xz);
+        texel = textureGrad(uTopMap, lp, gx, gy).rgb;
+        blockNormalSample = textureGrad(uTopNormal, lp, gx, gy).xyz;
+        blockTan = tl; blockBit = bl;
       } else {
-        vec2 suv = abs(bn.x) > abs(bn.z) ? vec2(vLevelPos.z, -vLevelPos.y) : vec2(vLevelPos.x, -vLevelPos.y);
+        bool alongZ = abs(bn.x) > abs(bn.z);
+        vec2 suv = alongZ ? vec2(vLevelPos.z, -vLevelPos.y) : vec2(vLevelPos.x, -vLevelPos.y);
         texel = texture2D(uSideMap, suv).rgb;
+        blockNormalSample = texture2D(uSideNormal, suv).xyz;
+        blockTan = alongZ ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+        blockBit = vec3(0.0, -1.0, 0.0);
         // más oscuro hacia abajo: da profundidad al vacío
         texel *= clamp(1.0 + vLevelPos.y * 0.32, 0.38, 1.0);
       }
+      // la piedra clara brilla, las juntas oscuras no
+      blockGloss = smoothstep(0.25, 0.85, dot(texel, vec3(0.333)));
       diffuseColor.rgb *= texel;
       #ifdef USE_BLOCK_AO
         if (bn.y > 0.5) {
@@ -90,8 +130,18 @@ export function createBlockMaterial({ top, side, ao = false }: BlockMaterialOpti
           if ((m & ${AO_SW}) != 0) occ *= aoCorner(length(lc - vec2(0.0, 1.0)));
           if ((m & ${AO_SE}) != 0) occ *= aoCorner(length(lc - vec2(1.0, 1.0)));
           diffuseColor.rgb *= occ;
+          blockGloss *= occ;
         }
-      #endif`);
+      #endif`)
+      .replace('#include <normal_fragment_maps>', `
+      {
+        vec3 mapN = blockNormalSample * 2.0 - 1.0;
+        mapN.xy *= uBump;
+        vec3 T = levelToView(blockTan);
+        vec3 B = levelToView(blockBit);
+        normal = normalize(T * mapN.x + B * mapN.y + normal * mapN.z);
+      }`)
+      .replace('#include <specularmap_fragment>', 'float specularStrength = blockGloss;');
   };
   // shaders distintos según AO: que three no reutilice el programa equivocado
   mat.customProgramCacheKey = () => (ao ? 'block-ao' : 'block');

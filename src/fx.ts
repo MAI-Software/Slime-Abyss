@@ -47,6 +47,10 @@ export class Fx {
     for (let k = 0; k < 4; k++) this.spawn(x, y, z, 0x7cc0ff, 0.22, 0.4, 2 + Math.random() * 2, 3);
   }
 
+  sparkle(x: number, y: number, z: number, color = 0xffd75e) {
+    for (let k = 0; k < 7; k++) this.spawn(x, y, z, color, 0.16, 0.5 + Math.random() * 0.2, 1.5 + Math.random() * 2.5, 4);
+  }
+
   update(dt: number) {
     for (const p of this.pool) {
       if (p.life <= 0) continue;

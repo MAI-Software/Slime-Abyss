@@ -3,7 +3,8 @@
     x > 0  → deslizar a la derecha de la pantalla
     z < 0  → deslizar hacia el fondo (lejos de la cámara)
   Modos: joystick virtual (por defecto) o giroscopio.
-  En ordenador, para pruebas: flechas/WASD, espacio, Q/E.
+  Sin botones de acción: dividir y reunir lo hace el propio escenario.
+  En ordenador, para pruebas: flechas/WASD.
 */
 
 export type ControlMode = 'joystick' | 'gyro';
@@ -18,16 +19,12 @@ type Pair = { roll: number; pitch: number };
 export class Input {
   tiltX = 0;
   tiltZ = 0;
-  mergeHeld = false;
   hasGyro = false;
   mode: ControlMode = 'joystick';
 
   private raw: Pair | null = null;
   private neutral: Pair | null = null;
   private keys = new Set<string>();
-  private mergeBtn = false;
-  private jumpQueued = false;
-  private splitQueued = false;
 
   private joyX = 0;
   private joyY = 0;
@@ -40,30 +37,10 @@ export class Input {
   constructor() {
     window.addEventListener('deviceorientation', (e) => this.onOrientation(e));
     window.addEventListener('keydown', (e) => {
-      if (e.repeat) return;
-      this.keys.add(e.code);
-      if (e.code === 'Space') this.jumpQueued = true;
-      if (e.code === 'KeyQ') this.splitQueued = true;
+      if (!e.repeat) this.keys.add(e.code);
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
     window.addEventListener('blur', () => this.keys.clear());
-
-    this.bindButton('btn-jump', () => (this.jumpQueued = true));
-    this.bindButton('btn-split', () => (this.splitQueued = true));
-    const merge = document.getElementById('btn-merge')!;
-    merge.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      merge.setPointerCapture(e.pointerId);
-      this.mergeBtn = true;
-      merge.classList.add('held');
-    });
-    const up = () => {
-      this.mergeBtn = false;
-      merge.classList.remove('held');
-    };
-    merge.addEventListener('pointerup', up);
-    merge.addEventListener('pointercancel', up);
-    merge.addEventListener('lostpointercapture', up);
 
     this.bindJoystick();
   }
@@ -73,15 +50,6 @@ export class Input {
     document.body.dataset.control = mode;
     this.releaseJoystick();
     if (mode === 'gyro') this.calibrate();
-  }
-
-  private bindButton(id: string, fn: () => void) {
-    const el = document.getElementById(id)!;
-    el.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      fn();
-      navigator.vibrate?.(12);
-    });
   }
 
   // ---------------------------------------------------------------- joystick flotante
@@ -191,7 +159,6 @@ export class Input {
     if (this.keys.has('ArrowRight') || this.keys.has('KeyD')) x = 1;
     if (this.keys.has('ArrowUp') || this.keys.has('KeyW')) z = -1;
     if (this.keys.has('ArrowDown') || this.keys.has('KeyS')) z = 1;
-    this.mergeHeld = this.mergeBtn || this.keys.has('KeyE');
 
     // suavizado: quita temblor del sensor y da algo de inercia al joystick
     const smooth = this.mode === 'gyro' ? 0.35 : 0.5;
@@ -199,9 +166,7 @@ export class Input {
     this.tiltZ += (z - this.tiltZ) * smooth;
   }
 
-  consumeJump() { const v = this.jumpQueued; this.jumpQueued = false; return v; }
-  consumeSplit() { const v = this.splitQueued; this.splitQueued = false; return v; }
-  clearQueued() { this.jumpQueued = false; this.splitQueued = false; this.releaseJoystick(); }
+  reset() { this.keys.clear(); this.releaseJoystick(); this.tiltX = this.tiltZ = 0; }
 }
 
 function wrap(deg: number): number {

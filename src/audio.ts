@@ -2,6 +2,9 @@
 
 let ctx: AudioContext | null = null;
 let lastSizzle = 0;
+let muted = false;
+
+export function setMuted(m: boolean) { muted = m; }
 
 export function unlockAudio() {
   if (!ctx) ctx = new AudioContext();
@@ -9,7 +12,7 @@ export function unlockAudio() {
 }
 
 function tone(type: OscillatorType, f0: number, f1: number, dur: number, vol = 0.18, delay = 0) {
-  if (!ctx) return;
+  if (!ctx || muted) return;
   const t = ctx.currentTime + delay;
   const o = ctx.createOscillator();
   const g = ctx.createGain();
@@ -24,7 +27,7 @@ function tone(type: OscillatorType, f0: number, f1: number, dur: number, vol = 0
 }
 
 function noise(dur: number, vol: number, freq: number) {
-  if (!ctx) return;
+  if (!ctx || muted) return;
   const len = Math.floor(ctx.sampleRate * dur);
   const buf = ctx.createBuffer(1, len, ctx.sampleRate);
   const data = buf.getChannelData(0);
@@ -40,17 +43,25 @@ function noise(dur: number, vol: number, freq: number) {
   src.start();
 }
 
+let lastCut = 0;
+
 export const sfx = {
-  jump: () => tone('sine', 220, 520, 0.22, 0.2),
   pad: () => tone('square', 180, 760, 0.3, 0.1),
-  split: () => { tone('sine', 520, 180, 0.16, 0.18); tone('sine', 480, 160, 0.16, 0.12, 0.05); },
-  merge: () => tone('sine', 300, 420, 0.1, 0.1),
   fall: () => tone('triangle', 500, 90, 0.5, 0.12),
   sizzle: () => {
     if (!ctx || ctx.currentTime - lastSizzle < 0.12) return;
     lastSizzle = ctx.currentTime;
     noise(0.35, 0.22, 2500);
   },
+  coin: () => { tone('square', 988, 988, 0.07, 0.07); tone('square', 1319, 1319, 0.22, 0.07, 0.07); },
+  cut: () => {
+    if (!ctx || ctx.currentTime - lastCut < 0.25) return;
+    lastCut = ctx.currentTime;
+    noise(0.18, 0.16, 4000);
+    tone('sine', 900, 300, 0.14, 0.06);
+  },
+  star: (k: number) => tone('triangle', 660 * 2 ** (k * 4 / 12), 880 * 2 ** (k * 4 / 12), 0.25, 0.14),
+  tick: () => tone('sine', 1200, 1200, 0.03, 0.04),
   win: () => [523, 659, 784, 1046].forEach((f, k) => tone('triangle', f, f, 0.22, 0.16, k * 0.12)),
   lose: () => [392, 330, 262].forEach((f, k) => tone('triangle', f, f * 0.97, 0.3, 0.14, k * 0.18)),
   click: () => tone('sine', 660, 880, 0.06, 0.08),

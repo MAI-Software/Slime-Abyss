@@ -364,6 +364,58 @@ flat_shape("face_blush", ellipse_pts(0.034, 0.02), 0.004, M["blush"])
 teardrop("face_sweat", 0.03, M["sweat"])
 teardrop("face_tear", 0.016, M["sweat"])
 
+# ================================================================== DIVISORES Y MONEDAS
+
+M["steel"] = material("Steel", "d7dfea", 0.18, 1.0)
+M["steel_dark"] = material("SteelDark", "4a4660", 0.45, 0.7)
+M["coin"] = material("CoinGold", "ffc53d", 0.22, 1.0, emit="6b4200", strength=0.25)
+
+# Cuchilla: hoja afilada a lo largo de Y (el juego la gira para la otra orientación).
+blade = empty("blade")
+bm = bmesh.new()
+box(bm, (0.2, 0.96, 0.1), (0, 0, 0.05))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.02, segments=2, affect="EDGES")
+mesh_object("blade_mount", bm, M["steel_dark"], parent=blade)
+bm = bmesh.new()
+profile = [(-0.46, 0.08), (0.46, 0.08), (0.46, 0.34), (0.3, 0.72), (-0.3, 0.72), (-0.46, 0.34)]
+verts = [bm.verts.new((-0.035, y, z)) for y, z in profile]
+face = bm.faces.new(verts)
+ext = bmesh.ops.extrude_face_region(bm, geom=[face], use_keep_orig=True)
+moved = [e for e in ext["geom"] if isinstance(e, bmesh.types.BMVert)]
+bmesh.ops.translate(bm, vec=(0.07, 0, 0), verts=moved)
+for v in bm.verts:  # filo: los vértices altos se juntan en el centro
+    if v.co.z > 0.3:
+        v.co.x *= 0.12
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+mesh_object("blade_edge", bm, M["steel"], parent=blade)
+
+# Pincho divisor: uno grande y tres pequeños sobre una base.
+spike = empty("spike")
+bm = bmesh.new()
+cylinder(bm, 0.3, 0.08, (0, 0, 0.04), 20)
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.015, segments=1, affect="EDGES")
+mesh_object("spike_base", bm, M["steel_dark"], parent=spike)
+bm = bmesh.new()
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=12, radius1=0.13, radius2=0.0, depth=0.78,
+                      matrix=Matrix.Translation((0, 0, 0.47)))
+for a in range(3):
+    ang = a * 2.094 + 0.5
+    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=10, radius1=0.065, radius2=0.0, depth=0.34,
+                          matrix=Matrix.Translation((0.19 * math.cos(ang), 0.19 * math.sin(ang), 0.25)))
+mesh_object("spike_points", bm, M["steel"], smooth=True, parent=spike)
+
+# Moneda de pie, mirando a -Y, con canto biselado y relieve.
+bm = bmesh.new()
+cylinder(bm, 0.22, 0.05, (0, 0, 0), 32, rot=Matrix.Rotation(math.radians(90), 4, "X"))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.012, segments=2, affect="EDGES")
+bm.normal_update()
+caps = [f for f in bm.faces if abs(f.normal.y) > 0.99 and f.calc_area() > 0.05]
+bmesh.ops.inset_individual(bm, faces=caps, thickness=0.035, depth=-0.008)
+bm.normal_update()
+caps = [f for f in bm.faces if abs(f.normal.y) > 0.99 and f.calc_area() > 0.03]
+bmesh.ops.inset_individual(bm, faces=caps, thickness=0.03, depth=0.01)
+mesh_object("coin", bm, M["coin"], smooth=False)
+
 # ================================================================== guardar y exportar
 
 os.makedirs(os.path.dirname(OUT_GLB), exist_ok=True)

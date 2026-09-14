@@ -3,7 +3,7 @@
   "id": "sendero-largo",
   "name": "Sendero largo (prueba)",
   "practice": true,
-  "count": 50,
+  "count": 80,
   "minPct": 0,
   "tiles": [
     "###############",
@@ -140,7 +140,7 @@
     },
     {
       "z": 23.5,
-      "text": "Escalones: SALTAR para subir"
+      "text": "Escalones: se suben solos"
     },
     {
       "z": 18.5,

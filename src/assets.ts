@@ -2,32 +2,29 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 // importado como URL: Vite le pone hash al nombre, así nunca se sirve un modelo viejo de caché
 import assetsUrl from './models/assets.glb?url';
-import floorUrl from './textures/floor.png?url';
-import wallTopUrl from './textures/wall_top.png?url';
-import brickUrl from './textures/brick.png?url';
-import stoneSideUrl from './textures/stone_side.png?url';
+// texturas de blender/build_textures.py: color + normales
+const textureFiles = import.meta.glob('./textures/*.jpg', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
-export type TextureName = 'floor' | 'wall_top' | 'brick' | 'stone_side';
-const TEXTURE_URLS: Record<TextureName, string> = {
-  floor: floorUrl, wall_top: wallTopUrl, brick: brickUrl, stone_side: stoneSideUrl,
-};
+export type TextureName = 'floor' | 'wall_top' | 'brick' | 'stone_side' | 'ice';
+export type TextureKey = TextureName | `${TextureName}_n`;
 
 /** Modelos hechos en Blender (blender/build_assets.py → src/models/assets.glb). */
 export class Assets {
   private nodes = new Map<string, THREE.Object3D>();
-  readonly textures = {} as Record<TextureName, THREE.Texture>;
+  readonly textures = {} as Record<TextureKey, THREE.Texture>;
 
   static async load(anisotropy: number, onProgress?: (p: number) => void): Promise<Assets> {
     const a = new Assets();
     const texLoader = new THREE.TextureLoader();
     const [gltf] = await Promise.all([
       new GLTFLoader().loadAsync(assetsUrl, (e) => { if (e.total) onProgress?.(e.loaded / e.total); }),
-      ...(Object.keys(TEXTURE_URLS) as TextureName[]).map(async (name) => {
-        const t = await texLoader.loadAsync(TEXTURE_URLS[name]);
-        t.colorSpace = THREE.SRGBColorSpace;
+      ...Object.entries(textureFiles).map(async ([path, url]) => {
+        const key = path.replace('./textures/', '').replace('.jpg', '') as TextureKey;
+        const t = await texLoader.loadAsync(url);
+        t.colorSpace = key.endsWith('_n') ? THREE.NoColorSpace : THREE.SRGBColorSpace;
         t.wrapS = t.wrapT = THREE.RepeatWrapping;
         t.anisotropy = anisotropy;
-        a.textures[name] = t;
+        a.textures[key] = t;
       }),
     ]);
     gltf.scene.traverse((o) => a.nodes.set(o.name, o));
@@ -45,6 +42,10 @@ export class Assets {
     const n = this.node(name) as THREE.Mesh;
     if (!n.isMesh) throw new Error(`"${name}" no es una malla`);
     return n.geometry;
+  }
+
+  surface(name: TextureName) {
+    return { color: this.textures[name], normal: this.textures[`${name}_n`] };
   }
 
   /** Copia independiente de un objeto con sus hijos, en el origen. */

@@ -6,12 +6,15 @@ import { Assets } from './assets';
 import { createContactShadowTexture } from './materials';
 
 // --- física ---
-const R = 0.2;            // radio de colisión de cada limito
-const REST = 0.3;         // distancia de reposo entre vecinos
-const LINK = 0.72;        // alcance de la cohesión
-const GROUP_LINK = 0.6;   // distancia para considerar mismo grupo
-const K_REP = 260;
-const K_ATT = 42;
+// El limo grande es un montón de limitos pequeños unidos por cohesión.
+const R = 0.16;           // radio de colisión de cada limito
+const REST = 0.24;        // distancia de reposo entre vecinos
+const LINK = 0.58;        // alcance de la cohesión
+const GROUP_LINK = 0.48;  // distancia para considerar mismo grupo
+const K_REP = 330;
+const K_ATT = 52;
+// Borde: un limito que asoma sobre el vacío apenas se agarra al resto y se descuelga.
+const OVERHANG_GRIP = 0.1;
 const VISC = 4.5;
 const GRAVITY = 20;
 const TILT_ACC = 16;
@@ -22,19 +25,19 @@ const PAD_V = 12.5;
 const DRAG = 0.15;
 const GROUND_FRICTION = 2.4;
 const DIE_TIME = 0.35;
-const MERGE_RANGE = 5;
-const MERGE_ACC = 14;
-const SPLIT_COOLDOWN = 1.0;
-const SPLIT_PUSH = 4.2;
 const SUBSTEPS = 3;
+const STEP_UP = 0.56;       // escalón que el limo sube solo (0.5 de altura de losa)
+const CUT_COOLDOWN = 0.7;   // tiempo sin cohesión entre mitades tras pasar por un divisor
+const CUT_TAG_BASE = 1_000_000;
 
 // --- render ---
-const FACE_GROUPS = 2;
-const FACE_MIN_SIZE = 4;
+const FACE_GROUPS = 4;
+const FACE_MIN_SIZE = 6;
 
 export type SlimeEvent =
   | { type: 'fall' | 'evaporate' | 'pad'; x: number; y: number; z: number }
-  | { type: 'split' | 'jump' };
+  | { type: 'coin'; x: number; y: number; z: number }
+  | { type: 'cut'; x: number; z: number };
 
 export interface Group {
   ids: number[];
@@ -52,20 +55,23 @@ export class Slime {
   // posición al inicio del paso de física (para interpolar el dibujo entre pasos)
   private ox: Float32Array; private oy: Float32Array; private oz: Float32Array;
   private ax: Float32Array; private ay: Float32Array; private az: Float32Array;
-  private mx: Float32Array; private mz: Float32Array;
   readonly alive: Uint8Array;
   readonly dying: Float32Array;
   private air: Float32Array;          // tiempo desde último contacto con suelo
   private groundCell: Int32Array;
-  private tag: Uint16Array;
+  private tag: Uint32Array;
   private noAttr: Float32Array;
   private parent: Int32Array;
   private gid: Int32Array;
   private rootGroup: Int32Array;
   private padFlags: Uint8Array;
   private fell: Uint8Array;
-  private tagCounter = 1;
+  /** agarre de cada limito a sus vecinos (1 normal, OVERHANG_GRIP si asoma al vacío) */
+  private grip: Float32Array;
+  private lastCutEvent = -1;
   private time = 0;
+  private readonly uniforms = { uTime: { value: 0 } };
+  private tmpCoin = new THREE.Vector3();
 
   groups: Group[] = [];
   private groupPool: Group[] = [];
@@ -89,25 +95,33 @@ export class Slime {
     this.ox = f(); this.oy = f(); this.oz = f();
     this.vx = f(); this.vy = f(); this.vz = f();
     this.ax = f(); this.ay = f(); this.az = f();
-    this.mx = f(); this.mz = f();
     this.dying = f(); this.air = f(); this.noAttr = f();
     this.alive = new Uint8Array(n).fill(1);
     this.groundCell = new Int32Array(n).fill(-1);
-    this.tag = new Uint16Array(n);
+    this.tag = new Uint32Array(n);
     this.parent = new Int32Array(n);
     this.gid = new Int32Array(n).fill(-1);
     this.rootGroup = new Int32Array(n);
     this.padFlags = new Uint8Array(n);
     this.fell = new Uint8Array(n);
+    this.grip = new Float32Array(n).fill(1);
     for (let k = 0; k < n; k++) this.groupPool.push({ ids: [], cx: 0, cy: 0, cz: 0, maxY: 0, maxZ: 0, vx: 0, vz: 0 });
 
+    // aparición: espiral compacta en 3 capas, sin salirse a casillas de otra altura (muros, vacío)
     const s = world.start;
+    const startTop = world.top(Math.floor(s.x), Math.floor(s.z));
     for (let k = 0; k < n; k++) {
       const a = k * 2.39996;
-      const layer = k % 2;
-      const rr = 0.19 * Math.sqrt(k / 2 + 0.5);
-      this.px[k] = this.ox[k] = s.x + Math.cos(a) * rr;
-      this.pz[k] = this.oz[k] = s.z + Math.sin(a) * rr;
+      const layer = k % 3;
+      const rr = 0.13 * Math.sqrt(k / 3 + 0.5);
+      let x = s.x + Math.cos(a) * rr;
+      let z = s.z + Math.sin(a) * rr;
+      if (world.top(Math.floor(x), Math.floor(z)) !== startTop) {
+        x = Math.min(Math.max(x, Math.floor(s.x) + R), Math.floor(s.x) + 1 - R);
+        z = Math.min(Math.max(z, Math.floor(s.z) + R), Math.floor(s.z) + 1 - R);
+      }
+      this.px[k] = this.ox[k] = x;
+      this.pz[k] = this.oz[k] = z;
       this.py[k] = this.oy[k] = s.y + R + 0.05 + layer * REST;
     }
 
@@ -119,11 +133,24 @@ export class Slime {
       emissiveIntensity: 0.3,
     });
     // borde brillante: da aspecto de gelatina sin coste de transparencia
+    material.envMapIntensity = 1.4;
     material.onBeforeCompile = (shader) => {
-      shader.fragmentShader = shader.fragmentShader.replace(
+      shader.uniforms.uTime = this.uniforms.uTime;
+      // superficie viva: ondula suavemente y el interior brilla con vetas que se mueven
+      shader.vertexShader = `uniform float uTime;\nvarying vec3 vSlimePos;\n${shader.vertexShader}`.replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        vec3 wp = (modelMatrix * vec4(position, 1.0)).xyz;
+        float wob = sin(uTime * 5.0 + wp.x * 4.0 + wp.z * 3.0) * 0.5 + sin(uTime * 3.3 - wp.z * 5.0 + wp.y * 6.0) * 0.5;
+        transformed += objectNormal * wob * 0.022;
+        vSlimePos = wp;`,
+      );
+      shader.fragmentShader = `uniform float uTime;\nvarying vec3 vSlimePos;\n${shader.fragmentShader}`.replace(
         '#include <opaque_fragment>',
         `float slimeRim = 1.0 - max(dot(normalize(normal), normalize(vViewPosition)), 0.0);
-        outgoingLight += vec3(0.45, 0.8, 1.0) * pow(slimeRim, 2.2) * 0.55;
+        float veins = sin(vSlimePos.x * 7.0 + uTime * 1.7) * sin(vSlimePos.z * 6.0 - uTime * 1.3) * sin(vSlimePos.y * 9.0 + uTime * 2.1);
+        outgoingLight += vec3(0.45, 0.8, 1.0) * pow(slimeRim, 2.2) * 0.6;
+        outgoingLight += vec3(0.25, 0.55, 1.0) * smoothstep(0.35, 0.9, veins) * 0.12;
         #include <opaque_fragment>`,
       );
     };
@@ -174,55 +201,16 @@ export class Slime {
     return c;
   }
 
-  // ---------------------------------------------------------------- acciones
-
-  jump(): boolean {
-    let any = false;
-    for (let i = 0; i < this.n; i++) {
-      if (!this.alive[i] || this.air[i] > 0.12) continue;
-      this.vy[i] = Math.max(this.vy[i], JUMP_V);
-      this.air[i] = 1;
-      any = true;
-    }
-    if (any) {
-      this.events.push({ type: 'jump' });
-      for (const f of this.faces) f.cheer(0.45);
-    }
-    return any;
-  }
-
-  /** Parte cada grupo grande en dos mitades (izquierda / derecha de cámara). */
-  split(): boolean {
-    let any = false;
-    for (const g of this.groups) {
-      if (g.ids.length < 6) continue;
-      const xs = g.ids.map((i) => this.px[i]).sort((a, b) => a - b);
-      const median = xs[Math.floor(xs.length / 2)];
-      const tagL = this.tagCounter++;
-      const tagR = this.tagCounter++;
-      for (const i of g.ids) {
-        const left = this.px[i] < median;
-        this.tag[i] = left ? tagL : tagR;
-        this.noAttr[i] = this.time + SPLIT_COOLDOWN;
-        this.vx[i] += left ? -SPLIT_PUSH : SPLIT_PUSH;
-        this.vy[i] += 1.8;
-      }
-      any = true;
-    }
-    if (this.tagCounter > 60000) this.tagCounter = 1;
-    if (any) this.events.push({ type: 'split' });
-    return any;
-  }
+  // ---------------------------------------------------------------- reacciones
 
   celebrate() { for (const f of this.faces) f.cheer(10); }
 
   // ---------------------------------------------------------------- simulación
 
-  step(dt: number, tiltX: number, tiltZ: number, merging: boolean) {
+  step(dt: number, tiltX: number, tiltZ: number) {
     this.ox.set(this.px);
     this.oy.set(this.py);
     this.oz.set(this.pz);
-    this.computeMergePull(merging);
     const h = dt / SUBSTEPS;
     for (let s = 0; s < SUBSTEPS; s++) {
       this.time += h;
@@ -232,45 +220,14 @@ export class Slime {
     this.computeGroups();
   }
 
-  private computeMergePull(merging: boolean) {
-    this.mx.fill(0);
-    this.mz.fill(0);
-    if (!merging || this.groups.length < 2) return;
-    const gid = this.gid;
-    const range2 = MERGE_RANGE * MERGE_RANGE;
-    for (let i = 0; i < this.n; i++) {
-      if (!this.alive[i] || gid[i] < 0) continue;
-      // hacia el grupo distinto más grande dentro del alcance
-      let best = -1;
-      let bestSize = 0;
-      for (let k = 0; k < this.groups.length; k++) {
-        if (k === gid[i]) continue;
-        const g = this.groups[k];
-        const dx = g.cx - this.px[i];
-        const dz = g.cz - this.pz[i];
-        if (dx * dx + dz * dz > range2) continue;
-        if (g.ids.length > bestSize) { best = k; bestSize = g.ids.length; }
-      }
-      if (best < 0) continue;
-      const g = this.groups[best];
-      const dx = g.cx - this.px[i];
-      const dz = g.cz - this.pz[i];
-      const d = Math.hypot(dx, dz) || 1;
-      this.mx[i] = (dx / d) * MERGE_ACC;
-      this.mz[i] = (dz / d) * MERGE_ACC;
-    }
-    // durante UNIR se permite atracción entre etiquetas distintas
-    this.noAttr.fill(0);
-  }
-
   private substep(h: number, tiltX: number, tiltZ: number) {
-    const { n, px, py, pz, vx, vy, vz, ax, ay, az, alive, tag, noAttr, time } = this;
+    const { n, px, py, pz, vx, vy, vz, ax, ay, az, alive, tag, noAttr, time, grip } = this;
     const link2 = LINK * LINK;
     const baseX = tiltX * TILT_ACC, baseZ = tiltZ * TILT_ACC;
     for (let i = 0; i < n; i++) {
-      ax[i] = baseX + this.mx[i];
+      ax[i] = baseX;
       ay[i] = -GRAVITY;
-      az[i] = baseZ + this.mz[i];
+      az[i] = baseZ;
     }
 
     for (let i = 0; i < n; i++) {
@@ -292,11 +249,11 @@ export class Slime {
           f = -K_REP * (REST - d);
         } else if (bonded) {
           const t = (d - REST) / (LINK - REST);
-          f = K_ATT * (d - REST) * (1 - t * t);
+          f = K_ATT * (d - REST) * (1 - t * t) * Math.min(grip[i], grip[j]);
         }
         if (bonded) {
           const rv = (vx[j] - vx[i]) * nx + (vy[j] - vy[i]) * ny + (vz[j] - vz[i]) * nz;
-          f += VISC * rv;
+          f += VISC * rv * Math.min(grip[i], grip[j]);
         }
         const fx = nx * f, fy = ny * f, fz = nz * f;
         ax[i] += fx; ay[i] += fy; az[i] += fz;
@@ -350,6 +307,15 @@ export class Slime {
         const dx = x - qx, dy = y - qy, dz = z - qz;
         const d2 = dx * dx + dy * dy + dz * dz;
         if (d2 >= R * R) continue;
+        // escalón bajo: el limo lo trepa en vez de chocar
+        const climb = top - (y - R);
+        if (climb > 0.02 && climb <= STEP_UP && dy <= 0 && top - this.world.top(Math.floor(x), Math.floor(z)) <= STEP_UP + 0.01) {
+          y = top + R;
+          if (this.vy[i] < 0) this.vy[i] = 0;
+          this.air[i] = 0;
+          this.groundCell[i] = cj * w.w + ci;
+          continue;
+        }
         let nx: number, ny: number, nz: number, pen: number;
         if (d2 < 1e-9) {
           // centro dentro del bloque: salir por la cara más cercana
@@ -380,11 +346,91 @@ export class Slime {
         }
       }
     }
+    // cuchillas y pinchos: cajas finas dentro de la casilla
+    for (let cj = j0; cj <= j1; cj++) {
+      for (let ci = i0; ci <= i1; ci++) {
+        const o = w.obstacle(ci, cj);
+        if (!o || y - R >= o.maxY) continue;
+        const qx = Math.min(Math.max(x, o.minX), o.maxX);
+        const qy = Math.min(Math.max(y, o.minY), o.maxY);
+        const qz = Math.min(Math.max(z, o.minZ), o.maxZ);
+        const dx = x - qx, dy = y - qy, dz = z - qz;
+        const d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 >= R * R) continue;
+        let nx: number, ny: number, nz: number, pen: number;
+        if (d2 < 1e-9) {
+          // dentro de la hoja: expulsar hacia el lado más cercano del eje de corte
+          if (o.axis === 'x') { nx = 0; ny = 0; nz = z < o.cz ? -1 : 1; pen = R + (o.maxZ - o.minZ) / 2 - Math.abs(z - o.cz); }
+          else { nx = x < o.cx ? -1 : 1; ny = 0; nz = 0; pen = R + (o.maxX - o.minX) / 2 - Math.abs(x - o.cx); }
+        } else {
+          const d = Math.sqrt(d2);
+          nx = dx / d; ny = dy / d; nz = dz / d;
+          pen = R - d;
+        }
+        x += nx * pen; y += ny * pen; z += nz * pen;
+        const vn = this.vx[i] * nx + this.vy[i] * ny + this.vz[i] * nz;
+        if (vn < 0) {
+          this.vx[i] -= nx * vn;
+          this.vy[i] -= ny * vn;
+          this.vz[i] -= nz * vn;
+        }
+      }
+    }
     this.px[i] = x; this.py[i] = y; this.pz[i] = z;
+  }
+
+  /**
+    Divisores: los limitos que pasan cerca del filo quedan etiquetados según el lado.
+    Mientras dura el enfriamiento, las dos mitades no se atraen y se separan solas.
+  */
+  private applyDividers(i: number) {
+    const w = this.world;
+    const x = this.px[i], z = this.pz[i];
+    const ci = Math.floor(x), cj = Math.floor(z);
+    for (let dj = -1; dj <= 1; dj++) {
+      for (let di = -1; di <= 1; di++) {
+        const o = w.obstacle(ci + di, cj + dj);
+        if (!o || this.py[i] > o.maxY + 0.25) continue;
+        let side: number;
+        if (o.kind === 'blade') {
+          const across = o.axis === 'x' ? z - o.cz : x - o.cx;
+          const along = o.axis === 'x' ? x - o.cx : z - o.cz;
+          if (Math.abs(across) > 0.34 || Math.abs(along) > 0.6) continue;
+          side = across < 0 ? 0 : 1;
+        } else {
+          const rx = x - o.cx, rz = z - o.cz;
+          if (rx * rx + rz * rz > 0.5 * 0.5) continue;
+          // lado respecto a la dirección en que avanza este limito
+          side = this.vx[i] * rz - this.vz[i] * rx < 0 ? 0 : 1;
+        }
+        const tag = CUT_TAG_BASE + o.id * 2 + side;
+        if (this.tag[i] !== tag && this.lastCutEvent !== o.id) {
+          this.lastCutEvent = o.id;
+          this.events.push({ type: 'cut', x: o.cx, z: o.cz });
+        }
+        this.tag[i] = tag;
+        this.noAttr[i] = this.time + CUT_COOLDOWN;
+        return;
+      }
+    }
+  }
+
+  /**
+    ¿Asoma este limito por un borde? Su centro está sobre vacío y a la altura del suelo
+    de al lado (no vale si va volando por encima, p. ej. tras una plataforma de salto).
+  */
+  private overhanging(x: number, y: number, z: number): boolean {
+    const w = this.world;
+    const ci = Math.floor(x), cj = Math.floor(z);
+    if (w.top(ci, cj) !== -Infinity) return false;
+    let edge = -Infinity;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) edge = Math.max(edge, w.top(ci + di, cj + dj));
+    return edge !== -Infinity && y < edge + R + 0.35;
   }
 
   private postStep(dt: number) {
     const w = this.world;
+    if (this.lastCutEvent >= 0 && Math.random() < dt * 2) this.lastCutEvent = -1;
     this.switchCounts.A = 0;
     this.switchCounts.B = 0;
     this.touchedTreasure = false;
@@ -412,8 +458,16 @@ export class Slime {
         continue;
       }
 
+      this.applyDividers(i);
+      this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : 1;
+
       const ci = Math.floor(x), cj = Math.floor(z);
       const under = w.cell(ci, cj);
+      if (under && under.kind === 'coin' && y < under.base + 1.3 && w.collectCoin(ci, cj)) {
+        const c = w.coinPosition(ci, cj, this.tmpCoin);
+        this.events.push({ type: 'coin', x: c.x, y: c.y, z: c.z });
+        for (const f of this.faces) f.cheer(0.5);
+      }
       if (under && w.fireActive(ci, cj) && y < under.base + 0.8) {
         this.dying[i] = 1e-4;
         this.hurts.push({ x, z });
@@ -509,6 +563,7 @@ export class Slime {
 
   /** alpha: fracción entre el paso de física anterior y el actual (0..1). */
   render(dt: number, alpha: number, lookX: number, lookZ: number) {
+    this.uniforms.uTime.value += dt;
     const { n, px, py, pz, ox, oy, oz, alive, dying } = this;
     const lead = this.groups[0];
     let used = 0;

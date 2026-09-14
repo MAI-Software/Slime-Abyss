@@ -8,7 +8,7 @@ import { edgeTable, triTable } from 'three/examples/jsm/objects/MarchingCubes.js
   de limitos, no del tamaño de la rejilla. Así la rejilla puede ser grande y fina.
 */
 
-const KERNEL_R = 0.5;  // radio de influencia de cada bola (mundo)
+const KERNEL_R = 0.42; // radio de influencia de cada bola (mundo)
 const ISO = 0.5;       // umbral de la superficie
 
 export class BlobMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {

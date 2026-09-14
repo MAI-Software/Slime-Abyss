@@ -14,7 +14,8 @@
 export type Channel = 'A' | 'B';
 
 export type CellKind =
-  | 'void' | 'floor' | 'wall' | 'fire' | 'firet' | 'ice' | 'jump' | 'switch' | 'door' | 'start' | 'treasure';
+  | 'void' | 'floor' | 'wall' | 'fire' | 'firet' | 'ice' | 'jump' | 'switch' | 'door' | 'start' | 'treasure'
+  | 'coin' | 'blade' | 'spike';
 
 export interface TileDef {
   char: string;
@@ -30,6 +31,10 @@ export interface TileDef {
   color: string;
   /** Es peligrosa (útil para filtros del editor y niveles "sin trampas"). */
   hazard?: boolean;
+  /** Cuchillas: eje a lo largo del que corre la hoja ('z' divide izquierda/derecha, 'x' delante/detrás). */
+  axis?: 'x' | 'z';
+  /** Divide el limo al atravesarlo (sin hacer daño). */
+  divider?: boolean;
 }
 
 export const TILES: readonly TileDef[] = [
@@ -46,6 +51,10 @@ export const TILES: readonly TileDef[] = [
   { char: 's', kind: 'switch', label: 'Interruptor B', channel: 'B', color: '#22c55e' },
   { char: 'D', kind: 'door', label: 'Puerta A', channel: 'A', raise: 1.5, color: '#b45309' },
   { char: 'd', kind: 'door', label: 'Puerta B', channel: 'B', raise: 1.5, color: '#15803d' },
+  { char: 'C', kind: 'coin', label: 'Moneda', color: '#ffc53d' },
+  { char: 'K', kind: 'blade', label: 'Cuchilla (divide izquierda / derecha)', axis: 'z', divider: true, color: '#d7dfea' },
+  { char: 'k', kind: 'blade', label: 'Cuchilla (divide delante / detrás)', axis: 'x', divider: true, color: '#c3ccd8' },
+  { char: 'Y', kind: 'spike', label: 'Pincho divisor', divider: true, color: '#9aa4b4' },
 ];
 
 export const TILE_BY_CHAR: ReadonlyMap<string, TileDef> = new Map(TILES.map((t) => [t.char, t]));
@@ -74,9 +83,35 @@ export interface LevelData {
   tips?: Tip[];
   /** Nivel de pruebas: siempre desbloqueado y fuera de la progresión. */
   practice?: boolean;
+  /** Fracción de limo a conservar para la 3ª estrella (por defecto DEFAULT_KEEP_PCT). */
+  keepPct?: number;
 }
 
-export const LIMITS = { minSize: 3, maxSize: 96, minCount: 10, maxCount: 80 } as const;
+export const DEFAULT_KEEP_PCT = 0.75;
+
+/** Las 3 estrellas de un piso: llegar al tesoro, todas las monedas y conservar limo. */
+export interface FloorResult {
+  done: boolean;
+  allCoins: boolean;
+  kept: boolean;
+  coins: number;
+  coinsTotal: number;
+  pct: number;
+  time: number;
+}
+
+export function starsOf(r: Pick<FloorResult, 'done' | 'allCoins' | 'kept'>): number {
+  return r.done ? 1 + (r.allCoins ? 1 : 0) + (r.kept ? 1 : 0) : 0;
+}
+
+export interface ChapterDef {
+  id: string;
+  name: string;
+  subtitle: string;
+  floors: LevelData[];
+}
+
+export const LIMITS = { minSize: 3, maxSize: 96, minCount: 10, maxCount: 120 } as const;
 
 export function levelSize(level: LevelData) {
   return { w: level.tiles[0]?.length ?? 0, d: level.tiles.length };
@@ -118,6 +153,9 @@ export function validateLevel(level: LevelData): string[] {
     errors.push(`El limo debe tener entre ${LIMITS.minCount} y ${LIMITS.maxCount} limitos.`);
   }
   if (level.minPct < 0 || level.minPct >= 1) errors.push('El porcentaje mínimo debe estar entre 0 y 0.99.');
+  if (level.keepPct !== undefined && (level.keepPct <= level.minPct || level.keepPct > 1)) {
+    errors.push('El limo a conservar para la 3ª estrella debe ser mayor que el mínimo.');
+  }
   return errors;
 }
 
@@ -134,7 +172,7 @@ export function createEmptyLevel(w = 11, d = 15, name = 'Nivel nuevo'): LevelDat
   const mid = Math.floor(w / 2);
   tiles[d - 2] = replaceAt(tiles[d - 2], mid, 'P');
   tiles[1] = replaceAt(tiles[1], mid, 'T');
-  return { format: LEVEL_FORMAT, id: `custom-${Date.now().toString(36)}`, name, count: 50, minPct: 0.35, tiles, heights };
+  return { format: LEVEL_FORMAT, id: `custom-${Date.now().toString(36)}`, name, count: 80, minPct: 0.35, tiles, heights };
 }
 
 export function replaceAt(row: string, i: number, ch: string): string {
