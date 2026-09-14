@@ -46,7 +46,7 @@ function loadAuth() {
   return authPromise;
 }
 
-const toPlayer = (u: User): Player => ({ uid: u.uid, name: u.displayName ?? 'Blub', photo: u.photoURL, email: u.email });
+const toPlayer = (u: User): Player => ({ uid: u.uid, name: u.displayName ?? 'Slime', photo: u.photoURL, email: u.email });
 
 /** Avisa cada vez que cambia la sesión (también al arrancar si ya había una). */
 export async function watchPlayer(cb: (p: Player | null) => void) {

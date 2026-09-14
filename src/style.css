@@ -156,15 +156,17 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
 .logo {
   margin: 0;
   font-family: 'Fredoka', sans-serif;
-  font-size: clamp(64px, 18vmin, 132px);
+  font-size: clamp(52px, 14vmin, 104px);
   font-weight: 700;
-  line-height: 1;
+  line-height: 0.92;
+  text-align: center;
   color: #7cc0ff;
   -webkit-text-stroke: 4px var(--ink);
   paint-order: stroke fill;
   text-shadow: 0 8px 0 var(--ink);
   animation: wobble 2.4s ease-in-out infinite;
 }
+.logo span { display: block; }
 .subtitle { margin: 4px 0 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-shadow: 0 2px 0 var(--ink); }
 .hint { margin: 0; font-size: 15px; font-weight: 700; opacity: 0.9; max-width: 280px; }
 @keyframes wobble {

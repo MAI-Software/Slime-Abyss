@@ -1,4 +1,4 @@
-# Blub! Mazmorras de Limo
+# Slime Abyss
 
 Juego 3D para móvil controlado con el giroscopio (inspirado en Mercury y LocoRoco).
 Un limo azul formado por muchos limitos se desliza por mazmorras de bloques hasta el tesoro.
@@ -88,7 +88,7 @@ y `toShareCode()` / `decodeLevel()` para compartir. `createEmptyLevel()` y `auto
 - Física a 60 Hz fija con interpolación al dibujar (suave en pantallas de 90/120 Hz).
 - Sin basura por frame en física/render (evita tirones del recolector).
 - Calidad adaptativa: si baja de ~45 fps reduce resolución y sombras; si va sobrado las sube.
-- En desarrollo: `__blub.quality()` muestra nivel de calidad y fps.
+- En desarrollo: `__slime.quality()` muestra nivel de calidad y fps.
 
 ## Iluminación
 Luz de cielo fría, sol cálido con sombras suaves y contraluz azul; tone mapping Neutral para colores cartoon.
@@ -96,6 +96,6 @@ Texturas proyectadas en coordenadas del nivel (sin UVs), giro aleatorio por casi
 en suelos junto a muros, resplandores falsos (fuego, tesoro) y sombra de contacto bajo el limo.
 
 ## Despliegue (Cloudflare Pages conectado a GitHub)
-Repo público: https://github.com/MAI-Software/mai-slime · rama `main`
+Repo público: https://github.com/MAI-Software/Slime-Abyss · rama `main`
 - Framework preset: Vite (o ninguno) · Build command: `npm run build` · Output directory: `dist`
 - Node: `.node-version` fija 22

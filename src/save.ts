@@ -28,12 +28,14 @@ export interface Save {
   rewards: string[];
 }
 
-const KEY = 'blub-save';
+const KEY = 'slime-abyss-save';
+/** clave del nombre anterior del juego: se lee una vez para no perder el progreso */
+const OLD_KEY = 'blub-save';
 
 export function loadSave(): Save {
   const fresh: Save = { v: 3, control: 'joystick', sound: true, vibration: true, lang: null, floors: {}, owned: [], equipped: null, spent: 0, rewards: [] };
   try {
-    const s = JSON.parse(localStorage.getItem(KEY) ?? '');
+    const s = JSON.parse(localStorage.getItem(KEY) ?? localStorage.getItem(OLD_KEY) ?? '');
     if (s?.v === 3) return { ...fresh, ...s };
     // migración desde v2: se conserva el progreso
     if (s?.v === 2) return { ...fresh, control: s.control ?? 'joystick', sound: s.sound ?? true, floors: s.floors ?? {} };

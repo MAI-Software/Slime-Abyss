@@ -495,7 +495,7 @@ $('btn-resume').addEventListener('click', () => { sfx.click(); mode = 'play'; ac
 $('btn-restart').addEventListener('click', () => { sfx.click(); restart(); });
 $('btn-quit').addEventListener('click', () => { sfx.click(); leaveLevel(); });
 document.addEventListener('visibilitychange', () => {
-  if (import.meta.env.DEV && (window as unknown as { __blubNoPause?: boolean }).__blubNoPause) return;
+  if (import.meta.env.DEV && (window as unknown as { __slimeNoPause?: boolean }).__slimeNoPause) return;
   if (document.hidden) pause();
 });
 matchMedia('(orientation: portrait) and (pointer: coarse)').addEventListener('change', (e) => { if (e.matches) pause(); });
@@ -940,7 +940,7 @@ renderer.setAnimationLoop(() => {
 if (import.meta.env.DEV) {
   // depuración: avanzar la simulación sin requestAnimationFrame
   Object.assign(window, {
-    __blub: {
+    __slime: {
       advance(seconds: number) { for (let s = 0; s < seconds; s += FIXED) frame(FIXED); },
       start: (c: number, k: number) => startFloor(CHAPTERS[c], k),
       practice: () => startLevel(PRACTICE, null, 0),
