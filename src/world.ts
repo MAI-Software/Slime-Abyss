@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import type { Channel, LevelDef } from './levels';
 import { Assets } from './assets';
+import { FireFx, type FireCell, type FireState } from './fire';
+import { HEIGHT_STEP, TILE_BY_CHAR, TILES, type CellKind, type Channel, type LevelData } from './level/format';
 
-export type CellKind =
-  | 'void' | 'floor' | 'wall' | 'fire' | 'firet' | 'ice' | 'jump' | 'switch' | 'door' | 'start' | 'treasure';
+export type { CellKind };
 
 export interface Cell {
   kind: CellKind;
@@ -12,12 +12,13 @@ export interface Cell {
   channel?: Channel;
 }
 
-const WALL_H = 1.5;
-const DOOR_H = 1.5;
+const DOOR_H = TILE_BY_CHAR.get('D')!.raise!;
 const SLAB_H = 0.5;   // alto de la losa biselada (block_top)
 const BOTTOM = -1.2;  // fondo de las columnas
 
-export const FRICTION: Partial<Record<CellKind, number>> = { ice: 0.25 };
+export const FRICTION: Partial<Record<CellKind, number>> = Object.fromEntries(
+  TILES.filter((t) => t.friction !== undefined).map((t) => [t.kind, t.friction]),
+);
 
 function drawLabel(c: HTMLCanvasElement, text: string, color: string) {
   const g = c.getContext('2d')!;
@@ -69,7 +70,7 @@ export class World {
   private switches = new Map<Channel, SwitchState>();
   private doors: DoorState[] = [];
   private pads: THREE.Object3D[] = [];
-  private flames: { mesh: THREE.InstancedMesh; cells: { i: number; j: number; base: number; timed: boolean }[] } | null = null;
+  private fire: FireFx | null = null;
   private chest: THREE.Object3D | null = null;
   private chestLid: THREE.Object3D | null = null;
   private sparkles: THREE.Points | null = null;
@@ -77,59 +78,21 @@ export class World {
   private time = 0;
   opening = 0; // animación de cofre abierto (0..1)
 
-  constructor(readonly def: LevelDef, private assets: Assets) {
-    this.d = def.map.length;
-    this.w = Math.max(...def.map.map((r) => r.length));
+  constructor(readonly def: LevelData, private assets: Assets) {
+    this.d = def.tiles.length;
+    this.w = def.tiles[0].length;
     this.cells = [];
     for (let j = 0; j < this.d; j++) {
       for (let i = 0; i < this.w; i++) this.cells.push(this.parse(i, j));
     }
-    if (!def.h) this.raiseWalls();
     this.build();
   }
 
   private parse(i: number, j: number): Cell {
-    const ch = this.def.map[j][i] ?? ' ';
-    const hch = this.def.h?.[j]?.[i];
-    const base = hch && hch >= '0' && hch <= '9' ? Number(hch) * 0.5 : 0;
-    if (ch === ' ' || ch === '.') return { kind: 'void', base: 0, top: -Infinity };
-    if (ch >= '0' && ch <= '9') {
-      const h = this.def.h ? base : Number(ch) * 0.5;
-      return { kind: 'floor', base: h, top: h };
-    }
-    switch (ch) {
-      case '#': return { kind: 'wall', base, top: base + WALL_H };
-      case 'P': return { kind: 'start', base, top: base };
-      case 'T': return { kind: 'treasure', base, top: base };
-      case 'F': return { kind: 'fire', base, top: base };
-      case 'X': return { kind: 'firet', base, top: base };
-      case 'I': return { kind: 'ice', base, top: base };
-      case 'J': return { kind: 'jump', base, top: base };
-      case 'S': return { kind: 'switch', base, top: base, channel: 'A' };
-      case 's': return { kind: 'switch', base, top: base, channel: 'B' };
-      case 'D': return { kind: 'door', base, top: base + DOOR_H, channel: 'A' };
-      case 'd': return { kind: 'door', base, top: base + DOOR_H, channel: 'B' };
-      default: return { kind: 'floor', base, top: base };
-    }
-  }
-
-  /** Sin capa de alturas: cada muro se apoya en el suelo más alto que toca. */
-  private raiseWalls() {
-    for (let j = 0; j < this.d; j++) {
-      for (let i = 0; i < this.w; i++) {
-        const c = this.cells[j * this.w + i];
-        if (c.kind !== 'wall') continue;
-        let base = 0;
-        for (let dj = -1; dj <= 1; dj++) {
-          for (let di = -1; di <= 1; di++) {
-            const n = this.cell(i + di, j + dj);
-            if (n && n.kind !== 'wall' && n.kind !== 'void') base = Math.max(base, n.base);
-          }
-        }
-        c.base = base;
-        c.top = base + WALL_H;
-      }
-    }
+    const tile = TILE_BY_CHAR.get(this.def.tiles[j][i]) ?? TILE_BY_CHAR.get('.')!;
+    if (tile.kind === 'void') return { kind: 'void', base: 0, top: -Infinity };
+    const base = Number(this.def.heights[j][i]) * HEIGHT_STEP;
+    return { kind: tile.kind, base, top: base + (tile.raise ?? 0), channel: tile.channel };
   }
 
   cell(i: number, j: number): Cell | null {
@@ -147,12 +110,19 @@ export class World {
     const c = this.cell(i, j);
     if (!c) return false;
     if (c.kind === 'fire') return true;
-    return c.kind === 'firet' && this.timedFire(i, j);
+    return c.kind === 'firet' && this.timedPhase(i, j) < 1.7;
   }
 
-  private timedFire(i: number, j: number): boolean {
-    return (this.time + (i + j) * 0.25) % 3.2 < 1.7;
+  /** Fuego intermitente: 1.7 s encendido, apagado y aviso 0.45 s antes de volver. */
+  private timedPhase(i: number, j: number): number {
+    return (this.time + (i + j) * 0.25) % 3.2;
   }
+
+  private fireState = (c: FireCell): FireState => {
+    if (!c.timed) return 2;
+    const p = this.timedPhase(c.i, c.j);
+    return p < 1.7 ? 2 : p > 2.75 ? 1 : 0;
+  };
 
   private add(name: string, x: number, y: number, z: number, opts?: { cloneMaterials?: boolean }): THREE.Object3D {
     const o = this.assets.clone(name, opts);
@@ -171,7 +141,7 @@ export class World {
     const cIce = new THREE.Color(0xbfeaff);
     const cJump = new THREE.Color(0xf9a8d4);
     const cSwitch = new THREE.Color(0x7b7394);
-    const fireCells: { i: number; j: number; base: number; timed: boolean }[] = [];
+    const fireCells: FireCell[] = [];
 
     for (let j = 0; j < this.d; j++) {
       for (let i = 0; i < this.w; i++) {
@@ -238,14 +208,8 @@ export class World {
     }
 
     if (fireCells.length) {
-      const fireMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.92, depthWrite: false });
-      this.ownedMaterials.push(fireMat);
-      const mesh = new THREE.InstancedMesh(this.assets.geometry('flame'), fireMat, fireCells.length * 3);
-      const colors = [new THREE.Color(0xff5a1f), new THREE.Color(0xffb020), new THREE.Color(0xff7a1a)];
-      for (let k = 0; k < fireCells.length * 3; k++) mesh.setColorAt(k, colors[k % 3]);
-      mesh.frustumCulled = false;
-      this.flames = { mesh, cells: fireCells };
-      this.group.add(mesh);
+      this.fire = new FireFx(fireCells, this.assets);
+      this.group.add(this.fire.group);
     }
 
     for (const [ch, sw] of this.switches) {
@@ -356,26 +320,7 @@ export class World {
       p.scale.set(1, s, 1);
     }
 
-    if (this.flames) {
-      const m = new THREE.Matrix4();
-      const q = new THREE.Quaternion();
-      const s = new THREE.Vector3();
-      const p = new THREE.Vector3();
-      let k = 0;
-      for (const f of this.flames.cells) {
-        const on = !f.timed || this.timedFire(f.i, f.j);
-        for (let n = 0; n < 3; n++) {
-          const flick = 0.75 + 0.35 * Math.sin(this.time * 14 + f.i * 3.1 + f.j * 1.7 + n * 2.2);
-          const scale = on ? flick * (n === 0 ? 1 : 0.65) : 0.1;
-          s.set(scale, scale * (n === 0 ? 1.15 : 1), scale);
-          const ang = n * 2.1 + f.i;
-          p.set(f.i + 0.5 + (n === 0 ? 0 : Math.cos(ang) * 0.22), f.base, f.j + 0.5 + (n === 0 ? 0 : Math.sin(ang) * 0.22));
-          m.compose(p, q, s);
-          this.flames.mesh.setMatrixAt(k++, m);
-        }
-      }
-      this.flames.mesh.instanceMatrix.needsUpdate = true;
-    }
+    this.fire?.update(this.time, this.fireState);
 
     if (this.chest && this.chestLid && this.sparkles) {
       const idle = 1 - this.opening;
@@ -394,5 +339,6 @@ export class World {
       m.dispose();
     }
     this.sparkles?.geometry.dispose();
+    this.fire?.dispose();
   }
 }

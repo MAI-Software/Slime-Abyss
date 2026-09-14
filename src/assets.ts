@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+// importado como URL: Vite le pone hash al nombre, así nunca se sirve un modelo viejo de caché
+import assetsUrl from './models/assets.glb?url';
 
-/** Modelos hechos en Blender (blender/build_assets.py → public/models/assets.glb). */
+/** Modelos hechos en Blender (blender/build_assets.py → src/models/assets.glb). */
 export class Assets {
   private nodes = new Map<string, THREE.Object3D>();
 
   static async load(onProgress?: (p: number) => void): Promise<Assets> {
-    const gltf = await new GLTFLoader().loadAsync(`${import.meta.env.BASE_URL}models/assets.glb`, (e) => {
+    const gltf = await new GLTFLoader().loadAsync(assetsUrl, (e) => {
       if (e.total) onProgress?.(e.loaded / e.total);
     });
     const a = new Assets();

@@ -7,7 +7,7 @@ import '@fontsource/nunito/700.css';
 import '@fontsource/nunito/800.css';
 import './style.css';
 import { Assets } from './assets';
-import { LEVELS } from './levels';
+import { CAMPAIGN as LEVELS } from './level/campaign';
 import { World } from './world';
 import { Slime } from './slime';
 import { Input, type ControlMode } from './input';
@@ -21,7 +21,7 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getEleme
 const lowQuality = matchMedia('(pointer: coarse)').matches;
 const canvas = $<HTMLCanvasElement>('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowQuality, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, lowQuality ? 1.5 : 2));
+
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -40,7 +40,7 @@ const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 80);
 scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x4a3b6b, 0.9));
 const sun = new THREE.DirectionalLight(0xfff1dc, 1.9);
 sun.castShadow = true;
-sun.shadow.mapSize.setScalar(lowQuality ? 1024 : 2048);
+
 sun.shadow.camera.left = sun.shadow.camera.bottom = -9;
 sun.shadow.camera.right = sun.shadow.camera.top = 9;
 sun.shadow.camera.near = 1;
@@ -48,6 +48,50 @@ sun.shadow.camera.far = 40;
 sun.shadow.bias = -0.0008;
 sun.shadow.normalBias = 0.02;
 scene.add(sun, sun.target);
+
+// ------------------------------------------------------------------ calidad adaptativa
+// Si el móvil no llega a ~45 fps baja resolución y sombras; si va sobrado, las sube.
+
+const QUALITY = [
+  { ratio: 1.0, shadow: 0 },
+  { ratio: 1.25, shadow: 512 },
+  { ratio: 1.5, shadow: 1024 },
+  { ratio: 2.0, shadow: 2048 },
+] as const;
+let quality = lowQuality ? 2 : 3;
+let frameAvg = 1 / 60;
+let qualityTimer = 0;
+let fastTime = 0;
+
+function applyQuality(level: number) {
+  quality = level;
+  const q = QUALITY[level];
+  renderer.setPixelRatio(Math.min(devicePixelRatio, q.ratio));
+  resize();
+  const shadows = q.shadow > 0;
+  if (sun.castShadow !== shadows) sun.castShadow = shadows;
+  if (shadows && sun.shadow.mapSize.x !== q.shadow) {
+    sun.shadow.mapSize.setScalar(q.shadow);
+    sun.shadow.map?.dispose();
+    sun.shadow.map = null;
+  }
+}
+
+function watchQuality(dt: number) {
+  frameAvg += (dt - frameAvg) * 0.05;
+  qualityTimer += dt;
+  fastTime = frameAvg < 1 / 55 ? fastTime + dt : 0;
+  if (qualityTimer < 2) return;
+  if (frameAvg > 1 / 45 && quality > 0) {
+    applyQuality(quality - 1);
+    qualityTimer = 0;
+    frameAvg = 1 / 60;
+  } else if (fastTime > 8 && quality < QUALITY.length - 1 && !(lowQuality && quality >= 2)) {
+    applyQuality(quality + 1);
+    qualityTimer = 0;
+    fastTime = 0;
+  }
+}
 
 // raíz inclinable (efecto visual tipo Mercury) → contenido del nivel dentro
 const tiltRoot = new THREE.Group();
@@ -65,7 +109,7 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize);
-resize();
+applyQuality(quality);
 
 // ------------------------------------------------------------------ estado
 
@@ -80,10 +124,13 @@ let elapsed = 0;
 let tipIndex = 0;
 let lastAlive = 0;
 let winT = 0;
+let acc = 0;
 let assets: Assets | null = null;
 const camTarget = new THREE.Vector3();
 const camPos = new THREE.Vector3();
 const tmpCenter = new THREE.Vector3();
+const camWant = new THREE.Vector3();
+let camZoom = 1;
 
 interface Save { unlocked: number; stars: number[]; best: number[]; control?: ControlMode }
 function loadSave(): Save {
@@ -166,6 +213,7 @@ $('btn-next').addEventListener('click', () => {
   else toMenu();
 });
 document.addEventListener('visibilitychange', () => {
+  if (import.meta.env.DEV && (window as unknown as { __blubNoPause?: boolean }).__blubNoPause) return;
   if (document.hidden && mode === 'play') { mode = 'pause'; show('screen-pause'); }
 });
 
@@ -201,19 +249,36 @@ function startLevel(k: number) {
   $('life-min').style.left = `${def.minPct * 100}%`;
   input.clearQueued();
   if (input.mode === 'gyro') input.calibrate();
+  hudCache.alive = hudCache.seconds = -1;
+  acc = 0;
   mode = 'play';
   show(null);
   updateHud();
 }
 
+const hudCache = { alive: -1, seconds: -1 };
+const hudEls = {
+  fill: $('life-fill'),
+  pct: $('life-pct'),
+  timer: $('timer'),
+};
+
+/** Solo toca el DOM cuando cambia algo (evita recalcular estilos 60 veces por segundo). */
 function updateHud() {
   if (!slime || !world) return;
-  const pct = slime.aliveCount / slime.n;
-  $('life-fill').style.width = `${pct * 100}%`;
-  $('life-fill').style.background = pct < world.def.minPct + 0.1 ? 'var(--danger)' : 'var(--slime)';
-  $('life-pct').textContent = `${Math.round(pct * 100)}%`;
+  const alive = slime.aliveCount;
+  if (alive !== hudCache.alive) {
+    hudCache.alive = alive;
+    const pct = alive / slime.n;
+    hudEls.fill.style.transform = `scaleX(${pct})`;
+    hudEls.fill.style.background = pct < world.def.minPct + 0.1 ? 'var(--danger)' : 'var(--slime)';
+    hudEls.pct.textContent = `${Math.round(pct * 100)}%`;
+  }
   const s = Math.floor(elapsed);
-  $('timer').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  if (s !== hudCache.seconds) {
+    hudCache.seconds = s;
+    hudEls.timer.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  }
 }
 
 function finish(win: boolean) {
@@ -298,10 +363,10 @@ function updateCamera(dt: number) {
     camTarget.z += (tmpCenter.z - camTarget.z) * k;
   }
   const portrait = camera.aspect < 1;
-  const dist = portrait ? 1.5 : 1;
-  const want = new THREE.Vector3(camTarget.x, camTarget.y + 8.6 * dist, camTarget.z + 4.6 * dist);
-  if (camPos.lengthSq() === 0) camPos.copy(want);
-  else camPos.lerp(want, 1 - Math.exp(-dt * 5));
+  const dist = (portrait ? 1.5 : 1) * camZoom;
+  camWant.set(camTarget.x, camTarget.y + 8.6 * dist, camTarget.z + 4.6 * dist);
+  if (camPos.lengthSq() === 0) camPos.copy(camWant);
+  else camPos.lerp(camWant, 1 - Math.exp(-dt * 5));
   camera.position.copy(camPos);
   camera.lookAt(camTarget.x, camTarget.y, camTarget.z - 0.3);
 
@@ -309,15 +374,15 @@ function updateCamera(dt: number) {
   tiltRoot.position.copy(camTarget);
   content.position.copy(camTarget).negate();
   const rx = input.tiltZ * 0.1, rz = -input.tiltX * 0.1;
-  tiltRoot.rotation.x += (rx - tiltRoot.rotation.x) * 0.2;
-  tiltRoot.rotation.z += (rz - tiltRoot.rotation.z) * 0.2;
+  const tk = 1 - Math.exp(-dt * 12);
+  tiltRoot.rotation.x += (rx - tiltRoot.rotation.x) * tk;
+  tiltRoot.rotation.z += (rz - tiltRoot.rotation.z) * tk;
 
   sun.position.set(camTarget.x + 5, camTarget.y + 12, camTarget.z + 4);
   sun.target.position.copy(camTarget);
 }
 
 const clock = new THREE.Clock();
-let acc = 0;
 const FIXED = 1 / 60;
 
 function frame(dt: number) {
@@ -332,6 +397,8 @@ function frame(dt: number) {
     }
     if (steps === 3) acc = 0;
   }
+  // fracción hacia el siguiente paso de física: dibujo suave a 90/120 Hz y con frames irregulares
+  const alpha = mode === 'play' ? Math.min(acc / FIXED, 1) : 1;
   if (mode === 'winning' && world && slime) {
     winT += dt;
     world.opening = Math.min(1, winT / 0.6);
@@ -342,11 +409,15 @@ function frame(dt: number) {
   } else if (world && mode !== 'play') world.update(dt * 0.3, slime?.switchCounts ?? { A: 0, B: 0 });
   fx.update(dt);
   updateCamera(dt);
-  slime?.render(dt, input.tiltX, input.tiltZ);
+  slime?.render(dt, alpha, input.tiltX, input.tiltZ);
   renderer.render(scene, camera);
 }
 
-renderer.setAnimationLoop(() => frame(Math.min(clock.getDelta(), 0.1)));
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.1);
+  frame(dt);
+  if (mode === 'play') watchQuality(dt);
+});
 
 if (import.meta.env.DEV) {
   // depuración: avanzar la simulación sin requestAnimationFrame
@@ -355,6 +426,8 @@ if (import.meta.env.DEV) {
       advance(seconds: number) { for (let t = 0; t < seconds; t += FIXED) frame(FIXED); },
       start: (k: number) => startLevel(k),
       hurt: () => { const g = slime?.groups[0]; if (g) slime!.hurts.push({ x: g.cx, z: g.cz }); },
+      zoom: (k: number) => { camZoom = k; camPos.set(0, 0, 0); },
+      quality: () => ({ quality, fps: Math.round(1 / frameAvg) }),
       state: () => ({ mode, alive: slime?.aliveCount, groups: slime?.groups.map((g) => g.ids.length), lead: slime?.groups[0] && { x: slime.groups[0].cx.toFixed(2), y: slime.groups[0].cy.toFixed(2), z: slime.groups[0].cz.toFixed(2) } }),
     },
   });

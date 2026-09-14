@@ -1,0 +1,50 @@
+{
+  "format": 1,
+  "id": "divide-y-venceras",
+  "name": "Divide y vencerás",
+  "count": 50,
+  "minPct": 0.35,
+  "need": {
+    "A": 15
+  },
+  "tiles": [
+    "..########..",
+    "..#000T00#..",
+    "..#000000#..",
+    "..###DD###..",
+    "..#000000#..",
+    "..#SS0000#..",
+    "..#SS0000#..",
+    "..#000000#..",
+    "..#000000#..",
+    "..#00P000#..",
+    "..########.."
+  ],
+  "heights": [
+    "003333333300",
+    "003333333300",
+    "003333333300",
+    "003333333300",
+    "003333333300",
+    "003003333300",
+    "003003333300",
+    "003333333300",
+    "003333333300",
+    "003333333300",
+    "003333333300"
+  ],
+  "tips": [
+    {
+      "z": 10,
+      "text": "La puerta necesita peso sobre el interruptor"
+    },
+    {
+      "z": 7.5,
+      "text": "Pulsa DIVIDIR antes del foso: solo debe caer una parte"
+    },
+    {
+      "z": 3.5,
+      "text": "Mantén UNIR para juntar los trozos cercanos"
+    }
+  ]
+}

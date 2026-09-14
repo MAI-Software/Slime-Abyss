@@ -16,7 +16,10 @@ npm run build
 Controles de prueba en ordenador: flechas/WASD inclinar, espacio saltar, Q dividir, E unir.
 
 ## Estructura
-- `src/levels.ts` niveles en ASCII (leyenda en el archivo)
+- `src/level/format.ts` formato de nivel (JSON versionado), paleta de casillas `TILES`, validación, códigos para compartir
+- `src/level/campaign/*.json` niveles del juego
+- `src/blob-mesh.ts` superficie del limo (metaballs que solo procesan celdas cercanas)
+- `src/fire.ts` fuego con shader, resplandor y chispas
 - `src/world.ts` bloques, colisiones, fuego, interruptores, puertas, tesoro
 - `src/slime.ts` física del limo, dividir/unir, render metaball y ojos
 - `src/input.ts` giroscopio + botones
@@ -29,7 +32,7 @@ se hacen en Blender. El cuerpo del limo es procedural (metaballs) porque tiene q
 - Regenerar desde cero: `"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --factory-startup -P blender/build_assets.py`
   (sobrescribe `blender/assets.blend`)
 - Tras retocar `blender/assets.blend` a mano: `"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b blender/assets.blend -P blender/export_assets.py`
-- Salida: `public/models/assets.glb`. El juego busca los objetos por nombre: no renombrar.
+- Salida: `src/models/assets.glb`. El juego busca los objetos por nombre: no renombrar.
 
 ## Controles
 Joystick virtual (por defecto) o giroscopio; se elige en el menú de niveles o en pausa.
@@ -37,3 +40,15 @@ Joystick virtual (por defecto) o giroscopio; se elige en el menú de niveles o e
 ## Camino a Play Store
 - Todo va empaquetado (fuentes con @fontsource, modelos locales): funciona sin conexión.
 - Pendiente: Capacitor Android, icono/splash, orientación horizontal fija, firma y AAB.
+
+## Niveles y futuro creador de niveles
+Cada nivel es un JSON (`LevelData`, `format: 1`) con dos capas del mismo tamaño:
+`tiles` (un carácter por casilla, ver `TILES`) y `heights` (dígito 0-9, altura = dígito × 0,5).
+El editor solo necesita: paleta desde `TILES`, pintar ambas capas, `validateLevel()` antes de guardar,
+y `toShareCode()` / `decodeLevel()` para compartir. `createEmptyLevel()` y `autoWallHeights()` ayudan a empezar.
+
+## Rendimiento
+- Física a 60 Hz fija con interpolación al dibujar (suave en pantallas de 90/120 Hz).
+- Sin basura por frame en física/render (evita tirones del recolector).
+- Calidad adaptativa: si baja de ~45 fps reduce resolución y sombras; si va sobrado las sube.
+- En desarrollo: `__blub.quality()` muestra nivel de calidad y fps.

@@ -1,12 +1,12 @@
-"""
-Genera todos los modelos del juego en Blender y los exporta a public/models/assets.glb.
+﻿"""
+Genera todos los modelos del juego en Blender y los exporta a src/models/assets.glb.
 
 Uso (desde la carpeta del proyecto):
   "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --factory-startup -P blender/build_assets.py
 
 Resultado:
   blender/assets.blend      -> archivo editable (retocar aquí y exportar con export_assets.py)
-  public/models/assets.glb  -> lo que carga el juego
+  src/models/assets.glb  -> lo que carga el juego
 
 Convenciones: Z arriba en Blender (el exportador lo pasa a Y arriba), 1 unidad = 1 bloque,
 las caras y frentes miran a -Y (hacia la cámara del juego). El juego busca los objetos por nombre.
@@ -20,7 +20,7 @@ import bpy
 from mathutils import Matrix, Vector
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-OUT_GLB = os.path.normpath(os.path.join(ROOT, "..", "public", "models", "assets.glb"))
+OUT_GLB = os.path.normpath(os.path.join(ROOT, "..", "src", "models", "assets.glb"))
 OUT_BLEND = os.path.join(ROOT, "assets.blend")
 
 # ------------------------------------------------------------------ escena limpia
@@ -70,7 +70,7 @@ M = {
     "gold": material("Gold", "f5b301", 0.3, 0.8, emit="7a4a00", strength=0.4),
     "white": material("EyeWhite", "ffffff", 0.3),
     "black": material("Ink", "0f172a", 0.4),
-    "mouth": material("Mouth", "5a1020", 0.5),
+    "mouth": material("Mouth", "3b0a1a", 0.5),
     "tongue": material("Tongue", "ff6b8a", 0.5),
     "blush": material("Blush", "ff8fb8", 0.8),
     "sweat": material("Sweat", "bfe6ff", 0.2),
@@ -134,20 +134,21 @@ def cylinder(bm, radius, depth, center=(0, 0, 0), segments=20, rot=None):
     )["verts"]
 
 
-def tube(name, points, radius, mat, parent=None, loc=(0, 0, 0)):
+def tube(name, points, radius, mat, parent=None, loc=(0, 0, 0), poly=False):
     """Línea gruesa redondeada (para ojos y bocas dibujadas). Puntos en el plano XZ."""
     cu = bpy.data.curves.new(name + "_curve", "CURVE")
     cu.dimensions = "3D"
     cu.bevel_depth = radius
     cu.bevel_resolution = 3
     cu.use_fill_caps = True
-    sp = cu.splines.new("NURBS")
+    sp = cu.splines.new("POLY" if poly else "NURBS")
     sp.points.add(len(points) - 1)
     for p, (x, z) in zip(sp.points, points):
         p.co = (x, 0.0, z, 1.0)
-    sp.use_endpoint_u = True
-    sp.order_u = 3
-    sp.resolution_u = 6
+    if not poly:
+        sp.use_endpoint_u = True
+        sp.order_u = 3
+        sp.resolution_u = 6
     tmp = bpy.data.objects.new(name + "_tmp", cu)
     SCENE.objects.link(tmp)
     dg = bpy.context.evaluated_depsgraph_get()
@@ -190,22 +191,36 @@ mesh_object("block_column", bm, M["block"])
 
 # ================================================================== FUEGO
 
+# Llama: gota alta con muchos anillos para que el shader del juego la ondule y la anime.
 bm = bmesh.new()
-bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=6, radius=0.2)
+bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=14, radius=0.2)
 for v in bm.verts:
     z = v.co.z
     if z > 0:
-        t = z / 0.2
-        v.co.x *= 1 - t * 0.85
-        v.co.y *= 1 - t * 0.85
-        v.co.z = z * 3.0
-    v.co.z += 0.2
+        t = min(z / 0.2, 1.0)
+        k = max(1 - t, 0.0) ** 1.4  # punta afilada
+        v.co.x *= 0.15 + 0.85 * k
+        v.co.y *= 0.15 + 0.85 * k
+        v.co.z = z * 3.2
+    else:
+        v.co.z *= 0.6
+    v.co.z += 0.12
 mesh_object("flame", bm, M["fire"], smooth=True)
 
+# Resplandor sobre la rejilla (el juego le pone un degradado radial aditivo).
 bm = bmesh.new()
-for k in (-0.3, 0.0, 0.3):
-    box(bm, (0.9, 0.06, 0.05), (0, k, 0.025))
-    box(bm, (0.06, 0.9, 0.05), (k, 0, 0.025))
+bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=24, radius=0.5)
+bmesh.ops.translate(bm, vec=(0, 0, 0.012), verts=bm.verts)
+mesh_object("fire_glow", bm, M["fire"])
+
+# Brasero: marco + rejilla.
+bm = bmesh.new()
+for k in (-0.22, 0.0, 0.22):
+    box(bm, (0.84, 0.05, 0.04), (0, k, 0.03))
+    box(bm, (0.05, 0.84, 0.04), (k, 0, 0.03))
+for sx, sy, px, py in ((0.94, 0.08, 0, 0.43), (0.94, 0.08, 0, -0.43), (0.08, 0.94, 0.43, 0), (0.08, 0.94, -0.43, 0)):
+    box(bm, (sx, sy, 0.08), (px, py, 0.04))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.008, segments=1, affect="EDGES")
 mesh_object("fire_grate", bm, M["iron"])
 
 # ================================================================== PLATAFORMA DE SALTO
@@ -275,68 +290,79 @@ bmesh.ops.scale(bm, vec=(1, 1, 0.82), verts=bm.verts)
 mesh_object("chest_lid_trim", bm, M["gold"], smooth=True, parent=lid)
 
 # ================================================================== CARA DEL LIMO
-# Todo mira a -Y. El juego coloca cada pieza; aquí solo importa la forma.
+# Estilo kawaii. Todo mira a -Y. El juego coloca cada pieza; aquí solo importa la forma.
 
-# Ojo normal: blanco + pupila (con brillo) que el juego desplaza.
-eye = empty("face_eye_open")
-bm = bmesh.new()
-ellipsoid(bm, (0.1, 0.05, 0.14))
-mesh_object("face_eye_white", bm, M["white"], smooth=True, parent=eye)
-bm = bmesh.new()
-ellipsoid(bm, (0.058, 0.03, 0.08))
-pupil = mesh_object("face_eye_pupil", bm, M["black"], smooth=True, parent=eye, loc=(0, -0.035, -0.01))
-bm = bmesh.new()
-ellipsoid(bm, (0.02, 0.012, 0.024), (0, 0, 0), 10, 6)
-mesh_object("face_eye_shine", bm, M["white"], smooth=True, parent=pupil, loc=(0.02, -0.028, 0.035))
 
-# Ojo de dolor ">" (el juego lo refleja para el ojo derecho "<").
-tube("face_eye_pain", [(-0.055, 0.06), (0.045, 0.0), (-0.055, -0.06)], 0.022, M["black"])
+def flat_shape(name, points, depth, mat, front=0.0, parent=None, loc=(0, 0, 0)):
+    """Silueta plana (puntos en XZ) con un poco de grosor hacia atrás (+Y)."""
+    bm = bmesh.new()
+    verts = [bm.verts.new((x, front, z)) for x, z in points]
+    face = bm.faces.new(verts)
+    ext = bmesh.ops.extrude_face_region(bm, geom=[face], use_keep_orig=True)
+    moved = [e for e in ext["geom"] if isinstance(e, bmesh.types.BMVert)]
+    bmesh.ops.translate(bm, vec=(0, depth, 0), verts=moved)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    return mesh_object(name, bm, mat, parent=parent, loc=loc)
+
+
+def ellipse_pts(rx, rz, cx=0.0, cz=0.0, n=24):
+    return [(cx + rx * math.cos(2 * math.pi * i / n), cz + rz * math.sin(2 * math.pi * i / n)) for i in range(n)]
+
+
+def teardrop(name, radius, mat):
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=10, v_segments=8, radius=radius)
+    for v in bm.verts:
+        if v.co.z > 0:
+            t = v.co.z / radius
+            v.co.x *= 1 - t * 0.9
+            v.co.y *= 1 - t * 0.9
+            v.co.z *= 2.2
+    bmesh.ops.scale(bm, vec=(1, 0.5, 1), verts=bm.verts)
+    return mesh_object(name, bm, mat, smooth=True)
+
+
+# Ojo: óvalo negro brillante con dos reflejos.
+eye = empty("face_eye")
+bm = bmesh.new()
+ellipsoid(bm, (0.062, 0.03, 0.082), (0, 0, 0), 20, 12)
+mesh_object("face_eye_ball", bm, M["black"], smooth=True, parent=eye)
+bm = bmesh.new()
+ellipsoid(bm, (0.024, 0.01, 0.028), (0, 0, 0), 12, 8)
+mesh_object("face_eye_shine", bm, M["white"], smooth=True, parent=eye, loc=(-0.02, -0.026, 0.03))
+bm = bmesh.new()
+ellipsoid(bm, (0.011, 0.008, 0.011), (0, 0, 0), 10, 6)
+mesh_object("face_eye_shine2", bm, M["white"], smooth=True, parent=eye, loc=(0.022, -0.026, -0.025))
+
+# Ojo de dolor ">" con esquina marcada (el juego lo refleja para "<").
+tube("face_eye_pain", [(-0.04, 0.045), (0.035, 0.0), (-0.04, -0.045)], 0.017, M["black"], poly=True)
 
 # Ojo feliz "^".
-tube("face_eye_happy", [(-0.065, -0.025), (-0.03, 0.03), (0.0, 0.045), (0.03, 0.03), (0.065, -0.025)], 0.022,
+tube("face_eye_happy", [(-0.05, -0.02), (-0.025, 0.025), (0.0, 0.04), (0.025, 0.025), (0.05, -0.02)], 0.017,
      M["black"])
 
-# Boca sonriente.
-tube("face_mouth_smile", [(x / 4 * 0.075, 0.03 * (x / 4) ** 2) for x in range(-4, 5)], 0.018, M["black"])
+# Boquita sonriente.
+tube("face_mouth_smile", [(-0.035, 0.012), (-0.018, -0.008), (0.0, -0.013), (0.018, -0.008), (0.035, 0.012)],
+     0.012, M["black"])
 
-# Boca abierta de alegría: hueco oscuro + lengua.
+# Boca abierta en "D" con lengua.
 mouth_open = empty("face_mouth_open")
-bm = bmesh.new()
-ellipsoid(bm, (0.075, 0.03, 0.06))
-bmesh.ops.scale(bm, vec=(1, 1, 1), verts=bm.verts)
-for v in bm.verts:  # media luna: parte de arriba plana
-    if v.co.z > 0.012:
-        v.co.z = 0.012 + (v.co.z - 0.012) * 0.2
-mesh_object("face_mouth_open_hole", bm, M["mouth"], smooth=True, parent=mouth_open)
-bm = bmesh.new()
-ellipsoid(bm, (0.04, 0.02, 0.022))
-mesh_object("face_mouth_open_tongue", bm, M["tongue"], smooth=True, parent=mouth_open, loc=(0, -0.018, -0.03))
+d_shape = [(0.05 * math.cos(math.pi * i / 16), -0.055 * math.sin(math.pi * i / 16)) for i in range(17)]
+flat_shape("face_mouth_open_hole", d_shape, 0.01, M["mouth"], parent=mouth_open)
+flat_shape("face_mouth_open_tongue", ellipse_pts(0.028, 0.015, 0, -0.038), 0.001, M["tongue"], front=-0.002,
+           parent=mouth_open)
 
 # Boca de sorpresa "o".
-bm = bmesh.new()
-ellipsoid(bm, (0.035, 0.025, 0.045))
-mesh_object("face_mouth_o", bm, M["mouth"], smooth=True)
+flat_shape("face_mouth_o", ellipse_pts(0.022, 0.028), 0.01, M["mouth"])
 
-# Boca de dolor en zigzag.
-tube("face_mouth_pain", [(-0.08, 0.0), (-0.053, 0.022), (-0.027, -0.012), (0.0, 0.022), (0.027, -0.012),
-                          (0.053, 0.022), (0.08, 0.0)], 0.017, M["black"])
+# Boca de dolor ondulada.
+tube("face_mouth_pain", [(-0.05, 0.0), (-0.033, 0.014), (-0.017, -0.01), (0.0, 0.014), (0.017, -0.01),
+                          (0.033, 0.014), (0.05, 0.0)], 0.011, M["black"])
 
-# Mofletes.
-bm = bmesh.new()
-ellipsoid(bm, (0.055, 0.008, 0.032), (0, 0, 0), 14, 6)
-mesh_object("face_blush", bm, M["blush"], smooth=True)
-
-# Gota de sudor (dolor).
-bm = bmesh.new()
-bmesh.ops.create_uvsphere(bm, u_segments=10, v_segments=8, radius=0.04)
-for v in bm.verts:
-    if v.co.z > 0:
-        t = v.co.z / 0.04
-        v.co.x *= 1 - t * 0.9
-        v.co.y *= 1 - t * 0.9
-        v.co.z *= 2.2
-bmesh.ops.scale(bm, vec=(1, 0.5, 1), verts=bm.verts)
-mesh_object("face_sweat", bm, M["sweat"], smooth=True)
+# Mofletes, sudor y lágrima.
+flat_shape("face_blush", ellipse_pts(0.034, 0.02), 0.004, M["blush"])
+teardrop("face_sweat", 0.03, M["sweat"])
+teardrop("face_tear", 0.016, M["sweat"])
 
 # ================================================================== guardar y exportar
 
