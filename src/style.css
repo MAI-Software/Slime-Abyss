@@ -197,13 +197,17 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
 .progress > i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
 .lock-ico { position: absolute; top: 14px; right: 14px; width: 26px; height: 26px; }
 
+/* 10 pisos por capítulo: siempre 2 filas de 5 */
 .floor-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 14px;
-  width: min(900px, 100%);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  width: min(960px, 100%);
 }
-.floor-card { min-height: 112px; align-items: flex-start; }
+.floor-card { min-height: 108px; min-width: 0; align-items: flex-start; padding: 12px 12px; }
+.floor-card .name { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.floor-card .meta { flex-wrap: wrap; gap: 4px 10px; }
+.floor-card .lock-ico { top: 10px; right: 10px; width: 22px; height: 22px; }
 .floor-card .num { font-family: 'Fredoka', sans-serif; font-size: 15px; font-weight: 700; color: var(--slime-dark); }
 .floor-card .name { font-weight: 800; font-size: 16px; line-height: 1.2; }
 
@@ -529,7 +533,13 @@ body[data-control="gyro"] #joy-zone { display: none; }
   .breakdown-card .big-btn { min-width: 0; min-height: 48px; font-size: 18px; padding: 8px 18px; }
   .settings-panel { padding: 2px 16px; }
   .setting-row { padding: 6px 0; }
-  .floor-card { min-height: 96px; }
+  .floor-grid { gap: 8px; }
+  .floor-card { min-height: 0; padding: 8px 10px; gap: 3px; }
+  .floor-card .num { font-size: 13px; }
+  .floor-card .name { font-size: 14px; }
+  .floor-card .meta { font-size: 14px; }
+  .floor-card .star { width: 15px; height: 15px; }
+  .floor-card .coin-ico { width: 16px; height: 16px; }
 }
 
 /* ---------- menú principal: accesos secundarios ---------- */
