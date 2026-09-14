@@ -37,6 +37,10 @@ se hacen en Blender. El cuerpo del limo es procedural (metaballs) porque tiene q
 - Texturas (losas, ladrillo, piedra): `"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --factory-startup -P blender/build_textures.py`
   → `src/textures/*.png` (256 px, repetibles, en gris: el juego las tiñe con el color de cada bloque). Se pueden repintar a mano.
 
+## Menú
+Modo Historia · Mi limo (accesorios) · Tienda (con las monedas conseguidas) · Perfil (Google) · Opciones (idioma, control, sonido, vibración, nivel de pruebas).
+Idiomas: castellano, inglés, francés, alemán e italiano (`src/i18n/`; castellano es la base y todas las traducciones tienen las mismas claves).
+
 ## Cómo se juega
 - Solo en horizontal. Joystick virtual (por defecto) o giroscopio, sin botones de acción.
   El mando fija una velocidad objetivo: arranque y frenado rápidos (el hielo resbala).
@@ -49,6 +53,24 @@ se hacen en Blender. El cuerpo del limo es procedural (metaballs) porque tiene q
   Solo las puertas secretas piden peso (`need`) y guardan un tesoro secreto (`G`, gema) opcional que no da estrella.
 - Plataformas de salto: lanzan todo el trozo que está sobre la tapa o pegado a ella; solo se quedan gotas lejanas.
 - Si el jugador agita mucho el mando, el limo se marea (ojos en espiral).
+- No hay mínimo para completar un piso: solo se pierde si no queda nada de limo. Lo conservado cuenta para la 3ª estrella.
+- Capítulos de 10 pisos. Completar uno al 100 % (todas las estrellas y secretos) regala un accesorio de cabeza, solo visual.
+
+## Reacciones
+| Casilla | Qué hace |
+|---|---|
+| `O` botella de aceite | el limo se vuelve aceite (color ámbar) |
+| `F`/`X` fuego | limo normal: se evapora · con aceite: arde 12 s sin daño · congelado: se derrite |
+| `W` plantas / `Z` bloque de hielo | el limo en llamas los elimina al tocarlos |
+| `^ v < >` ventilador | corriente de 9 casillas: deshace el limo normal (sobre el vacío lo hunde) |
+| `Q` aire frío | congela 30 s: rígido, no gotea y flota entero sobre las corrientes · apaga las llamas |
+
+## Inicio de sesión con Google (Firebase)
+Preparado pero desactivado hasta configurar un proyecto:
+1. Firebase Console → nuevo proyecto → app web.
+2. Authentication → activar Google; en Dominios autorizados añadir el dominio de Cloudflare Pages.
+3. Copiar la config web a `.env.local` (ver `.env.example`) y a las variables de entorno de Cloudflare Pages.
+Firebase se carga bajo demanda. En la futura app Android hará falta un plugin nativo de Firebase Auth para Capacitor.
 
 ## Camino a Play Store
 - Todo va empaquetado (fuentes con @fontsource, modelos locales): funciona sin conexión.

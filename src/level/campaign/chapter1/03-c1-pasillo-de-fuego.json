@@ -3,7 +3,6 @@
   "id": "c1-pasillo-de-fuego",
   "name": "Pasillo de fuego",
   "count": 80,
-  "minPct": 0.35,
   "keepPct": 0.65,
   "tips": [
     {

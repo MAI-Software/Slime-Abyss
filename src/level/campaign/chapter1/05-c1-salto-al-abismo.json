@@ -3,7 +3,6 @@
   "id": "c1-salto-al-abismo",
   "name": "Salto al abismo",
   "count": 80,
-  "minPct": 0.35,
   "keepPct": 0.65,
   "need": {
     "B": 12

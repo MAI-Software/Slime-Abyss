@@ -7,22 +7,32 @@ import '@fontsource/nunito/700.css';
 import '@fontsource/nunito/800.css';
 import './style.css';
 import { Assets } from './assets';
-import { CHAPTERS, PRACTICE, UPCOMING } from './level/campaign';
+import { CHAPTERS, MENU_STAGE, PRACTICE, UPCOMING } from './level/campaign';
 import { DEFAULT_KEEP_PCT, starsOf, type ChapterDef, type FloorResult, type LevelData } from './level/format';
 import { World } from './world';
-import { Slime } from './slime';
+import { Slime, type SlimeState } from './slime';
 import { Input, type ControlMode } from './input';
 import { Fx } from './fx';
 import { LiquidGauge } from './hud-liquid';
 import { setMuted, sfx, unlockAudio } from './audio';
+import { LANGS, applyDom, detectLang, getLang, levelName, levelTip, setLang, t, type Lang } from './i18n';
+import { loadSave, writeSave } from './save';
+import { ACCESSORIES } from './cosmetics';
+import { firebaseConfigured, signInWithGoogle, signOutPlayer, watchPlayer, type Player } from './firebase';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
+const save = loadSave();
+const store = () => writeSave(save);
+
 /** Vibración corta; el navegador solo la permite tras un toque del usuario. */
 function buzz(pattern: number | number[]) {
+  if (!save.vibration) return;
   if ((navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation?.hasBeenActive === false) return;
   navigator.vibrate?.(pattern);
 }
+
+setLang(save.lang ?? detectLang());
 
 // ------------------------------------------------------------------ render base
 
@@ -55,9 +65,9 @@ function skyTexture(): THREE.CanvasTexture {
   grad.addColorStop(1, '#0e0a22');
   g.fillStyle = grad;
   g.fillRect(0, 0, 32, 256);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
 const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 80);
@@ -138,27 +148,20 @@ function resize() {
 addEventListener('resize', resize);
 applyQuality(quality);
 
-// ------------------------------------------------------------------ guardado
+// ------------------------------------------------------------------ progreso
 
-interface FloorSave { done: boolean; allCoins: boolean; kept: boolean; bestCoins: number; bestPct: number; bestTime: number; secret?: boolean }
-interface Save { v: 2; control: ControlMode; sound: boolean; floors: Record<string, FloorSave> }
-
-function loadSave(): Save {
-  try {
-    const s = JSON.parse(localStorage.getItem('blub-save') ?? '');
-    if (s?.v === 2) return s;
-    if (s?.control) return { v: 2, control: s.control, sound: true, floors: {} };
-  } catch { /* primera vez */ }
-  return { v: 2, control: 'joystick', sound: true, floors: {} };
-}
-const save = loadSave();
-function writeSave() {
-  try { localStorage.setItem('blub-save', JSON.stringify(save)); } catch { /* modo privado */ }
-}
 const floorSave = (id: string) => save.floors[id];
 const floorStars = (id: string) => (save.floors[id] ? starsOf(save.floors[id]) : 0);
 const floorUnlocked = (ch: ChapterDef, k: number) => k === 0 || !!floorSave(ch.floors[k - 1].id)?.done;
 const chapterDone = (ch: ChapterDef) => ch.floors.every((f) => floorSave(f.id)?.done);
+const coinsTotalOf = (lv: LevelData) => lv.tiles.join('').split('C').length - 1;
+const gemsTotalOf = (lv: LevelData) => lv.tiles.join('').split('G').length - 1;
+/** 100 %: todas las estrellas y todos los secretos del capítulo. */
+const chapterPerfect = (ch: ChapterDef) => ch.floors.every((f) => floorStars(f.id) === 3 && (gemsTotalOf(f) === 0 || !!floorSave(f.id)?.secret));
+const coinsEarned = () => Object.values(save.floors).reduce((a, f) => a + f.bestCoins, 0);
+const wallet = () => Math.max(0, coinsEarned() - save.spent);
+const chapterTitle = (ch: ChapterDef) => t('story.chapter', { n: CHAPTERS.indexOf(ch) + 1 });
+const chapterSubtitle = (ch: ChapterDef) => t(`chapters.${ch.id}`);
 
 // ------------------------------------------------------------------ estado
 
@@ -178,9 +181,15 @@ let lastAlive = 0;
 let winT = 0;
 let acc = 0;
 let menuAngle = 0;
+let menuZoom = 1;
+let menuShift = 0;
+let player: Player | null = null;
+/** recompensa ganada en el último piso, pendiente de mostrar */
+let pendingReward: { item: string; then: () => void } | null = null;
 const camTarget = new THREE.Vector3();
 const camPos = new THREE.Vector3();
 const tmpCenter = new THREE.Vector3();
+const tmpFx = new THREE.Vector3();
 const camWant = new THREE.Vector3();
 const lookAhead = new THREE.Vector2();
 let camZoom = 1;
@@ -189,22 +198,28 @@ let camZoom = 1;
 
 const STAR_PATH = 'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z';
 const starSvg = (on: boolean) => `<svg class="star${on ? ' on' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR_PATH}"/></svg>`;
-const starsHtml = (n: number) => `<span class="star-row" aria-label="${n} de 3 estrellas">${[0, 1, 2].map((k) => starSvg(k < n)).join('')}</span>`;
+const starsHtml = (n: number) => `<span class="star-row" role="img" aria-label="${t('common.stars', { n })}">${[0, 1, 2].map((k) => starSvg(k < n)).join('')}</span>`;
 const coinSvg = '<svg class="ico coin-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/></svg>';
+const gemSvg = '<svg class="gem-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20"/></svg>';
 const lockSvg = '<svg class="ico lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
 const checkSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 const crossSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
-const fmtTime = (t: number) => { const s = Math.floor(t); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
-const coinsTotalOf = (lv: LevelData) => lv.tiles.join('').split('C').length - 1;
-const gemsTotalOf = (lv: LevelData) => lv.tiles.join('').split('G').length - 1;
-const gemSvg = '<svg class="gem-ico" viewBox="0 0 24 24" aria-label="Tesoro secreto"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20"/></svg>';
+const STATE_ICONS: Record<Exclude<SlimeState, 'normal'>, string> = {
+  oiled: '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
+  burning: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  frozen: '<line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/>',
+};
+const fmtTime = (sec: number) => { const s = Math.floor(sec); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
 // ------------------------------------------------------------------ pantallas
 
-const SCREENS = ['main', 'story', 'chapter', 'settings', 'pause', 'result', 'breakdown'] as const;
+const SCREENS = ['main', 'story', 'chapter', 'myslime', 'shop', 'profile', 'options', 'pause', 'result', 'breakdown', 'reward'] as const;
 type ScreenId = (typeof SCREENS)[number];
+let currentScreen: ScreenId | null = 'main';
 
 function show(id: ScreenId | null) {
+  currentScreen = id;
   for (const s of SCREENS) {
     const el = $(`screen-${s}`);
     const visible = s === id;
@@ -216,56 +231,78 @@ function show(id: ScreenId | null) {
     el.hidden = !visible;
   }
   $('hud').hidden = !(mode === 'play' || mode === 'pause' || mode === 'winning');
+  // en Mi limo y Tienda la cámara del menú se acerca al limo
+  menuZoom = id === 'myslime' || id === 'shop' ? 0.62 : 1;
+}
+
+function openScreen(id: ScreenId) {
+  if (id === 'story') renderStory();
+  if (id === 'shop') renderShop();
+  if (id === 'myslime') renderMySlime();
+  if (id === 'profile') renderProfile();
+  if (id === 'options') renderOptions();
+  show(id);
 }
 
 document.querySelectorAll<HTMLButtonElement>('[data-back]').forEach((b) => {
-  b.addEventListener('click', () => {
-    sfx.click();
-    const to = b.dataset.back as ScreenId;
-    if (to === 'story') renderStory();
-    show(to);
-  });
+  b.addEventListener('click', () => { sfx.click(); openScreen(b.dataset.back as ScreenId); });
+});
+document.querySelectorAll<HTMLButtonElement>('[data-go]').forEach((b) => {
+  b.addEventListener('click', () => { unlockAudio(); sfx.click(); openScreen(b.dataset.go as ScreenId); });
 });
 
 function toast(text: string, ms = 3200) {
-  const t = $('toast');
-  t.textContent = text;
-  t.hidden = false;
-  t.style.animation = 'none';
-  void t.offsetWidth;
-  t.style.animation = '';
+  const el = $('toast');
+  el.textContent = text;
+  el.hidden = false;
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = '';
   clearTimeout((toast as unknown as { h?: number }).h);
-  (toast as unknown as { h?: number }).h = window.setTimeout(() => (t.hidden = true), ms);
+  (toast as unknown as { h?: number }).h = window.setTimeout(() => (el.hidden = true), ms);
 }
+
+/** Vuelve a pintar la pantalla abierta (p. ej. al cambiar de idioma). */
+function refreshScreen() {
+  applyDom();
+  if (currentScreen && !['pause', 'result', 'breakdown', 'reward'].includes(currentScreen)) openScreen(currentScreen);
+  if (mode === 'menu') $('load-hint').textContent = assets ? t('menu.hint') : '';
+}
+
+// ------------------------------------------------------------------ historia
 
 function renderStory() {
   const list = $('chapter-list');
   list.innerHTML = '';
-  for (const ch of CHAPTERS) {
+  CHAPTERS.forEach((ch) => {
     const stars = ch.floors.reduce((a, f) => a + floorStars(f.id), 0);
     const coins = ch.floors.reduce((a, f) => a + (floorSave(f.id)?.bestCoins ?? 0), 0);
     const coinsTotal = ch.floors.reduce((a, f) => a + coinsTotalOf(f), 0);
     const b = document.createElement('button');
     b.className = 'card chapter-card';
-    b.innerHTML = `<span class="eyebrow">${ch.name}</span><span class="title">${ch.subtitle}</span>
+    b.innerHTML = `<span class="eyebrow">${chapterTitle(ch)}</span><span class="title">${chapterSubtitle(ch)}</span>
       <span class="meta"><span class="m">${starSvg(true)} ${stars}/${ch.floors.length * 3}</span><span class="m">${coinSvg} ${coins}/${coinsTotal}</span></span>
       <span class="progress"><i style="width:${(stars / (ch.floors.length * 3)) * 100}%"></i></span>`;
     b.addEventListener('click', () => { sfx.click(); openChapter(ch); });
     list.appendChild(b);
-  }
-  for (const up of UPCOMING) {
+  });
+  UPCOMING.forEach((_, k) => {
     const b = document.createElement('button');
     b.className = 'card chapter-card locked';
     b.disabled = true;
-    b.innerHTML = `${lockSvg}<span class="eyebrow">${up.name}</span><span class="title">${up.subtitle}</span>`;
+    b.innerHTML = `${lockSvg}<span class="eyebrow">${t('story.chapter', { n: CHAPTERS.length + k + 1 })}</span><span class="title">${t('common.comingSoon')}</span>`;
     list.appendChild(b);
-  }
+  });
 }
 
 function openChapter(ch: ChapterDef) {
   chapter = ch;
-  $('chapter-title').textContent = ch.name;
-  $('chapter-sub').textContent = ch.subtitle;
+  $('chapter-title').textContent = chapterTitle(ch);
+  $('chapter-sub').textContent = chapterSubtitle(ch);
+  const rewardEl = $('chapter-reward');
+  rewardEl.textContent = ch.reward
+    ? save.rewards.includes(ch.id) ? t('story.rewardOwned') : t('story.reward', { item: t(`items.${ch.reward}`) })
+    : '';
   const list = $('floor-list');
   list.innerHTML = '';
   ch.floors.forEach((f, k) => {
@@ -274,8 +311,9 @@ function openChapter(ch: ChapterDef) {
     const b = document.createElement('button');
     b.className = `card floor-card${unlocked ? '' : ' locked'}`;
     b.disabled = !unlocked;
-    b.innerHTML = `${unlocked ? '' : lockSvg}<span class="num">Piso ${k + 1}</span><span class="name">${unlocked ? f.name : 'Bloqueado'}</span>
-      ${unlocked ? `<span class="meta">${starsHtml(floorStars(f.id))}<span class="m">${coinSvg} ${s?.bestCoins ?? 0}/${coinsTotalOf(f)}</span></span>` : ''}`;
+    const gem = gemsTotalOf(f) > 0 && s?.secret ? ` ${gemSvg}` : '';
+    b.innerHTML = `${unlocked ? '' : lockSvg}<span class="num">${t('story.floor', { n: k + 1 })}</span><span class="name">${unlocked ? levelName(f) : t('common.locked')}</span>
+      ${unlocked ? `<span class="meta">${starsHtml(floorStars(f.id))}<span class="m">${coinSvg} ${s?.bestCoins ?? 0}/${coinsTotalOf(f)}${gem}</span></span>` : ''}`;
     b.addEventListener('click', () => { sfx.click(); startFloor(ch, k); });
     list.appendChild(b);
   });
@@ -284,44 +322,165 @@ function openChapter(ch: ChapterDef) {
 }
 
 $('btn-chapter-breakdown').addEventListener('click', () => { sfx.click(); if (chapter) showBreakdown(chapter); });
+$('btn-story').addEventListener('click', () => {
+  unlockAudio();
+  sfx.click();
+  if (input.mode === 'gyro') input.requestPermission();
+  input.requestFullscreen();
+  openScreen('story');
+});
 
-// ------------------------------------------------------------------ ajustes
+// ------------------------------------------------------------------ tienda y Mi limo
+
+function equip(id: string | null) {
+  save.equipped = id;
+  store();
+  slime?.setHat(id);
+}
+
+function renderShop() {
+  $('shop-wallet').textContent = t('shop.wallet', { n: wallet() });
+  const list = $('shop-list');
+  list.innerHTML = '';
+  for (const item of ACCESSORIES) {
+    const owned = save.owned.includes(item.id);
+    const equipped = save.equipped === item.id;
+    const b = document.createElement('button');
+    b.className = `item-card${equipped ? ' equipped' : ''}`;
+    let state: string;
+    if (equipped) state = t('shop.equipped');
+    else if (owned) state = t('shop.equip');
+    else if (item.price === null) {
+      const ch = CHAPTERS.find((c) => c.id === item.reward);
+      state = t('shop.rewardOnly', { chapter: ch ? chapterTitle(ch) : '' });
+      b.disabled = true;
+    } else {
+      state = t('shop.buy', { n: item.price });
+      b.disabled = wallet() < item.price;
+      if (b.disabled) state = `${state} · ${t('shop.notEnough')}`;
+    }
+    b.innerHTML = `<span class="item-name">${t(`items.${item.id}`)}</span><span class="item-state">${state}</span>`;
+    b.addEventListener('click', () => {
+      if (owned) { equip(equipped ? null : item.id); sfx.click(); }
+      else if (item.price !== null && wallet() >= item.price) {
+        save.spent += item.price;
+        save.owned.push(item.id);
+        equip(item.id);
+        sfx.coin();
+        buzz(20);
+      }
+      renderShop();
+    });
+    list.appendChild(b);
+  }
+}
+
+function renderMySlime() {
+  const list = $('myslime-list');
+  list.innerHTML = '';
+  const owned = ACCESSORIES.filter((a) => save.owned.includes(a.id));
+  $('myslime-empty').hidden = owned.length > 0;
+  const options: (string | null)[] = [null, ...owned.map((a) => a.id)];
+  for (const id of options) {
+    const equipped = save.equipped === id;
+    const b = document.createElement('button');
+    b.className = `item-card${equipped ? ' equipped' : ''}`;
+    b.innerHTML = `<span class="item-name">${id ? t(`items.${id}`) : t('myslime.none')}</span><span class="item-state">${equipped ? t('shop.equipped') : t('shop.equip')}</span>`;
+    b.addEventListener('click', () => { sfx.click(); equip(id); renderMySlime(); });
+    list.appendChild(b);
+  }
+}
+
+// ------------------------------------------------------------------ perfil
+
+function renderProfile() {
+  const status = $('profile-status');
+  $('profile-name').textContent = player?.name ?? t('profile.guest');
+  $('profile-email').textContent = player?.email ?? t('profile.cloudSoon');
+  const avatar = $('profile-avatar');
+  avatar.style.backgroundImage = player?.photo ? `url("${encodeURI(player.photo)}")` : '';
+  const google = $<HTMLButtonElement>('btn-google');
+  google.hidden = !!player;
+  google.disabled = !firebaseConfigured;
+  $('btn-signout').hidden = !player;
+  if (!firebaseConfigured) status.textContent = t('profile.notConfigured');
+  else if (!player) status.textContent = '';
+  const allFloors = CHAPTERS.flatMap((c) => c.floors);
+  const stats = [
+    [t('profile.starsTotal'), `${allFloors.reduce((a, f) => a + floorStars(f.id), 0)}/${allFloors.length * 3}`],
+    [t('profile.coinsTotal'), String(coinsEarned())],
+    [t('profile.secretsTotal'), `${allFloors.filter((f) => floorSave(f.id)?.secret).length}/${allFloors.filter((f) => gemsTotalOf(f) > 0).length}`],
+    [t('profile.chaptersDone'), `${CHAPTERS.filter(chapterPerfect).length}/${CHAPTERS.length}`],
+    [t('profile.items'), `${save.owned.length}/${ACCESSORIES.length}`],
+  ];
+  $('profile-stats').innerHTML = stats.map(([label, value]) => `<div class="stat"><b>${escapeHtml(value)}</b><span>${escapeHtml(label)}</span></div>`).join('');
+}
+
+$('btn-google').addEventListener('click', async () => {
+  unlockAudio();
+  sfx.click();
+  const status = $('profile-status');
+  const btn = $<HTMLButtonElement>('btn-google');
+  btn.disabled = true;
+  status.textContent = t('profile.connecting');
+  try {
+    player = await signInWithGoogle();
+    status.textContent = '';
+  } catch (err) {
+    console.warn(err);
+    status.textContent = t('profile.error');
+  }
+  btn.disabled = !firebaseConfigured;
+  renderProfile();
+});
+$('btn-signout').addEventListener('click', async () => {
+  sfx.click();
+  await signOutPlayer();
+  player = null;
+  renderProfile();
+});
+watchPlayer((p) => { player = p; if (currentScreen === 'profile') renderProfile(); }).catch(() => { /* sin Firebase */ });
+
+// ------------------------------------------------------------------ opciones
+
+function renderOptions() {
+  const select = $<HTMLSelectElement>('lang-select');
+  select.innerHTML = LANGS.map((l) => `<option value="${l}"${l === getLang() ? ' selected' : ''}>${t(`lang.${l}`)}</option>`).join('');
+  const toggle = (id: string, on: boolean) => {
+    const b = $(id);
+    b.textContent = on ? t('options.on') : t('options.off');
+    b.setAttribute('aria-pressed', String(on));
+  };
+  toggle('btn-sound', save.sound);
+  toggle('btn-vibration', save.vibration);
+}
+
+$<HTMLSelectElement>('lang-select').addEventListener('change', (e) => {
+  const lang = (e.target as HTMLSelectElement).value as Lang;
+  save.lang = lang;
+  store();
+  setLang(lang);
+  refreshScreen();
+});
 
 function setControl(m: ControlMode) {
   input.setMode(m);
   if (m === 'gyro') input.requestPermission();
   document.querySelectorAll<HTMLButtonElement>('.pick-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
   save.control = m;
-  writeSave();
+  store();
 }
 document.querySelectorAll<HTMLButtonElement>('.pick-btn').forEach((b) => {
   b.addEventListener('click', () => { sfx.click(); setControl(b.dataset.mode as ControlMode); });
 });
 setControl(save.control);
+setMuted(!save.sound);
 
-function setSound(on: boolean) {
-  save.sound = on;
-  setMuted(!on);
-  const b = $('btn-sound');
-  b.textContent = on ? 'Activado' : 'Silenciado';
-  b.setAttribute('aria-pressed', String(on));
-  writeSave();
-}
-setSound(save.sound);
-
-$('btn-sound').addEventListener('click', () => { setSound(!save.sound); sfx.click(); });
+$('btn-sound').addEventListener('click', () => { save.sound = !save.sound; setMuted(!save.sound); store(); renderOptions(); sfx.click(); });
+$('btn-vibration').addEventListener('click', () => { save.vibration = !save.vibration; store(); renderOptions(); sfx.click(); buzz(30); });
 $('btn-calib').addEventListener('click', () => { input.calibrate(); sfx.click(); });
 $('btn-pause-calib').addEventListener('click', () => { input.calibrate(); sfx.click(); });
-$('btn-settings').addEventListener('click', () => { unlockAudio(); sfx.click(); show('settings'); });
 $('btn-practice').addEventListener('click', () => { sfx.click(); startLevel(PRACTICE, null, 0); });
-$('btn-story').addEventListener('click', () => {
-  unlockAudio();
-  sfx.click();
-  if (input.mode === 'gyro') input.requestPermission();
-  input.requestFullscreen();
-  renderStory();
-  show('story');
-});
 
 // ------------------------------------------------------------------ pausa
 
@@ -353,6 +512,7 @@ function loadLevel(def: LevelData) {
   clearLevel();
   world = new World(def, assets!);
   slime = new Slime(world, def.count, lowQuality, assets!);
+  slime.setHat(save.equipped);
   content.add(world.group, slime.group);
   camTarget.copy(world.start);
   camPos.set(0, 0, 0);
@@ -372,10 +532,11 @@ function startLevel(def: LevelData, ch: ChapterDef | null, k: number) {
   winT = 0;
   acc = 0;
   lastAlive = def.count;
-  hudCache.alive = hudCache.seconds = hudCache.coins = -1;
+  hudCache.alive = hudCache.seconds = hudCache.coins = hudCache.stateSec = -1;
+  hudCache.state = '';
   $('toast').hidden = true;
   gauge.reset();
-  $('level-name').textContent = ch ? `Piso ${k + 1} · ${def.name}` : def.name;
+  $('level-name').textContent = ch ? `${t('story.floor', { n: k + 1 })} · ${levelName(def)}` : levelName(def);
   $('hud-coins').hidden = world!.coinsTotal === 0;
   input.reset();
   if (input.mode === 'gyro') input.calibrate();
@@ -392,19 +553,23 @@ function leaveLevel() {
   const ch = chapter;
   toMenuScene();
   if (ch) openChapter(ch);
-  else show('settings');
+  else openScreen('options');
 }
 
-/** Fondo del menú: el primer piso con el limo en reposo y la cámara girando despacio. */
+/** Fondo del menú: plataforma abierta con el limo en reposo. */
 function toMenuScene() {
   mode = 'menu';
-  if (assets) loadLevel(CHAPTERS[0].floors[0]);
+  if (assets) loadLevel(MENU_STAGE);
 }
 
 // ------------------------------------------------------------------ HUD
 
-const hudCache = { alive: -1, seconds: -1, coins: -1 };
-const hudEls = { pct: $('life-pct'), timer: $('timer'), coins: $('coins-count'), coinChip: $('hud-coins'), life: document.querySelector('.hud-chip.life') as HTMLElement };
+const hudCache = { alive: -1, seconds: -1, coins: -1, state: '', stateSec: -1 };
+const hudEls = {
+  pct: $('life-pct'), timer: $('timer'), coins: $('coins-count'), coinChip: $('hud-coins'),
+  life: document.querySelector('.hud-chip.life') as HTMLElement,
+  stateChip: $('hud-state'), stateIco: $('state-ico'), stateText: $('state-text'),
+};
 
 /** Solo toca el DOM cuando cambia algo. */
 function updateHud() {
@@ -423,6 +588,18 @@ function updateHud() {
     if (hudCache.coins >= 0) bump(hudEls.coinChip, 'bump');
     hudCache.coins = world.coinsCollected;
     hudEls.coins.textContent = `${world.coinsCollected}/${world.coinsTotal}`;
+  }
+  const st = slime.state;
+  const sec = Math.ceil(slime.stateT);
+  if (st !== hudCache.state || sec !== hudCache.stateSec) {
+    hudCache.state = st;
+    hudCache.stateSec = sec;
+    hudEls.stateChip.hidden = st === 'normal';
+    if (st !== 'normal') {
+      hudEls.stateChip.className = `hud-chip state ${st}`;
+      hudEls.stateIco.innerHTML = STATE_ICONS[st];
+      hudEls.stateText.textContent = st === 'oiled' ? t('hud.oiled') : t(`hud.${st}`, { s: `${sec}s` });
+    }
   }
 }
 
@@ -464,26 +641,30 @@ function finish(win: boolean) {
       bestTime: prev?.done ? Math.min(prev.bestTime, elapsed) : elapsed,
       secret: gotGem || !!prev?.secret,
     };
-    writeSave();
+    // capítulo al 100 % por primera vez: su accesorio
+    if (chapter.reward && !save.rewards.includes(chapter.id) && chapterPerfect(chapter)) {
+      save.rewards.push(chapter.id);
+      if (!save.owned.includes(chapter.reward)) save.owned.push(chapter.reward);
+      pendingReward = { item: chapter.reward, then: () => {} };
+    }
+    store();
   }
 
-  $('result-title').textContent = win ? '¡Piso completado!' : 'El limo se ha deshecho';
+  $('result-title').textContent = win ? t('result.done') : t('result.failed');
   const starsEl = $('result-stars');
   starsEl.innerHTML = win ? [0, 1, 2].map(() => starSvg(false)).join('') : '';
-  const goals = win
+  const goals: { ok: boolean; label: string; val: string; secret?: boolean }[] = win
     ? [
-      { ok: r.done, label: 'Llegar al tesoro', val: '' },
-      { ok: r.allCoins, label: 'Todas las monedas', val: `${r.coins}/${r.coinsTotal}` },
-      { ok: r.kept, label: `Conservar el ${Math.round(keepPct * 100)}% del limo`, val: `${Math.round(pct * 100)}%` },
+      { ok: r.done, label: t('result.goalTreasure'), val: '' },
+      { ok: r.allCoins, label: t('result.goalCoins'), val: `${r.coins}/${r.coinsTotal}` },
+      { ok: r.kept, label: t('result.goalKeep', { pct: Math.round(keepPct * 100) }), val: `${Math.round(pct * 100)}%` },
     ]
-    : [{ ok: false, label: `Necesitas al menos el ${Math.round(def.minPct * 100)}% del limo`, val: `${Math.round(pct * 100)}%` }];
-  const goalRows: { ok: boolean; label: string; val: string; secret?: boolean }[] = goals;
+    : [{ ok: false, label: t('result.failInfo'), val: '0%' }];
   // el tesoro secreto no da estrella: solo se muestra si el piso tiene uno
-  if (win && gemsTotal > 0) goalRows.push({ ok: gotGem, label: 'Tesoro secreto', val: gotGem ? '¡Encontrado!' : '', secret: true });
-  $('result-goals').innerHTML = goalRows.map((g, k) =>
+  if (win && gemsTotal > 0) goals.push({ ok: gotGem, label: t('result.goalSecret'), val: gotGem ? t('result.found') : '', secret: true });
+  $('result-goals').innerHTML = goals.map((g, k) =>
     `<li class="${g.ok ? 'ok' : ''}${g.secret ? ' secret' : ''}" style="animation-delay:${150 + k * 120}ms"><span class="goal-mark">${g.ok ? checkSvg : crossSvg}</span>${g.label}<span class="val">${g.val}</span></li>`).join('');
 
-  // estrellas una a una
   if (win) {
     [...starsEl.children].forEach((star, k) => {
       if (k >= earned) return;
@@ -494,29 +675,51 @@ function finish(win: boolean) {
   const last = !!chapter && floorIndex === chapter.floors.length - 1;
   const next = $<HTMLButtonElement>('btn-next');
   next.hidden = !win || !chapter;
-  next.textContent = last ? 'Ver desglose del capítulo' : 'Siguiente piso';
-  $('btn-result-back').textContent = chapter ? 'Capítulo' : 'Salir';
+  next.textContent = last ? t('result.toBreakdown') : t('result.next');
+  $('btn-result-back').textContent = chapter ? t('result.chapter') : t('result.exit');
   if (!win) { sfx.lose(); buzz(200); }
   show('result');
 }
 
+/** Si hay un accesorio recién ganado, lo enseña antes de seguir. */
+function afterReward(then: () => void) {
+  if (!pendingReward) { then(); return; }
+  const item = pendingReward.item;
+  pendingReward = { item, then };
+  $('reward-title').textContent = t('toast.reward', { item: t(`items.${item}`) });
+  sfx.win();
+  buzz([30, 60, 30]);
+  show('reward');
+}
+$('btn-reward-ok').addEventListener('click', () => {
+  sfx.click();
+  if (!pendingReward) return;
+  const { item, then } = pendingReward;
+  pendingReward = null;
+  equip(item);
+  then();
+});
+
 $('btn-next').addEventListener('click', () => {
   sfx.click();
   if (!chapter) return;
-  if (floorIndex === chapter.floors.length - 1) {
-    toMenuScene();
-    showBreakdown(chapter);
-  } else startFloor(chapter, floorIndex + 1);
+  const ch = chapter;
+  afterReward(() => {
+    if (floorIndex === ch.floors.length - 1) {
+      toMenuScene();
+      showBreakdown(ch);
+    } else startFloor(ch, floorIndex + 1);
+  });
 });
-$('btn-retry').addEventListener('click', () => { sfx.click(); restart(); });
-$('btn-result-back').addEventListener('click', () => { sfx.click(); leaveLevel(); });
+$('btn-retry').addEventListener('click', () => { sfx.click(); afterReward(restart); });
+$('btn-result-back').addEventListener('click', () => { sfx.click(); afterReward(leaveLevel); });
 
 // ------------------------------------------------------------------ desglose del capítulo
 
 function showBreakdown(ch: ChapterDef) {
   chapter = ch;
-  $('bd-title').textContent = chapterDone(ch) ? `${ch.name} completado` : `${ch.name} · progreso`;
-  $('bd-sub').textContent = ch.subtitle;
+  $('bd-title').textContent = chapterDone(ch) ? t('breakdown.done', { chapter: chapterTitle(ch) }) : t('breakdown.progress', { chapter: chapterTitle(ch) });
+  $('bd-sub').textContent = chapterSubtitle(ch);
   let stars = 0, coins = 0, coinsTotal = 0, pctSum = 0, time = 0, secrets = 0, secretsTotal = 0;
   $('bd-rows').innerHTML = ch.floors.map((f, k) => {
     const s = floorSave(f.id);
@@ -530,7 +733,7 @@ function showBreakdown(ch: ChapterDef) {
     const hasGem = gemsTotalOf(f) > 0;
     if (hasGem) { secretsTotal++; if (s?.secret) secrets++; }
     const secretCell = hasGem ? (s?.secret ? gemSvg : '—') : '';
-    return `<tr style="animation-delay:${120 + k * 110}ms"><th>${k + 1}. ${f.name}</th><td>${starsHtml(st)}</td>
+    return `<tr style="animation-delay:${120 + k * 70}ms"><th>${k + 1}. ${levelName(f)}</th><td>${starsHtml(st)}</td>
       <td>${s?.bestCoins ?? 0}/${total}</td><td>${secretCell}</td><td>${s ? Math.round(s.bestPct * 100) + '%' : '—'}</td><td>${s ? fmtTime(s.bestTime) : '—'}</td></tr>`;
   }).join('');
   const maxStars = ch.floors.length * 3;
@@ -540,7 +743,7 @@ function showBreakdown(ch: ChapterDef) {
   $('bd-time').textContent = fmtTime(time);
   $('bd-secrets').textContent = secretsTotal ? `${secrets}/${secretsTotal}` : '—';
   const ratio = stars / maxStars;
-  const [medal, label] = ratio >= 0.9 ? ['gold', 'Rango Oro'] : ratio >= 0.6 ? ['silver', 'Rango Plata'] : ['bronze', 'Rango Bronce'];
+  const [medal, label] = ratio >= 0.9 ? ['gold', t('breakdown.gold')] : ratio >= 0.6 ? ['silver', t('breakdown.silver')] : ['bronze', t('breakdown.bronze')];
   $('bd-rank').innerHTML = `<span class="medal ${medal}" aria-hidden="true"></span>${label}`;
   show('breakdown');
   sfx.win();
@@ -569,6 +772,8 @@ $('btn-bd-menu').addEventListener('click', () => { sfx.click(); show('main'); })
 
 // ------------------------------------------------------------------ bucle
 
+const STATE_TOASTS: Partial<Record<SlimeState, string>> = { oiled: 'toast.oil', burning: 'toast.ignite', frozen: 'toast.freeze' };
+
 function tick(dt: number) {
   if (!world || !slime) return;
   input.update();
@@ -582,16 +787,33 @@ function tick(dt: number) {
       case 'evaporate': sfx.sizzle(); fx.steam(e.x, e.y, e.z); break;
       case 'pad': sfx.pad(); fx.splat(e.x, e.y, e.z); break;
       case 'coin': sfx.coin(); fx.sparkle(e.x, e.y + 0.4, e.z); buzz(15); break;
+      case 'cut': sfx.cut(); buzz(8); break;
+      case 'oil': sfx.pad(); fx.sparkle(e.x, e.y + 0.3, e.z, 0xf5a524); break;
       case 'gem':
         sfx.gem();
         for (let k = 0; k < 3; k++) fx.sparkle(e.x, e.y + 0.3 + k * 0.25, e.z, 0xc4b5fd);
-        toast('¡Tesoro secreto encontrado!');
+        toast(t('toast.secret'));
         buzz([20, 40, 20]);
         break;
-      case 'cut': sfx.cut(); buzz(8); break;
+      case 'burn':
+        sfx.sizzle();
+        for (let k = 0; k < 3; k++) fx.steam(e.x, world.cell(Math.floor(e.x), Math.floor(e.z))!.base + 0.4 + k * 0.3, e.z);
+        buzz(25);
+        break;
+      case 'state': {
+        const key = STATE_TOASTS[e.to] ?? (e.from === 'frozen' ? 'toast.thaw' : e.from === 'burning' ? 'toast.extinguish' : null);
+        if (key) toast(t(key), 2600);
+        if (e.to === 'burning') { sfx.sizzle(); buzz([15, 30, 15]); }
+        if (e.to === 'frozen') { sfx.gem(); buzz(40); }
+        break;
+      }
     }
   }
   slime.events.length = 0;
+
+  // efectos continuos del estado
+  if (slime.state === 'burning' && Math.random() < 0.7 && slime.randomParticle(tmpFx)) fx.flame(tmpFx.x, tmpFx.y, tmpFx.z);
+  if (slime.state === 'frozen' && Math.random() < 0.15 && slime.randomParticle(tmpFx)) fx.frost(tmpFx.x, tmpFx.y + 0.1, tmpFx.z);
 
   const alive = slime.aliveCount;
   if (alive < lastAlive) {
@@ -604,26 +826,27 @@ function tick(dt: number) {
   const tips = world.def.tips ?? [];
   const lead = slime.groups[0];
   if (lead && tipIndex < tips.length && lead.cz < tips[tipIndex].z) {
-    toast(tips[tipIndex].text);
+    toast(levelTip(world.def, tipIndex));
     tipIndex++;
   }
 
   updateHud();
   if (slime.touchedTreasure) {
-    // celebración: el cofre se abre, sale una lluvia de brillos y el limo sonríe
     mode = 'winning';
     winT = 0;
     slime.celebrate();
     sfx.win();
-    const t = world.treasure;
-    for (let k = 0; k < 3; k++) fx.sparkle(t.x, t.y + 0.6 + k * 0.2, t.z);
-  } else if (world.def.minPct > 0 && alive / slime.n < world.def.minPct) finish(false);
+    const tr = world.treasure;
+    for (let k = 0; k < 3; k++) fx.sparkle(tr.x, tr.y + 0.6 + k * 0.2, tr.z);
+  } else if (alive === 0) {
+    // ya no hay mínimo para completar: solo se pierde si no queda nada de limo
+    finish(false);
+  }
 }
 
 function updateCamera(dt: number) {
   if (!slime || !world) return;
   if (slime.center(tmpCenter)) {
-    // mirar un poco hacia donde avanza el limo para ver lo que viene
     const lead = slime.groups[0];
     const la = 1 - Math.exp(-dt * 2.5);
     lookAhead.x += ((mode === 'play' && lead ? lead.vx * 0.3 : 0) - lookAhead.x) * la;
@@ -637,9 +860,14 @@ function updateCamera(dt: number) {
     camTarget.z += (tmpCenter.z - camTarget.z) * k;
   }
   if (mode === 'menu') {
-    // escaparate del menú: órbita lenta y cercana alrededor del limo
-    menuAngle += dt * 0.12;
-    camWant.set(camTarget.x + Math.sin(menuAngle) * 3.6, camTarget.y + 6.2, camTarget.z + Math.cos(menuAngle) * 3.6);
+    // escaparate del menú: órbita lenta; en Mi limo y Tienda se para de frente, se acerca
+    // y deja al limo a la izquierda para que el panel no lo tape
+    const closeUp = menuZoom < 1;
+    if (closeUp) menuAngle += (Math.round(menuAngle / (Math.PI * 2)) * Math.PI * 2 - menuAngle) * (1 - Math.exp(-dt * 3));
+    else menuAngle += dt * 0.12;
+    const r = 3.6 * menuZoom, hgt = 6.2 * menuZoom;
+    menuShift += ((closeUp ? 1.15 : 0) - menuShift) * (1 - Math.exp(-dt * 4));
+    camWant.set(camTarget.x + Math.sin(menuAngle) * r + menuShift, camTarget.y + hgt, camTarget.z + Math.cos(menuAngle) * r);
   } else {
     const dist = (camera.aspect < 1 ? 1.5 : 1) * camZoom;
     camWant.set(camTarget.x, camTarget.y + 8.6 * dist, camTarget.z + 4.6 * dist);
@@ -647,19 +875,16 @@ function updateCamera(dt: number) {
   if (camPos.lengthSq() === 0) camPos.copy(camWant);
   else camPos.lerp(camWant, 1 - Math.exp(-dt * (mode === 'menu' ? 2 : 5)));
   camera.position.copy(camPos);
-  camera.lookAt(camTarget.x, camTarget.y + (mode === 'menu' ? 0.3 : 0), camTarget.z - (mode === 'menu' ? 0 : 0.3));
+  camera.lookAt(camTarget.x + (mode === 'menu' ? menuShift : 0), camTarget.y + (mode === 'menu' ? 0.3 : 0), camTarget.z - (mode === 'menu' ? 0 : 0.3));
 
-  tiltRoot.position.copy(camTarget);
-  content.position.copy(camTarget).negate();
-  // inclinación del escenario: suave con el mando a medias y muy marcada a fondo (hasta ~19°),
-  // a juego con la pendiente que la física aplica al líquido
+  // inclinación del escenario: suave con el mando a medias y muy marcada a fondo
   const mag2 = input.tiltX * input.tiltX + input.tiltZ * input.tiltZ;
   const sway = mode !== 'play' ? 0 : 0.04 + 0.3 * mag2;
-  const rx = input.tiltZ * sway;
-  const rz = -input.tiltX * sway;
+  tiltRoot.position.copy(camTarget);
+  content.position.copy(camTarget).negate();
   const tk = 1 - Math.exp(-dt * 7);
-  tiltRoot.rotation.x += (rx - tiltRoot.rotation.x) * tk;
-  tiltRoot.rotation.z += (rz - tiltRoot.rotation.z) * tk;
+  tiltRoot.rotation.x += (input.tiltZ * sway - tiltRoot.rotation.x) * tk;
+  tiltRoot.rotation.z += (-input.tiltX * sway - tiltRoot.rotation.z) * tk;
 
   sun.position.set(camTarget.x + 5, camTarget.y + 12, camTarget.z + 4);
   sun.target.position.copy(camTarget);
@@ -695,14 +920,13 @@ function frame(dt: number) {
   } else if (world) {
     world.update(dt * 0.3, slime?.switchCounts ?? { A: 0, B: 0 });
   }
-  // fracción hacia el siguiente paso de física: dibujo suave a 90/120 Hz
   const alpha = mode === 'play' ? Math.min(acc / FIXED, 1) : 1;
   fx.update(dt);
   updateCamera(dt);
   slime?.render(dt, alpha, input.tiltX, input.tiltZ);
   if (!$('hud').hidden && slime && world) {
     const pct = slime.aliveCount / slime.n;
-    gauge.update(dt, pct, input.tiltX, world.def.minPct > 0 && pct < world.def.minPct + 0.12);
+    gauge.update(dt, pct, input.tiltX, pct < 0.25);
   }
   renderer.render(scene, camera);
 }
@@ -717,7 +941,7 @@ if (import.meta.env.DEV) {
   // depuración: avanzar la simulación sin requestAnimationFrame
   Object.assign(window, {
     __blub: {
-      advance(seconds: number) { for (let t = 0; t < seconds; t += FIXED) frame(FIXED); },
+      advance(seconds: number) { for (let s = 0; s < seconds; s += FIXED) frame(FIXED); },
       start: (c: number, k: number) => startFloor(CHAPTERS[c], k),
       practice: () => startLevel(PRACTICE, null, 0),
       finish: (win: boolean) => finish(win),
@@ -727,22 +951,27 @@ if (import.meta.env.DEV) {
       quality: () => ({ quality, fps: Math.round(1 / frameAvg) }),
       slime: () => slime,
       world: () => world,
-      state: () => ({ mode, alive: slime?.aliveCount, groups: slime?.groups.map((g) => g.ids.length), coins: world && `${world.coinsCollected}/${world.coinsTotal}`, lead: slime?.groups[0] && { x: slime.groups[0].cx.toFixed(2), y: slime.groups[0].cy.toFixed(2), z: slime.groups[0].cz.toFixed(2) } }),
+      save: () => save,
+      open: (id: ScreenId) => openScreen(id),
+      state: () => ({ mode, alive: slime?.aliveCount, slimeState: slime?.state, groups: slime?.groups.map((g) => g.ids.length), coins: world && `${world.coinsCollected}/${world.coinsTotal}`, lead: slime?.groups[0] && { x: slime.groups[0].cx.toFixed(2), y: slime.groups[0].cy.toFixed(2), z: slime.groups[0].cz.toFixed(2) } }),
     },
   });
 }
 
 // ------------------------------------------------------------------ arranque
 
+applyDom();
 show('main');
-Assets.load(Math.min(4, renderer.capabilities.getMaxAnisotropy()), (p) => { $('load-hint').textContent = `Cargando… ${Math.round(p * 100)}%`; })
+$('load-hint').textContent = t('common.loading', { pct: 0 });
+Assets.load(Math.min(4, renderer.capabilities.getMaxAnisotropy()), (p) => { $('load-hint').textContent = t('common.loading', { pct: Math.round(p * 100) }); })
   .then((a) => {
     assets = a;
     toMenuScene();
-    $('load-hint').textContent = 'Desliza, divide y reúne al limo';
+    $('load-hint').textContent = t('menu.hint');
     $<HTMLButtonElement>('btn-story').disabled = false;
   })
   .catch((err) => {
     console.error(err);
-    $('load-hint').textContent = 'No se pudieron cargar los recursos. Reinicia el juego.';
+    $('load-hint').textContent = t('common.loadError');
   });
+

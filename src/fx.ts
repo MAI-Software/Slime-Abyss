@@ -47,6 +47,16 @@ export class Fx {
     for (let k = 0; k < 4; k++) this.spawn(x, y, z, 0x7cc0ff, 0.22, 0.4, 2 + Math.random() * 2, 3);
   }
 
+  /** Lengua de fuego sobre el limo en llamas. */
+  flame(x: number, y: number, z: number) {
+    this.spawn(x, y + 0.1, z, Math.random() < 0.5 ? 0xff7a1a : 0xffc34d, 0.2, 0.35 + Math.random() * 0.2, 1.8 + Math.random() * 1.5, 0.6);
+  }
+
+  /** Escarcha sobre el limo congelado. */
+  frost(x: number, y: number, z: number) {
+    this.spawn(x, y + 0.05, z, 0xe8f8ff, 0.12, 0.6, 0.4 + Math.random() * 0.4, 0.4);
+  }
+
   sparkle(x: number, y: number, z: number, color = 0xffd75e) {
     for (let k = 0; k < 7; k++) this.spawn(x, y, z, color, 0.16, 0.5 + Math.random() * 0.2, 1.5 + Math.random() * 2.5, 4);
   }

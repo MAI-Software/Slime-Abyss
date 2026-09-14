@@ -15,7 +15,8 @@ export type Channel = 'A' | 'B';
 
 export type CellKind =
   | 'void' | 'floor' | 'wall' | 'fire' | 'firet' | 'ice' | 'jump' | 'switch' | 'door' | 'start' | 'treasure'
-  | 'coin' | 'blade' | 'spike' | 'gem';
+  | 'coin' | 'blade' | 'spike' | 'gem'
+  | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet';
 
 export interface TileDef {
   char: string;
@@ -35,6 +36,10 @@ export interface TileDef {
   axis?: 'x' | 'z';
   /** Divide el limo al atravesarlo (sin hacer daño). */
   divider?: boolean;
+  /** Ventiladores: hacia dónde sopla (n = fila 0 / fondo, s = hacia la cámara, e = derecha, w = izquierda). */
+  dir?: 'n' | 's' | 'e' | 'w';
+  /** Obstáculo que desaparece al tocarlo el limo en llamas. */
+  burnable?: boolean;
 }
 
 export const TILES: readonly TileDef[] = [
@@ -56,6 +61,14 @@ export const TILES: readonly TileDef[] = [
   { char: 'k', kind: 'blade', label: 'Cuchilla (divide delante / detrás)', axis: 'x', divider: true, color: '#c3ccd8' },
   { char: 'Y', kind: 'spike', label: 'Pincho divisor', divider: true, color: '#9aa4b4' },
   { char: 'G', kind: 'gem', label: 'Tesoro secreto (gema)', color: '#8b5cf6' },
+  { char: 'O', kind: 'oil', label: 'Botella de aceite', color: '#e0a526' },
+  { char: 'W', kind: 'plant', label: 'Plantas (arden)', raise: 1.1, burnable: true, color: '#3f9d3c' },
+  { char: 'Z', kind: 'iceblock', label: 'Bloque de hielo (se derrite)', raise: 1.0, burnable: true, color: '#a9e4ff' },
+  { char: '^', kind: 'fan', label: 'Ventilador (sopla al fondo)', dir: 'n', raise: 1.0, color: '#3d4a66' },
+  { char: 'v', kind: 'fan', label: 'Ventilador (sopla hacia la cámara)', dir: 's', raise: 1.0, color: '#3d4a66' },
+  { char: '>', kind: 'fan', label: 'Ventilador (sopla a la derecha)', dir: 'e', raise: 1.0, color: '#3d4a66' },
+  { char: '<', kind: 'fan', label: 'Ventilador (sopla a la izquierda)', dir: 'w', raise: 1.0, color: '#3d4a66' },
+  { char: 'Q', kind: 'coldjet', label: 'Chorro de aire frío (congela 30 s)', color: '#bfefff' },
 ];
 
 export const TILE_BY_CHAR: ReadonlyMap<string, TileDef> = new Map(TILES.map((t) => [t.char, t]));
@@ -73,8 +86,11 @@ export interface LevelData {
   author?: string;
   /** Limitos con los que empieza el limo. */
   count: number;
-  /** Fracción mínima de limo para no perder (0 = no se puede perder). */
-  minPct: number;
+  /**
+    Obsoleto: los pisos ya no tienen mínimo para completarse (solo se pierde si no queda limo).
+    El limo conservado cuenta para las estrellas con keepPct.
+  */
+  minPct?: number;
   tiles: string[];
   heights: string[];
   /**
@@ -113,6 +129,8 @@ export interface ChapterDef {
   name: string;
   subtitle: string;
   floors: LevelData[];
+  /** Accesorio que se gana al completar el capítulo al 100 % (todas las estrellas y secretos). */
+  reward?: string;
 }
 
 export const LIMITS = { minSize: 3, maxSize: 96, minCount: 10, maxCount: 120 } as const;
@@ -156,9 +174,8 @@ export function validateLevel(level: LevelData): string[] {
   if (level.count < LIMITS.minCount || level.count > LIMITS.maxCount) {
     errors.push(`El limo debe tener entre ${LIMITS.minCount} y ${LIMITS.maxCount} limitos.`);
   }
-  if (level.minPct < 0 || level.minPct >= 1) errors.push('El porcentaje mínimo debe estar entre 0 y 0.99.');
-  if (level.keepPct !== undefined && (level.keepPct <= level.minPct || level.keepPct > 1)) {
-    errors.push('El limo a conservar para la 3ª estrella debe ser mayor que el mínimo.');
+  if (level.keepPct !== undefined && (level.keepPct <= 0 || level.keepPct > 1)) {
+    errors.push('El limo a conservar para la 3ª estrella debe estar entre 0 y 1.');
   }
   return errors;
 }
@@ -176,7 +193,7 @@ export function createEmptyLevel(w = 11, d = 15, name = 'Nivel nuevo'): LevelDat
   const mid = Math.floor(w / 2);
   tiles[d - 2] = replaceAt(tiles[d - 2], mid, 'P');
   tiles[1] = replaceAt(tiles[1], mid, 'T');
-  return { format: LEVEL_FORMAT, id: `custom-${Date.now().toString(36)}`, name, count: 80, minPct: 0.35, tiles, heights };
+  return { format: LEVEL_FORMAT, id: `custom-${Date.now().toString(36)}`, name, count: 80, tiles, heights };
 }
 
 export function replaceAt(row: string, i: number, ch: string): string {

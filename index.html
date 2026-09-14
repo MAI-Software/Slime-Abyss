@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#140f2b" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <title>Blub! Mazmorras de Limo</title>
+  <title>Blub!</title>
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -14,9 +14,15 @@
   <!-- ====================================================== HUD -->
   <div id="hud" hidden>
     <div class="hud-top">
-      <div class="hud-chip life">
-        <canvas id="life-flask" aria-hidden="true"></canvas>
-        <span id="life-pct">100%</span>
+      <div class="hud-left">
+        <div class="hud-chip life">
+          <canvas id="life-flask" aria-hidden="true"></canvas>
+          <span id="life-pct">100%</span>
+        </div>
+        <div class="hud-chip state" id="hud-state" hidden>
+          <svg class="ico" id="state-ico" viewBox="0 0 24 24" aria-hidden="true"></svg>
+          <span id="state-text"></span>
+        </div>
       </div>
       <div id="level-name"></div>
       <div class="hud-right">
@@ -25,13 +31,13 @@
           <span id="coins-count">0/0</span>
         </div>
         <span id="timer">0:00</span>
-        <button id="btn-pause" class="icon-btn" aria-label="Pausa">
+        <button id="btn-pause" class="icon-btn" data-i18n-aria="hud.pause">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>
         </button>
       </div>
     </div>
     <div id="toast" role="status" aria-live="polite" hidden></div>
-    <div id="joy-zone" aria-label="Joystick">
+    <div id="joy-zone" aria-hidden="true">
       <div id="joy-base"><div id="joy-knob"></div></div>
     </div>
   </div>
@@ -40,102 +46,184 @@
   <div id="screen-main" class="screen screen-main">
     <div class="main-brand">
       <h1 class="logo">Blub!</h1>
-      <p class="subtitle">Mazmorras de Limo</p>
+      <p class="subtitle" data-i18n="menu.subtitle"></p>
     </div>
     <div class="main-actions">
-      <button id="btn-story" class="big-btn" disabled>Modo Historia</button>
-      <button id="btn-settings" class="small-btn with-icon">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
-        Ajustes
-      </button>
-      <p id="load-hint" class="hint">Cargando…</p>
+      <button id="btn-story" class="big-btn" data-i18n="menu.story" disabled></button>
+      <div class="menu-grid">
+        <button class="small-btn with-icon" data-go="myslime">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>
+          <span data-i18n="menu.myslime"></span>
+        </button>
+        <button class="small-btn with-icon" data-go="shop">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg>
+          <span data-i18n="menu.shop"></span>
+        </button>
+        <button class="small-btn with-icon" data-go="profile">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span data-i18n="menu.profile"></span>
+        </button>
+        <button class="small-btn with-icon" data-go="options">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+          <span data-i18n="menu.options"></span>
+        </button>
+      </div>
+      <p id="load-hint" class="hint"></p>
     </div>
   </div>
 
-  <!-- ====================================================== HISTORIA: CAPÍTULOS -->
+  <!-- ====================================================== HISTORIA -->
   <div id="screen-story" class="screen" hidden>
     <header class="screen-head">
-      <button class="icon-btn back-btn" data-back="main" aria-label="Volver">
+      <button class="icon-btn" data-back="main" data-i18n-aria="common.back">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
       </button>
-      <h2>Modo Historia</h2>
+      <h2 data-i18n="story.title"></h2>
     </header>
     <div id="chapter-list" class="card-row"></div>
   </div>
 
-  <!-- ====================================================== CAPÍTULO: PISOS -->
   <div id="screen-chapter" class="screen" hidden>
     <header class="screen-head">
-      <button class="icon-btn back-btn" data-back="story" aria-label="Volver">
+      <button class="icon-btn" data-back="story" data-i18n-aria="common.back">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
       </button>
       <div>
         <h2 id="chapter-title"></h2>
         <p id="chapter-sub" class="head-sub"></p>
       </div>
+      <p id="chapter-reward" class="reward-note"></p>
     </header>
     <div id="floor-list" class="floor-grid"></div>
-    <button id="btn-chapter-breakdown" class="small-btn" hidden>Ver desglose del capítulo</button>
+    <button id="btn-chapter-breakdown" class="small-btn" data-i18n="story.breakdown" hidden></button>
   </div>
 
-  <!-- ====================================================== AJUSTES -->
-  <div id="screen-settings" class="screen" hidden>
+  <!-- ====================================================== MI LIMO -->
+  <div id="screen-myslime" class="screen screen-side" hidden>
+    <div class="side-panel">
+      <header class="screen-head">
+        <button class="icon-btn" data-back="main" data-i18n-aria="common.back">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        </button>
+        <h2 data-i18n="myslime.title"></h2>
+      </header>
+      <p class="panel-label" data-i18n="myslime.head"></p>
+      <div id="myslime-list" class="item-grid"></div>
+      <p id="myslime-empty" class="panel-note" data-i18n="myslime.empty" hidden></p>
+    </div>
+  </div>
+
+  <!-- ====================================================== TIENDA -->
+  <div id="screen-shop" class="screen screen-side" hidden>
+    <div class="side-panel wide">
+      <header class="screen-head">
+        <button class="icon-btn" data-back="main" data-i18n-aria="common.back">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        </button>
+        <h2 data-i18n="shop.title"></h2>
+        <div class="hud-chip coins wallet">
+          <svg class="ico coin-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/></svg>
+          <span id="shop-wallet"></span>
+        </div>
+      </header>
+      <div id="shop-list" class="item-grid"></div>
+      <p class="panel-note" data-i18n="shop.hint"></p>
+    </div>
+  </div>
+
+  <!-- ====================================================== PERFIL -->
+  <div id="screen-profile" class="screen" hidden>
     <header class="screen-head">
-      <button class="icon-btn back-btn" data-back="main" aria-label="Volver">
+      <button class="icon-btn" data-back="main" data-i18n-aria="common.back">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
       </button>
-      <h2>Ajustes</h2>
+      <h2 data-i18n="profile.title"></h2>
+    </header>
+    <div class="profile-card">
+      <div class="profile-id">
+        <div id="profile-avatar" class="avatar" aria-hidden="true"></div>
+        <div>
+          <p id="profile-name" class="profile-name"></p>
+          <p id="profile-email" class="panel-note"></p>
+        </div>
+      </div>
+      <button id="btn-google" class="google-btn">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        <span id="google-label" data-i18n="profile.signIn"></span>
+      </button>
+      <button id="btn-signout" class="small-btn" data-i18n="profile.signOut" hidden></button>
+      <p id="profile-status" class="panel-note" role="status" aria-live="polite"></p>
+      <p class="panel-label" data-i18n="profile.stats"></p>
+      <div id="profile-stats" class="stat-grid"></div>
+    </div>
+  </div>
+
+  <!-- ====================================================== OPCIONES -->
+  <div id="screen-options" class="screen" hidden>
+    <header class="screen-head">
+      <button class="icon-btn" data-back="main" data-i18n-aria="common.back">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      </button>
+      <h2 data-i18n="options.title"></h2>
     </header>
     <div class="settings-panel">
       <div class="setting-row">
-        <span>Control</span>
-        <div class="control-pick" role="group" aria-label="Control">
-          <button class="pick-btn" data-mode="joystick">Joystick</button>
-          <button class="pick-btn" data-mode="gyro">Giroscopio</button>
+        <span data-i18n="options.language"></span>
+        <select id="lang-select" class="lang-select" data-i18n-aria="options.language"></select>
+      </div>
+      <div class="setting-row">
+        <span data-i18n="options.control"></span>
+        <div class="control-pick" role="group">
+          <button class="pick-btn" data-mode="joystick" data-i18n="options.joystick"></button>
+          <button class="pick-btn" data-mode="gyro" data-i18n="options.gyro"></button>
         </div>
       </div>
       <div class="setting-row gyro-only">
-        <span>Posición neutra</span>
-        <button id="btn-calib" class="small-btn">Calibrar</button>
+        <span data-i18n="options.neutral"></span>
+        <button id="btn-calib" class="small-btn" data-i18n="options.calibrate"></button>
       </div>
       <div class="setting-row">
-        <span>Sonido</span>
-        <button id="btn-sound" class="small-btn" aria-pressed="true">Activado</button>
+        <span data-i18n="options.sound"></span>
+        <button id="btn-sound" class="small-btn toggle-btn"></button>
       </div>
       <div class="setting-row">
-        <span>Nivel de pruebas</span>
-        <button id="btn-practice" class="small-btn">Jugar</button>
+        <span data-i18n="options.vibration"></span>
+        <button id="btn-vibration" class="small-btn toggle-btn"></button>
+      </div>
+      <div class="setting-row">
+        <span data-i18n="options.practice"></span>
+        <button id="btn-practice" class="small-btn" data-i18n="options.play"></button>
       </div>
     </div>
   </div>
 
   <!-- ====================================================== PAUSA -->
   <div id="screen-pause" class="screen" hidden>
-    <h2>Pausa</h2>
-    <button id="btn-resume" class="big-btn">Seguir</button>
-    <div class="control-pick" role="group" aria-label="Control">
-      <button class="pick-btn" data-mode="joystick">Joystick</button>
-      <button class="pick-btn" data-mode="gyro">Giroscopio</button>
+    <h2 data-i18n="pause.title"></h2>
+    <button id="btn-resume" class="big-btn" data-i18n="pause.resume"></button>
+    <div class="control-pick" role="group">
+      <button class="pick-btn" data-mode="joystick" data-i18n="options.joystick"></button>
+      <button class="pick-btn" data-mode="gyro" data-i18n="options.gyro"></button>
     </div>
-    <button id="btn-pause-calib" class="small-btn gyro-only">Calibrar inclinación</button>
+    <button id="btn-pause-calib" class="small-btn gyro-only" data-i18n="pause.calibrate"></button>
     <div class="btn-row">
-      <button id="btn-restart" class="small-btn">Reiniciar</button>
-      <button id="btn-quit" class="small-btn">Salir</button>
+      <button id="btn-restart" class="small-btn" data-i18n="pause.restart"></button>
+      <button id="btn-quit" class="small-btn" data-i18n="pause.quit"></button>
     </div>
   </div>
 
-  <!-- ====================================================== RESULTADO DEL PISO -->
+  <!-- ====================================================== RESULTADO -->
   <div id="screen-result" class="screen" hidden>
     <div class="result-card">
       <h2 id="result-title"></h2>
       <div id="result-stars" class="stars-big" aria-live="polite"></div>
       <ul id="result-goals" class="goals"></ul>
       <div class="btn-row">
-        <button id="btn-next" class="big-btn">Siguiente piso</button>
+        <button id="btn-next" class="big-btn"></button>
       </div>
       <div class="btn-row">
-        <button id="btn-retry" class="small-btn">Repetir</button>
-        <button id="btn-result-back" class="small-btn">Capítulo</button>
+        <button id="btn-retry" class="small-btn" data-i18n="result.retry"></button>
+        <button id="btn-result-back" class="small-btn"></button>
       </div>
     </div>
   </div>
@@ -148,26 +236,39 @@
       <div class="table-wrap">
         <table class="bd-table">
           <thead>
-            <tr><th>Piso</th><th>Estrellas</th><th>Monedas</th><th>Secreto</th><th>Limo</th><th>Tiempo</th></tr>
+            <tr>
+              <th data-i18n="breakdown.floor"></th><th data-i18n="breakdown.stars"></th><th data-i18n="breakdown.coins"></th>
+              <th data-i18n="breakdown.secret"></th><th data-i18n="breakdown.slime"></th><th data-i18n="breakdown.time"></th>
+            </tr>
           </thead>
           <tbody id="bd-rows"></tbody>
           <tfoot>
-            <tr><th>Total</th><td id="bd-stars"></td><td id="bd-coins"></td><td id="bd-secrets"></td><td id="bd-pct"></td><td id="bd-time"></td></tr>
+            <tr><th data-i18n="breakdown.total"></th><td id="bd-stars"></td><td id="bd-coins"></td><td id="bd-secrets"></td><td id="bd-pct"></td><td id="bd-time"></td></tr>
           </tfoot>
         </table>
       </div>
       <div class="btn-row bd-actions">
         <div id="bd-rank" class="rank"></div>
-        <button id="btn-bd-chapter" class="small-btn">Volver al capítulo</button>
-        <button id="btn-bd-menu" class="big-btn">Menú principal</button>
+        <button id="btn-bd-chapter" class="small-btn" data-i18n="breakdown.backChapter"></button>
+        <button id="btn-bd-menu" class="big-btn" data-i18n="breakdown.menu"></button>
       </div>
+    </div>
+  </div>
+
+  <!-- ====================================================== NUEVO ACCESORIO -->
+  <div id="screen-reward" class="screen" hidden>
+    <div class="reward-card">
+      <p class="panel-label" data-i18n="breakdown.perfect"></p>
+      <div class="reward-burst" aria-hidden="true"></div>
+      <h2 id="reward-title"></h2>
+      <button id="btn-reward-ok" class="big-btn" data-i18n="shop.equip"></button>
     </div>
   </div>
 
   <!-- ====================================================== GIRAR EL MÓVIL -->
   <div id="rotate-overlay" role="alert">
     <svg class="rotate-phone" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
-    <p>Gira el móvil para jugar en horizontal</p>
+    <p data-i18n="common.rotate"></p>
   </div>
 
   <script type="module" src="/src/main.ts"></script>

@@ -6,19 +6,45 @@ import c1f2 from './campaign/chapter1/02-c1-filo-de-cuchilla.json';
 import c1f3 from './campaign/chapter1/03-c1-pasillo-de-fuego.json';
 import c1f4 from './campaign/chapter1/04-c1-divide-y-venceras.json';
 import c1f5 from './campaign/chapter1/05-c1-salto-al-abismo.json';
+import c1f6 from './campaign/chapter1/06-c1-aceite-y-chispas.json';
+import c1f7 from './campaign/chapter1/07-c1-hielo-que-arde.json';
+import c1f8 from './campaign/chapter1/08-c1-ventiladores.json';
+import c1f9 from './campaign/chapter1/09-c1-corriente-helada.json';
+import c1f10 from './campaign/chapter1/10-c1-gran-cripta.json';
 
-/** Modo historia: capítulos con sus pisos en orden. */
+/** Modo historia: capítulos de 10 pisos. Completar uno al 100 % da su accesorio. */
 export const CHAPTERS: ChapterDef[] = [
   {
     id: 'cripta-azul',
     name: 'Capítulo 1',
     subtitle: 'La Cripta Azul',
-    floors: [c1f1, c1f2, c1f3, c1f4, c1f5] as LevelData[],
+    floors: [c1f1, c1f2, c1f3, c1f4, c1f5, c1f6, c1f7, c1f8, c1f9, c1f10] as LevelData[],
+    reward: 'hat_beanie',
   },
 ];
 
 /** Capítulos anunciados que aún no se pueden jugar. */
 export const UPCOMING = [{ name: 'Capítulo 2', subtitle: 'Próximamente' }];
+
+/** Escenario del menú: plataforma abierta donde luce el limo (no se juega). */
+export const MENU_STAGE: LevelData = {
+  format: 1,
+  id: 'menu-stage',
+  name: 'Menú',
+  count: 80,
+  tiles: [
+    '.........',
+    '..00000..',
+    '.0C000C0.',
+    '.0000000.',
+    '.000P000.',
+    '.0000000.',
+    '.0C0G0C0.',
+    '..00000..',
+    '.........',
+  ],
+  heights: Array(9).fill('000000000'),
+};
 
 /** Nivel de pruebas sin trampas (desde Ajustes). */
 export const PRACTICE = sendero as LevelData;

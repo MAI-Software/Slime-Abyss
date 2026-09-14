@@ -12,7 +12,21 @@ export interface Cell {
   top: number;
   channel?: Channel;
   axis?: 'x' | 'z';
+  dir?: 'n' | 's' | 'e' | 'w';
 }
+
+export type PickupType = 'coin' | 'gem' | 'oil';
+
+/** Plantas o bloque de hielo que el limo en llamas elimina. */
+interface Breakable {
+  obj: THREE.Object3D;
+  kind: 'plant' | 'iceblock';
+  broken: boolean;
+  t: number;
+}
+
+const DIRS = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] } as const;
+const WIND_LEN = 9;
 
 /** Obstáculo que no ocupa toda la casilla (cuchillas, pinchos): caja para colisión y zona de corte. */
 export interface Obstacle {
@@ -37,7 +51,7 @@ interface Pad {
 }
 
 interface Coin {
-  gem: boolean;
+  type: PickupType;
   i: number;
   j: number;
   obj: THREE.Object3D;
@@ -114,8 +128,18 @@ export class World {
   private obstacleAt: Int32Array;
   coinsCollected = 0;
   gemsCollected = 0;
-  get coinsTotal() { return this.coins.filter((c) => !c.gem).length; }
-  get gemsTotal() { return this.coins.filter((c) => c.gem).length; }
+  get coinsTotal() { return this.coins.filter((c) => c.type === 'coin').length; }
+  get gemsTotal() { return this.coins.filter((c) => c.type === 'gem').length; }
+  private breakables = new Map<number, Breakable>();
+  private fans: { blades: THREE.Object3D; i: number; j: number; dir: 'n' | 's' | 'e' | 'w'; base: number }[] = [];
+  private coldCells: number[] = [];
+  /** corriente de aire por casilla: dirección × fuerza y altura del ventilador */
+  readonly windX: Float32Array;
+  readonly windZ: Float32Array;
+  readonly windBase: Float32Array;
+  private windFx: THREE.Points | null = null;
+  private windCells: { i: number; j: number; dx: number; dz: number; base: number; pow: number }[] = [];
+  private mistFx: THREE.Points | null = null;
   private fire: FireFx | null = null;
   private chest: THREE.Object3D | null = null;
   private chestLid: THREE.Object3D | null = null;
@@ -134,6 +158,9 @@ export class World {
       for (let i = 0; i < this.w; i++) this.cells.push(this.parse(i, j));
     }
     this.obstacleAt = new Int32Array(this.w * this.d).fill(-1);
+    this.windX = new Float32Array(this.w * this.d);
+    this.windZ = new Float32Array(this.w * this.d);
+    this.windBase = new Float32Array(this.w * this.d);
     this.build();
   }
 
@@ -141,7 +168,7 @@ export class World {
     const tile = TILE_BY_CHAR.get(this.def.tiles[j][i]) ?? TILE_BY_CHAR.get('.')!;
     if (tile.kind === 'void') return { kind: 'void', base: 0, top: -Infinity };
     const base = Number(this.def.heights[j][i]) * HEIGHT_STEP;
-    return { kind: tile.kind, base, top: base + (tile.raise ?? 0), channel: tile.channel, axis: tile.axis };
+    return { kind: tile.kind, base, top: base + (tile.raise ?? 0), channel: tile.channel, axis: tile.axis, dir: tile.dir };
   }
 
   cell(i: number, j: number): Cell | null {
@@ -179,16 +206,38 @@ export class World {
     return k < 0 ? null : this.obstacles[k];
   }
 
-  /** Moneda en la casilla (i, j) sin recoger; la marca como recogida. */
-  /** Recoge la moneda o gema de la casilla. Devuelve qué era, o null si no había nada. */
-  collectCoin(i: number, j: number): 'coin' | 'gem' | null {
+  /** Recoge lo que haya en la casilla (moneda, gema o aceite). Devuelve qué era, o null. */
+  collectCoin(i: number, j: number): PickupType | null {
     const c = this.coinAt.get(j * this.w + i);
     if (!c || c.collected) return null;
     c.collected = true;
     c.t = 0;
-    if (c.gem) this.gemsCollected++;
-    else this.coinsCollected++;
-    return c.gem ? 'gem' : 'coin';
+    if (c.type === 'gem') this.gemsCollected++;
+    else if (c.type === 'coin') this.coinsCollected++;
+    return c.type;
+  }
+
+  /** ¿Hay plantas o hielo sin quemar en la casilla? */
+  burnable(i: number, j: number): boolean {
+    const b = this.breakables.get(j * this.w + i);
+    return !!b && !b.broken;
+  }
+
+  /** El limo en llamas elimina el obstáculo. Devuelve qué era. */
+  burn(i: number, j: number): 'plant' | 'iceblock' | null {
+    const idx = j * this.w + i;
+    const b = this.breakables.get(idx);
+    if (!b || b.broken) return null;
+    b.broken = true;
+    b.t = 0;
+    const c = this.cells[idx];
+    c.top = c.base;
+    c.kind = 'floor';
+    return b.kind;
+  }
+
+  isCold(i: number, j: number): boolean {
+    return i >= 0 && j >= 0 && i < this.w && j < this.d && this.coldCells.includes(j * this.w + i);
   }
 
   /** Dispara la animación del muelle. Devuelve true si no se había disparado hace nada (para sonido). */
@@ -273,9 +322,29 @@ export class World {
             this.treasure.set(x, c.base, z);
             this.addChest(x, c.base, z);
             break;
-          case 'coin': case 'gem':
+          case 'coin': case 'gem': case 'oil':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
-            this.addCoin(i, j, c.base, c.kind === 'gem');
+            this.addCoin(i, j, c.base, c.kind);
+            break;
+          case 'plant': case 'iceblock': {
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            const obj = this.add(c.kind === 'plant' ? 'plant_block' : 'ice_block', x, c.base, z);
+            obj.rotation.y = ((i * 7 + j * 3) % 4) * (Math.PI / 2);
+            this.breakables.set(j * this.w + i, { obj, kind: c.kind, broken: false, t: 0 });
+            break;
+          }
+          case 'fan': {
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            const obj = this.add('fan', x, c.base, z);
+            // el modelo sopla hacia +Z (hacia la cámara)
+            obj.rotation.y = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }[c.dir ?? 's'];
+            this.fans.push({ blades: Assets.child(obj, 'fan_blades'), i, j, dir: c.dir ?? 's', base: c.base });
+            break;
+          }
+          case 'coldjet':
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            this.add('cold_vent', x, c.base, z);
+            this.coldCells.push(j * this.w + i);
             break;
           case 'blade': case 'spike':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
@@ -287,6 +356,8 @@ export class World {
     }
 
     this.buildBlocks(solids);
+    this.buildWind();
+    this.buildMist();
 
     if (fireCells.length) {
       this.fire = new FireFx(fireCells, this.assets);
@@ -349,12 +420,14 @@ export class World {
     make('wall', wallMat, wallMat);
   }
 
-  private addCoin(i: number, j: number, base: number, gem: boolean) {
-    const y = base + (gem ? 0.35 : 0.55);
-    const obj = this.add(gem ? 'gem' : 'coin', i + 0.5, y, j + 0.5);
-    if (gem) {
+  private addCoin(i: number, j: number, base: number, kind: string) {
+    const type: PickupType = kind === 'gem' ? 'gem' : kind === 'oil' ? 'oil' : 'coin';
+    const gem = type === 'gem';
+    const y = base + (type === 'coin' ? 0.55 : type === 'oil' ? 0.12 : 0.35);
+    const obj = this.add(type === 'coin' ? 'coin' : type === 'gem' ? 'gem' : 'oil_bottle', i + 0.5, y, j + 0.5);
+    if (gem || type === 'oil') {
       // halo violeta bajo la gema para que se vea desde lejos
-      const glowMat = createGlowMaterial(0xa855f7, this.timeUniform, 0.8);
+      const glowMat = createGlowMaterial(gem ? 0xa855f7 : 0xf5a524, this.timeUniform, 0.8);
       this.ownedMaterials.push(glowMat);
       const glow = new THREE.Mesh(this.assets.geometry('fire_glow'), glowMat);
       glow.position.set(i + 0.5, base + 0.02, j + 0.5);
@@ -363,9 +436,99 @@ export class World {
       this.group.add(glow);
       obj.userData.glow = glow;
     }
-    const coin: Coin = { gem, i, j, obj, baseY: y, collected: false, t: 0 };
+    const coin: Coin = { type, i, j, obj, baseY: y, collected: false, t: 0 };
     this.coins.push(coin);
     this.coinAt.set(j * this.w + i, coin);
+  }
+
+  /** Corriente de cada ventilador: avanza por casillas (también sobre el vacío) hasta chocar con algo alto. */
+  private buildWind() {
+    for (const f of this.fans) {
+      const [dx, dz] = DIRS[f.dir];
+      for (let k = 1; k <= WIND_LEN; k++) {
+        const ci = f.i + dx * k, cj = f.j + dz * k;
+        const cell = this.cell(ci, cj);
+        if (!cell) break;
+        if (cell.top !== -Infinity && cell.top > f.base + 0.6) break;
+        const idx = cj * this.w + ci;
+        const pow = 1 - (k - 1) / (WIND_LEN + 1);
+        this.windX[idx] += dx * pow;
+        this.windZ[idx] += dz * pow;
+        this.windBase[idx] = f.base;
+        this.windCells.push({ i: ci, j: cj, dx, dz, base: f.base, pow });
+      }
+    }
+    if (!this.windCells.length) return;
+    const per = 3;
+    const pos = new Float32Array(this.windCells.length * per * 3);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+    const mat = new THREE.PointsMaterial({ color: 0xe6f4ff, size: 0.07, transparent: true, opacity: 0.55, depthWrite: false });
+    this.ownedMaterials.push(mat);
+    this.ownedGeometries.push(geo);
+    this.windFx = new THREE.Points(geo, mat);
+    this.windFx.frustumCulled = false;
+    this.group.add(this.windFx);
+  }
+
+  private buildMist() {
+    if (!this.coldCells.length) return;
+    const pos = new Float32Array(this.coldCells.length * 8 * 3);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+    const mat = new THREE.PointsMaterial({ color: 0xd9f6ff, size: 0.16, transparent: true, opacity: 0.6, depthWrite: false });
+    this.ownedMaterials.push(mat);
+    this.ownedGeometries.push(geo);
+    this.mistFx = new THREE.Points(geo, mat);
+    this.mistFx.frustumCulled = false;
+    this.group.add(this.mistFx);
+  }
+
+  private updateEffects(dt: number) {
+    for (const f of this.fans) f.blades.rotation.z += dt * 16;
+    if (this.windFx) {
+      const pos = (this.windFx.geometry.getAttribute('position') as THREE.BufferAttribute).array as Float32Array;
+      let w = 0;
+      for (let k = 0; k < this.windCells.length; k++) {
+        const c = this.windCells[k];
+        for (let p = 0; p < 3; p++) {
+          const phase = (this.time * (1.6 + c.pow) + p / 3 + (c.i * 0.37 + c.j * 0.61)) % 1;
+          const side = (p - 1) * 0.28;
+          pos[w++] = c.i + 0.5 + c.dx * (phase - 0.5) + (c.dz !== 0 ? side : 0);
+          pos[w++] = c.base + 0.35 + p * 0.22 + Math.sin(this.time * 6 + p + k) * 0.04;
+          pos[w++] = c.j + 0.5 + c.dz * (phase - 0.5) + (c.dx !== 0 ? side : 0);
+        }
+      }
+      (this.windFx.geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
+    }
+    if (this.mistFx) {
+      const pos = (this.mistFx.geometry.getAttribute('position') as THREE.BufferAttribute).array as Float32Array;
+      let w = 0;
+      for (const idx of this.coldCells) {
+        const ci = idx % this.w, cj = Math.floor(idx / this.w);
+        const base = this.cells[idx].base;
+        for (let p = 0; p < 8; p++) {
+          const life = (this.time * 0.8 + p / 8) % 1;
+          const a = p * 2.4 + this.time * 0.6;
+          pos[w++] = ci + 0.5 + Math.cos(a) * 0.25 * (1 - life * 0.5);
+          pos[w++] = base + 0.1 + life * 1.4;
+          pos[w++] = cj + 0.5 + Math.sin(a) * 0.25 * (1 - life * 0.5);
+        }
+      }
+      (this.mistFx.geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
+    }
+    for (const b of this.breakables.values()) {
+      if (!b.broken || !b.obj.visible) continue;
+      b.t += dt;
+      const k = Math.min(b.t / (b.kind === 'plant' ? 0.6 : 0.9), 1);
+      if (b.kind === 'plant') {
+        b.obj.scale.setScalar(Math.max(0.01, 1 - k));
+        b.obj.rotation.y += dt * 3;
+      } else {
+        b.obj.scale.set(Math.max(0.01, 1 - k * 0.4), Math.max(0.01, 1 - k), Math.max(0.01, 1 - k * 0.4));
+      }
+      if (k >= 1) b.obj.visible = false;
+    }
   }
 
   private addDivider(i: number, j: number, c: Cell) {
@@ -508,8 +671,8 @@ export class World {
     for (const c of this.coins) {
       if (!c.obj.visible) continue;
       if (!c.collected) {
-        c.obj.rotation.y = this.time * (c.gem ? 1.6 : 2.6) + c.i * 0.7;
-        c.obj.position.y = c.baseY + Math.sin(this.time * 3 + c.j) * (c.gem ? 0.1 : 0.06);
+        c.obj.rotation.y = this.time * (c.type === 'coin' ? 2.6 : 1.4) + c.i * 0.7;
+        c.obj.position.y = c.baseY + Math.sin(this.time * 3 + c.j) * (c.type === 'coin' ? 0.06 : 0.08);
       } else {
         // recogida: salta, gira rápido, crece y se desvanece
         c.t += dt;
@@ -535,6 +698,7 @@ export class World {
     }
 
     this.fire?.update(this.time, this.fireState);
+    this.updateEffects(dt);
 
     if (this.chest && this.chestLid && this.sparkles) {
       const idle = 1 - this.opening;

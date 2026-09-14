@@ -54,8 +54,34 @@ const FACE_MIN_SIZE = 6;
 
 export type SlimeEvent =
   | { type: 'fall' | 'evaporate' | 'pad'; x: number; y: number; z: number }
-  | { type: 'coin' | 'gem'; x: number; y: number; z: number }
-  | { type: 'cut'; x: number; z: number };
+  | { type: 'coin' | 'gem' | 'oil'; x: number; y: number; z: number }
+  | { type: 'cut'; x: number; z: number }
+  | { type: 'burn'; x: number; z: number; what: 'plant' | 'iceblock' }
+  | { type: 'state'; from: SlimeState; to: SlimeState };
+
+/**
+  Reacciones del limo (todo el limo a la vez):
+    normal  --aceite-->  oiled   --fuego-->  burning (quema plantas y hielo, no le daña el fuego)
+    burning --fin o aire frío--> normal
+    cualquiera --aire frío--> frozen (30 s: rígido, no gotea, viaja sobre las corrientes de aire)
+    frozen  --fuego--> normal (se derrite sin daño)
+*/
+export type SlimeState = 'normal' | 'oiled' | 'burning' | 'frozen';
+export const BURN_TIME = 12;
+export const FREEZE_TIME = 30;
+const WIND_ACC = 42;          // empuje del ventilador sobre el limo normal (lo deshace)
+const WIND_SCATTER = 38;
+const WIND_GRIP = 0.04;
+const WIND_SINK = 30;
+const WIND_FROZEN_ACC = 9;    // congelado: la corriente lo transporta entero
+const HOVER_HEIGHT = 0.8;
+
+const STATE_LOOK: Record<SlimeState, { color: number; emissive: number; rim: [number, number, number]; wobble: number }> = {
+  normal: { color: 0x2f8cff, emissive: 0x0b3a8c, rim: [0.45, 0.8, 1.0], wobble: 1 },
+  oiled: { color: 0xd49a1c, emissive: 0x5a3500, rim: [1.0, 0.85, 0.45], wobble: 0.8 },
+  burning: { color: 0xff6a1a, emissive: 0xd23a00, rim: [1.0, 0.75, 0.2], wobble: 1.3 },
+  frozen: { color: 0xbfe9ff, emissive: 0x3f8fc2, rim: [0.85, 0.97, 1.0], wobble: 0 },
+};
 
 export interface Group {
   ids: number[];
@@ -91,7 +117,13 @@ export class Slime {
   private padX: Float32Array; private padZ: Float32Array; private padTop: Float32Array;
   private lastCutEvent = -1;
   private time = 0;
-  private readonly uniforms = { uTime: { value: 0 } };
+  private readonly uniforms = { uTime: { value: 0 }, uWobble: { value: 1 }, uRim: { value: new THREE.Vector3(0.45, 0.8, 1.0) } };
+  state: SlimeState = 'normal';
+  stateT = 0;
+  private material!: THREE.MeshStandardMaterial;
+  private burnHits: number[] = [];
+  private tmpColor = new THREE.Color();
+  private tmpRim = new THREE.Vector3();
   private tmpCoin = new THREE.Vector3();
 
   groups: Group[] = [];
@@ -106,10 +138,12 @@ export class Slime {
   private blob: BlobMesh;
   private spheres: THREE.InstancedMesh;
   private faces: Face[] = [];
+  private hat: THREE.Object3D | null = null;
+  private hatPos = new THREE.Vector3();
   private contactShadows: THREE.Mesh[] = [];
   private shadowTex = createContactShadowTexture();
 
-  constructor(private world: World, count: number, lowQuality: boolean, assets: Assets) {
+  constructor(private world: World, count: number, lowQuality: boolean, private assets: Assets) {
     const n = (this.n = count);
     const f = () => new Float32Array(n);
     this.px = f(); this.py = f(); this.pz = f();
@@ -158,22 +192,25 @@ export class Slime {
     });
     // borde brillante: da aspecto de gelatina sin coste de transparencia
     material.envMapIntensity = 1.4;
+    this.material = material;
     material.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = this.uniforms.uTime;
+      shader.uniforms.uWobble = this.uniforms.uWobble;
+      shader.uniforms.uRim = this.uniforms.uRim;
       // superficie viva: ondula suavemente y el interior brilla con vetas que se mueven
-      shader.vertexShader = `uniform float uTime;\nvarying vec3 vSlimePos;\n${shader.vertexShader}`.replace(
+      shader.vertexShader = `uniform float uTime;\nuniform float uWobble;\nvarying vec3 vSlimePos;\n${shader.vertexShader}`.replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
         vec3 wp = (modelMatrix * vec4(position, 1.0)).xyz;
         float wob = sin(uTime * 5.0 + wp.x * 4.0 + wp.z * 3.0) * 0.5 + sin(uTime * 3.3 - wp.z * 5.0 + wp.y * 6.0) * 0.5;
-        transformed += objectNormal * wob * 0.022;
+        transformed += objectNormal * wob * 0.022 * uWobble;
         vSlimePos = wp;`,
       );
-      shader.fragmentShader = `uniform float uTime;\nvarying vec3 vSlimePos;\n${shader.fragmentShader}`.replace(
+      shader.fragmentShader = `uniform float uTime;\nuniform vec3 uRim;\nvarying vec3 vSlimePos;\n${shader.fragmentShader}`.replace(
         '#include <opaque_fragment>',
         `float slimeRim = 1.0 - max(dot(normalize(normal), normalize(vViewPosition)), 0.0);
         float veins = sin(vSlimePos.x * 7.0 + uTime * 1.7) * sin(vSlimePos.z * 6.0 - uTime * 1.3) * sin(vSlimePos.y * 9.0 + uTime * 2.1);
-        outgoingLight += vec3(0.45, 0.8, 1.0) * pow(slimeRim, 2.2) * 0.6;
+        outgoingLight += uRim * pow(slimeRim, 2.2) * 0.6;
         outgoingLight += vec3(0.25, 0.55, 1.0) * smoothstep(0.35, 0.9, veins) * 0.12;
         #include <opaque_fragment>`,
       );
@@ -229,6 +266,34 @@ export class Slime {
 
   celebrate() { for (const f of this.faces) f.cheer(10); }
 
+  private setState(to: SlimeState) {
+    if (to === this.state && to !== 'frozen' && to !== 'burning') return;
+    const from = this.state;
+    this.state = to;
+    this.stateT = to === 'burning' ? BURN_TIME : to === 'frozen' ? FREEZE_TIME : 0;
+    if (from !== to) this.events.push({ type: 'state', from, to });
+  }
+
+  /** Accesorio de cabeza (solo visual). null para quitarlo. */
+  setHat(id: string | null) {
+    if (this.hat) { this.group.remove(this.hat); this.hat = null; }
+    if (!id) return;
+    try {
+      this.hat = this.assets.clone(id);
+      this.hat.visible = false;
+      this.group.add(this.hat);
+    } catch { this.hat = null; }
+  }
+
+  /** Un limito al azar (para que el juego ponga llamas o escarcha encima). */
+  randomParticle(out: THREE.Vector3): boolean {
+    for (let tries = 0; tries < 6; tries++) {
+      const i = Math.floor(Math.random() * this.n);
+      if (this.alive[i] && this.dying[i] === 0) { out.set(this.px[i], this.py[i], this.pz[i]); return true; }
+    }
+    return false;
+  }
+
   // ---------------------------------------------------------------- simulación
 
   /** tiltX/tiltZ: dirección del mando en [-1, 1] (x derecha, z hacia la cámara). */
@@ -248,10 +313,34 @@ export class Slime {
   private substep(h: number, tiltX: number, tiltZ: number) {
     const { n, px, py, pz, vx, vy, vz, ax, ay, az, alive, tag, noAttr, time, grip } = this;
     const link2 = LINK * LINK;
+    const frozen = this.state === 'frozen';
+    const kAttr = frozen ? K_ATT * 5 : K_ATT;
+    const kVisc = frozen ? VISC * 6 : VISC;
+    const w = this.world;
     for (let i = 0; i < n; i++) {
       ax[i] = 0;
       ay[i] = -GRAVITY;
       az[i] = 0;
+      if (!alive[i]) continue;
+      // corriente de un ventilador
+      const ci = Math.floor(px[i]), cj = Math.floor(pz[i]);
+      if (ci < 0 || cj < 0 || ci >= w.w || cj >= w.d) continue;
+      const idx = cj * w.w + ci;
+      const wx = w.windX[idx], wz = w.windZ[idx];
+      if (wx === 0 && wz === 0 || py[i] > w.windBase[idx] + 2.2) continue;
+      const pow = Math.hypot(wx, wz);
+      if (frozen) {
+        // flota a media altura y se deja llevar entero
+        ax[i] += wx * WIND_FROZEN_ACC;
+        az[i] += wz * WIND_FROZEN_ACC;
+        ay[i] += GRAVITY + (w.windBase[idx] + HOVER_HEIGHT - py[i]) * 30 - vy[i] * 7;
+      } else {
+        // lo empuja y lo esparce: se deshace. Sobre el vacío no hay colchón de aire que lo sostenga:
+        // la turbulencia lo hunde (solo el limo congelado es capaz de flotar en la corriente)
+        ax[i] += wx * WIND_ACC + (Math.random() - 0.5) * WIND_SCATTER * pow;
+        az[i] += wz * WIND_ACC + (Math.random() - 0.5) * WIND_SCATTER * pow;
+        ay[i] += w.cells[idx].top === -Infinity ? -WIND_SINK * pow : 5 * pow;
+      }
     }
 
     for (let i = 0; i < n; i++) {
@@ -273,11 +362,11 @@ export class Slime {
           f = -K_REP * (REST - d);
         } else if (bonded) {
           const t = (d - REST) / (LINK - REST);
-          f = K_ATT * (d - REST) * (1 - t * t) * Math.min(grip[i], grip[j]);
+          f = kAttr * (d - REST) * (1 - t * t) * Math.min(grip[i], grip[j]);
         }
         if (bonded) {
           const rv = (vx[j] - vx[i]) * nx + (vy[j] - vy[i]) * ny + (vz[j] - vz[i]) * nz;
-          f += VISC * rv * Math.min(grip[i], grip[j]);
+          f += kVisc * rv * Math.min(grip[i], grip[j]);
         }
         const fx = nx * f, fy = ny * f, fz = nz * f;
         ax[i] += fx; ay[i] += fy; az[i] += fz;
@@ -315,6 +404,14 @@ export class Slime {
       }
       const onGround = this.air[i] < 0.08;
       if (onGround) { ax[i] += slopeX; az[i] += slopeZ; }
+      if (frozen) {
+        // hielo: todo el trozo se mueve como un bloque
+        const g = gid[i];
+        if (g >= 0 && gcnt[g] > 0) {
+          vx[i] += (gvx[g] - vx[i]) * 0.3;
+          vz[i] += (gvz[g] - vz[i]) * 0.3;
+        }
+      }
       vx[i] = (vx[i] + ax[i] * h) * dragK;
       vy[i] = (vy[i] + ay[i] * h) * dragK;
       vz[i] = (vz[i] + az[i] * h) * dragK;
@@ -395,7 +492,8 @@ export class Slime {
           this.vy[i] -= ny * vn;
           this.vz[i] -= nz * vn;
         }
-        if (ny < 0.5) {
+        if (ny < 0.5 && this.state === 'burning' && w.burnable(ci, cj)) this.burnHits.push(cj * w.w + ci);
+        if (ny < 0.5 && this.state !== 'frozen') {
           // contra un muro: el líquido se pega un poco; en la arista vertical, se suelta una gota
           const drag = 1 - WALL_DRAG / 180;
           this.vx[i] *= drag;
@@ -496,6 +594,17 @@ export class Slime {
   private postStep(dt: number) {
     const w = this.world;
     if (this.lastCutEvent >= 0 && Math.random() < dt * 2) this.lastCutEvent = -1;
+    // temporizadores de estado y obstáculos quemados
+    if (this.stateT > 0) {
+      this.stateT -= dt;
+      if (this.stateT <= 0) this.setState('normal');
+    }
+    for (const idx of this.burnHits) {
+      const ci = idx % w.w, cj = Math.floor(idx / w.w);
+      const what = w.burn(ci, cj);
+      if (what) this.events.push({ type: 'burn', x: ci + 0.5, z: cj + 0.5, what });
+    }
+    this.burnHits.length = 0;
     this.switchCounts.A = 0;
     this.switchCounts.B = 0;
     this.touchedTreasure = false;
@@ -525,22 +634,36 @@ export class Slime {
 
       this.applyDividers(i);
       this.loose[i] = Math.max(0, this.loose[i] - dt);
-      this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : this.loose[i] > 0 ? CORNER_GRIP : 1;
-
       const ci = Math.floor(x), cj = Math.floor(z);
       const under = w.cell(ci, cj);
-      if (under && (under.kind === 'coin' || under.kind === 'gem') && y < under.base + 1.3) {
+      const idx = under ? cj * w.w + ci : -1;
+      const inWind = idx >= 0 && (w.windX[idx] !== 0 || w.windZ[idx] !== 0) && y < w.windBase[idx] + 2.2;
+      if (this.state === 'frozen') this.grip[i] = 1;
+      else if (inWind) this.grip[i] = WIND_GRIP;
+      else this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : this.loose[i] > 0 ? CORNER_GRIP : 1;
+
+      if (under && (under.kind === 'coin' || under.kind === 'gem' || under.kind === 'oil') && y < under.base + 1.3) {
         const got = w.collectCoin(ci, cj);
         if (got) {
           const c = w.coinPosition(ci, cj, this.tmpCoin);
           this.events.push({ type: got, x: c.x, y: c.y, z: c.z });
-          for (const f of this.faces) f.cheer(got === 'gem' ? 1.2 : 0.5);
+          if (got === 'oil') { if (this.state !== 'burning') this.setState('oiled'); }
+          else for (const f of this.faces) f.cheer(got === 'gem' ? 1.2 : 0.5);
         }
       }
+      // aire frío: congela (o apaga las llamas)
+      if (under && w.isCold(ci, cj) && y < under.base + 1.6) {
+        if (this.state === 'burning') this.setState('normal');
+        else if (this.state !== 'frozen' || this.stateT < FREEZE_TIME - 0.5) this.setState('frozen');
+      }
       if (under && w.fireActive(ci, cj) && y < under.base + 0.8) {
-        this.dying[i] = 1e-4;
-        this.hurts.push({ x, z });
-        continue;
+        if (this.state === 'oiled') this.setState('burning');
+        else if (this.state === 'frozen') this.setState('normal');
+        else if (this.state !== 'burning') {
+          this.dying[i] = 1e-4;
+          this.hurts.push({ x, z });
+          continue;
+        }
       }
       if (!this.fell[i] && y < -0.8) {
         this.fell[i] = 1;
@@ -646,6 +769,16 @@ export class Slime {
   /** alpha: fracción entre el paso de física anterior y el actual (0..1). */
   render(dt: number, alpha: number, lookX: number, lookZ: number) {
     this.uniforms.uTime.value += dt;
+    const look = STATE_LOOK[this.state];
+    const k = 1 - Math.exp(-dt * 6);
+    this.material.color.lerp(this.tmpColor.setHex(look.color), k);
+    this.material.emissive.lerp(this.tmpColor.setHex(look.emissive), k);
+    const flicker = this.state === 'burning' ? 0.5 + Math.sin(this.uniforms.uTime.value * 23) * 0.15 + Math.random() * 0.1 : 0.3;
+    this.material.emissiveIntensity += (flicker - this.material.emissiveIntensity) * k;
+    this.material.roughness += ((this.state === 'frozen' ? 0.05 : 0.14) - this.material.roughness) * k;
+    this.uniforms.uWobble.value += (look.wobble - this.uniforms.uWobble.value) * k;
+    this.uniforms.uRim.value.lerp(this.tmpRim.set(...look.rim), k);
+    for (const f of this.faces) f.frozen = this.state === 'frozen';
     const { n, px, py, pz, ox, oy, oz, alive, dying } = this;
     const lead = this.groups[0];
     let used = 0;
@@ -691,6 +824,22 @@ export class Slime {
       face.update(g, dt, lookX, lookZ, airborne / g.ids.length);
     }
 
+    // accesorio sobre el trozo principal
+    if (this.hat) {
+      const g = this.groups[0];
+      if (!g || g.ids.length < FACE_MIN_SIZE) this.hat.visible = false;
+      else {
+        const tx = g.cx, ty = g.maxY + 0.1, tz = g.cz + 0.05;
+        if (!this.hat.visible) this.hatPos.set(tx, ty, tz);
+        else this.hatPos.lerp(this.tmpRim.set(tx, ty, tz), 1 - Math.exp(-dt * 14));
+        const sc = Math.min(1.15, Math.max(0.45, 0.35 + g.ids.length / 100));
+        this.hat.position.copy(this.hatPos);
+        this.hat.scale.setScalar(sc);
+        this.hat.rotation.set(-0.2 + g.vz * 0.03, 0, -g.vx * 0.04);
+        this.hat.visible = true;
+      }
+    }
+
     // daño → cara de dolor en el trozo más cercano
     for (const h of this.hurts) {
       let best = 0;
@@ -719,7 +868,7 @@ export class Slime {
 
 // ------------------------------------------------------------------ cara
 
-type Expr = 'idle' | 'wee' | 'air' | 'happy' | 'pain' | 'dizzy';
+type Expr = 'idle' | 'wee' | 'air' | 'happy' | 'pain' | 'dizzy' | 'frozen';
 
 /**
   Cara kawaii modelada en Blender (face_*): ojos negros brillantes, boquita y mofletes.
@@ -743,6 +892,7 @@ class Face {
   private painT = 0;
   // mareo: se acumula con los cambios bruscos de velocidad y se va pasando solo
   private dizzyT = 0;
+  frozen = false;
   private agitation = 0;
   private prevVx = 0;
   private prevVz = 0;
@@ -841,6 +991,7 @@ class Face {
     let expr: Expr = 'idle';
     if (this.painT > 0) expr = 'pain';
     else if (this.happyT > 0) expr = 'happy';
+    else if (this.frozen) expr = 'frozen';
     else if (this.dizzyT > 0) expr = 'dizzy';
     else if (airFrac > 0.6) expr = 'air';
     else if (speed > 4.4) expr = 'wee';
@@ -855,7 +1006,7 @@ class Face {
       if (this.blinkT < -0.1) this.blinkT = 2 + Math.random() * 3;
     }
 
-    const normalEyes = expr === 'idle' || expr === 'wee' || expr === 'air';
+    const normalEyes = expr === 'idle' || expr === 'wee' || expr === 'air' || expr === 'frozen';
     // mirada: los ojos enteros se desplazan un poco hacia donde va el limo
     const lx = Math.max(-1, Math.min(1, g.vx * 0.2 + lookX * 0.5)) * 0.012;
     const ly = (expr === 'air' ? 1 : Math.max(-1, Math.min(1, -g.vz * 0.12 - lookZ * 0.3))) * 0.01;
@@ -865,7 +1016,7 @@ class Face {
       const r = e.userData.rest as THREE.Vector3;
       e.position.set(r.x + lx, r.y + ly, r.z);
       const sx = e.scale.x < 0 ? -1 : 1;
-      e.scale.set(sx * eyeScale, eyeScale * open, eyeScale);
+      e.scale.set(sx * eyeScale, eyeScale * (expr === 'idle' ? open : expr === 'frozen' ? 0.55 : 1), eyeScale);
     }
     for (const e of this.eyesPain) e.visible = expr === 'pain';
     for (const e of this.eyesHappy) e.visible = expr === 'happy';
@@ -875,7 +1026,7 @@ class Face {
     });
     this.mouths.smile.visible = expr === 'idle';
     this.mouths.open.visible = expr === 'wee' || expr === 'happy';
-    this.mouths.o.visible = expr === 'air';
+    this.mouths.o.visible = expr === 'air' || expr === 'frozen';
     this.mouths.pain.visible = expr === 'pain' || expr === 'dizzy';
     this.sweat.visible = expr === 'pain';
     for (const b of this.blush) {
@@ -895,7 +1046,7 @@ class Face {
     });
 
     // gracia: rebote al cambiar de cara, balanceo al moverse, tembleque con dolor
-    let wobble = Math.sin(this.t * 9) * Math.min(speed, 4) * 0.015;
+    let wobble = expr === 'frozen' ? 0 : Math.sin(this.t * 9) * Math.min(speed, 4) * 0.015;
     let shakeX = 0;
     if (expr === 'pain') {
       shakeX = Math.sin(this.t * 70) * 0.02;

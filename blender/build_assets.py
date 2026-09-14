@@ -134,7 +134,7 @@ def cylinder(bm, radius, depth, center=(0, 0, 0), segments=20, rot=None):
     )["verts"]
 
 
-def tube(name, points, radius, mat, parent=None, loc=(0, 0, 0), poly=False):
+def tube(name, points, radius, mat, parent=None, loc=(0, 0, 0), poly=False, cyclic=False, plane="XZ"):
     """Línea gruesa redondeada (para ojos y bocas dibujadas). Puntos en el plano XZ."""
     cu = bpy.data.curves.new(name + "_curve", "CURVE")
     cu.dimensions = "3D"
@@ -143,8 +143,9 @@ def tube(name, points, radius, mat, parent=None, loc=(0, 0, 0), poly=False):
     cu.use_fill_caps = True
     sp = cu.splines.new("POLY" if poly else "NURBS")
     sp.points.add(len(points) - 1)
-    for p, (x, z) in zip(sp.points, points):
-        p.co = (x, 0.0, z, 1.0)
+    for p, (a, b) in zip(sp.points, points):
+        p.co = (a, 0.0, b, 1.0) if plane == "XZ" else (a, b, 0.0, 1.0)
+    sp.use_cyclic_u = cyclic
     if not poly:
         sp.use_endpoint_u = True
         sp.order_u = 3
@@ -484,6 +485,160 @@ for k in range(46):
     r = 0.008 + 0.05 * t
     spiral.append((r * math.cos(ang), r * math.sin(ang)))
 tube("face_eye_dizzy", spiral, 0.011, M["black"])
+
+# ================================================================== REACCIONES
+M["glass_oil"] = material("OilBottle", "e0a526", 0.1, 0.0, emit="7a4a00", strength=0.35)
+M["cork"] = material("Cork", "a0703c", 0.9)
+M["label"] = material("Label", "fdf2e0", 0.8)
+M["leaf"] = material("Leaf", "3f9d3c", 0.7)
+M["leaf_dark"] = material("LeafDark", "2a6e2f", 0.8)
+M["thorn"] = material("Thorn", "6b4a2b", 0.7)
+M["ice_block"] = material("IceBlock", "a9e4ff", 0.05, 0.0, emit="3aa0d8", strength=0.25)
+M["fan_body"] = material("FanBody", "3d4a66", 0.45, 0.6)
+M["fan_blade"] = material("FanBlade", "cfd8e6", 0.25, 0.8)
+M["cold"] = material("ColdGlow", "bfefff", 0.2, 0.0, emit="7fd8ff", strength=1.5)
+
+# Botella de aceite: cuerpo ámbar, etiqueta, cuello y tapón.
+bottle = empty("oil_bottle")
+bm = bmesh.new()
+ellipsoid(bm, (0.13, 0.13, 0.16), (0, 0, 0.16), 18, 12)
+mesh_object("oil_bottle_body", bm, M["glass_oil"], smooth=True, parent=bottle)
+bm = bmesh.new()
+cylinder(bm, 0.135, 0.08, (0, 0, 0.15), 20)
+mesh_object("oil_bottle_label", bm, M["label"], smooth=True, parent=bottle)
+bm = bmesh.new()
+cylinder(bm, 0.05, 0.12, (0, 0, 0.34), 14)
+mesh_object("oil_bottle_neck", bm, M["glass_oil"], smooth=True, parent=bottle)
+bm = bmesh.new()
+cylinder(bm, 0.058, 0.07, (0, 0, 0.43), 14)
+mesh_object("oil_bottle_cork", bm, M["cork"], smooth=True, parent=bottle)
+
+# Plantas: matorral espeso con espinas (bloquea el paso hasta que arde). De z=0 a ~1.1.
+plant = empty("plant_block")
+bm = bmesh.new()
+for (x, y, z, r) in ((0, 0, 0.35, 0.42), (-0.22, 0.18, 0.62, 0.3), (0.24, -0.15, 0.7, 0.32), (0.05, 0.1, 0.92, 0.26),
+                     (0.25, 0.25, 0.35, 0.28), (-0.25, -0.25, 0.4, 0.3)):
+    ellipsoid(bm, (r, r, r * 0.95), (x, y, z), 12, 8)
+mesh_object("plant_bush", bm, M["leaf"], smooth=True, parent=plant)
+bm = bmesh.new()
+for (x, y, z, r) in ((0.3, 0.05, 0.55, 0.22), (-0.3, 0.02, 0.75, 0.2), (0.0, -0.32, 0.5, 0.22), (0.02, 0.33, 0.65, 0.2)):
+    ellipsoid(bm, (r, r, r), (x, y, z), 10, 6)
+mesh_object("plant_bush_dark", bm, M["leaf_dark"], smooth=True, parent=plant)
+bm = bmesh.new()
+for k in range(14):
+    ang = k * 2.4
+    h = 0.25 + (k % 5) * 0.16
+    x, y = 0.42 * math.cos(ang), 0.42 * math.sin(ang)
+    m = Matrix.Translation((x, y, h)) @ Matrix.Rotation(ang, 4, "Z") @ Matrix.Rotation(math.radians(90), 4, "Y")
+    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=5, radius1=0.035, radius2=0.0, depth=0.16, matrix=m)
+mesh_object("plant_thorns", bm, M["thorn"], parent=plant)
+
+# Bloque de hielo: cubo biselado translúcido-claro (se derrite con el limo en llamas).
+bm = bmesh.new()
+box(bm, (0.94, 0.94, 1.0), (0, 0, 0.5))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.05, segments=2, affect="EDGES")
+mesh_object("ice_block", bm, M["ice_block"])
+
+# Ventilador: pedestal + aro + aspas (el juego gira fan_blades y orienta el conjunto; sopla hacia -Y).
+fan = empty("fan")
+bm = bmesh.new()
+box(bm, (0.5, 0.36, 0.22), (0, 0.05, 0.11))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.03, segments=1, affect="EDGES")
+box(bm, (0.12, 0.12, 0.28), (0, 0.05, 0.34))
+mesh_object("fan_base", bm, M["fan_body"], parent=fan)
+ring = [(0.4 * math.cos(a * math.tau / 28), 0.4 * math.sin(a * math.tau / 28)) for a in range(28)]
+tube("fan_ring", ring, 0.045, M["fan_body"], parent=fan, loc=(0, 0, 0.62), poly=True, cyclic=True)
+blades = empty("fan_blades", parent=fan, loc=(0, 0, 0.62))
+bm = bmesh.new()
+for k in range(4):
+    ang = k * math.pi / 2
+    m = Matrix.Rotation(ang, 4, "Y") @ Matrix.Translation((0.19, 0, 0)) @ Matrix.Rotation(math.radians(25), 4, "X")
+    bmesh.ops.create_cube(bm, size=1.0, matrix=m @ Matrix.Diagonal((0.3, 0.02, 0.12, 1)))
+ellipsoid(bm, (0.07, 0.06, 0.07))
+mesh_object("fan_blades_mesh", bm, M["fan_blade"], parent=blades)
+
+# Rejilla de aire frío en el suelo (el juego añade la niebla).
+vent = empty("cold_vent")
+bm = bmesh.new()
+for k in (-0.3, 0.3):
+    box(bm, (0.8, 0.07, 0.06), (0, k, 0.03))
+    box(bm, (0.07, 0.8, 0.06), (k, 0, 0.03))
+for k in (-0.1, 0.1):
+    box(bm, (0.6, 0.04, 0.04), (0, k, 0.02))
+mesh_object("cold_vent_grate", bm, M["iron"], parent=vent)
+bm = bmesh.new()
+bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=24, radius=0.3)
+bmesh.ops.translate(bm, vec=(0, 0, 0.012), verts=bm.verts)
+mesh_object("cold_vent_glow", bm, M["cold"], parent=vent)
+
+# ================================================================== ACCESORIOS DE CABEZA (solo visuales)
+# Origen en la base del accesorio; tamaño para una cabeza de ~0.5 de radio.
+M["wool"] = material("Wool", "6d5bd0", 0.95)
+M["wool_light"] = material("WoolLight", "f5f3ff", 0.95)
+M["felt_black"] = material("FeltBlack", "1f1b2e", 0.7)
+M["ribbon_red"] = material("RibbonRed", "e11d48", 0.5)
+M["bow_pink"] = material("BowPink", "f472b6", 0.45)
+M["party"] = material("PartyTeal", "14b8a6", 0.55)
+M["party_star"] = material("PartyYellow", "facc15", 0.5)
+M["gold_hat"] = material("CrownGold", "fbbf24", 0.25, 1.0, emit="7a4a00", strength=0.3)
+M["ruby"] = material("Ruby", "e11d48", 0.1, 0.2, emit="7f1d1d", strength=0.4)
+
+hat = empty("hat_beanie")
+bm = bmesh.new()
+ellipsoid(bm, (0.3, 0.3, 0.24), (0, 0, 0.0), 20, 12)
+bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < -1e-4], context="VERTS")
+mesh_object("hat_beanie_dome", bm, M["wool"], smooth=True, parent=hat, loc=(0, 0, 0.05))
+bm = bmesh.new()
+cylinder(bm, 0.315, 0.09, (0, 0, 0.05), 24)
+mesh_object("hat_beanie_band", bm, M["wool_light"], smooth=True, parent=hat)
+bm = bmesh.new()
+ellipsoid(bm, (0.085, 0.085, 0.085), (0, 0, 0), 14, 10)
+mesh_object("hat_beanie_pompom", bm, M["wool_light"], smooth=True, parent=hat, loc=(0, 0, 0.33))
+
+hat = empty("hat_crown")
+bm = bmesh.new()
+cylinder(bm, 0.24, 0.12, (0, 0, 0.06), 28)
+for k in range(5):
+    ang = k * math.tau / 5
+    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=8, radius1=0.06, radius2=0.0, depth=0.16,
+                          matrix=Matrix.Translation((0.22 * math.cos(ang), 0.22 * math.sin(ang), 0.2)))
+mesh_object("hat_crown_gold", bm, M["gold_hat"], parent=hat)
+bm = bmesh.new()
+ellipsoid(bm, (0.035, 0.02, 0.035), (0, -0.245, 0.06), 10, 6)
+mesh_object("hat_crown_ruby", bm, M["ruby"], smooth=True, parent=hat)
+
+hat = empty("hat_top")
+bm = bmesh.new()
+cylinder(bm, 0.34, 0.03, (0, 0, 0.015), 28)
+cylinder(bm, 0.2, 0.34, (0, 0, 0.2), 28)
+mesh_object("hat_top_felt", bm, M["felt_black"], parent=hat)
+bm = bmesh.new()
+cylinder(bm, 0.205, 0.06, (0, 0, 0.08), 28)
+mesh_object("hat_top_band", bm, M["ribbon_red"], parent=hat)
+
+hat = empty("hat_bow")
+bm = bmesh.new()
+ellipsoid(bm, (0.14, 0.05, 0.1), (-0.13, 0, 0.1), 14, 8)
+ellipsoid(bm, (0.14, 0.05, 0.1), (0.13, 0, 0.1), 14, 8)
+ellipsoid(bm, (0.05, 0.06, 0.05), (0, 0, 0.1), 10, 6)
+mesh_object("hat_bow_mesh", bm, M["bow_pink"], smooth=True, parent=hat)
+
+hat = empty("hat_party")
+bm = bmesh.new()
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=20, radius1=0.18, radius2=0.0, depth=0.42,
+                      matrix=Matrix.Translation((0, 0, 0.21)))
+mesh_object("hat_party_cone", bm, M["party"], smooth=True, parent=hat)
+bm = bmesh.new()
+ellipsoid(bm, (0.06, 0.06, 0.06), (0, 0, 0.44), 12, 8)
+mesh_object("hat_party_pompom", bm, M["party_star"], smooth=True, parent=hat)
+
+hat = empty("hat_leaf")
+bm = bmesh.new()
+cylinder(bm, 0.018, 0.14, (0, 0, 0.07), 8)
+mesh_object("hat_leaf_stem", bm, M["thorn"], parent=hat)
+bm = bmesh.new()
+ellipsoid(bm, (0.16, 0.02, 0.08), (0.14, 0, 0.16), 14, 6)
+mesh_object("hat_leaf_blade", bm, M["leaf"], smooth=True, parent=hat)
 
 # ================================================================== guardar y exportar
 

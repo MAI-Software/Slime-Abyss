@@ -531,3 +531,160 @@ body[data-control="gyro"] #joy-zone { display: none; }
   .setting-row { padding: 6px 0; }
   .floor-card { min-height: 96px; }
 }
+
+/* ---------- menú principal: accesos secundarios ---------- */
+.menu-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: min(360px, 100%); }
+.menu-grid .small-btn { min-width: 0; width: 100%; }
+
+/* ---------- pantallas con el limo visible a la izquierda ---------- */
+.screen-side { align-items: flex-end; background: linear-gradient(90deg, rgba(12, 8, 30, 0) 30%, rgba(12, 8, 30, 0.7) 100%); }
+.side-panel {
+  width: min(420px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(253, 242, 248, 0.96);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 24px;
+  box-shadow: 0 6px 0 var(--ink);
+}
+.side-panel.wide { width: min(560px, 100%); }
+.side-panel .screen-head { width: 100%; }
+.side-panel h2 { color: var(--ink); text-shadow: none; flex: 1; }
+.panel-label { margin: 4px 0 0; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--secondary); text-align: left; }
+.panel-note { margin: 0; font-size: 14px; font-weight: 700; color: var(--muted); text-align: left; }
+.reward-note { margin: 0 0 0 auto; font-weight: 800; font-size: 14px; color: var(--gold-light); text-shadow: 0 2px 0 var(--ink); }
+
+.item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.item-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  text-align: left;
+  box-shadow: 0 4px 0 var(--ink);
+  font-family: 'Nunito', sans-serif;
+  transition: transform var(--press), box-shadow var(--press);
+}
+.item-card:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.item-card .item-name { font-weight: 800; font-size: 15px; }
+.item-card .item-state { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px; color: var(--slime-dark); }
+.item-card.equipped { background: #dbeafe; }
+.item-card.equipped .item-state { color: var(--ok); }
+.item-card:disabled { opacity: 0.6; cursor: not-allowed; }
+.item-swatch { width: 34px; height: 34px; border-radius: 10px; border: 2px solid var(--ink); display: grid; place-items: center; font-weight: 800; }
+
+/* ---------- perfil ---------- */
+.profile-card {
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 24px;
+  box-shadow: 0 6px 0 var(--ink);
+  text-align: left;
+}
+.profile-id { display: flex; align-items: center; gap: 12px; }
+.avatar {
+  width: 56px; height: 56px; flex: none;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: var(--slime) center / cover no-repeat;
+}
+.profile-name { margin: 0; font-family: 'Fredoka', sans-serif; font-size: 22px; font-weight: 700; }
+.google-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 18px;
+  background: #fff;
+  color: #1f1f1f;
+  border: 1px solid #747775;
+  border-radius: 999px;
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  align-self: flex-start;
+}
+.google-btn svg { width: 20px; height: 20px; }
+.google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.stat {
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #efe7f5;
+  font-weight: 800;
+}
+.stat b { display: block; font-family: 'Fredoka', sans-serif; font-size: 22px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+
+/* ---------- opciones ---------- */
+.lang-select {
+  min-height: 46px;
+  padding: 6px 12px;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+}
+.toggle-btn[aria-pressed="true"] { background: var(--slime); color: #fff; }
+
+/* ---------- HUD: estado del limo ---------- */
+.hud-left { display: flex; align-items: center; gap: 8px; }
+.hud-chip.state { padding: 6px 12px 6px 8px; }
+.hud-chip.state.oiled { background: #fde68a; }
+.hud-chip.state.burning { background: #fdba74; animation: bump 900ms ease-in-out infinite; }
+.hud-chip.state.frozen { background: #cff4ff; }
+
+/* ---------- recompensa ---------- */
+.reward-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 26px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 26px;
+  box-shadow: 0 6px 0 var(--ink);
+  overflow: hidden;
+}
+.reward-card h2 { color: var(--ink); text-shadow: none; }
+.reward-burst {
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--gold-light) 0 30%, transparent 31%),
+    repeating-conic-gradient(from 0deg, rgba(245, 158, 11, 0.55) 0 12deg, transparent 12deg 30deg);
+  animation: spin 6s linear infinite, star-pop 600ms both;
+}
+@keyframes spin { to { rotate: 360deg; } }
+
+@media (max-height: 520px) {
+  .menu-grid .small-btn { min-height: 44px; font-size: 15px; }
+  .side-panel { padding: 8px 12px; gap: 6px; }
+  .profile-card { padding: 10px 14px; gap: 6px; }
+  .avatar { width: 44px; height: 44px; }
+  .stat b { font-size: 18px; }
+  .stat-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .stat { padding: 5px 8px; }
+}

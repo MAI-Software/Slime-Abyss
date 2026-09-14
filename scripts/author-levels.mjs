@@ -16,7 +16,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../src/level/campaig
 
 const PRACTICE = {
   file: '00-sendero-largo.json',
-  id: 'sendero-largo', name: 'Sendero largo (prueba)', practice: true, count: 80, minPct: 0,
+  id: 'sendero-largo', name: 'Sendero largo (prueba)', practice: true, count: 80,
   map: [
     '###############',
     '#000000T000000#',
@@ -60,7 +60,7 @@ const PRACTICE = {
 const CHAPTER1 = [
   {
     file: 'chapter1/01-c1-primeros-pasos.json',
-    id: 'c1-primeros-pasos', name: 'Primeros pasos', count: 80, minPct: 0.35, keepPct: 0.8,
+    id: 'c1-primeros-pasos', name: 'Primeros pasos', count: 80, keepPct: 0.8,
     map: [
       '###############',
       '#000000T000000#',
@@ -112,7 +112,7 @@ const CHAPTER1 = [
   },
   {
     file: 'chapter1/02-c1-filo-de-cuchilla.json',
-    id: 'c1-filo-de-cuchilla', name: 'Filo de cuchilla', count: 80, minPct: 0.35, keepPct: 0.7,
+    id: 'c1-filo-de-cuchilla', name: 'Filo de cuchilla', count: 80, keepPct: 0.7,
     // secreto: el interruptor verde pide 14 limitos juntos y abre el rincón de la gema
     need: { B: 14 }, latch: { B: true },
     map: [
@@ -150,7 +150,7 @@ const CHAPTER1 = [
   },
   {
     file: 'chapter1/03-c1-pasillo-de-fuego.json',
-    id: 'c1-pasillo-de-fuego', name: 'Pasillo de fuego', count: 80, minPct: 0.35, keepPct: 0.65,
+    id: 'c1-pasillo-de-fuego', name: 'Pasillo de fuego', count: 80, keepPct: 0.65,
     map: [
       '...#######.....',
       '...#C0T00#.....',
@@ -184,7 +184,7 @@ const CHAPTER1 = [
   },
   {
     file: 'chapter1/04-c1-divide-y-venceras.json',
-    id: 'c1-divide-y-venceras', name: 'Divide y vencerás', count: 80, minPct: 0.35, keepPct: 0.75,
+    id: 'c1-divide-y-venceras', name: 'Divide y vencerás', count: 80, keepPct: 0.75,
     map: [
       '###########',
       '#000000T00#',
@@ -213,7 +213,7 @@ const CHAPTER1 = [
   },
   {
     file: 'chapter1/05-c1-salto-al-abismo.json',
-    id: 'c1-salto-al-abismo', name: 'Salto al abismo', count: 80, minPct: 0.35, keepPct: 0.65,
+    id: 'c1-salto-al-abismo', name: 'Salto al abismo', count: 80, keepPct: 0.65,
     // S abre la salida con solo tocarlo; s (secreto) pide 12 limitos juntos y abre la sala de la gema
     need: { B: 12 }, latch: { A: true, B: true },
     map: [
@@ -238,6 +238,143 @@ const CHAPTER1 = [
     tips: [
       { z: 15, text: 'Las plataformas rosas te lanzan sobre el abismo' },
       { z: 8, text: 'Pisa el interruptor para abrir la salida' },
+    ],
+  },
+  {
+    file: 'chapter1/06-c1-aceite-y-chispas.json',
+    id: 'c1-aceite-y-chispas', name: 'Aceite y chispas', count: 80, keepPct: 0.75,
+    map: [
+      '#############',
+      '#0C000T000C0#',
+      '#00000000000#',
+      '#####WWW#####',
+      '....#000#....',
+      '....#0C0#....',
+      '....#000#....',
+      '..###000###..',
+      '..#0000000#..',
+      '..#00F0F00#..',
+      '..#0000000#..',
+      '..###000###..',
+      '....#000#....',
+      '....#0O0#....',
+      '....#000#....',
+      '....#0P0#....',
+      '....#####....',
+    ],
+    tips: [
+      { z: 15, text: 'Coge la botella: el limo se vuelve aceite' },
+      { z: 10.5, text: 'Con aceite, el fuego no te evapora: te hace arder' },
+      { z: 6.5, text: 'Ardiendo quemas las plantas que cierran el paso' },
+    ],
+  },
+  {
+    file: 'chapter1/07-c1-hielo-que-arde.json',
+    id: 'c1-hielo-que-arde', name: 'Hielo que arde', count: 80, keepPct: 0.75,
+    map: [
+      '###########',
+      '#000T0000C#',
+      '#000000000#',
+      '####ZZZ####',
+      '...#000#...',
+      '...#0C0#...',
+      '...#000#...',
+      '####ZZZ####',
+      '#C00000000#',
+      '#0F00000F0#',
+      '#000000000#',
+      '####000####',
+      '...#0O0#...',
+      '...#000#...',
+      '...#0P0#...',
+      '...#####...',
+    ],
+    tips: [
+      { z: 14, text: 'Las llamas duran poco: date prisa' },
+      { z: 7.5, text: 'Ardiendo, derrites los bloques de hielo' },
+    ],
+  },
+  {
+    file: 'chapter1/08-c1-ventiladores.json',
+    id: 'c1-ventiladores', name: 'Ventiladores', count: 80, keepPct: 0.6,
+    map: [
+      '#############',
+      '#00000T00000#',
+      '#00000000000#',
+      '#####000#####',
+      '....#000#....',
+      '...>0000C....',
+      '....#000#....',
+      '....#0C0#....',
+      '....#000#....',
+      '...>C0000....',
+      '....#000#....',
+      '....#000#....',
+      '....#0P0#....',
+      '....#####....',
+    ],
+    tips: [
+      { z: 12, text: 'El viento de los ventiladores deshace el limo hacia el vacío' },
+      { z: 10.2, text: 'Cruza las corrientes deprisa' },
+    ],
+  },
+  {
+    file: 'chapter1/09-c1-corriente-helada.json',
+    id: 'c1-corriente-helada', name: 'Corriente helada', count: 80, keepPct: 0.75,
+    map: [
+      '..#######..',
+      '..#00T00#..',
+      '..#C0000#..',
+      '..#00000#..',
+      '...........',
+      '...........',
+      '...........',
+      '..#00000#..',
+      '..#0^^^0#..',
+      '..#C000C#..',
+      '..#00Q00#..',
+      '..#00000#..',
+      '..#00P00#..',
+      '..#######..',
+    ],
+    tips: [
+      { z: 12, text: 'El aire frío congela al limo durante 30 segundos' },
+      { z: 9.5, text: 'Congelado no se deshace: la corriente te lleva entero' },
+      { z: 7.5, text: 'Ponte delante de los ventiladores' },
+    ],
+  },
+  {
+    file: 'chapter1/10-c1-gran-cripta.json',
+    id: 'c1-gran-cripta', name: 'La gran cripta', count: 80, keepPct: 0.7,
+    map: [
+      '###############',
+      '#0T0000000#00G#',
+      '#00C000000Z000#',
+      '######WWW######',
+      '.....#000#.....',
+      '.....#0F0#.....',
+      '.....#000#.....',
+      '.....#000#.....',
+      '.....#0O0#.....',
+      '.....#000#.....',
+      '.....#000#.....',
+      '.....#000#.....',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '....#C0000#....',
+      '....#00000#....',
+      '....#0^^^0#....',
+      '....#00000#....',
+      '....#0Q0C0#....',
+      '....#00000#....',
+      '....#C0P00#....',
+      '....#######....',
+    ],
+    tips: [
+      { z: 21, text: 'Última prueba: usa todo lo que has aprendido' },
+      { z: 9, text: 'Aceite, fuego... y a quemar las plantas' },
     ],
   },
 ];
