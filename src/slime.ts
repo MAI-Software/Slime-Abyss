@@ -3,6 +3,7 @@ import { BlobMesh } from './blob-mesh';
 import { FRICTION, World } from './world';
 import type { Channel } from './level/format';
 import { Assets } from './assets';
+import { createContactShadowTexture } from './materials';
 
 // --- física ---
 const R = 0.2;            // radio de colisión de cada limito
@@ -78,6 +79,8 @@ export class Slime {
   private blob: BlobMesh;
   private spheres: THREE.InstancedMesh;
   private faces: Face[] = [];
+  private contactShadows: THREE.Mesh[] = [];
+  private shadowTex = createContactShadowTexture();
 
   constructor(private world: World, count: number, lowQuality: boolean, assets: Assets) {
     const n = (this.n = count);
@@ -131,10 +134,17 @@ export class Slime {
     this.blob.castShadow = true;
     this.group.add(this.blob);
 
+    const shadowGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+    const shadowMat = new THREE.MeshBasicMaterial({ map: this.shadowTex, transparent: true, depthWrite: false });
     for (let k = 0; k < FACE_GROUPS; k++) {
       const face = new Face(assets);
       this.faces.push(face);
       this.group.add(face.root);
+      const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+      shadow.renderOrder = 1;
+      shadow.visible = false;
+      this.contactShadows.push(shadow);
+      this.group.add(shadow);
     }
     this.spheres = new THREE.InstancedMesh(new THREE.SphereGeometry(0.25, 12, 9), material, n);
     this.spheres.castShadow = true;
@@ -528,7 +538,17 @@ export class Slime {
     for (let k = 0; k < FACE_GROUPS; k++) {
       const g = this.groups[k];
       const face = this.faces[k];
-      if (!g || g.ids.length < FACE_MIN_SIZE) { face.hide(); continue; }
+      const shadow = this.contactShadows[k];
+      if (!g || g.ids.length < FACE_MIN_SIZE) { face.hide(); shadow.visible = false; continue; }
+      // sombra de contacto sobre la casilla de debajo (se desvanece al alejarse del suelo)
+      const floorY = this.world.top(Math.floor(g.cx), Math.floor(g.cz));
+      const above = g.cy - floorY;
+      shadow.visible = floorY !== -Infinity && above < 3;
+      if (shadow.visible) {
+        const size = (1.1 + g.ids.length / 28) * (1 - Math.min(above, 3) / 4.5);
+        shadow.position.set(g.cx, floorY + 0.015, g.cz + 0.05);
+        shadow.scale.set(size, 1, size * 0.9);
+      }
       let airborne = 0;
       for (const i of g.ids) if (this.air[i] > 0.15) airborne++;
       face.update(g, dt, lookX, lookZ, airborne / g.ids.length);
@@ -551,6 +571,9 @@ export class Slime {
 
   dispose() {
     this.blob.geometry.dispose();
+    this.contactShadows[0]?.geometry.dispose();
+    (this.contactShadows[0]?.material as THREE.Material | undefined)?.dispose();
+    this.shadowTex.dispose();
     this.spheres.geometry.dispose();
     (this.spheres.material as THREE.Material).dispose();
     for (const f of this.faces) f.dispose();

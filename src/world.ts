@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Assets } from './assets';
 import { FireFx, type FireCell, type FireState } from './fire';
+import { AO_E, AO_N, AO_NE, AO_NW, AO_S, AO_SE, AO_SW, AO_W, createBlockMaterial, createGlowMaterial } from './materials';
 import { HEIGHT_STEP, TILE_BY_CHAR, TILES, type CellKind, type Channel, type LevelData } from './level/format';
 
 export type { CellKind };
@@ -75,6 +76,8 @@ export class World {
   private chestLid: THREE.Object3D | null = null;
   private sparkles: THREE.Points | null = null;
   private ownedMaterials: THREE.Material[] = [];
+  private ownedGeometries: THREE.BufferGeometry[] = [];
+  private timeUniform = { value: 0 };
   private time = 0;
   opening = 0; // animación de cofre abierto (0..1)
 
@@ -132,11 +135,11 @@ export class World {
   }
 
   private build() {
-    const solids: { i: number; j: number; top: number; color: THREE.Color }[] = [];
-    const cFloorA = new THREE.Color(0xe9d7ad);
-    const cFloorB = new THREE.Color(0xdcc594);
-    const cWall = new THREE.Color(0x6f6798);
-    const cWallB = new THREE.Color(0x675f8f);
+    const solids: { i: number; j: number; top: number; color: THREE.Color; wall: boolean }[] = [];
+    const cFloorA = new THREE.Color(0xf6e6c2);
+    const cFloorB = new THREE.Color(0xeddab0);
+    const cWall = new THREE.Color(0x857db3);
+    const cWallB = new THREE.Color(0x7c74a8);
     const cFire = new THREE.Color(0x6b2a2a);
     const cIce = new THREE.Color(0xbfeaff);
     const cJump = new THREE.Color(0xf9a8d4);
@@ -151,61 +154,41 @@ export class World {
         const x = i + 0.5, z = j + 0.5;
         switch (c.kind) {
           case 'wall':
-            solids.push({ i, j, top: c.top, color: (i + j) % 2 === 0 ? cWall : cWallB });
+            solids.push({ i, j, top: c.top, color: (i + j) % 2 === 0 ? cWall : cWallB, wall: true });
             break;
           case 'fire': case 'firet':
-            solids.push({ i, j, top: c.base, color: cFire });
+            solids.push({ i, j, top: c.base, color: cFire, wall: false });
             fireCells.push({ i, j, base: c.base, timed: c.kind === 'firet' });
             this.add('fire_grate', x, c.base, z);
             break;
-          case 'ice': solids.push({ i, j, top: c.base, color: cIce }); break;
+          case 'ice': solids.push({ i, j, top: c.base, color: cIce, wall: false }); break;
           case 'jump':
-            solids.push({ i, j, top: c.base, color: cJump });
+            solids.push({ i, j, top: c.base, color: cJump, wall: false });
             this.pads.push(this.add('jump_pad', x, c.base, z));
             break;
           case 'switch':
-            solids.push({ i, j, top: c.base, color: cSwitch });
+            solids.push({ i, j, top: c.base, color: cSwitch, wall: false });
             this.addSwitch(i, j, c);
             break;
           case 'door':
-            solids.push({ i, j, top: c.base, color: checker });
+            solids.push({ i, j, top: c.base, color: checker, wall: false });
             this.addDoor(i, j, c);
             break;
           case 'start':
-            solids.push({ i, j, top: c.base, color: checker });
+            solids.push({ i, j, top: c.base, color: checker, wall: false });
             this.start.set(x, c.base, z);
             break;
           case 'treasure':
-            solids.push({ i, j, top: c.base, color: checker });
+            solids.push({ i, j, top: c.base, color: checker, wall: false });
             this.treasure.set(x, c.base, z);
             this.addChest(x, c.base, z);
             break;
-          default: solids.push({ i, j, top: c.top, color: checker });
+          default: solids.push({ i, j, top: c.top, color: checker, wall: false });
         }
       }
     }
 
-    // bloques: losa biselada arriba + columna estirada debajo (2 draw calls para todo el nivel)
-    const mat = new THREE.MeshLambertMaterial();
-    this.ownedMaterials.push(mat);
-    const tops = new THREE.InstancedMesh(this.assets.geometry('block_top'), mat, solids.length);
-    const cols = new THREE.InstancedMesh(this.assets.geometry('block_column'), mat, solids.length);
-    const m = new THREE.Matrix4();
-    solids.forEach((s, k) => {
-      m.makeTranslation(s.i + 0.5, s.top, s.j + 0.5);
-      tops.setMatrixAt(k, m);
-      tops.setColorAt(k, s.color);
-      const h = Math.max(0.01, s.top - SLAB_H - BOTTOM);
-      m.makeScale(1, h, 1);
-      m.setPosition(s.i + 0.5, s.top - SLAB_H, s.j + 0.5);
-      cols.setMatrixAt(k, m);
-      cols.setColorAt(k, s.color.clone().multiplyScalar(0.82));
-    });
-    for (const im of [tops, cols]) {
-      im.receiveShadow = true;
-      im.castShadow = true;
-      this.group.add(im);
-    }
+    this.buildBlocks(solids);
 
     if (fireCells.length) {
       this.fire = new FireFx(fireCells, this.assets);
@@ -220,6 +203,65 @@ export class World {
       sw.label.position.set(cx, sw.buttons[0].parent!.position.y + 1.6, cz);
       this.updateLabel(sw);
     }
+  }
+
+  /**
+    Bloques en 4 draw calls: losas y columnas, separando suelos (textura de losas + oclusión
+    junto a paredes) y muros (ladrillo). Solo proyectan sombra los muros y los suelos elevados.
+  */
+  private buildBlocks(solids: { i: number; j: number; top: number; color: THREE.Color; wall: boolean }[]) {
+    const tex = this.assets.textures;
+    const floorTopMat = createBlockMaterial({ top: tex.floor, side: tex.stone_side, ao: true });
+    const floorColMat = createBlockMaterial({ top: tex.floor, side: tex.stone_side });
+    const wallMat = createBlockMaterial({ top: tex.wall_top, side: tex.brick });
+    this.ownedMaterials.push(floorTopMat, floorColMat, wallMat);
+    const raised = solids.some((s) => !s.wall && s.top > 0);
+
+    const make = (list: typeof solids, wall: boolean) => {
+      if (!list.length) return;
+      const topGeo = this.assets.geometry('block_top').clone();
+      const ao = new Float32Array(list.length);
+      const tops = new THREE.InstancedMesh(topGeo, wall ? wallMat : floorTopMat, list.length);
+      const cols = new THREE.InstancedMesh(this.assets.geometry('block_column'), wall ? wallMat : floorColMat, list.length);
+      const m = new THREE.Matrix4();
+      const colColor = new THREE.Color();
+      list.forEach((s, k) => {
+        m.makeTranslation(s.i + 0.5, s.top, s.j + 0.5);
+        tops.setMatrixAt(k, m);
+        tops.setColorAt(k, s.color);
+        const h = Math.max(0.01, s.top - SLAB_H - BOTTOM);
+        m.makeScale(1, h, 1);
+        m.setPosition(s.i + 0.5, s.top - SLAB_H, s.j + 0.5);
+        cols.setMatrixAt(k, m);
+        cols.setColorAt(k, colColor.copy(s.color).multiplyScalar(0.85));
+        if (!wall) ao[k] = this.aoMask(s.i, s.j, s.top);
+      });
+      topGeo.setAttribute('aAO', new THREE.InstancedBufferAttribute(ao, 1));
+      this.ownedGeometries.push(topGeo);
+      for (const im of [tops, cols]) {
+        im.receiveShadow = true;
+        im.castShadow = wall || raised;
+        this.group.add(im);
+      }
+    };
+    make(solids.filter((s) => !s.wall), false);
+    make(solids.filter((s) => s.wall), true);
+  }
+
+  /** Bits de vecinos más altos que esta losa (oclusión ambiental). */
+  private aoMask(i: number, j: number, top: number): number {
+    const higher = (di: number, dj: number) => this.top(i + di, j + dj) > top + 0.2;
+    const w = higher(-1, 0), e = higher(1, 0), n = higher(0, -1), s = higher(0, 1);
+    let m = 0;
+    if (w) m |= AO_W;
+    if (e) m |= AO_E;
+    if (n) m |= AO_N;
+    if (s) m |= AO_S;
+    if (!w && !n && higher(-1, -1)) m |= AO_NW;
+    if (!e && !n && higher(1, -1)) m |= AO_NE;
+    if (!w && !s && higher(-1, 1)) m |= AO_SW;
+    if (!e && !s && higher(1, 1)) m |= AO_SE;
+    return m;
   }
 
   private addSwitch(i: number, j: number, c: Cell) {
@@ -265,6 +307,13 @@ export class World {
 
   private addChest(x: number, y: number, z: number) {
     this.chest = this.add('chest', x, y, z);
+    const glowMat = createGlowMaterial(0xffc23a, this.timeUniform, 0.6);
+    this.ownedMaterials.push(glowMat);
+    const glow = new THREE.Mesh(this.assets.geometry('fire_glow'), glowMat);
+    glow.position.set(x, y + 0.01, z);
+    glow.scale.set(2.2, 1, 2.2);
+    glow.renderOrder = 2;
+    this.group.add(glow);
     this.chestLid = Assets.child(this.chest, 'chest_lid');
     const n = 24;
     const pos = new Float32Array(n * 3);
@@ -293,6 +342,7 @@ export class World {
   /** counts: limitos apoyados en interruptores por canal este frame */
   update(dt: number, counts: Record<Channel, number>) {
     this.time += dt;
+    this.timeUniform.value = this.time;
 
     for (const sw of this.switches.values()) {
       sw.count = counts[sw.channel];
@@ -339,6 +389,7 @@ export class World {
       m.dispose();
     }
     this.sparkles?.geometry.dispose();
+    for (const g of this.ownedGeometries) g.dispose();
     this.fire?.dispose();
   }
 }

@@ -33,6 +33,8 @@ se hacen en Blender. El cuerpo del limo es procedural (metaballs) porque tiene q
   (sobrescribe `blender/assets.blend`)
 - Tras retocar `blender/assets.blend` a mano: `"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b blender/assets.blend -P blender/export_assets.py`
 - Salida: `src/models/assets.glb`. El juego busca los objetos por nombre: no renombrar.
+- Texturas (losas, ladrillo, piedra): `"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --factory-startup -P blender/build_textures.py`
+  → `src/textures/*.png` (256 px, repetibles, en gris: el juego las tiñe con el color de cada bloque). Se pueden repintar a mano.
 
 ## Controles
 Joystick virtual (por defecto) o giroscopio; se elige en el menú de niveles o en pausa.
@@ -52,3 +54,13 @@ y `toShareCode()` / `decodeLevel()` para compartir. `createEmptyLevel()` y `auto
 - Sin basura por frame en física/render (evita tirones del recolector).
 - Calidad adaptativa: si baja de ~45 fps reduce resolución y sombras; si va sobrado las sube.
 - En desarrollo: `__blub.quality()` muestra nivel de calidad y fps.
+
+## Iluminación
+Luz de cielo fría, sol cálido con sombras suaves y contraluz azul; tone mapping Neutral para colores cartoon.
+Texturas proyectadas en coordenadas del nivel (sin UVs), giro aleatorio por casilla, oclusión ambiental
+en suelos junto a muros, resplandores falsos (fuego, tesoro) y sombra de contacto bajo el limo.
+
+## Despliegue (Cloudflare Pages conectado a GitHub)
+Repo público: https://github.com/MAI-Software/mai-slime · rama `main`
+- Framework preset: Vite (o ninguno) · Build command: `npm run build` · Output directory: `dist`
+- Node: `.node-version` fija 22

@@ -24,21 +24,42 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowQuality, power
 
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.95;
+// Neutral conserva los colores saturados del estilo cartoon (ACES los apagaba)
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1d1640);
-scene.fog = new THREE.Fog(0x1d1640, 16, 34);
+scene.background = skyTexture();
+scene.fog = new THREE.Fog(0x191336, 18, 40);
+
+/** Fondo: degradado morado con un halo central, pintado una vez en un canvas. */
+function skyTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 32;
+  c.height = 256;
+  const g = c.getContext('2d')!;
+  const grad = g.createLinearGradient(0, 0, 0, 256);
+  grad.addColorStop(0, '#3a2b78');
+  grad.addColorStop(0.45, '#241a52');
+  grad.addColorStop(1, '#0e0a22');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 32, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-scene.environmentIntensity = 0.55;
+scene.environmentIntensity = 0.45;
 pmrem.dispose();
 
 const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 80);
 
-scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x4a3b6b, 0.9));
-const sun = new THREE.DirectionalLight(0xfff1dc, 1.9);
+// luz de cielo fría + sol cálido con sombras + contraluz azul que recorta al limo y los muros
+scene.add(new THREE.HemisphereLight(0xd2e2ff, 0x3d2d5c, 1.05));
+const rim = new THREE.DirectionalLight(0x86a8ff, 0.85);
+scene.add(rim, rim.target);
+const sun = new THREE.DirectionalLight(0xffe4c0, 2.4);
 sun.castShadow = true;
 
 sun.shadow.camera.left = sun.shadow.camera.bottom = -9;
@@ -47,6 +68,7 @@ sun.shadow.camera.near = 1;
 sun.shadow.camera.far = 40;
 sun.shadow.bias = -0.0008;
 sun.shadow.normalBias = 0.02;
+sun.shadow.radius = 3;
 scene.add(sun, sun.target);
 
 // ------------------------------------------------------------------ calidad adaptativa
@@ -380,6 +402,8 @@ function updateCamera(dt: number) {
 
   sun.position.set(camTarget.x + 5, camTarget.y + 12, camTarget.z + 4);
   sun.target.position.copy(camTarget);
+  rim.position.set(camTarget.x - 6, camTarget.y + 5, camTarget.z - 9);
+  rim.target.position.copy(camTarget);
 }
 
 const clock = new THREE.Clock();
@@ -435,7 +459,7 @@ if (import.meta.env.DEV) {
 
 // arranque: cargar modelos de Blender y dejar un nivel de fondo en el menú
 show('screen-title');
-Assets.load((p) => { $('load-hint').textContent = `Cargando modelos… ${Math.round(p * 100)}%`; })
+Assets.load(Math.min(4, renderer.capabilities.getMaxAnisotropy()), (p) => { $('load-hint').textContent = `Cargando modelos… ${Math.round(p * 100)}%`; })
   .then((a) => {
     assets = a;
     startLevel(1);

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Assets } from './assets';
+import { createGlowMaterial } from './materials';
 
 /*
   Fuego estilizado y barato para móvil:
@@ -86,12 +87,12 @@ export class FireFx {
           float n = fireNoise(vec2(vFirePos.x * 9.0 + vSeed, vFirePos.y * 6.0 - uTime * 4.0)) * 0.65
                   + fireNoise(vec2(vFirePos.z * 14.0 - vSeed, vFirePos.y * 12.0 - uTime * 7.0)) * 0.35;
           float body = smoothstep(0.0, 0.3, (1.0 - h) * 1.2 - n * 0.6 + 0.08);
-          vec3 fireCol = mix(vec3(1.0, 0.86, 0.3), vec3(1.0, 0.42, 0.06), smoothstep(0.05, 0.5, h));
-          fireCol = mix(fireCol, vec3(0.78, 0.08, 0.02), smoothstep(0.5, 1.0, h));
+          vec3 fireCol = mix(vec3(1.0, 0.78, 0.18), vec3(1.0, 0.34, 0.03), smoothstep(0.05, 0.45, h));
+          fireCol = mix(fireCol, vec3(0.72, 0.05, 0.02), smoothstep(0.45, 1.0, h));
           // borde de la llama algo más oscuro: se lee bien sobre cualquier suelo
           fireCol *= mix(0.72, 1.0, vRim);
           diffuseColor.rgb *= fireCol;
-          diffuseColor.a *= body * mix(0.55, 1.0, vRim);`);
+          diffuseColor.a *= clamp(body * 1.4, 0.0, 1.0) * mix(0.7, 1.0, vRim);`);
     };
     this.flames = new THREE.InstancedMesh(assets.geometry('flame'), flameMat, Math.max(1, n * FLAMES_PER_CELL));
     const tints = [new THREE.Color(1, 0.9, 0.85), new THREE.Color(1, 1, 0.75), new THREE.Color(1, 0.8, 0.7)];
@@ -100,18 +101,8 @@ export class FireFx {
     this.flames.renderOrder = 3;
 
     // --- resplandor
-    const glowMat = new THREE.MeshBasicMaterial({
-      color: 0xff7a1a, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    });
-    glowMat.onBeforeCompile = (shader) => {
-      shader.uniforms.uTime = this.uniforms.uTime;
-      shader.vertexShader = `varying vec3 vGlowPos;\n${shader.vertexShader}`
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlowPos = position;');
-      shader.fragmentShader = `uniform float uTime;\nvarying vec3 vGlowPos;\n${shader.fragmentShader}`
-        .replace('#include <color_fragment>', `#include <color_fragment>
-          float r = clamp(length(vGlowPos.xz) / 0.5, 0.0, 1.0);
-          diffuseColor.a *= pow(1.0 - r, 2.0) * (0.75 + 0.25 * sin(uTime * 11.0 + vGlowPos.x * 40.0));`);
-    };
+    // luz falsa: el fuego ilumina las casillas de alrededor sin luces reales (caras en móvil)
+    const glowMat = createGlowMaterial(0xff6a12, this.uniforms.uTime, 1);
     this.glows = new THREE.InstancedMesh(assets.geometry('fire_glow'), glowMat, Math.max(1, n));
     this.glows.frustumCulled = false;
     this.glows.renderOrder = 2;
@@ -143,7 +134,7 @@ export class FireFx {
       const power = st === 2 ? 1 : st === 1 ? 0.28 + Math.abs(Math.sin(time * 25 + seed * 10)) * 0.12 : 0;
 
       for (let f = 0; f < FLAMES_PER_CELL; f++) {
-        const s = power * (f === 0 ? 1.1 : f === 1 ? 0.62 : 0.72);
+        const s = power * (f === 0 ? 1.3 : f === 1 ? 0.75 : 0.8);
         const ang = seed * 6.28 + f * 2.1;
         const off = f === 2 ? 0.2 : 0;
         tmpP.set(cx + Math.cos(ang) * off, c.base + (f === 1 ? 0.06 : 0.02), cz + Math.sin(ang) * off);
@@ -152,7 +143,7 @@ export class FireFx {
         flames.setMatrixAt(k * FLAMES_PER_CELL + f, tmpM);
       }
 
-      const g = st === 2 ? 1.25 : st === 1 ? 0.6 : 0.001;
+      const g = st === 2 ? 2.6 + Math.sin(time * 7 + seed * 9) * 0.12 : st === 1 ? 0.9 : 0.001;
       tmpP.set(cx, c.base, cz);
       tmpS.set(g, 1, g);
       tmpM.compose(tmpP, tmpQ, tmpS);

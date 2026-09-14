@@ -2,16 +2,34 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 // importado como URL: Vite le pone hash al nombre, así nunca se sirve un modelo viejo de caché
 import assetsUrl from './models/assets.glb?url';
+import floorUrl from './textures/floor.png?url';
+import wallTopUrl from './textures/wall_top.png?url';
+import brickUrl from './textures/brick.png?url';
+import stoneSideUrl from './textures/stone_side.png?url';
+
+export type TextureName = 'floor' | 'wall_top' | 'brick' | 'stone_side';
+const TEXTURE_URLS: Record<TextureName, string> = {
+  floor: floorUrl, wall_top: wallTopUrl, brick: brickUrl, stone_side: stoneSideUrl,
+};
 
 /** Modelos hechos en Blender (blender/build_assets.py → src/models/assets.glb). */
 export class Assets {
   private nodes = new Map<string, THREE.Object3D>();
+  readonly textures = {} as Record<TextureName, THREE.Texture>;
 
-  static async load(onProgress?: (p: number) => void): Promise<Assets> {
-    const gltf = await new GLTFLoader().loadAsync(assetsUrl, (e) => {
-      if (e.total) onProgress?.(e.loaded / e.total);
-    });
+  static async load(anisotropy: number, onProgress?: (p: number) => void): Promise<Assets> {
     const a = new Assets();
+    const texLoader = new THREE.TextureLoader();
+    const [gltf] = await Promise.all([
+      new GLTFLoader().loadAsync(assetsUrl, (e) => { if (e.total) onProgress?.(e.loaded / e.total); }),
+      ...(Object.keys(TEXTURE_URLS) as TextureName[]).map(async (name) => {
+        const t = await texLoader.loadAsync(TEXTURE_URLS[name]);
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.anisotropy = anisotropy;
+        a.textures[name] = t;
+      }),
+    ]);
     gltf.scene.traverse((o) => a.nodes.set(o.name, o));
     return a;
   }
