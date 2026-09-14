@@ -429,8 +429,8 @@ body[data-control="gyro"] #joy-zone { display: none; }
   position: absolute;
   left: calc(100px + var(--safe-l));
   top: calc(100% - 100px - var(--safe-b));
-  width: 132px;
-  height: 132px;
+  width: 148px;
+  height: 148px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: rgba(253, 242, 248, 0.12);
@@ -443,8 +443,8 @@ body[data-control="gyro"] #joy-zone { display: none; }
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 62px;
-  height: 62px;
+  width: 66px;
+  height: 66px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: var(--paper);

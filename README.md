@@ -39,9 +39,10 @@ se hacen en Blender. El cuerpo del limo es procedural (metaballs) porque tiene q
 
 ## Cómo se juega
 - Solo en horizontal. Joystick virtual (por defecto) o giroscopio, sin botones de acción.
+  El mando fija una velocidad objetivo: arranque y frenado rápidos (el hielo resbala).
 - El limo es un montón de limitos pequeños: lo que asoma por un borde se descuelga y cae, y el limo encoge.
 - Cuchillas (`K` izquierda/derecha, `k` delante/detrás) y pinchos (`Y`) lo dividen; los trozos se reúnen al tocarse.
-- Los escalones bajos (0,5) se suben solos.
+- Niveles lisos con caminos largos: los cambios de altura son solo bajadas.
 - Cada piso da hasta 3 estrellas: llegar al tesoro, todas las monedas (`C`) y conservar el % de limo del nivel.
 - Al terminar el último piso de un capítulo se muestra el desglose (estrellas, monedas, limo, tiempo y rango).
 
@@ -50,6 +51,8 @@ se hacen en Blender. El cuerpo del limo es procedural (metaballs) porque tiene q
 - Pendiente: Capacitor Android, icono/splash, orientación horizontal fija, firma y AAB.
 
 ## Niveles y futuro creador de niveles
+Los pisos se escriben como mapas ASCII en `scripts/author-levels.mjs` (`node scripts/author-levels.mjs` genera los JSON y avisa si algún tramo sube).
+
 Cada nivel es un JSON (`LevelData`, `format: 1`) con dos capas del mismo tamaño:
 `tiles` (un carácter por casilla, ver `TILES`) y `heights` (dígito 0-9, altura = dígito × 0,5).
 El editor solo necesita: paleta desde `TILES`, pintar ambas capas, `validateLevel()` antes de guardar,

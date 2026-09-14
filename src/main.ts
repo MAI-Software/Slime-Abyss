@@ -182,6 +182,7 @@ const camTarget = new THREE.Vector3();
 const camPos = new THREE.Vector3();
 const tmpCenter = new THREE.Vector3();
 const camWant = new THREE.Vector3();
+const lookAhead = new THREE.Vector2();
 let camZoom = 1;
 
 // ------------------------------------------------------------------ iconos
@@ -353,6 +354,7 @@ function loadLevel(def: LevelData) {
   content.add(world.group, slime.group);
   camTarget.copy(world.start);
   camPos.set(0, 0, 0);
+  lookAhead.set(0, 0);
 }
 
 function startFloor(ch: ChapterDef, k: number) {
@@ -602,6 +604,14 @@ function tick(dt: number) {
 function updateCamera(dt: number) {
   if (!slime || !world) return;
   if (slime.center(tmpCenter)) {
+    // mirar un poco hacia donde avanza el limo para ver lo que viene
+    const lead = slime.groups[0];
+    const la = 1 - Math.exp(-dt * 2.5);
+    lookAhead.x += ((mode === 'play' && lead ? lead.vx * 0.3 : 0) - lookAhead.x) * la;
+    lookAhead.y += ((mode === 'play' && lead ? lead.vz * 0.38 : 0) - lookAhead.y) * la;
+    lookAhead.clampLength(0, 2.2);
+    tmpCenter.x += lookAhead.x;
+    tmpCenter.z += lookAhead.y;
     const k = 1 - Math.exp(-dt * 4);
     camTarget.x += (tmpCenter.x - camTarget.x) * k;
     camTarget.y += (Math.max(tmpCenter.y, -2) - camTarget.y) * k;
@@ -622,8 +632,10 @@ function updateCamera(dt: number) {
 
   tiltRoot.position.copy(camTarget);
   content.position.copy(camTarget).negate();
-  const rx = mode === 'play' ? input.tiltZ * 0.1 : 0;
-  const rz = mode === 'play' ? -input.tiltX * 0.1 : 0;
+  // balanceo del escenario: fuerte con giroscopio (sensación Mercury), sutil con joystick
+  const sway = mode !== 'play' ? 0 : input.mode === 'gyro' ? 0.1 : 0.03;
+  const rx = input.tiltZ * sway;
+  const rz = -input.tiltX * sway;
   const tk = 1 - Math.exp(-dt * 12);
   tiltRoot.rotation.x += (rx - tiltRoot.rotation.x) * tk;
   tiltRoot.rotation.z += (rz - tiltRoot.rotation.z) * tk;

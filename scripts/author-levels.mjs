@@ -1,0 +1,306 @@
+/*
+  Genera los niveles JSON a partir de mapas ASCII legibles.
+  Uso: node scripts/author-levels.mjs
+
+  Mapa: dígito = suelo con esa altura (×0.5) · '.' vacío · '#' muro (se apoya en el suelo más alto que toca)
+  Letras (P, T, C, K, Y, F, X, I, J, S, D...): toman la altura de la capa `h` si existe;
+  si no, la altura más repetida entre sus vecinos de suelo.
+  Norma de diseño: suelos lisos y caminos largos; los cambios de altura solo hacia ABAJO
+  en el sentido de avance (de la salida P hacia el tesoro T). Nada de escalones hacia arriba.
+*/
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '../src/level/campaign');
+
+const PRACTICE = {
+  file: '00-sendero-largo.json',
+  id: 'sendero-largo', name: 'Sendero largo (prueba)', practice: true, count: 80, minPct: 0,
+  map: [
+    '###############',
+    '#000000T000000#',
+    '#0000000000000#',
+    '#########00####',
+    '........#00#...',
+    '........#00#...',
+    '........#22#...',
+    '..#######22#...',
+    '..#22222222#...',
+    '..#22222222#...',
+    '..#22#######...',
+    '..#22#.........',
+    '..#22#.........',
+    '..#44#.........',
+    '..#44#######...',
+    '..#44444444#...',
+    '..#44444444#...',
+    '..#######44#...',
+    '........#44#...',
+    '........#66#...',
+    '........#66#...',
+    '..#######66#...',
+    '..#66666666#...',
+    '..#66666666#...',
+    '..#66#######...',
+    '..#66#.........',
+    '..#66#.........',
+    '..#66########..',
+    '..#6666666666#.',
+    '..#66666666P6#.',
+    '..###########..',
+  ],
+  tips: [
+    { z: 29, text: 'Nivel de prueba: sin trampas, no se pierde limo' },
+    { z: 24, text: 'Bajar un desnivel no hace daño' },
+    { z: 15, text: 'Pasillos largos: prueba giros suaves con el joystick' },
+  ],
+};
+
+const CHAPTER1 = [
+  {
+    file: 'chapter1/01-c1-primeros-pasos.json',
+    id: 'c1-primeros-pasos', name: 'Primeros pasos', count: 80, minPct: 0.35, keepPct: 0.8,
+    map: [
+      '###############',
+      '#000000T000000#',
+      '#0C0000000000C#',
+      '#0000000000000#',
+      '######000######',
+      '.....#000#.....',
+      '.....#0C0#.....',
+      '.....#000#.....',
+      '.....#222#.....',
+      '.....#222#.....',
+      '...#22222222#..',
+      '...#2C222222#..',
+      '...#2222.222#..',
+      '...#222222C2#..',
+      '...#22222222#..',
+      '...######22##..',
+      '........#22#...',
+      '........#22#...',
+      '........#C2#...',
+      '........#44#...',
+      '..#######44#...',
+      '..#44444444#...',
+      '..#4C444.44#...',
+      '..#44444444#...',
+      '..#44#######...',
+      '..#44#.........',
+      '..#44#.........',
+      '...44..........',
+      '...C4..........',
+      '...44..........',
+      '..#66#.........',
+      '..#66########..',
+      '..#66666C666#..',
+      '..#666666666#..',
+      '..#######666#..',
+      '..#######666#..',
+      '........#888#..',
+      '........#8P8#..',
+      '........#####..',
+    ],
+    tips: [
+      { z: 37, text: 'Desliza al limo con el joystick hacia el tesoro' },
+      { z: 35.5, text: 'Bajar un desnivel no hace daño' },
+      { z: 29.8, text: 'Tramo sin muros: lo que asoma por el borde, se cae' },
+      { z: 23, text: 'Rodea los agujeros' },
+      { z: 13.5, text: 'Recoge todas las monedas para ganar una estrella' },
+    ],
+  },
+  {
+    file: 'chapter1/02-c1-filo-de-cuchilla.json',
+    id: 'c1-filo-de-cuchilla', name: 'Filo de cuchilla', count: 80, minPct: 0.35, keepPct: 0.7,
+    map: [
+      '###############',
+      '#000000T000000#',
+      '#00000000000C0#',
+      '#0C00000000000#',
+      '#00000Y0000000#',
+      '#0000000000000#',
+      '######000######',
+      '.....#000#.....',
+      '.....#222#.....',
+      '....#22222#....',
+      '....#22#22#....',
+      '....#2C#22#....',
+      '....#22#2.#....',
+      '....#22#22#....',
+      '....#.2#C2#....',
+      '....#22#22#....',
+      '....#22#22#....',
+      '....#22K22#....',
+      '....#22222#....',
+      '....#44444#....',
+      '....#44C44#....',
+      '....#44444#....',
+      '....#44P44#....',
+      '....#######....',
+    ],
+    tips: [
+      { z: 21.5, text: 'Las cuchillas parten al limo en dos' },
+      { z: 16.5, text: 'Las dos mitades se mueven a la vez' },
+      { z: 9.5, text: 'Al tocarse, los trozos vuelven a unirse' },
+      { z: 5.5, text: 'Los pinchos también dividen' },
+    ],
+  },
+  {
+    file: 'chapter1/03-c1-pasillo-de-fuego.json',
+    id: 'c1-pasillo-de-fuego', name: 'Pasillo de fuego', count: 80, minPct: 0.35, keepPct: 0.65,
+    map: [
+      '...#######.....',
+      '...#C0T00#.....',
+      '...#00000#.....',
+      '...##000##.....',
+      '....#0X0#......',
+      '....#X0X#......',
+      '....#0X0#......',
+      '....#000#......',
+      '..###0I0###....',
+      '..#C0IIIF0#....',
+      '..#0FIIII0#....',
+      '..#0IIIIF0#....',
+      '..#00000FC#....',
+      '..#####00##....',
+      '.......00......',
+      '.......00......',
+      '.......C0......',
+      '.......00......',
+      '.....#2222#....',
+      '.....#2P22#....',
+      '.....######....',
+    ],
+    tips: [
+      { z: 19, text: 'Puente estrecho y sin muros: con calma' },
+      { z: 12.5, text: 'El fuego evapora el limo y el hielo resbala' },
+      { z: 7.5, text: 'Este fuego se apaga a ratos: espera tu momento' },
+    ],
+  },
+  {
+    file: 'chapter1/04-c1-divide-y-venceras.json',
+    id: 'c1-divide-y-venceras', name: 'Divide y vencerás', count: 80, minPct: 0.35, keepPct: 0.75,
+    need: { A: 16 },
+    map: [
+      '###########',
+      '#000000T00#',
+      '#0C00000C0#',
+      '######DD###',
+      '###SS#00###',
+      '###SS#0C###',
+      '###00#00###',
+      '###00#00###',
+      '###00K00###',
+      '###00000###',
+      '###00C00###',
+      '###00000###',
+      '###00P00###',
+      '###########',
+    ],
+    h: [
+      '33333333333', '33333333333', '33333333333', '33333333333',
+      '33300333333', '33300333333',
+      '33333333333', '33333333333', '33333333333', '33333333333', '33333333333', '33333333333', '33333333333', '33333333333',
+    ],
+    tips: [
+      { z: 12, text: 'La puerta necesita peso sobre el interruptor' },
+      { z: 8.8, text: 'La cuchilla manda una mitad al foso y la otra a la puerta' },
+    ],
+  },
+  {
+    file: 'chapter1/05-c1-salto-al-abismo.json',
+    id: 'c1-salto-al-abismo', name: 'Salto al abismo', count: 80, minPct: 0.35, keepPct: 0.65,
+    need: { B: 40 }, latch: { B: true },
+    map: [
+      '..#########..',
+      '..#0C0T000#..',
+      '..#0000000#..',
+      '..####d####..',
+      '..#C00000C#..',
+      '..#XX000XX#..',
+      '..#0000000#..',
+      '..#000s000#..',
+      '..#0000000#..',
+      '.............',
+      '.............',
+      '..#JJJJJJJ#..',
+      '..#0000000#..',
+      '..#00C0000#..',
+      '..#0000000#..',
+      '..#000P000#..',
+      '..#########..',
+    ],
+    tips: [
+      { z: 15, text: 'Las plataformas rosas te lanzan sobre el abismo' },
+      { z: 8, text: 'El interruptor pide 40: llega con el limo unido' },
+    ],
+  },
+];
+
+function build(def) {
+  const d = def.map.length;
+  const w = def.map[0].length;
+  def.map.forEach((r, j) => { if (r.length !== w) throw new Error(`${def.id}: fila ${j} mide ${r.length}, no ${w}`); });
+  const isDigit = (c) => c >= '0' && c <= '9';
+  const tiles = [], heights = [];
+  for (let j = 0; j < d; j++) {
+    let t = '', h = '';
+    for (let i = 0; i < w; i++) {
+      const ch = def.map[j][i];
+      if (ch === '.') { t += '.'; h += '0'; continue; }
+      if (isDigit(ch)) { t += '0'; h += def.h ? def.h[j][i] : ch; continue; }
+      t += ch;
+      if (def.h) { h += def.h[j][i]; continue; }
+      if (ch === '#') { h += '0'; continue; }
+      const votes = {};
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+        const n = def.map[j + dj]?.[i + di];
+        if (n && isDigit(n)) votes[n] = (votes[n] ?? 0) + 1;
+      }
+      const best = Object.entries(votes).sort((a, b) => b[1] - a[1] || Number(b[0]) - Number(a[0]))[0];
+      h += best ? best[0] : '0';
+    }
+    tiles.push(t); heights.push(h);
+  }
+  if (!def.h) {
+    for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) {
+      if (tiles[j][i] !== '#') continue;
+      let base = 0;
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+        const t = tiles[j + dj]?.[i + di];
+        if (!t || t === '#' || t === '.') continue;
+        base = Math.max(base, Number(heights[j + dj][i + di]));
+      }
+      heights[j] = heights[j].slice(0, i) + base + heights[j].slice(i + 1);
+    }
+  }
+  checkNoStepsUp(def, tiles, heights);
+  const { map, h, file, ...meta } = def;
+  return { format: 1, ...meta, tiles, heights };
+}
+
+/** Avisa si hay suelo contiguo que sube (el diseño pide solo bajadas; los fosos con interruptor se permiten). */
+function checkNoStepsUp(def, tiles, heights) {
+  if (def.h) return;
+  const walk = (t) => t !== '.' && t !== '#';
+  for (let j = 0; j < tiles.length; j++) for (let i = 0; i < tiles[0].length; i++) {
+    if (!walk(tiles[j][i])) continue;
+    // hacia el tesoro se avanza a filas menores: la fila de arriba no puede ser más alta
+    const up = tiles[j - 1]?.[i];
+    if (up && walk(up) && Number(heights[j - 1][i]) > Number(heights[j][i])) {
+      console.warn(`  aviso ${def.id}: sube en (${i}, ${j - 1})`);
+    }
+  }
+}
+
+function pretty(data) {
+  return JSON.stringify(data, null, 2).replace(/\[\n\s+("[^"\n]*",?\n\s+)+"[^"\n]*"\n\s+\]/g, (m) =>
+    m.replace(/\n\s+/g, '\n    ').replace(/\n    \]/, '\n  ]'));
+}
+
+mkdirSync(join(root, 'chapter1'), { recursive: true });
+for (const def of [PRACTICE, ...CHAPTER1]) {
+  writeFileSync(join(root, def.file), pretty(build(def)) + '\n');
+  console.log('ok', def.file);
+}

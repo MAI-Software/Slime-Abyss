@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BlobMesh } from './blob-mesh';
-import { FRICTION, World } from './world';
+import { World } from './world';
 import type { Channel } from './level/format';
 import { Assets } from './assets';
 import { createContactShadowTexture } from './materials';
@@ -17,13 +17,17 @@ const K_ATT = 52;
 const OVERHANG_GRIP = 0.1;
 const VISC = 4.5;
 const GRAVITY = 20;
-const TILT_ACC = 16;
 const MAX_V = 11;
 const MAX_A = 140;
 const JUMP_V = 7.6;
 const PAD_V = 12.5;
 const DRAG = 0.15;
-const GROUND_FRICTION = 2.4;
+// Control: el mando fija una velocidad objetivo y cada limito se acerca a ella.
+// Arranca y frena rápido en suelo normal; en hielo apenas agarra; en el aire casi nada.
+const MAX_SPEED = 4.6;
+const DRIVE_GROUND = 12;
+const DRIVE_ICE = 0.9;
+const DRIVE_AIR = 1.2;
 const DIE_TIME = 0.35;
 const SUBSTEPS = 3;
 const STEP_UP = 0.56;       // escalón que el limo sube solo (0.5 de altura de losa)
@@ -207,6 +211,7 @@ export class Slime {
 
   // ---------------------------------------------------------------- simulación
 
+  /** tiltX/tiltZ: dirección del mando en [-1, 1] (x derecha, z hacia la cámara). */
   step(dt: number, tiltX: number, tiltZ: number) {
     this.ox.set(this.px);
     this.oy.set(this.py);
@@ -223,11 +228,10 @@ export class Slime {
   private substep(h: number, tiltX: number, tiltZ: number) {
     const { n, px, py, pz, vx, vy, vz, ax, ay, az, alive, tag, noAttr, time, grip } = this;
     const link2 = LINK * LINK;
-    const baseX = tiltX * TILT_ACC, baseZ = tiltZ * TILT_ACC;
     for (let i = 0; i < n; i++) {
-      ax[i] = baseX;
+      ax[i] = 0;
       ay[i] = -GRAVITY;
-      az[i] = baseZ;
+      az[i] = 0;
     }
 
     for (let i = 0; i < n; i++) {
@@ -263,6 +267,10 @@ export class Slime {
 
     const dragK = 1 - DRAG * h;
     const cells = this.world.cells;
+    const tvx = tiltX * MAX_SPEED, tvz = tiltZ * MAX_SPEED;
+    const kGround = 1 - Math.exp(-DRIVE_GROUND * h);
+    const kIce = 1 - Math.exp(-DRIVE_ICE * h);
+    const kAir = 1 - Math.exp(-DRIVE_AIR * h);
     for (let i = 0; i < n; i++) {
       if (!alive[i]) continue;
       const a2 = ax[i] * ax[i] + ay[i] * ay[i] + az[i] * az[i];
@@ -283,12 +291,10 @@ export class Slime {
       pz[i] += vz[i] * h;
       this.air[i] += h;
       this.collide(i);
-      if (this.air[i] === 0) {
-        const cell = this.groundCell[i];
-        const fr = 1 - (cell >= 0 ? FRICTION[cells[cell].kind] ?? GROUND_FRICTION : GROUND_FRICTION) * h;
-        vx[i] *= fr;
-        vz[i] *= fr;
-      }
+      const cell = this.groundCell[i];
+      const k = this.air[i] > 0.08 ? kAir : cell >= 0 && cells[cell].kind === 'ice' ? kIce : kGround;
+      vx[i] += (tvx - vx[i]) * k;
+      vz[i] += (tvz - vz[i]) * k;
     }
   }
 
@@ -725,7 +731,7 @@ class Face {
     if (this.painT > 0) expr = 'pain';
     else if (this.happyT > 0) expr = 'happy';
     else if (airFrac > 0.6) expr = 'air';
-    else if (speed > 3.2) expr = 'wee';
+    else if (speed > 4.4) expr = 'wee';
 
     const want = Math.min(2.6, Math.max(1.0, 0.9 + g.ids.length / 32));
     this.scale += (want - this.scale) * k;

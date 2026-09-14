@@ -11,8 +11,9 @@ export type ControlMode = 'joystick' | 'gyro';
 
 const RANGE_DEG = 22;
 const GYRO_DEAD = 0.06;
-const JOY_DEAD = 0.12;
-const JOY_RADIUS = 56; // px de recorrido del mando
+const JOY_DEAD = 0.1;
+const JOY_RADIUS = 64; // px de recorrido del mando
+const JOY_CURVE = 1.35; // >1: más precisión con desplazamientos pequeños
 
 type Pair = { roll: number; pitch: number };
 
@@ -86,6 +87,13 @@ export class Input {
     let dy = cy - this.joyOrigin.y;
     const len = Math.hypot(dx, dy);
     if (len > JOY_RADIUS) {
+      // la base sigue al dedo: nunca se "choca" con el borde del mando
+      const excess = len - JOY_RADIUS;
+      this.joyOrigin.x += (dx / len) * excess;
+      this.joyOrigin.y += (dy / len) * excess;
+      const r = this.zone.getBoundingClientRect();
+      this.base.style.left = `${this.joyOrigin.x - r.left}px`;
+      this.base.style.top = `${this.joyOrigin.y - r.top}px`;
       dx = (dx / len) * JOY_RADIUS;
       dy = (dy / len) * JOY_RADIUS;
     }
@@ -150,9 +158,9 @@ export class Input {
     } else if (this.mode === 'joystick') {
       const len = Math.hypot(this.joyX, this.joyY);
       if (len > JOY_DEAD) {
-        const k = Math.min(1, (len - JOY_DEAD) / (1 - JOY_DEAD)) / len;
-        x = this.joyX * k;
-        z = this.joyY * k;
+        const mag = Math.min(1, (len - JOY_DEAD) / (1 - JOY_DEAD)) ** JOY_CURVE;
+        x = (this.joyX / len) * mag;
+        z = (this.joyY / len) * mag;
       }
     }
     if (this.keys.has('ArrowLeft') || this.keys.has('KeyA')) x = -1;
@@ -161,7 +169,7 @@ export class Input {
     if (this.keys.has('ArrowDown') || this.keys.has('KeyS')) z = 1;
 
     // suavizado: quita temblor del sensor y da algo de inercia al joystick
-    const smooth = this.mode === 'gyro' ? 0.35 : 0.5;
+    const smooth = this.mode === 'gyro' ? 0.35 : 0.65;
     this.tiltX += (x - this.tiltX) * smooth;
     this.tiltZ += (z - this.tiltZ) * smooth;
   }
