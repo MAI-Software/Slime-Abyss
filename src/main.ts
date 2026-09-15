@@ -13,7 +13,7 @@ import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from '.
 import { BODY_COLORS, CHEEKS, EYES, IRIS_COLORS, IRIS_EYES, LOOK_PRICES, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
 import { ACHIEVEMENTS, drawPatchIcon, type Achievement, type AchievementContext } from './achievements';
 import { Thumbs } from './thumbs';
-import { Input, type ControlMode } from './input';
+import { Input, fullscreenActive, fullscreenSupported, installedApp, type ControlMode } from './input';
 import { Fx } from './fx';
 import { LiquidGauge } from './hud-liquid';
 import { AbyssAmbience } from './abyss';
@@ -475,6 +475,36 @@ function openChapter(ch: ChapterDef) {
   $('btn-chapter-breakdown').hidden = !chapterDone(ch);
   show('chapter');
 }
+
+// ------------------------------------------------------------------ pantalla completa
+
+/*
+  En el móvil se entra sola al primer toque (los navegadores solo la dejan pedir tras un gesto) y hay botón en el menú
+  y en la pausa. El Safari de iPhone no tiene pantalla completa para páginas: el botón explica cómo instalarla.
+*/
+const touchDevice = matchMedia('(pointer: coarse)').matches;
+function syncFullscreenButtons() {
+  const on = fullscreenActive();
+  // instalada desde la pantalla de inicio ya ocupa todo: sin botones
+  const hide = installedApp() || (on && touchDevice);
+  $('btn-fullscreen').hidden = hide;
+  $('btn-pause-fullscreen').hidden = hide || on;
+  $('btn-fullscreen').setAttribute('aria-pressed', String(on));
+}
+function toggleFullscreen() {
+  sfx.click();
+  if (!fullscreenSupported()) { toast(t('common.iosFullscreen'), 5000); return; }
+  if (fullscreenActive()) input.exitFullscreen();
+  else input.requestFullscreen();
+}
+$('btn-fullscreen').addEventListener('click', toggleFullscreen);
+$('btn-pause-fullscreen').addEventListener('click', toggleFullscreen);
+for (const ev of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(ev, syncFullscreenButtons);
+if (touchDevice && fullscreenSupported()) {
+  // primer toque en cualquier sitio (también sobre el aviso de girar el móvil)
+  window.addEventListener('pointerup', () => input.requestFullscreen(), { once: true, capture: true });
+}
+syncFullscreenButtons();
 
 $('btn-chapter-breakdown').addEventListener('click', () => { sfx.click(); if (chapter) showBreakdown(chapter); });
 $('btn-story').addEventListener('click', () => {

@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#140f2b" />
   <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="./icon-192.png" sizes="192x192" type="image/png" />
@@ -68,6 +70,9 @@
 
   <!-- ====================================================== MENÚ PRINCIPAL -->
   <div id="screen-main" class="screen screen-main">
+    <button id="btn-fullscreen" class="icon-btn fs-btn" data-i18n-aria="common.fullscreen">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+    </button>
     <div class="main-brand">
       <h1 class="logo" aria-label="Slime Abyss">
         <svg class="logo-art" viewBox="0 0 480 330" aria-hidden="true">
@@ -285,6 +290,10 @@
       <button class="pick-btn" data-mode="gyro" data-i18n="options.gyro"></button>
     </div>
     <button id="btn-pause-calib" class="small-btn gyro-only" data-i18n="pause.calibrate"></button>
+    <button id="btn-pause-fullscreen" class="small-btn with-icon">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      <span data-i18n="common.fullscreen"></span>
+    </button>
     <div class="btn-row">
       <button id="btn-restart" class="small-btn" data-i18n="pause.restart"></button>
       <button id="btn-quit" class="small-btn" data-i18n="pause.quit"></button>

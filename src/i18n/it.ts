@@ -9,6 +9,8 @@ export const it: Dict = {
     loadError: 'Impossibile caricare il gioco. Riavvialo.',
     comingSoon: 'Prossimamente',
     rotate: 'Ruota il telefono in orizzontale per giocare',
+    fullscreen: 'Schermo intero',
+    iosFullscreen: 'Su iPhone: tocca Condividi e «Aggiungi alla schermata Home» per giocare a schermo intero',
     stars: '{n} stelle su 3',
   },
   menu: {

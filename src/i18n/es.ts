@@ -8,6 +8,8 @@ export const es = {
     loadError: 'No se pudieron cargar los recursos. Reinicia el juego.',
     comingSoon: 'Próximamente',
     rotate: 'Gira el móvil para jugar en horizontal',
+    fullscreen: 'Pantalla completa',
+    iosFullscreen: 'En iPhone: pulsa Compartir y «Añadir a pantalla de inicio» para jugar a pantalla completa',
     stars: '{n} de 3 estrellas',
   },
   menu: {

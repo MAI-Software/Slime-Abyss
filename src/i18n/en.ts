@@ -9,6 +9,8 @@ export const en: Dict = {
     loadError: 'Could not load the game files. Please restart the game.',
     comingSoon: 'Coming soon',
     rotate: 'Turn your phone sideways to play',
+    fullscreen: 'Full screen',
+    iosFullscreen: 'On iPhone: tap Share and “Add to Home Screen” to play full screen',
     stars: '{n} of 3 stars',
   },
   menu: {

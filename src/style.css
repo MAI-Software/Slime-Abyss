@@ -101,6 +101,9 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
   border-radius: 14px;
 }
 .btn-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+/* pantalla completa: esquina superior derecha del menú (el tablón de logros queda detrás, sin botones) */
+.fs-btn { position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); z-index: 2; box-shadow: 0 3px 0 var(--ink); }
+.fs-btn[hidden], #btn-pause-fullscreen[hidden] { display: none; }
 
 /* ---------- pantallas ---------- */
 .screen {

@@ -9,6 +9,8 @@ export const de: Dict = {
     loadError: 'Das Spiel konnte nicht geladen werden. Bitte starte es neu.',
     comingSoon: 'Demnächst',
     rotate: 'Dreh dein Handy ins Querformat, um zu spielen',
+    fullscreen: 'Vollbild',
+    iosFullscreen: 'Auf dem iPhone: Teilen und „Zum Home-Bildschirm“ tippen, um im Vollbild zu spielen',
     stars: '{n} von 3 Sternen',
   },
   menu: {

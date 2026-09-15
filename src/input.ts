@@ -94,12 +94,19 @@ export class Input {
   }
 
   requestFullscreen() {
-    const el = document.documentElement;
-    if (!document.fullscreenElement && el.requestFullscreen) {
-      el.requestFullscreen()
-        .then(() => (screen.orientation as unknown as { lock?: (o: string) => Promise<void> }).lock?.('landscape'))
-        .catch(() => { /* navegador de escritorio o sin soporte */ });
-    }
+    const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
+    if (fullscreenActive()) return;
+    const req = el.requestFullscreen?.bind(el) ?? el.webkitRequestFullscreen?.bind(el);
+    if (!req) return;
+    Promise.resolve(req())
+      .then(() => (screen.orientation as unknown as { lock?: (o: string) => Promise<void> }).lock?.('landscape'))
+      .catch(() => { /* sin soporte o rechazado */ });
+  }
+
+  exitFullscreen() {
+    const d = document as Document & { webkitExitFullscreen?: () => Promise<void> | void };
+    if (!fullscreenActive()) return;
+    Promise.resolve((d.exitFullscreen?.bind(d) ?? d.webkitExitFullscreen?.bind(d))?.()).catch(() => { /* ya fuera */ });
   }
 
   calibrate() {
@@ -278,4 +285,22 @@ class Stick {
     const mag = Math.min(1, (len - JOY_DEAD) / (1 - JOY_DEAD)) ** JOY_CURVE;
     return [(this.x / len) * mag, (this.y / len) * mag];
   }
+}
+
+/** ¿Hay pantalla completa (API del navegador o app instalada en la pantalla de inicio)? */
+export function fullscreenActive() {
+  const d = document as Document & { webkitFullscreenElement?: Element | null };
+  return !!(d.fullscreenElement ?? d.webkitFullscreenElement) || installedApp();
+}
+
+/** Abierto desde el icono de la pantalla de inicio (ya ocupa toda la pantalla). */
+export function installedApp() {
+  return matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches
+    || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+}
+
+/** El navegador deja poner la página a pantalla completa (el Safari de iPhone no: solo instalándola). */
+export function fullscreenSupported() {
+  const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: unknown };
+  return !!(el.requestFullscreen || el.webkitRequestFullscreen);
 }
