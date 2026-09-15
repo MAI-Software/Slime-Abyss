@@ -746,128 +746,174 @@ for side in (-1, 1):
 
 # ================================================================== HABITACIÓN DEL MENÚ
 # Suelo de 9x7 centrado en el origen (donde está el limo), paredes al fondo (+Y) y a los lados; sin pared delantera.
-# Los huecos slot_<coleccionable> marcan dónde se expone cada pieza.
+# Todo se coloca respecto a unos planos fijos para que nada se cruce ni parpadee:
+#   cara interior de la pared del fondo en Y = WALL_Y; de las laterales en X = ±WALL_X
+#   el zócalo (tabla, paneles, moldura, rodapié) sobresale como mucho TRIM_D de la pared
+#   los muebles pegados a la pared empiezan delante de eso (Y <= FURN_Y)
+# Huecos: slot_<coleccionable> (dónde se expone cada pieza) y light_* (dónde el juego pone luces).
+WALL_Y, WALL_X, WALL_H = 3.5, 4.5, 4.2
+TRIM_D = 0.07
+FURN_Y = WALL_Y - TRIM_D - 0.01
+
 M["plank"] = material("Plank", "a8764a", 0.75)
-M["plank_dark"] = material("PlankDark", "8c5f3a", 0.8)
+M["plank_dark"] = material("PlankDark", "5a3a22", 0.9)
 M["wallpaper"] = material("Wallpaper", "5b4b8a", 0.9)
-M["wall_trim"] = material("WallTrim", "3b2f63", 0.7)
 M["shelf_wood"] = material("ShelfWood", "6b4226", 0.7)
 M["rug"] = material("Rug", "c2410c", 0.95)
 M["rug_edge"] = material("RugEdge", "fbbf24", 0.9)
 M["glass"] = material("Glass", "d6f2ff", 0.05)
 M["pedestal"] = material("Pedestal", "e7e0f5", 0.5)
 M["candle"] = material("CandleFlame", "ffd27a", 0.4, emit="ffb347", strength=4.0)
+M["brass"] = material("Brass", "b08d3c", 0.35, 1.0)
+M["wainscot"] = material("Wainscot", "7a4a2a", 0.7)
+M["wainscot_panel"] = material("WainscotPanel", "8f5a34", 0.75)
 
 room = empty("menu_room")
+
+# suelo: tablas con juntas reales (huecos sobre una base oscura, sin caras superpuestas)
+rng_floor = random.Random(3)
 bm = bmesh.new()
-for k in range(-9, 9):
-    box(bm, (9.0, 0.48, 0.12), (0, k * 0.5 + 0.25, -0.06))
+box(bm, (2 * WALL_X, 2 * WALL_Y, 0.04), (0, 0, -0.04))
+mesh_object("room_floor_base", bm, M["plank_dark"], parent=room)
+bm = bmesh.new()
+rows = 14
+row_w = 2 * WALL_Y / rows
+for r in range(rows):
+    y = -WALL_Y + row_w * (r + 0.5)
+    x = -WALL_X + rng_floor.uniform(0.2, 1.4)
+    edges = [-WALL_X]
+    while x < WALL_X - 0.4:
+        edges.append(x)
+        x += rng_floor.uniform(1.8, 3.0)
+    edges.append(WALL_X)
+    for x0, x1 in zip(edges, edges[1:]):
+        box(bm, (x1 - x0 - 0.02, row_w - 0.03, 0.1), ((x0 + x1) / 2, y, -0.05))
 mesh_object("room_floor", bm, M["plank"], parent=room)
+
+# paredes
 bm = bmesh.new()
-for k in range(-9, 9, 3):
-    box(bm, (9.0, 0.02, 0.121), (0, k * 0.5, -0.06))
-mesh_object("room_floor_seams", bm, M["plank_dark"], parent=room)
-bm = bmesh.new()
-box(bm, (9.4, 0.3, 4.2), (0, 3.65, 2.1))
-box(bm, (0.3, 7.4, 4.2), (-4.65, 0, 2.1))
-box(bm, (0.3, 7.4, 4.2), (4.65, 0, 2.1))
+box(bm, (2 * WALL_X + 0.6, 0.3, WALL_H), (0, WALL_Y + 0.15, WALL_H / 2))
+for sx in (-1, 1):
+    box(bm, (0.3, 2 * WALL_Y + 0.3, WALL_H), (sx * (WALL_X + 0.15), 0.15, WALL_H / 2))
 mesh_object("room_walls", bm, M["wallpaper"], parent=room)
+
+
+def wall_strip(bm, depth, height, z0):
+    """Franja pegada a las tres paredes (fondo y laterales) que se unen en las esquinas sin cruzarse."""
+    box(bm, (2 * WALL_X, depth, height), (0, WALL_Y - depth / 2, z0 + height / 2))
+    for sx in (-1, 1):
+        box(bm, (depth, 2 * WALL_Y - depth, height), (sx * (WALL_X - depth / 2), -depth / 2, z0 + height / 2))
+
+
+# zócalo: tabla fina, moldura a media altura, rodapié y cornisa
 bm = bmesh.new()
-box(bm, (9.4, 0.34, 0.25), (0, 3.63, 0.125))
-box(bm, (0.34, 7.4, 0.25), (-4.63, 0, 0.125))
-box(bm, (0.34, 7.4, 0.25), (4.63, 0, 0.125))
-box(bm, (9.4, 0.34, 0.12), (0, 3.63, 4.2))
-mesh_object("room_trim", bm, M["wall_trim"], parent=room)
+wall_strip(bm, 0.03, 1.0, 0.0)
+wall_strip(bm, TRIM_D, 0.06, 1.0)
+wall_strip(bm, TRIM_D, 0.14, 0.0)
+wall_strip(bm, 0.09, 0.12, WALL_H - 0.12)
+mesh_object("room_wainscot", bm, M["wainscot"], parent=room)
+
+# paneles en relieve repartidos para caber justos en cada pared (sobresalen menos que la moldura)
 bm = bmesh.new()
-bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=40, radius=1.55)
-bmesh.ops.translate(bm, vec=(0, 0, 0.005), verts=bm.verts)
+PANEL_W, PANEL_GAP, PANEL_D = 0.9, 0.2, 0.02
+face_y = WALL_Y - 0.03 - PANEL_D / 2
+span = 2 * WALL_X - 0.3
+n = int((span + PANEL_GAP) // (PANEL_W + PANEL_GAP))
+start = -(n * (PANEL_W + PANEL_GAP) - PANEL_GAP) / 2 + PANEL_W / 2
+for k in range(n):
+    box(bm, (PANEL_W, PANEL_D, 0.64), (start + k * (PANEL_W + PANEL_GAP), face_y, 0.54))
+span = 2 * WALL_Y - 0.03 - 0.3
+n = int((span + PANEL_GAP) // (PANEL_W + PANEL_GAP))
+mid = -0.015
+start = mid - (n * (PANEL_W + PANEL_GAP) - PANEL_GAP) / 2 + PANEL_W / 2
+for sx in (-1, 1):
+    for k in range(n):
+        box(bm, (PANEL_D, PANEL_W, 0.64), (sx * (WALL_X - 0.03 - PANEL_D / 2), start + k * (PANEL_W + PANEL_GAP), 0.54))
+mesh_object("room_wainscot_panels", bm, M["wainscot_panel"], parent=room)
+
+# alfombra
+bm = bmesh.new()
+bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=64, radius=1.55)
+bmesh.ops.translate(bm, vec=(0, 0, 0.004), verts=bm.verts)
 mesh_object("room_rug_edge", bm, M["rug_edge"], parent=room)
 bm = bmesh.new()
-bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=40, radius=1.4)
-bmesh.ops.translate(bm, vec=(0, 0, 0.01), verts=bm.verts)
+bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=64, radius=1.4)
+bmesh.ops.translate(bm, vec=(0, 0, 0.009), verts=bm.verts)
 mesh_object("room_rug", bm, M["rug"], parent=room)
+
+SHELF_D = 0.45
+SHELF_Y = FURN_Y - SHELF_D / 2
+SHELF_TOPS = (0.08, 0.89, 1.69, 2.5)
 
 
 def bookcase(name, x):
     bm = bmesh.new()
-    w, d, h = 2.2, 0.45, 2.5
-    y = 3.5 - d / 2
-    box(bm, (w, 0.04, h), (x, 3.48, h / 2))
-    box(bm, (0.08, d, h), (x - w / 2, y, h / 2))
-    box(bm, (0.08, d, h), (x + w / 2, y, h / 2))
-    for z in (0.04, 0.85, 1.65, 2.46):
-        box(bm, (w, d, 0.08), (x, y, z))
+    w, h = 2.2, 2.5
+    box(bm, (w - 0.16, 0.03, h - 0.08), (x, FURN_Y - 0.015, h / 2))
+    for sx in (-1, 1):
+        box(bm, (0.08, SHELF_D, h), (x + sx * (w / 2 - 0.04), SHELF_Y, h / 2))
+    for top in SHELF_TOPS:
+        box(bm, (w - 0.16, SHELF_D, 0.08), (x, SHELF_Y, top - 0.04))
     mesh_object(name, bm, M["shelf_wood"], parent=room)
 
 
 bookcase("room_bookcase_left", -2.55)
 bookcase("room_bookcase_right", 2.55)
 
-# zócalo de madera con paneles y moldura alta: la habitación de un limo aventurero en lo hondo del abismo
-M["wainscot"] = material("Wainscot", "7a4a2a", 0.7)
-M["wainscot_panel"] = material("WainscotPanel", "8f5a34", 0.75)
-bm = bmesh.new()
-box(bm, (9.0, 0.06, 1.0), (0, 3.47, 0.5))
-box(bm, (0.06, 7.0, 1.0), (-4.47, 0, 0.5))
-box(bm, (0.06, 7.0, 1.0), (4.47, 0, 0.5))
-box(bm, (9.0, 0.1, 0.06), (0, 3.45, 1.02))
-box(bm, (0.1, 7.0, 0.06), (-4.45, 0, 1.02))
-box(bm, (0.1, 7.0, 0.06), (4.45, 0, 1.02))
-box(bm, (9.0, 0.12, 0.1), (0, 3.44, 3.95))
-mesh_object("room_wainscot", bm, M["wainscot"], parent=room)
-bm = bmesh.new()
-for k in range(-4, 4):
-    box(bm, (0.9, 0.03, 0.62), (k * 1.1 + 0.55, 3.43, 0.5))
-for k in range(-3, 3):
-    for x in (-4.43, 4.43):
-        box(bm, (0.03, 0.9, 0.62), (x, k * 1.1 + 0.55, 0.5))
-mesh_object("room_wainscot_panels", bm, M["wainscot_panel"], parent=room)
-
 # ventana redonda al abismo en la pared del fondo (brilla desde abajo)
 M["abyss_glass"] = material("AbyssGlass", "1e1b4b", 0.2, emit="3b82f6", strength=0.9)
 M["window_frame"] = material("WindowFrame", "4a2d18", 0.6)
-ring = [(0.62 * math.cos(a * math.tau / 32), 0.62 * math.sin(a * math.tau / 32) + 2.55) for a in range(32)]
-tube("room_window_frame", ring, 0.07, M["window_frame"], parent=room, loc=(0, 3.44, 0), poly=True, cyclic=True)
+WIN_Z, WIN_R = 2.55, 0.62
+ring = [(WIN_R * math.cos(a * math.tau / 48), WIN_R * math.sin(a * math.tau / 48) + WIN_Z) for a in range(48)]
+tube("room_window_frame", ring, 0.07, M["window_frame"], parent=room, loc=(0, WALL_Y - 0.05, 0), poly=True, cyclic=True)
 bm = bmesh.new()
-box(bm, (0.05, 0.05, 1.24), (0, 3.44, 2.55))
-box(bm, (1.24, 0.05, 0.05), (0, 3.44, 2.55))
+box(bm, (0.05, 0.05, 2 * WIN_R), (0, WALL_Y - 0.045, WIN_Z))
+box(bm, (2 * WIN_R, 0.05, 0.05), (0, WALL_Y - 0.045, WIN_Z))
 mesh_object("room_window_bars", bm, M["window_frame"], parent=room)
-flat_shape("room_window_glass", ellipse_pts(0.6, 0.6, 0, 2.55, 32), 0.02, M["abyss_glass"], front=3.47, parent=room)
+flat_shape("room_window_glass", ellipse_pts(WIN_R - 0.02, WIN_R - 0.02, 0, WIN_Z, 48), 0.015, M["abyss_glass"],
+           front=WALL_Y - 0.018, parent=room)
+empty("light_window", parent=room, loc=(0, WALL_Y - 0.7, WIN_Z - 0.2))
+
 
 def vitrina(name, x, y, z_top):
     bm = bmesh.new()
     box(bm, (0.7, 0.7, z_top), (x, y, z_top / 2))
-    bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.03, segments=1, affect="EDGES")
+    bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.03, segments=2, affect="EDGES")
     mesh_object(name + "_pedestal", bm, M["pedestal"], parent=room)
     bm = bmesh.new()
-    box(bm, (0.62, 0.62, 0.62), (x, y, z_top + 0.31))
+    box(bm, (0.62, 0.62, 0.6), (x, y, z_top + 0.3))
     mesh_object(name + "_glass", bm, M["glass"], parent=room)
     bm = bmesh.new()
-    box(bm, (0.66, 0.66, 0.04), (x, y, z_top + 0.64))
+    box(bm, (0.66, 0.66, 0.04), (x, y, z_top + 0.62))
+    bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.01, segments=1, affect="EDGES")
     mesh_object(name + "_lid", bm, M["shelf_wood"], parent=room)
 
 
-vitrina("room_vitrina_center", 0.0, 3.0, 0.95)
-vitrina("room_vitrina_left", -3.7, 0.9, 0.8)
-vitrina("room_vitrina_right", 3.7, 0.9, 0.8)
+vitrina("room_vitrina_center", 0.0, FURN_Y - 0.36, 0.95)
+vitrina("room_vitrina_left", -(WALL_X - 0.8), 0.9, 0.8)
+vitrina("room_vitrina_right", WALL_X - 0.8, 0.9, 0.8)
 
-# velas en la pared del fondo
-bm = bmesh.new()
-for x in (-1.25, 1.25):
-    cylinder(bm, 0.05, 0.25, (x, 3.4, 2.2), 10)
-mesh_object("room_candles", bm, M["pedestal"], parent=room)
-bm = bmesh.new()
-for x in (-1.25, 1.25):
-    ellipsoid(bm, (0.04, 0.04, 0.08), (x, 3.4, 2.4), 10, 8)
-mesh_object("room_candle_flames", bm, M["candle"], smooth=True, parent=room)
+# velas en apliques de latón sobre la pared del fondo
+bm_brass, bm_wax, bm_flame = bmesh.new(), bmesh.new(), bmesh.new()
+for side, x in (("l", -1.1), ("r", 1.1)):
+    cup_y = WALL_Y - 0.17
+    box(bm_brass, (0.12, 0.02, 0.24), (x, WALL_Y - 0.01, 2.02))
+    box(bm_brass, (0.03, 0.15, 0.03), (x, WALL_Y - 0.095, 1.96))
+    cylinder(bm_brass, 0.07, 0.03, (x, cup_y, 1.975), 20)
+    cylinder(bm_wax, 0.045, 0.22, (x, cup_y, 2.1), 20)
+    ellipsoid(bm_flame, (0.035, 0.035, 0.075), (x, cup_y, 2.29), 16, 10)
+    empty(f"light_candle_{side}", parent=room, loc=(x, cup_y - 0.08, 2.36))
+mesh_object("room_sconces", bm_brass, M["brass"], smooth=True, parent=room)
+mesh_object("room_candles", bm_wax, M["pedestal"], smooth=True, parent=room)
+mesh_object("room_candle_flames", bm_flame, M["candle"], smooth=True, parent=room)
 
 # la escala del hueco es la escala con la que se expone la pieza
-for slot, loc, size in (("slot_col_trophy", (0.0, 3.0, 0.95), 1.3),
-                        ("slot_col_crystal_skull", (-3.7, 0.9, 0.8), 1.35),
-                        ("slot_col_ancient_vase", (3.7, 0.9, 0.8), 1.25),
-                        ("slot_col_crypt_key", (-2.55, 3.25, 0.89), 1.6),
-                        ("slot_col_blue_orb", (-2.55, 3.25, 1.69), 1.6),
-                        ("slot_col_coin_chest", (2.55, 3.25, 0.89), 1.8)):
+for slot, loc, size in (("slot_col_trophy", (0.0, FURN_Y - 0.36, 0.95), 1.3),
+                        ("slot_col_crystal_skull", (-(WALL_X - 0.8), 0.9, 0.8), 1.35),
+                        ("slot_col_ancient_vase", (WALL_X - 0.8, 0.9, 0.8), 1.25),
+                        ("slot_col_crypt_key", (-2.55, SHELF_Y, SHELF_TOPS[1]), 1.6),
+                        ("slot_col_blue_orb", (-2.55, SHELF_Y, SHELF_TOPS[2]), 1.6),
+                        ("slot_col_coin_chest", (2.55, SHELF_Y, SHELF_TOPS[1]), 1.8)):
     empty(slot, parent=room, loc=loc).scale = (size, size, size)
 
 # ================================================================== guardar y exportar

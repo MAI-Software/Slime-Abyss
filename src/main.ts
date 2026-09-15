@@ -17,6 +17,7 @@ import { Fx } from './fx';
 import { LiquidGauge } from './hud-liquid';
 import { AbyssAmbience } from './abyss';
 import { Trail } from './trail';
+import { LightPool, flicker } from './lights';
 import { setMuted, sfx, unlockAudio } from './audio';
 import { LANGS, applyDom, detectLang, getLang, levelName, levelTip, setLang, t, type Lang } from './i18n';
 import { loadSave, writeSave } from './save';
@@ -77,7 +78,9 @@ function skyTexture(): THREE.CanvasTexture {
 const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 80);
 
 // luz de cielo fría + sol cálido con sombras + contraluz azul que recorta al limo y los muros
-scene.add(new THREE.HemisphereLight(0xd2e2ff, 0x3d2d5c, 1.05));
+// (en la habitación del menú se atenúan y mandan las velas y la ventana: ver LIGHTING)
+const hemi = new THREE.HemisphereLight(0xd2e2ff, 0x3d2d5c, 1.05);
+scene.add(hemi);
 const rim = new THREE.DirectionalLight(0x86a8ff, 0.85);
 scene.add(rim, rim.target);
 const sun = new THREE.DirectionalLight(0xffe4c0, 2.4);
@@ -88,8 +91,19 @@ sun.shadow.camera.near = 1;
 sun.shadow.camera.far = 40;
 sun.shadow.bias = -0.0008;
 sun.shadow.normalBias = 0.02;
-sun.shadow.radius = 3;
+sun.shadow.radius = 4;
 scene.add(sun, sun.target);
+
+/** Ambiente de cada modo: en el menú la habitación es cálida y en penumbra; en el juego, luz de día del abismo. */
+const LIGHTING = {
+  menu: { hemi: 0.5, sun: 1.25, rim: 0.3, env: 0.3, sunOffset: new THREE.Vector3(-4, 10, 7) },
+  play: { hemi: 0.95, sun: 2.4, rim: 0.85, env: 0.5, sunOffset: new THREE.Vector3(5, 12, 4) },
+};
+const sunOffset = LIGHTING.play.sunOffset.clone();
+const sunRight = new THREE.Vector3();
+const sunUp = new THREE.Vector3();
+const sunDir = new THREE.Vector3();
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
 // ------------------------------------------------------------------ calidad adaptativa
 // Si el móvil no llega a ~45 fps baja resolución y sombras; si va sobrado, las sube.
@@ -144,6 +158,69 @@ scene.add(tiltRoot);
 const fx = new Fx();
 content.add(fx.group);
 const trail = new Trail();
+const lightPool = new LightPool(lowQuality ? 3 : 4, content);
+let lightT = 0;
+let fireOrderT = 0;
+const fireOrder: number[] = [];
+const tmpLight = new THREE.Vector3();
+/** halo luminoso alrededor de la llama de cada vela */
+const candleHalos: THREE.Sprite[] = [];
+function haloTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d')!;
+  const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(255,230,170,1)');
+  grad.addColorStop(0.25, 'rgba(255,180,90,0.55)');
+  grad.addColorStop(1, 'rgba(255,140,40,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** Velas y ventana en el menú; en el juego, el limo en llamas y los fuegos más cercanos a la cámara. */
+function updateLights(dt: number) {
+  lightT += dt;
+  lightPool.begin();
+  if (mode === 'menu' && room) {
+    const o = room.position;
+    for (const [k, name] of ['light_candle_l', 'light_candle_r'].entries()) {
+      const p = room.getObjectByName(name)?.position;
+      // un poco separada de la pared para que no queme un punto blanco en el papel
+      const f = flicker(lightT, k);
+      if (p) lightPool.add(o.x + p.x, o.y + p.y, o.z + p.z + 0.3, 0xffb25c, 4.6 * f, 7);
+      const halo = candleHalos[k];
+      if (halo) { halo.material.opacity = 0.55 * f; halo.scale.setScalar(0.62 * (0.92 + f * 0.08)); }
+    }
+    const w = room.getObjectByName('light_window')?.position;
+    if (w) lightPool.add(o.x + w.x, o.y + w.y, o.z + w.z, 0x5b86ff, 2.4 + Math.sin(lightT * 0.7) * 0.35, 6.5);
+  } else if (world && slime) {
+    if (slime.state === 'burning' && slime.center(tmpLight)) {
+      lightPool.add(tmpLight.x, tmpLight.y + 0.8, tmpLight.z, 0xff7a24, 5 * flicker(lightT, 9), 5.5);
+    }
+    const spots = world.fireSpots;
+    if (spots.length) {
+      fireOrderT -= dt;
+      if (fireOrderT <= 0 || fireOrder.length !== spots.length) {
+        fireOrderT = 0.4;
+        fireOrder.length = 0;
+        spots.forEach((_, k) => fireOrder.push(k));
+        const d2 = (k: number) => (spots[k].x - camTarget.x) ** 2 + (spots[k].z - camTarget.z) ** 2;
+        fireOrder.sort((a, b) => d2(a) - d2(b));
+      }
+      for (const k of fireOrder) {
+        const spot = spots[k];
+        const level = world.fireSpotLevel(spot);
+        if (level < 0.02) continue;
+        const size = Math.sqrt(spot.cells.length);
+        if (!lightPool.add(spot.x, spot.y + 0.75, spot.z, 0xff8a2e, 3.2 * size * level * flicker(lightT, k), 4 + size)) break;
+      }
+    }
+  }
+  lightPool.end();
+}
 content.add(trail.group);
 /** tiempo acumulado para dejar manchas de rastro a ritmo fijo */
 let trailT = 0;
@@ -432,6 +509,16 @@ function refreshRoom() {
       }
     });
     content.add(room);
+    const haloTex = haloTexture();
+    for (const name of ['light_candle_l', 'light_candle_r']) {
+      const spot = room.getObjectByName(name);
+      if (!spot) continue;
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+      halo.position.copy(spot.position).y -= 0.06;
+      halo.renderOrder = 4;
+      room.add(halo);
+      candleHalos.push(halo);
+    }
   }
   for (const o of showcase) room.remove(o);
   showcase.length = 0;
@@ -1073,8 +1160,23 @@ function updateCamera(dt: number) {
   tiltRoot.rotation.x += (moveZ * sway - tiltRoot.rotation.x) * tk;
   tiltRoot.rotation.z += (-moveX * sway - tiltRoot.rotation.z) * tk;
 
-  sun.position.set(camTarget.x + 5, camTarget.y + 12, camTarget.z + 4);
-  sun.target.position.copy(camTarget);
+  // ambiente del modo (transición suave al entrar o salir del menú)
+  const look = mode === 'menu' ? LIGHTING.menu : LIGHTING.play;
+  const lk = 1 - Math.exp(-dt * 3);
+  hemi.intensity += (look.hemi - hemi.intensity) * lk;
+  sun.intensity += (look.sun - sun.intensity) * lk;
+  rim.intensity += (look.rim - rim.intensity) * lk;
+  scene.environmentIntensity += (look.env - scene.environmentIntensity) * lk;
+  sunOffset.lerp(look.sunOffset, lk);
+  // el foco de sombras avanza a saltos de un texel: los bordes de las sombras no tiemblan al mover la cámara
+  sunDir.copy(sunOffset).normalize();
+  sunRight.crossVectors(WORLD_UP, sunDir).normalize();
+  sunUp.crossVectors(sunDir, sunRight);
+  const texel = (sun.shadow.camera.right - sun.shadow.camera.left) / sun.shadow.mapSize.x;
+  const sa = Math.round(camTarget.dot(sunRight) / texel) * texel;
+  const sb = Math.round(camTarget.dot(sunUp) / texel) * texel;
+  sun.target.position.copy(sunRight).multiplyScalar(sa).addScaledVector(sunUp, sb).addScaledVector(sunDir, camTarget.dot(sunDir));
+  sun.position.copy(sun.target.position).add(sunOffset);
   rim.position.set(camTarget.x - 6, camTarget.y + 5, camTarget.z - 9);
   rim.target.position.copy(camTarget);
 }
@@ -1112,6 +1214,7 @@ function frame(dt: number) {
   fx.update(dt);
   trail.update(mode === 'play' || mode === 'winning' ? dt : dt * 0.3);
   updateCamera(dt);
+  updateLights(dt);
   abyss.group.visible = mode !== 'menu';
   if (abyss.group.visible) abyss.update(dt, camTarget);
   slime?.render(dt, alpha, input.tiltX, input.tiltZ);

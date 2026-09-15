@@ -141,6 +141,8 @@ export class World {
   private windCells: { i: number; j: number; dx: number; dz: number; base: number; pow: number }[] = [];
   private mistFx: THREE.Points | null = null;
   private fire: FireFx | null = null;
+  /** focos de fuego para iluminar: grupos de casillas de fuego cercanas (bloques de 3x3) */
+  readonly fireSpots: { x: number; y: number; z: number; cells: FireCell[] }[] = [];
   private chest: THREE.Object3D | null = null;
   private chestLid: THREE.Object3D | null = null;
   private sparkles: THREE.Points | null = null;
@@ -192,6 +194,16 @@ export class World {
   /** Fuego intermitente: 1.7 s encendido, apagado y aviso 0.45 s antes de volver. */
   private timedPhase(i: number, j: number): number {
     return (this.time + (i + j) * 0.25) % 3.2;
+  }
+
+  /** Cuánto alumbra un foco ahora mismo (0 apagado … 1 todo encendido; el aviso da un poco). */
+  fireSpotLevel(spot: { cells: FireCell[] }): number {
+    let sum = 0;
+    for (const c of spot.cells) {
+      const st = this.fireState(c);
+      sum += st === 2 ? 1 : st === 1 ? 0.25 : 0;
+    }
+    return sum / spot.cells.length;
   }
 
   private fireState = (c: FireCell): FireState => {
@@ -360,6 +372,19 @@ export class World {
     this.buildMist();
 
     if (fireCells.length) {
+      const spots = new Map<string, { x: number; y: number; z: number; cells: FireCell[] }>();
+      for (const c of fireCells) {
+        const key = `${Math.floor(c.i / 3)},${Math.floor(c.j / 3)}`;
+        let spot = spots.get(key);
+        if (!spot) spots.set(key, (spot = { x: 0, y: 0, z: 0, cells: [] }));
+        spot.cells.push(c);
+        spot.x += c.i + 0.5; spot.y += c.base; spot.z += c.j + 0.5;
+      }
+      for (const spot of spots.values()) {
+        const k = spot.cells.length;
+        spot.x /= k; spot.y /= k; spot.z /= k;
+        this.fireSpots.push(spot);
+      }
       this.fire = new FireFx(fireCells, this.assets);
       this.group.add(this.fire.group);
     }
