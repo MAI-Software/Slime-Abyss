@@ -4,7 +4,8 @@ import { World, type RailPath } from './world';
 import type { Channel } from './level/format';
 import { Assets } from './assets';
 import { createContactShadowTexture } from './materials';
-import { BODY_COLORS, DEFAULT_LOOK, EYES_MIRRORED, EYES_PER_SIDE, type BodyColor, type SlimeLook } from './look';
+import { BODY_COLORS, DEFAULT_LOOK, EYES_MIRRORED, EYES_PER_SIDE, type BodyColor, type IrisId, type SlimeLook } from './look';
+import { tintIris } from './thumbs';
 
 // --- física ---
 // El limo grande es un montón de limitos pequeños unidos por cohesión.
@@ -163,7 +164,7 @@ export class Slime {
   /** trozos de al menos 3 limitos en el último agrupado (si bajan, se han unido) */
   private bigGroups = 1;
   private time = 0;
-  private readonly uniforms = { uTime: { value: 0 }, uWobble: { value: 1 }, uRim: { value: new THREE.Vector3(0.45, 0.8, 1.0) } };
+  private readonly uniforms = { uTime: { value: 0 }, uWobble: { value: 1 }, uRim: { value: new THREE.Vector3(0.45, 0.8, 1.0) }, uOpacity: { value: 1 } };
   state: SlimeState = 'normal';
   stateT = 0;
   private material!: THREE.MeshStandardMaterial;
@@ -249,6 +250,7 @@ export class Slime {
       shader.uniforms.uTime = this.uniforms.uTime;
       shader.uniforms.uWobble = this.uniforms.uWobble;
       shader.uniforms.uRim = this.uniforms.uRim;
+      shader.uniforms.uOpacity = this.uniforms.uOpacity;
       // superficie viva: ondula suavemente y brilla en el borde como una gelatina
       shader.vertexShader = `uniform float uTime;\nuniform float uWobble;\nvarying vec3 vSlimePos;\n${shader.vertexShader}`.replace(
         '#include <begin_vertex>',
@@ -258,7 +260,7 @@ export class Slime {
         transformed += objectNormal * wob * 0.022 * uWobble;
         vSlimePos = wp;`,
       );
-      shader.fragmentShader = `uniform float uTime;\nuniform vec3 uRim;\nvarying vec3 vSlimePos;
+      shader.fragmentShader = `uniform float uTime;\nuniform vec3 uRim;\nuniform float uOpacity;\nvarying vec3 vSlimePos;
         float slimeHash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
         float slimeNoise(vec3 p) {
           vec3 i = floor(p), f = fract(p);
@@ -276,6 +278,8 @@ export class Slime {
         vec3 slimeH = normalize(normalize(vec3(-0.45, 0.75, 0.5)) + normalize(vViewPosition));
         float slimeSpec = max(dot(normalize(normal), slimeH), 0.0);
         outgoingLight += vec3(1.0) * (pow(slimeSpec, 90.0) * 0.75 + pow(slimeSpec, 10.0) * 0.07);
+        // agua: se ve a través del centro; el borde (fresnel) y los brillos quedan casi opacos
+        diffuseColor.a = mix(uOpacity, max(uOpacity, 0.8), pow(slimeRim, 2.0)) + pow(slimeSpec, 90.0) * 0.6;
         #include <opaque_fragment>`,
       ).replace(
         '#include <normal_fragment_maps>',
@@ -345,6 +349,12 @@ export class Slime {
       this.material.color.setHex(this.body.color);
       this.material.emissive.setHex(this.body.emissive);
       this.uniforms.uRim.value.set(...this.body.rim);
+    }
+    // solo los colores translúcidos pasan a la cola transparente (cambiarlo recompila el material)
+    const see = this.body.opacity !== undefined;
+    if (this.material.transparent !== see) {
+      this.material.transparent = see;
+      this.material.needsUpdate = true;
     }
     for (const f of this.faces) f.setLook(look);
   }
@@ -1133,6 +1143,8 @@ export class Slime {
     this.material.roughness += (rough - this.material.roughness) * k;
     this.uniforms.uWobble.value += (STATE_LOOK[this.state].wobble - this.uniforms.uWobble.value) * k;
     this.uniforms.uRim.value.lerp(this.tmpRim.set(...look.rim), k);
+    const opacity = this.state === 'normal' ? this.body.opacity ?? 1 : 1;
+    this.uniforms.uOpacity.value += (opacity - this.uniforms.uOpacity.value) * k;
     this.xrayColor.value.setRGB(...look.rim);
     for (const f of this.faces) f.frozen = this.state === 'frozen';
     const { n, px, py, pz, ox, oy, oz, alive, dying } = this;
@@ -1259,6 +1271,14 @@ class Face {
     this.setLook(DEFAULT_LOOK);
   }
 
+  /** Rasgo elegido en Mi limo ('none' o sin modelo → nada). */
+  private optional(name: string, x: number, y: number, z: number, mirror = false, iris?: IrisId) {
+    if (!this.assets.has(name)) return null;
+    const o = this.part(name, x, y, z, mirror);
+    if (iris) tintIris(o, iris);
+    return o;
+  }
+
   private part(name: string, x: number, y: number, z: number, mirror = false) {
     const o = this.assets.clone(name, { unlit: true });
     o.position.set(x, y, z);
@@ -1298,14 +1318,18 @@ class Face {
     for (const side of [-1, 1]) {
       // guiño: cada lado su modelo; gafas: el derecho es el izquierdo reflejado
       const name = EYES_PER_SIDE.has(look.eyes) ? `face_eye_${look.eyes}_${side < 0 ? 'l' : 'r'}` : `face_eye_${look.eyes}`;
-      const eye = this.part(name, side * 0.1, 0.035, 0, side > 0 && EYES_MIRRORED.has(look.eyes));
-      const lookAt = eye.getObjectByName(`${name}_look`) ?? eye;
-      lookAt.userData.rest = lookAt.position.clone();
-      this.eyes.push(eye);
-      this.looks.push(lookAt);
-      if (look.cheeks !== 'none') this.blush.push(this.part(`face_blush_${look.cheeks}`, side * 0.175, -0.035, -0.005));
+      const eye = this.optional(name, side * 0.1, 0.035, 0, side > 0 && EYES_MIRRORED.has(look.eyes), look.iris);
+      if (eye) {
+        const lookAt = eye.getObjectByName(`${name}_look`) ?? eye;
+        lookAt.userData.rest = lookAt.position.clone();
+        this.eyes.push(eye);
+        this.looks.push(lookAt);
+      }
+      // el moflete derecho es el izquierdo reflejado (bigotes hacia fuera)
+      const cheek = this.optional(`face_blush_${look.cheeks}`, side * 0.175, -0.035, -0.005, side > 0);
+      if (cheek) this.blush.push(cheek);
     }
-    this.idleMouth = this.part(`face_mouth_${look.mouth}`, 0, -0.055, 0.01);
+    this.idleMouth = this.optional(`face_mouth_${look.mouth}`, 0, -0.055, 0.01);
   }
 
   poke() { this.bounce = 1; }

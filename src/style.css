@@ -866,7 +866,12 @@ body[data-control="gyro"] .squeeze-btn { bottom: calc(26px + var(--safe-b)); rig
 .chip.thumb-chip img { width: 58px; height: 58px; object-fit: contain; pointer-events: none; }
 .chip.thumb-chip[aria-pressed="true"] { background: #dbeafe; color: var(--ink); outline: 3px solid var(--slime); outline-offset: 2px; }
 .chip.thumb-chip .lock-ico { position: absolute; right: 4px; bottom: 4px; width: 16px; height: 16px; color: var(--ink); background: #fff; border-radius: 50%; padding: 1px; }
-.chip.thumb-chip.none-opt::after { content: ""; position: absolute; width: 70%; height: 3px; background: var(--ink); border-radius: 2px; transform: rotate(-35deg); }
+.swatch.water { background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0 12%, transparent 13%), radial-gradient(circle at 50% 55%, rgba(205, 238, 245, 0.25) 0 45%, rgba(125, 211, 252, 0.85) 75%, #e0f7ff 100%); }
+.swatch.priced { position: relative; overflow: visible; opacity: 0.8; }
+.swatch .price-tag { position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 2px; padding: 1px 5px 1px 2px; border-radius: 999px; background: var(--ink); color: #fde68a; font: 800 11px/1.2 Nunito, system-ui, sans-serif; white-space: nowrap; }
+.swatch .price-tag .coin-ico { width: 12px; height: 12px; }
+.swatch-row:has(.priced) { padding-bottom: 12px; }
+.wallet-chip { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px 4px 6px; border-radius: 999px; background: rgba(15, 23, 42, 0.55); color: #fde68a; font: 800 15px/1 Nunito, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
 @keyframes spin { to { rotate: 360deg; } }
 
 @media (max-height: 520px) {

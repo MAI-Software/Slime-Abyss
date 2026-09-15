@@ -65,7 +65,7 @@ export class Assets {
       if (!m.isMesh) return;
       const mat = m.material as THREE.MeshStandardMaterial;
       if (options.unlit) {
-        m.material = new THREE.MeshBasicMaterial({ color: mat.color });
+        m.material = new THREE.MeshBasicMaterial({ color: mat.color, name: mat.name });
       } else if (options.cloneMaterials) {
         m.material = mat.clone();
       }

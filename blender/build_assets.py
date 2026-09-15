@@ -613,6 +613,53 @@ sparkles = empty("face_blush_sparkles")
 M["sparkle"] = material("SparkleWhite", "fff7d6", 0.4, emit="fde68a", strength=0.4)
 flat_shape("face_blush_sparkles_big", star_pts(0.02, 0.006, 4, -0.006, 0.006), 0.004, M["sparkle"], parent=sparkles)
 flat_shape("face_blush_sparkles_small", star_pts(0.011, 0.0035, 4, 0.02, -0.014), 0.004, M["sparkle"], parent=sparkles)
+
+# Ojos de anime: "tomoe" (iris rojo con anillo y tres comas) y "ondas" (anillos concéntricos sobre lila).
+M["tomoe_red"] = material("TomoeRed", "c1121f", 0.35)
+M["ripple"] = material("RippleIris", "c4b5fd", 0.4)
+
+
+def comma(r, tail):
+    """Coma de tomoe: círculo con una cola curva (puntos XZ, centrada en el círculo)."""
+    pts = [(r * math.cos(a), r * math.sin(a)) for a in [math.radians(d) for d in range(40, 361, 20)]]
+    pts += [(r * 1.25 * math.cos(math.radians(20)) + tail * 0.35, r * 1.1 + tail * 0.35),
+            (tail * 0.55, r + tail * 0.9),
+            (r * 0.2, r * 1.05)]
+    return pts
+
+
+eye = eye_base("face_eye_tomoe", 0.062, 0.082, M["white"])
+look = empty("face_eye_tomoe_look", parent=eye, loc=(0, -0.02, -0.004))
+bm = bmesh.new()
+ellipsoid(bm, (0.05, 0.012, 0.062), (0, 0, 0), 32, 18)
+mesh_object("face_eye_tomoe_iris", bm, M["tomoe_red"], smooth=True, parent=look)
+ring = [(0.03 * math.cos(a * math.tau / 36), 0.037 * math.sin(a * math.tau / 36)) for a in range(36)]
+tube("face_eye_tomoe_ring", ring, 0.0028, M["black"], parent=look, loc=(0, -0.013, 0), poly=True, cyclic=True)
+bm = bmesh.new()
+ellipsoid(bm, (0.011, 0.006, 0.013), (0, 0, 0), 20, 12)
+mesh_object("face_eye_tomoe_pupil", bm, M["black"], smooth=True, parent=look, loc=(0, -0.014, 0))
+for k in range(3):
+    ang = math.pi / 2 + k * math.tau / 3
+    cx, cz = 0.03 * math.cos(ang), 0.037 * math.sin(ang)
+    # la coma sigue la tangente del anillo
+    rot = ang + math.pi
+    pts = [(cx + x * math.cos(rot) - z * math.sin(rot), cz + x * math.sin(rot) + z * math.cos(rot)) for x, z in comma(0.0075, 0.012)]
+    flat_shape(f"face_eye_tomoe_comma{k}", pts, 0.004, M["black"], front=-0.019, parent=look)
+
+eye = eye_base("face_eye_ripple", 0.062, 0.082, M["ripple"])
+look = empty("face_eye_ripple_look", parent=eye, loc=(0, -0.031, 0))
+for k, r in enumerate((0.014, 0.028, 0.042)):
+    ring = [(r * math.cos(a * math.tau / 40), r * 1.25 * math.sin(a * math.tau / 40)) for a in range(40)]
+    tube(f"face_eye_ripple_ring{k}", ring, 0.0026, M["black"], parent=look, poly=True, cyclic=True)
+bm = bmesh.new()
+ellipsoid(bm, (0.006, 0.004, 0.007), (0, 0, 0), 16, 10)
+mesh_object("face_eye_ripple_pupil", bm, M["black"], smooth=True, parent=look, loc=(0, -0.002, 0))
+
+# bigotes de gato (moflete izquierdo; el derecho se refleja): tres líneas que se abren hacia fuera
+whiskers = empty("face_blush_whiskers")
+for k, (z0, z1) in enumerate(((0.012, 0.03), (0.0, 0.0), (-0.012, -0.03))):
+    tube(f"face_blush_whiskers_line{k}", [(0.012, z0), (-0.024, (z0 + z1) / 2 + z1 * 0.1), (-0.056, z1 * 0.85)], 0.0032, M["black"],
+         parent=whiskers)
 teardrop("face_sweat", 0.03, M["sweat"])
 teardrop("face_tear", 0.016, M["sweat"])
 

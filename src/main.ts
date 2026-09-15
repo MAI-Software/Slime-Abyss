@@ -10,7 +10,7 @@ import { CHAPTERS, MENU_STAGE, PRACTICE, UPCOMING } from './level/campaign';
 import { DEFAULT_KEEP_PCT, starsOf, type ChapterDef, type FloorResult, type LevelData } from './level/format';
 import { World } from './world';
 import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
-import { BODY_COLORS, CHEEKS, EYES, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
+import { BODY_COLORS, CHEEKS, EYES, IRIS_COLORS, IRIS_EYES, LOOK_PRICES, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
 import { ACHIEVEMENTS, drawPatchIcon, type Achievement, type AchievementContext } from './achievements';
 import { Thumbs } from './thumbs';
 import { Input, type ControlMode } from './input';
@@ -274,6 +274,8 @@ const gemsTotalOf = (lv: LevelData) => lv.tiles.join('').split('G').length - 1;
 /** 100 %: todas las estrellas y todos los secretos del capítulo. */
 const chapterPerfect = (ch: ChapterDef) => ch.floors.every((f) => floorStars(f.id) === 3 && (gemsTotalOf(f) === 0 || !!floorSave(f.id)?.secret));
 const coinsEarned = () => Object.values(save.floors).reduce((a, f) => a + f.bestCoins, 0);
+/** Saldo del monedero: la mejor marca de monedas de cada piso (no se farmea) menos lo gastado. */
+const coinWallet = () => Math.max(0, coinsEarned() - save.coinsSpent);
 const chapterTitle = (ch: ChapterDef) => t('story.chapter', { n: CHAPTERS.indexOf(ch) + 1 });
 const chapterSubtitle = (ch: ChapterDef) => t(`chapters.${ch.id}`);
 
@@ -308,7 +310,7 @@ const showcase: THREE.Object3D[] = [];
 const menuLook = new THREE.Vector3();
 let player: Player | null = null;
 /** coleccionables ganados en el último piso, pendientes de enseñar */
-const pendingRewards: { kind: 'collectible' | 'achievement'; id: string }[] = [];
+const pendingRewards: { kind: 'collectible' | 'achievement' | 'look'; id: string }[] = [];
 /** logro que enfoca la cámara en la pantalla Logros */
 let achFocus: string | null = null;
 /** parches cosidos en el tablón de la habitación */
@@ -557,7 +559,8 @@ function achievementRewardText(id: string): string | null {
 function lookPreview(key: LookKey, opt: string): string | null {
   if (!thumbs) return null;
   if (key === 'color') return thumbs.slime(opt as SlimeLook['color'], save.look);
-  return thumbs.face(key, opt, save.look.color);
+  if (key === 'iris') return null;
+  return thumbs.face(key, opt, save.look.color, save.look.iris);
 }
 
 /** Insignia del parche de un logro (tela con forma y bordado). */
@@ -735,44 +738,74 @@ type LookKey = keyof SlimeLook;
 const LOOK_OPTIONS: { key: LookKey; options: readonly string[] }[] = [
   { key: 'color', options: Object.keys(BODY_COLORS) },
   { key: 'eyes', options: EYES },
+  // subopción: color del iris, solo para los ojos con iris normal
+  { key: 'iris', options: Object.keys(IRIS_COLORS) },
   { key: 'mouth', options: MOUTHS },
   { key: 'cheeks', options: CHEEKS },
 ];
 const hexCss = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
 
+/** Opción de pago pulsada una vez: la segunda pulsación (en pocos segundos) la compra. */
+let buyArmed: { id: string; until: number } | null = null;
+
 function renderMySlime() {
   const root = $('myslime-options');
   root.innerHTML = '';
+  $('myslime-wallet').innerHTML = `${coinSvg}<span>${coinWallet()}</span>`;
+  $('myslime-wallet').setAttribute('aria-label', t('myslime.wallet', { n: coinWallet() }));
   for (const { key, options } of LOOK_OPTIONS) {
+    if (key === 'iris' && !IRIS_EYES.has(save.look.eyes)) continue;
     const label = document.createElement('p');
     label.className = 'panel-label';
     label.textContent = t(`myslime.${key}`);
     const row = document.createElement('div');
-    row.className = key === 'color' ? 'swatch-row' : 'chip-row';
+    row.className = key === 'color' || key === 'iris' ? `swatch-row${key === 'iris' ? ' iris-row' : ''}` : 'chip-row';
     row.setAttribute('role', 'group');
     row.setAttribute('aria-label', label.textContent);
     for (const opt of options) {
       const b = document.createElement('button');
       const name = t(`myslime.${key}Opt.${opt}`);
-      const open = lookOptionUnlocked(key, opt, save.achievements);
-      const needed = ACHIEVEMENTS.find((a) => a.id === LOOK_UNLOCKS[`${key}:${opt}`]);
+      const id = `${key}:${opt}`;
+      const open = lookOptionUnlocked(key, opt, save.achievements, save.bought);
+      const needed = ACHIEVEMENTS.find((a) => a.id === LOOK_UNLOCKS[id]);
+      const price = LOOK_PRICES[id];
       b.setAttribute('aria-pressed', String(save.look[key] === opt));
-      if (key === 'color') {
-        const body = BODY_COLORS[opt as keyof typeof BODY_COLORS];
-        b.className = `swatch${'metalness' in body ? ' metallic' : ''}${open ? '' : ' locked'}`;
+      if (key === 'color' || key === 'iris') {
+        const body = key === 'color' ? BODY_COLORS[opt as keyof typeof BODY_COLORS] : { color: IRIS_COLORS[opt as keyof typeof IRIS_COLORS] };
+        b.className = `swatch${'metalness' in body ? ' metallic' : ''}${'opacity' in body ? ' water' : ''}${open ? '' : ' locked'}${price && !open ? ' priced' : ''}`;
         b.style.setProperty('--swatch', hexCss(body.color));
-        b.setAttribute('aria-label', open ? name : `${name} · ${t('achievements.locked')}`);
+        b.setAttribute('aria-label', open ? name : price ? `${name} · ${price}` : `${name} · ${t('achievements.locked')}`);
         b.title = name;
-        if (!open) b.innerHTML = lockSvg;
+        if (!open) b.innerHTML = price ? `${lockSvg}<span class="price-tag">${coinSvg}${price}</span>` : lockSvg;
       } else {
-        // se elige viendo el rasgo, no leyendo su nombre
-        b.className = `chip thumb-chip${open ? '' : ' locked'}${opt === 'none' ? ' none-opt' : ''}`;
+        // se elige viendo el rasgo, no leyendo su nombre ('none': solo el círculo del color)
+        b.className = `chip thumb-chip${open ? '' : ' locked'}`;
         b.setAttribute('aria-label', open ? name : `${name} · ${t('achievements.locked')}`);
         b.title = name;
         const src = lookPreview(key, opt);
         b.innerHTML = `${src ? `<img src="${src}" alt="" draggable="false">` : escapeHtml(name)}${open ? '' : lockSvg}`;
       }
       b.addEventListener('click', () => {
+        if (!open && price) {
+          sfx.click();
+          const wallet = coinWallet();
+          if (wallet < price) { toast(t('myslime.needCoins', { name, price, n: price - wallet }), 2800); return; }
+          if (!buyArmed || buyArmed.id !== id || performance.now() > buyArmed.until) {
+            buyArmed = { id, until: performance.now() + 4000 };
+            toast(t('myslime.buyConfirm', { name, price }), 3800);
+            return;
+          }
+          buyArmed = null;
+          save.coinsSpent += price;
+          save.bought.push(id);
+          (save.look as unknown as Record<string, string>)[key] = opt;
+          store();
+          applyLook();
+          sfx.coin();
+          pendingRewards.push({ kind: 'look', id });
+          afterReward(() => show('myslime'));
+          return;
+        }
         if (!open) {
           sfx.click();
           if (needed) toast(t('achievements.unlockHint', { name: achName(needed) }), 2600);
@@ -1147,7 +1180,13 @@ function afterReward(then: () => void) {
     img.className = cls;
     visual.appendChild(img);
   };
-  if (item.kind === 'collectible') {
+  if (item.kind === 'look') {
+    const [key, opt] = item.id.split(':') as [LookKey, string];
+    $('reward-label').textContent = t('myslime.bought');
+    $('reward-title').textContent = `${t(`myslime.${key}`)}: ${t(`myslime.${key}Opt.${opt}`)}`;
+    $('reward-note').textContent = t('myslime.boughtNote');
+    image(lookPreview(key, opt), `reward-look ${key}`);
+  } else if (item.kind === 'collectible') {
     $('reward-label').textContent = t('collection.new');
     $('reward-title').textContent = t(`collectibles.${item.id}`);
     $('reward-note').textContent = t('collection.place');

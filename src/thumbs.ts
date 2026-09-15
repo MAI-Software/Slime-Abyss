@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Assets } from './assets';
-import { BODY_COLORS, EYES_MIRRORED, EYES_PER_SIDE, type BodyColorId, type SlimeLook } from './look';
+import { BODY_COLORS, EYES_MIRRORED, EYES_PER_SIDE, IRIS_COLORS, IRIS_EYES, type BodyColorId, type IrisId, type SlimeLook } from './look';
 
 /**
   Miniaturas renderizadas con los modelos reales (para Mi limo y los avisos de premio):
@@ -9,6 +9,14 @@ import { BODY_COLORS, EYES_MIRRORED, EYES_PER_SIDE, type BodyColorId, type Slime
 */
 
 type FaceKind = 'eyes' | 'mouth' | 'cheeks';
+
+/** Pinta el material "Iris" de un clon con el color de iris elegido. */
+export function tintIris(o: THREE.Object3D, iris: IrisId) {
+  o.traverse((c) => {
+    const m = c as THREE.Mesh;
+    if (m.isMesh && (m.material as THREE.Material).name === 'Iris') (m.material as THREE.MeshBasicMaterial).color.setHex(IRIS_COLORS[iris]);
+  });
+}
 
 const FRAME: Record<FaceKind, number> = { eyes: 0.36, mouth: 0.15, cheeks: 0.1 };
 
@@ -33,9 +41,9 @@ export class Thumbs {
     this.ortho.position.set(0, 0, 2);
   }
 
-  /** Una parte de la cara (ojos, boca o mofletes) sobre un círculo del color del limo. */
-  face(kind: FaceKind, id: string, color: BodyColorId): string {
-    const cacheKey = `face:${kind}:${id}:${color}`;
+  /** Una parte de la cara (ojos, boca o mofletes) sobre un círculo del color del limo ('none': solo el círculo). */
+  face(kind: FaceKind, id: string, color: BodyColorId, iris: IrisId = 'blue'): string {
+    const cacheKey = `face:${kind}:${id}:${color}:${kind === 'eyes' && IRIS_EYES.has(id) ? iris : ''}`;
     const hit = this.cache.get(cacheKey);
     if (hit) return hit;
     const group = new THREE.Group();
@@ -44,10 +52,11 @@ export class Thumbs {
     disc.position.z = -0.08;
     group.add(disc);
     const part = (name: string, x: number, y: number, mirror = false) => {
-      if (!this.assets.has(name)) return; // p. ej. mofletes "none"
+      if (!this.assets.has(name)) return; // 'none'
       const o = this.assets.clone(name, { unlit: true });
       o.position.set(x, y, 0);
       if (mirror) o.scale.x = -1;
+      tintIris(o, iris);
       group.add(o);
     };
     if (kind === 'eyes') {
@@ -56,7 +65,16 @@ export class Thumbs {
       part(sided ? `face_eye_${id}_r` : `face_eye_${id}`, 0.1, 0, EYES_MIRRORED.has(id));
     }
     else if (kind === 'mouth') part(`face_mouth_${id}`, 0, 0.004);
-    else if (id !== 'none') part(`face_blush_${id}`, 0, 0);
+    else {
+      part(`face_blush_${id}`, 0, 0);
+      // los bigotes salen hacia un lado: se centra la pieza en el círculo
+      const piece = group.children[1];
+      if (piece) {
+        const c = new THREE.Box3().setFromObject(piece).getCenter(new THREE.Vector3());
+        piece.position.x -= c.x;
+        piece.position.y -= c.y;
+      }
+    }
     this.ortho.left = this.ortho.bottom = -f / 2;
     this.ortho.right = this.ortho.top = f / 2;
     this.ortho.updateProjectionMatrix();
@@ -67,9 +85,9 @@ export class Thumbs {
   }
 
   /** Un limo entero (esfera con cara) de un color. */
-  slime(color: BodyColorId, look?: Pick<SlimeLook, 'eyes' | 'mouth' | 'cheeks'>): string {
-    const face = look ?? { eyes: 'round', mouth: 'cat', cheeks: 'lines' };
-    const cacheKey = `slime:${color}:${face.eyes}:${face.mouth}:${face.cheeks}`;
+  slime(color: BodyColorId, look?: Pick<SlimeLook, 'eyes' | 'mouth' | 'cheeks' | 'iris'>): string {
+    const face = look ?? { eyes: 'round', mouth: 'cat', cheeks: 'lines', iris: 'blue' };
+    const cacheKey = `slime:${color}:${face.eyes}:${face.mouth}:${face.cheeks}:${face.iris}`;
     const hit = this.cache.get(cacheKey);
     if (hit) return hit;
     const body = BODY_COLORS[color];
@@ -77,6 +95,7 @@ export class Thumbs {
     const ball = new THREE.Mesh(new THREE.SphereGeometry(0.5, 48, 32), new THREE.MeshStandardMaterial({
       color: body.color, emissive: body.emissive, emissiveIntensity: 0.3,
       metalness: 'metalness' in body ? body.metalness : 0, roughness: 'roughness' in body ? body.roughness : 0.14,
+      transparent: 'opacity' in body, opacity: 'opacity' in body ? 0.45 : 1, depthWrite: !('opacity' in body),
     }));
     ball.scale.set(1, 0.82, 1);
     group.add(ball);
@@ -88,12 +107,13 @@ export class Thumbs {
       const o = this.assets.clone(name, { unlit: true });
       o.position.set(x, y, 0);
       if (mirror) o.scale.x = -1;
+      tintIris(o, face.iris);
       faceRoot.add(o);
     };
     for (const side of [-1, 1]) {
       const eye = EYES_PER_SIDE.has(face.eyes) ? `face_eye_${face.eyes}_${side < 0 ? 'l' : 'r'}` : `face_eye_${face.eyes}`;
       part(eye, side * 0.1, 0.035, side > 0 && EYES_MIRRORED.has(face.eyes));
-      if (face.cheeks !== 'none') part(`face_blush_${face.cheeks}`, side * 0.175, -0.035);
+      part(`face_blush_${face.cheeks}`, side * 0.175, -0.035, side > 0);
     }
     part(`face_mouth_${face.mouth}`, 0, -0.055);
     group.add(faceRoot);

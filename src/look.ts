@@ -15,6 +15,8 @@ export interface BodyColor {
   /** colores metálicos: reflejan el entorno */
   metalness?: number;
   roughness?: number;
+  /** colores translúcidos (agua): opacidad del centro; los bordes quedan casi opacos */
+  opacity?: number;
 }
 
 /**
@@ -32,13 +34,23 @@ export const BODY_COLORS = {
   rosegold: { color: 0xf3b3a0, emissive: 0x6b3428, rim: [1.0, 0.86, 0.82], metalness: 0.55, roughness: 0.2 },
   emerald: { color: 0x14b87a, emissive: 0x05402a, rim: [0.6, 1.0, 0.85], metalness: 0.35, roughness: 0.08 },
   midnight: { color: 0x243a8f, emissive: 0x0a1238, rim: [0.6, 0.78, 1.0], roughness: 0.08 },
+  // agua: casi incolora y translúcida (el congelado es celeste opaco y no tiembla)
+  water: { color: 0xa6e3f2, emissive: 0x0f5266, rim: [0.8, 0.96, 1.0], roughness: 0.03, opacity: 0.22 },
 } satisfies Record<string, BodyColor>;
 
 export type BodyColorId = keyof typeof BODY_COLORS;
 
-export const EYES = ['round', 'dot', 'cat', 'sparkle', 'star', 'heart', 'sleepy', 'wink', 'glasses'] as const;
-export const MOUTHS = ['cat', 'smile', 'tongue', 'fang', 'grin', 'pout', 'smirk', 'vampire', 'wobbly'] as const;
-export const CHEEKS = ['lines', 'spots', 'none', 'hearts', 'stars', 'freckles', 'swirls', 'bandage', 'sparkles'] as const;
+/** 'none' va primero en cada apartado: sin ese rasgo (la vista previa es solo el círculo del color). */
+export const EYES = ['none', 'round', 'dot', 'cat', 'sparkle', 'star', 'heart', 'sleepy', 'wink', 'glasses', 'tomoe', 'ripple'] as const;
+export const MOUTHS = ['none', 'cat', 'smile', 'tongue', 'fang', 'grin', 'pout', 'smirk', 'vampire', 'wobbly'] as const;
+export const CHEEKS = ['none', 'lines', 'spots', 'whiskers', 'hearts', 'stars', 'freckles', 'swirls', 'bandage', 'sparkles'] as const;
+
+/** Colores de iris para los ojos con iris normal (material "Iris" del modelo). */
+export const IRIS_COLORS = {
+  blue: 0x1e3a8a, brown: 0x6b3f1d, green: 0x15803d, violet: 0x6d28d9, amber: 0xb45309, pink: 0xbe185d, gray: 0x475569,
+} as const;
+export type IrisId = keyof typeof IRIS_COLORS;
+export const IRIS_EYES = new Set<string>(['round', 'sparkle', 'wink', 'glasses']);
 
 /** Ojos con modelo distinto a cada lado (face_eye_<id>_l / _r). */
 export const EYES_PER_SIDE = new Set<string>(['wink']);
@@ -50,9 +62,10 @@ export interface SlimeLook {
   eyes: (typeof EYES)[number];
   mouth: (typeof MOUTHS)[number];
   cheeks: (typeof CHEEKS)[number];
+  iris: IrisId;
 }
 
-export const DEFAULT_LOOK: SlimeLook = { color: 'blue', eyes: 'round', mouth: 'cat', cheeks: 'lines' };
+export const DEFAULT_LOOK: SlimeLook = { color: 'blue', eyes: 'round', mouth: 'cat', cheeks: 'lines', iris: 'blue' };
 
 /** Opciones raras: "apartado:opción" → logro que la desbloquea (un logro puede dar varias). */
 export const LOOK_UNLOCKS: Record<string, string> = {
@@ -68,7 +81,9 @@ export const LOOK_UNLOCKS: Record<string, string> = {
   'mouth:wobbly': 'jumper-20',
   'cheeks:bandage': 'burner-10',
   'eyes:wink': 'chapter-1',
-  'color:gold': 'coins-c1',
+  'eyes:tomoe': 'coins-c1',
+  'eyes:ripple': 'stars-50',
+  'color:water': 'chapter-2',
   'color:metal': 'stars-30',
   'mouth:smirk': 'chapter-2',
   'eyes:sleepy': 'floors-10',
@@ -81,20 +96,29 @@ export const LOOK_UNLOCKS: Record<string, string> = {
   'color:emerald': 'full-slime-5',
 };
 
-export function lookOptionUnlocked(key: keyof SlimeLook, opt: string, achievements: readonly string[]) {
-  const needed = LOOK_UNLOCKS[`${key}:${opt}`];
+/** Opciones que se compran con monedas: "apartado:opción" → precio. Las monedas no se pueden farmear (mejor marca de cada piso). */
+export const LOOK_PRICES: Record<string, number> = {
+  'color:gold': 999,
+};
+
+/** bought: opciones compradas ("apartado:opción"). */
+export function lookOptionUnlocked(key: keyof SlimeLook, opt: string, achievements: readonly string[], bought: readonly string[] = []) {
+  const id = `${key}:${opt}`;
+  if (LOOK_PRICES[id]) return bought.includes(id);
+  const needed = LOOK_UNLOCKS[id];
   return !needed || achievements.includes(needed);
 }
 
 /** Corrige un aspecto guardado (valores desconocidos o aún bloqueados → por defecto). */
-export function sanitizeLook(raw: Partial<SlimeLook> | undefined, achievements: readonly string[] = []): SlimeLook {
+export function sanitizeLook(raw: Partial<SlimeLook> | undefined, achievements: readonly string[] = [], bought: readonly string[] = []): SlimeLook {
   const pick = <K extends keyof SlimeLook>(key: K, list: readonly SlimeLook[K][], v: unknown): SlimeLook[K] =>
-    list.includes(v as SlimeLook[K]) && lookOptionUnlocked(key, String(v), achievements) ? (v as SlimeLook[K]) : DEFAULT_LOOK[key];
+    list.includes(v as SlimeLook[K]) && lookOptionUnlocked(key, String(v), achievements, bought) ? (v as SlimeLook[K]) : DEFAULT_LOOK[key];
   return {
     // 'obsidian' se llamaba así antes de ser 'black'; 'red' se quitó (se confundía con las llamas)
     color: pick('color', Object.keys(BODY_COLORS) as BodyColorId[], (raw?.color as string) === 'obsidian' ? 'black' : raw?.color),
     eyes: pick('eyes', EYES, raw?.eyes),
     mouth: pick('mouth', MOUTHS, raw?.mouth),
     cheeks: pick('cheeks', CHEEKS, raw?.cheeks),
+    iris: pick('iris', Object.keys(IRIS_COLORS) as IrisId[], raw?.iris),
   };
 }
