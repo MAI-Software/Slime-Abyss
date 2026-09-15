@@ -161,7 +161,7 @@ export const en: Dict = {
     },
     'c1-filo-de-cuchilla': {
       name: 'Blade Edge',
-      tips: ['Blades split your slime in two', 'Both halves move at the same time', 'Pieces rejoin when they touch; you can also hold the squeeze button', 'Spikes split it too'],
+      tips: ['Blades split your slime in two', 'Both halves move at the same time', 'Pieces rejoin when they touch; you can also hold the squeeze button'],
     },
     'c1-pasillo-de-fuego': {
       name: 'Fire Corridor',
@@ -225,7 +225,7 @@ export const en: Dict = {
     },
     'c2-puente-de-viento': {
       name: 'Windy Bridge',
-      tips: ['The bridge is windy: the track is the safe way', 'As a ball, the wind cannot move you'],
+      tips: ['Spikes pop your slime: don’t step on them', 'The bridge is windy: the track is the safe way', 'As a ball, the wind cannot move you'],
     },
     'c2-bifurcacion': {
       name: 'Crossroads',

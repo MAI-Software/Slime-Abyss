@@ -161,7 +161,7 @@ export const it: Dict = {
     },
     'c1-filo-de-cuchilla': {
       name: 'Filo della lama',
-      tips: ['Le lame dividono lo slime in due', 'Le due metà si muovono insieme', 'I pezzi si riuniscono toccandosi; puoi anche tenere premuto il pulsante stringere', 'Anche le punte lo dividono'],
+      tips: ['Le lame dividono lo slime in due', 'Le due metà si muovono insieme', 'I pezzi si riuniscono toccandosi; puoi anche tenere premuto il pulsante stringere'],
     },
     'c1-pasillo-de-fuego': {
       name: 'Corridoio di fuoco',
@@ -225,7 +225,7 @@ export const it: Dict = {
     },
     'c2-puente-de-viento': {
       name: 'Ponte ventoso',
-      tips: ['Il ponte è ventoso: il binario è la via sicura', 'Da palla, il vento non ti sposta'],
+      tips: ['Le punte bucano lo slime: non calpestarle', 'Il ponte è ventoso: il binario è la via sicura', 'Da palla, il vento non ti sposta'],
     },
     'c2-bifurcacion': {
       name: 'Biforcazione',

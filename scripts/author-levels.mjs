@@ -120,7 +120,7 @@ const CHAPTER1 = [
       '#G0#000T000000#',
       '#00#00000000C0#',
       '#dd#0000000000#',
-      '#00000Y0000000#',
+      '#0000000000000#',
       '#0s000000000C0#',
       '######000######',
       '.....#000#.....',
@@ -145,7 +145,6 @@ const CHAPTER1 = [
       { z: 21.5, text: 'Las cuchillas parten al limo en dos' },
       { z: 16.5, text: 'Las dos mitades se mueven a la vez' },
       { z: 9.5, text: 'Al tocarse, los trozos vuelven a unirse; también puedes mantener el botón de apretar' },
-      { z: 5.5, text: 'Los pinchos también dividen' },
     ],
   },
   {
@@ -417,9 +416,9 @@ const CHAPTER2 = [
       '#####000#####',
       '....#0C0#....',
       '..###000###..',
-      '..#0Y000Y0#..',
-      '..#000Y000#..',
-      '..#0Y000Y0#..',
+      '..#0k000k0#..',
+      '..#000k000#..',
+      '..#0k000k0#..',
       '..#C00000C#..',
       '..###000###..',
       '....#000#....',
@@ -536,7 +535,7 @@ const CHAPTER2 = [
       '......=......',
       '...###R###...',
       '...#00000#...',
-      '...#0Y0Y0#...',
+      '...#0k0k0#...',
       '...#00K00#...',
       '...#C000C#...',
       '...#00000#...',
@@ -604,7 +603,7 @@ const CHAPTER2 = [
   {
     file: 'chapter2/08-c2-puente-de-viento.json',
     id: 'c2-puente-de-viento', name: 'Puente de viento', count: 80, keepPct: 0.7,
-    // Dos caminos: puente con ventiladores o vía; las monedas llevan a la vía.
+    // Dos caminos: puente con ventiladores o vía; las monedas llevan a la vía. Presenta la casilla de pinchos (flanquea el puente).
     map: [
       '#############',
       '#00000T00000#',
@@ -615,14 +614,15 @@ const CHAPTER2 = [
       '...=.....0<..',
       '...=.....0...',
       '###R#####0###',
-      '#00000000000#',
+      '#0000000Y0Y0#',
       '#00C00000000#',
       '#00000P00000#',
       '#############',
     ],
     tips: [
-      { z: 10.5, text: 'El puente tiene viento: la vía es el camino seguro' },
-      { z: 8.8, text: 'En bola, el viento no te mueve' },
+      { z: 11.2, text: 'Los pinchos pinchan el limo: no los pises' },
+      { z: 9.8, text: 'El puente tiene viento: la vía es el camino seguro' },
+      { z: 8.5, text: 'En bola, el viento no te mueve' },
     ],
   },
   {

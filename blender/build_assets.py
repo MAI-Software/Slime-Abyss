@@ -532,20 +532,22 @@ for v in bm.verts:  # filo: los vértices altos se juntan en el centro
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 mesh_object("blade_edge", bm, M["steel"], parent=blade)
 
-# Pincho divisor: uno grande y tres pequeños sobre una base.
-spike = empty("spike")
+# Casilla de pinchos: una losa metálica cubierta de púas (pincha el limo que la pisa).
+spike = empty("spike_bed")
 bm = bmesh.new()
-cylinder(bm, 0.3, 0.08, (0, 0, 0.04), 20)
-bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.015, segments=1, affect="EDGES")
-mesh_object("spike_base", bm, M["steel_dark"], parent=spike)
+box(bm, (0.96, 0.96, 0.08), (0, 0, 0.04))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.02, segments=2, affect="EDGES")
+mesh_object("spike_bed_plate", bm, M["steel_dark"], parent=spike)
 bm = bmesh.new()
-bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=12, radius1=0.13, radius2=0.0, depth=0.78,
-                      matrix=Matrix.Translation((0, 0, 0.47)))
-for a in range(3):
-    ang = a * 2.094 + 0.5
-    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=10, radius1=0.065, radius2=0.0, depth=0.34,
-                          matrix=Matrix.Translation((0.19 * math.cos(ang), 0.19 * math.sin(ang), 0.25)))
-mesh_object("spike_points", bm, M["steel"], smooth=True, parent=spike)
+rng_spikes = random.Random(11)
+for gx in range(4):
+    for gy in range(4):
+        cx = -0.345 + gx * 0.23 + rng_spikes.uniform(-0.025, 0.025)
+        cy = -0.345 + gy * 0.23 + rng_spikes.uniform(-0.025, 0.025)
+        h = rng_spikes.uniform(0.26, 0.38)
+        bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=10, radius1=0.085, radius2=0.0, depth=h,
+                              matrix=Matrix.Translation((cx, cy, 0.08 + h / 2)))
+mesh_object("spike_bed_points", bm, M["steel"], smooth=True, parent=spike)
 
 # Moneda de pie, mirando a -Y, con canto biselado y relieve.
 bm = bmesh.new()

@@ -161,7 +161,7 @@ export const de: Dict = {
     },
     'c1-filo-de-cuchilla': {
       name: 'Klingenkante',
-      tips: ['Klingen teilen deinen Schleim in zwei Hälften', 'Beide Hälften bewegen sich gleichzeitig', 'Stücke verbinden sich bei Berührung; du kannst auch die Zusammenziehen-Taste halten', 'Stacheln teilen ihn auch'],
+      tips: ['Klingen teilen deinen Schleim in zwei Hälften', 'Beide Hälften bewegen sich gleichzeitig', 'Stücke verbinden sich bei Berührung; du kannst auch die Zusammenziehen-Taste halten'],
     },
     'c1-pasillo-de-fuego': {
       name: 'Feuergang',
@@ -225,7 +225,7 @@ export const de: Dict = {
     },
     'c2-puente-de-viento': {
       name: 'Windige Brücke',
-      tips: ['Auf der Brücke ist es windig: Die Schiene ist der sichere Weg', 'Als Kugel bewegt dich der Wind nicht'],
+      tips: ['Stacheln stechen den Schleim: tritt nicht darauf', 'Auf der Brücke ist es windig: Die Schiene ist der sichere Weg', 'Als Kugel bewegt dich der Wind nicht'],
     },
     'c2-bifurcacion': {
       name: 'Weggabelung',

@@ -198,7 +198,14 @@ export const sfx = {
     wash({ dur: 0.12, vol: 0.14, type: 'bandpass', f0: 5000, f1: 2500, q: 3, delay: Math.random() * 0.08, reverb: 0.3 });
     bubbles(6, 0.3, 900, 2600, 0.07);
   },
-  /** cuchilla o pincho: el limo se parte con un "chof" húmedo */
+  /** pinchos: pinchazo seco y la gota que revienta */
+  pop: () => {
+    if (!throttle('pop', 0.07)) return;
+    wash({ dur: 0.05, vol: 0.2, type: 'highpass', f0: 5200, f1: 3000, q: 0.7, reverb: 0.3 });
+    blup(700 + Math.random() * 300, 0.07, 0.14, 0.005, 2.8);
+    wash({ dur: 0.14, vol: 0.12, type: 'bandpass', f0: 1800, f1: 600, q: 1.2, delay: 0.02 });
+  },
+  /** cuchilla: el limo se parte con un "chof" húmedo */
   cut: () => {
     if (!throttle('cut', 0.2)) return;
     wash({ dur: 0.16, vol: 0.24, type: 'bandpass', f0: 2600, f1: 700, q: 1.6 });

@@ -1069,6 +1069,7 @@ function tick(dt: number) {
     switch (e.type) {
       case 'fall': sfx.fall(); break;
       case 'evaporate': sfx.sizzle(); fx.steam(e.x, e.y, e.z); break;
+      case 'pop': sfx.pop(); fx.splat(e.x, e.y, e.z); buzz(12); break;
       case 'pad': sfx.pad(); fx.splat(e.x, e.y, e.z); break;
       case 'board': sfx.board(); fx.splat(e.x, e.y, e.z); buzz(20); break;
       case 'unboard': sfx.unboard(); fx.splat(e.x, e.y, e.z); buzz(15); break;

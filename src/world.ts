@@ -45,9 +45,9 @@ export interface RailPath {
 }
 const WIND_LEN = 9;
 
-/** Obstáculo que no ocupa toda la casilla (cuchillas, pinchos): caja para colisión y zona de corte. */
+/** Obstáculo que no ocupa toda la casilla (cuchillas): caja para colisión y zona de corte. */
 export interface Obstacle {
-  kind: 'blade' | 'spike';
+  kind: 'blade';
   axis?: 'x' | 'z';
   cx: number;
   cz: number;
@@ -396,7 +396,13 @@ export class World {
           case 'rail':
             c.top = RAIL_FENCE; // no se dibuja bloque: la vía se monta en buildRails
             break;
-          case 'blade': case 'spike':
+          case 'spike': {
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            const bed = this.add('spike_bed', x, c.base, z);
+            bed.rotation.y = ((i * 5 + j * 3) % 4) * (Math.PI / 2);
+            break;
+          }
+          case 'blade':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.addDivider(i, j, c);
             break;
@@ -638,19 +644,13 @@ export class World {
 
   private addDivider(i: number, j: number, c: Cell) {
     const x = i + 0.5, z = j + 0.5;
-    let o: Obstacle;
-    if (c.kind === 'blade') {
-      const obj = this.add('blade', x, c.base, z);
-      // el modelo corre a lo largo de Z; la variante 'x' se gira
-      if (c.axis === 'x') obj.rotation.y = Math.PI / 2;
-      const half = 0.47, thick = 0.05;
-      o = c.axis === 'x'
-        ? { kind: 'blade', axis: 'x', cx: x, cz: z, minX: x - half, maxX: x + half, minZ: z - thick, maxZ: z + thick, minY: c.base, maxY: c.base + 0.72, id: 0 }
-        : { kind: 'blade', axis: 'z', cx: x, cz: z, minX: x - thick, maxX: x + thick, minZ: z - half, maxZ: z + half, minY: c.base, maxY: c.base + 0.72, id: 0 };
-    } else {
-      this.add('spike', x, c.base, z);
-      o = { kind: 'spike', cx: x, cz: z, minX: x - 0.12, maxX: x + 0.12, minZ: z - 0.12, maxZ: z + 0.12, minY: c.base, maxY: c.base + 0.85, id: 0 };
-    }
+    const obj = this.add('blade', x, c.base, z);
+    // el modelo corre a lo largo de Z; la variante 'x' se gira
+    if (c.axis === 'x') obj.rotation.y = Math.PI / 2;
+    const half = 0.47, thick = 0.05;
+    const o: Obstacle = c.axis === 'x'
+      ? { kind: 'blade', axis: 'x', cx: x, cz: z, minX: x - half, maxX: x + half, minZ: z - thick, maxZ: z + thick, minY: c.base, maxY: c.base + 0.72, id: 0 }
+      : { kind: 'blade', axis: 'z', cx: x, cz: z, minX: x - thick, maxX: x + thick, minZ: z - half, maxZ: z + half, minY: c.base, maxY: c.base + 0.72, id: 0 };
     o.id = j * this.w + i;
     this.obstacleAt[o.id] = this.obstacles.length;
     this.obstacles.push(o);

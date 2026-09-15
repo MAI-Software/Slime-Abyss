@@ -6,11 +6,15 @@
   "keepPct": 0.7,
   "tips": [
     {
-      "z": 10.5,
+      "z": 11.2,
+      "text": "Los pinchos pinchan el limo: no los pises"
+    },
+    {
+      "z": 9.8,
       "text": "El puente tiene viento: la vía es el camino seguro"
     },
     {
-      "z": 8.8,
+      "z": 8.5,
       "text": "En bola, el viento no te mueve"
     }
   ],
@@ -24,7 +28,7 @@
     "...=.....0<..",
     "...=.....0...",
     "###R#####0###",
-    "#00000000000#",
+    "#0000000Y0Y0#",
     "#00C00000000#",
     "#00000P00000#",
     "#############"

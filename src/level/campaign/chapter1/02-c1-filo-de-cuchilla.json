@@ -22,10 +22,6 @@
     {
       "z": 9.5,
       "text": "Al tocarse, los trozos vuelven a unirse; también puedes mantener el botón de apretar"
-    },
-    {
-      "z": 5.5,
-      "text": "Los pinchos también dividen"
     }
   ],
   "tiles": [
@@ -33,7 +29,7 @@
     "#G0#000T000000#",
     "#00#00000000C0#",
     "#dd#0000000000#",
-    "#00000Y0000000#",
+    "#0000000000000#",
     "#0s000000000C0#",
     "######000######",
     ".....#000#.....",

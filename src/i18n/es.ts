@@ -160,7 +160,7 @@ export const es = {
     },
     'c1-filo-de-cuchilla': {
       name: 'Filo de cuchilla',
-      tips: ['Las cuchillas parten al limo en dos', 'Las dos mitades se mueven a la vez', 'Al tocarse, los trozos vuelven a unirse; también puedes mantener el botón de apretar', 'Los pinchos también dividen'],
+      tips: ['Las cuchillas parten al limo en dos', 'Las dos mitades se mueven a la vez', 'Al tocarse, los trozos vuelven a unirse; también puedes mantener el botón de apretar'],
     },
     'c1-pasillo-de-fuego': {
       name: 'Pasillo de fuego',
@@ -224,7 +224,7 @@ export const es = {
     },
     'c2-puente-de-viento': {
       name: 'Puente de viento',
-      tips: ['El puente tiene viento: la vía es el camino seguro', 'En bola, el viento no te mueve'],
+      tips: ['Los pinchos pinchan el limo: no los pises', 'El puente tiene viento: la vía es el camino seguro', 'En bola, el viento no te mueve'],
     },
     'c2-bifurcacion': {
       name: 'Bifurcación',

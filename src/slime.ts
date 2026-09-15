@@ -53,6 +53,8 @@ const DIE_TIME = 0.35;
 const FIRE_RECOIL = 5;
 const FIRE_RECOIL_REACH = 2.4;
 const FIRE_STUN = 0.4;
+/** altura de las púas de la casilla de pinchos */
+const SPIKE_H = 0.42;
 const SUBSTEPS = 3;
 const STEP_UP = 0.56;       // escalón que el limo sube solo (0.5 de altura de losa)
 const CUT_COOLDOWN = 0.7;   // tiempo sin cohesión entre mitades tras pasar por un divisor
@@ -82,7 +84,7 @@ const OUTLINE_WIDTH = 0.026;
 const XRAY_LIFT = 0.2;
 
 export type SlimeEvent =
-  | { type: 'fall' | 'evaporate' | 'pad'; x: number; y: number; z: number }
+  | { type: 'fall' | 'evaporate' | 'pad' | 'pop'; x: number; y: number; z: number }
   | { type: 'coin' | 'gem' | 'oil'; x: number; y: number; z: number }
   | { type: 'board' | 'unboard' | 'land' | 'merge'; x: number; y: number; z: number }
   | { type: 'cut'; x: number; z: number }
@@ -973,6 +975,14 @@ export class Slime {
           }
         }
       }
+      // pinchos: revientan el limito que los pisa (el limo congelado es duro y no se pincha) y dan respingo
+      if (under && under.kind === 'spike' && y < under.base + SPIKE_H && this.state !== 'frozen') {
+        this.alive[i] = 0;
+        this.events.push({ type: 'pop', x, y, z });
+        this.hurts.push({ x, z });
+        if (this.fireHits.length < 6) this.fireHits.push(ci + 0.5, cj + 0.5);
+        continue;
+      }
       if (!this.fell[i] && y < -0.8) {
         this.fell[i] = 1;
         this.hurts.push({ x, z });
@@ -1024,7 +1034,7 @@ export class Slime {
     }
   }
 
-  /** Respingo: los limitos cerca del fuego que ha quemado salen despedidos hacia atrás. */
+  /** Respingo: los limitos cerca del fuego o los pinchos que han hecho daño salen despedidos hacia atrás. */
   private recoilFromFire() {
     const hits = this.fireHits;
     const reach2 = FIRE_RECOIL_REACH * FIRE_RECOIL_REACH;

@@ -60,7 +60,8 @@ export const TILES: readonly TileDef[] = [
   { char: 'C', kind: 'coin', label: 'Moneda', color: '#ffc53d' },
   { char: 'K', kind: 'blade', label: 'Cuchilla (divide izquierda / derecha)', axis: 'z', divider: true, color: '#d7dfea' },
   { char: 'k', kind: 'blade', label: 'Cuchilla (divide delante / detrás)', axis: 'x', divider: true, color: '#c3ccd8' },
-  { char: 'Y', kind: 'spike', label: 'Pincho divisor', divider: true, color: '#9aa4b4' },
+  // pinchan el limo que los pisa (el congelado no se pincha); dan un respingo como el fuego
+  { char: 'Y', kind: 'spike', label: 'Casilla de pinchos', hazard: true, color: '#9aa4b4' },
   { char: 'G', kind: 'gem', label: 'Tesoro secreto (gema)', color: '#8b5cf6' },
   { char: 'O', kind: 'oil', label: 'Botella de aceite', color: '#e0a526' },
   { char: 'W', kind: 'plant', label: 'Plantas (arden)', raise: 1.1, burnable: true, color: '#3f9d3c' },
