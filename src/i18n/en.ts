@@ -163,7 +163,7 @@ export const en: Dict = {
     },
     'c1-divide-y-venceras': {
       name: 'Divide and Conquer',
-      tips: ['The door stays open while some slime is on the switch', 'The blade sends one part into the pit and the other to the door'],
+      tips: ['Leave one part on the switch while the other goes through the door', 'Step on the green switch to let the other half through'],
     },
     'c1-salto-al-abismo': {
       name: 'Leap of Faith',

@@ -163,7 +163,7 @@ export const fr: Dict = {
     },
     'c1-divide-y-venceras': {
       name: 'Diviser pour régner',
-      tips: ["La porte s'ouvre tant qu'un peu de slime reste sur l'interrupteur", "La lame envoie une partie dans la fosse et l'autre vers la porte"],
+      tips: ['Laisse une partie sur l’interrupteur pendant que l’autre passe la porte', 'Appuie sur l’interrupteur vert pour laisser passer l’autre moitié'],
     },
     'c1-salto-al-abismo': {
       name: "Saut dans l'abîme",

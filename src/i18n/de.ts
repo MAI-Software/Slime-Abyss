@@ -163,7 +163,7 @@ export const de: Dict = {
     },
     'c1-divide-y-venceras': {
       name: 'Teile und herrsche',
-      tips: ['Die Tür bleibt offen, solange etwas Schleim auf dem Schalter ist', 'Die Klinge schickt einen Teil in die Grube und den anderen zur Tür'],
+      tips: ['Lass einen Teil auf dem Schalter, während der andere durch die Tür geht', 'Tritt auf den grünen Schalter, um die andere Hälfte durchzulassen'],
     },
     'c1-salto-al-abismo': {
       name: 'Sprung in den Abgrund',

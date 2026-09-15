@@ -163,7 +163,7 @@ export const it: Dict = {
     },
     'c1-divide-y-venceras': {
       name: 'Dividi e conquista',
-      tips: ["La porta resta aperta finché un po' di slime è sull'interruttore", "La lama manda una parte nella fossa e l'altra alla porta"],
+      tips: ['Lascia una parte sull’interruttore mentre l’altra passa la porta', 'Premi l’interruttore verde per far passare l’altra metà'],
     },
     'c1-salto-al-abismo': {
       name: "Salto nell'abisso",

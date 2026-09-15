@@ -185,14 +185,18 @@ const CHAPTER1 = [
   {
     file: 'chapter1/04-c1-divide-y-venceras.json',
     id: 'c1-divide-y-venceras', name: 'Divide y vencerás', count: 80, keepPct: 0.75,
+    // Todo llano y sin callejones: la cuchilla parte al limo en dos carriles.
+    // Izquierda: S (A, mientras se pisa) justo delante de la puerta d, así esa mitad lo sigue pisando al avanzar.
+    // Derecha: cruza D y pisa s (B, se queda abierto) al fondo de la sala, que abre d y reúne a las dos mitades.
+    latch: { B: true },
     map: [
       '###########',
-      '#000000T00#',
+      '#T0000000s#',
       '#0C00000C0#',
-      '######DD###',
+      '###dd#DD###',
       '###SS#00###',
-      '###SS#0C###',
       '###00#00###',
+      '###00#0C###',
       '###00#00###',
       '###00K00###',
       '###00000###',
@@ -201,14 +205,9 @@ const CHAPTER1 = [
       '###00P00###',
       '###########',
     ],
-    h: [
-      '33333333333', '33333333333', '33333333333', '33333333333',
-      '33300333333', '33300333333',
-      '33333333333', '33333333333', '33333333333', '33333333333', '33333333333', '33333333333', '33333333333', '33333333333',
-    ],
     tips: [
-      { z: 12, text: 'La puerta se abre mientras algo de limo pise el interruptor' },
-      { z: 8.8, text: 'La cuchilla manda una parte al foso y la otra a la puerta' },
+      { z: 11.5, text: 'Deja una parte sobre el interruptor mientras la otra cruza la puerta' },
+      { z: 3, text: 'Pisa el interruptor verde para abrir el paso a la otra mitad' },
     ],
   },
   {
@@ -417,11 +416,51 @@ function build(def) {
     }
   }
   checkNoStepsUp(def, tiles, heights);
+  checkNoDeadEnds(def, tiles, heights);
   const { map, h, file, ...meta } = def;
   return { format: 1, ...meta, tiles, heights };
 }
 
-/** Avisa si hay suelo contiguo que sube (el diseño pide solo bajadas; los fosos con interruptor se permiten). */
+/**
+  Avisa de zonas sin vuelta: casillas a las que se puede llegar desde la salida pero desde las que ya no
+  se llega al tesoro (fosos, bajadas a callejones). El limo sube como mucho una losa de altura; las puertas
+  cuentan como abiertas, las plataformas de salto alcanzan 6 casillas y las corrientes de aire 10.
+*/
+function checkNoDeadEnds(def, tiles, heights) {
+  const H = tiles.length, W = tiles[0].length;
+  const at = (i, j) => (j >= 0 && j < H && i >= 0 && i < W ? tiles[j][i] : '.');
+  const walk = (i, j) => at(i, j) !== '.' && at(i, j) !== '#';
+  const top = (i, j) => Number(heights[j][i]);
+  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const WIND = { '^': [0, -1], v: [0, 1], '<': [-1, 0], '>': [1, 0] };
+  const next = (i, j) => {
+    const out = [];
+    const reach = at(i, j) === 'J' ? 6 : WIND[at(i, j)] || at(i, j) === 'Q' ? 10 : 1;
+    const dirs = WIND[at(i, j)] ? [WIND[at(i, j)]] : DIRS;
+    for (const [di, dj] of reach > 1 ? [...dirs, ...(dirs === DIRS ? [] : DIRS)] : DIRS) {
+      for (let k = 1; k <= reach; k++) {
+        const a = i + di * k, b = j + dj * k;
+        if (walk(a, b) && top(a, b) <= top(i, j) + 1) out.push([a, b]);
+      }
+    }
+    return out;
+  };
+  const reachable = (start) => {
+    const seen = new Set([String(start)]);
+    const queue = [start];
+    while (queue.length) for (const n of next(...queue.shift())) if (!seen.has(String(n))) { seen.add(String(n)); queue.push(n); }
+    return seen;
+  };
+  let P, T;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { if (at(i, j) === 'P') P = [i, j]; if (at(i, j) === 'T') T = [i, j]; }
+  if (!P || !T) return;
+  const fromStart = reachable(P);
+  if (!fromStart.has(String(T))) console.warn(`  aviso ${def.id}: el tesoro no se alcanza desde la salida`);
+  const stuck = [...fromStart].filter((k) => !reachable(k.split(',').map(Number)).has(String(T)));
+  if (stuck.length) console.warn(`  aviso ${def.id}: zona sin vuelta en ${stuck.map((k) => `(${k})`).join(' ')}`);
+}
+
+/** Avisa si hay suelo contiguo que sube (el diseño pide solo bajadas). */
 function checkNoStepsUp(def, tiles, heights) {
   if (def.h) return;
   const walk = (t) => t !== '.' && t !== '#';

@@ -162,7 +162,7 @@ export const es = {
     },
     'c1-divide-y-venceras': {
       name: 'Divide y vencerás',
-      tips: ['La puerta se abre mientras algo de limo pise el interruptor', 'La cuchilla manda una parte al foso y la otra a la puerta'],
+      tips: ['Deja una parte sobre el interruptor mientras la otra cruza la puerta', 'Pisa el interruptor verde para abrir el paso a la otra mitad'],
     },
     'c1-salto-al-abismo': {
       name: 'Salto al abismo',
