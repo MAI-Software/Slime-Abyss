@@ -159,18 +159,15 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
 .hint:empty { display: none; }
 .logo {
   margin: 0;
-  font-family: 'Fredoka', sans-serif;
-  font-size: clamp(52px, 14vmin, 104px);
-  font-weight: 700;
-  line-height: 0.92;
-  text-align: center;
-  color: #7cc0ff;
-  -webkit-text-stroke: 4px var(--ink);
-  paint-order: stroke fill;
-  text-shadow: 0 8px 0 var(--ink);
+  line-height: 0;
   animation: wobble 2.4s ease-in-out infinite;
+  transform-origin: 30% 60%;
 }
-.logo span { display: block; }
+/* título en SVG: relieve de tinta, degradado de limo, brillo y goterones (src/logo.ts) */
+.logo-art { display: block; width: clamp(220px, 52vmin, 430px); height: auto; overflow: visible; }
+.logo-art text { font-family: 'Fredoka', 'Nunito', sans-serif; font-weight: 700; }
+.logo-depth, .logo-outline { fill: var(--ink); stroke: var(--ink); stroke-width: 16px; stroke-linejoin: round; }
+.logo-gloss { pointer-events: none; }
 .hint { margin: 0; font-size: 15px; font-weight: 700; opacity: 0.9; max-width: 280px; }
 @keyframes wobble {
   0%, 100% { transform: scale(1, 1); }
@@ -261,6 +258,9 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
 .pick-btn + .pick-btn { border-left: 3px solid var(--ink); }
 .pick-btn[aria-pressed="true"] { background: var(--slime); color: #fff; }
 body[data-control="joystick"] .gyro-only { display: none !important; }
+body[data-control="gyro"] .joy-only { display: none !important; }
+/* joysticks fijos: siempre visibles en su sitio */
+body[data-joy="fixed"] #joy-base, body[data-joy="fixed"] #cam-base { opacity: 0.8; }
 
 /* ---------- resultado ---------- */
 .result-card, .breakdown-card {

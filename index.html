@@ -6,7 +6,25 @@
   <meta name="theme-color" content="#140f2b" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="./icon-192.png" sizes="192x192" type="image/png" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <title>Slime Abyss</title>
+  <meta name="description" content="Juego de un limo líquido que desciende por el abismo: divídete, júntate y rueda por raíles. Gratis en el navegador." />
+  <!-- vista previa al compartir el enlace (WhatsApp, Telegram, redes): la imagen necesita dirección absoluta -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Slime Abyss" />
+  <meta property="og:title" content="Slime Abyss" />
+  <meta property="og:description" content="Juego de un limo líquido que desciende por el abismo. Gratis en el navegador." />
+  <meta property="og:url" content="https://slime-abyss.pages.dev/" />
+  <meta property="og:image" content="https://slime-abyss.pages.dev/og-image.jpg" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Slime Abyss: un limo azul con cara en su habitación del abismo" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Slime Abyss" />
+  <meta name="twitter:image" content="https://slime-abyss.pages.dev/og-image.jpg" />
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -51,7 +69,41 @@
   <!-- ====================================================== MENÚ PRINCIPAL -->
   <div id="screen-main" class="screen screen-main">
     <div class="main-brand">
-      <h1 class="logo"><span>Slime</span> <span>Abyss</span></h1>
+      <h1 class="logo" aria-label="Slime Abyss">
+        <svg class="logo-art" viewBox="0 0 480 330" aria-hidden="true">
+          <defs>
+            <linearGradient id="logo-slime" gradientUnits="userSpaceOnUse" x1="0" y1="30" x2="0" y2="200">
+              <stop offset="0" stop-color="#e2f7ff"/><stop offset="0.38" stop-color="#7fd0ff"/><stop offset="0.7" stop-color="#2f8cff"/><stop offset="1" stop-color="#1846b8"/>
+            </linearGradient>
+            <linearGradient id="logo-abyss" gradientUnits="userSpaceOnUse" x1="0" y1="180" x2="0" y2="300">
+              <stop offset="0" stop-color="#f3e8ff"/><stop offset="0.38" stop-color="#b9a0ff"/><stop offset="0.72" stop-color="#7c4dff"/><stop offset="1" stop-color="#3b1f99"/>
+            </linearGradient>
+            <linearGradient id="logo-gloss" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff" stop-opacity="0.85"/><stop offset="0.55" stop-color="#fff" stop-opacity="0"/>
+            </linearGradient>
+            <clipPath id="clip-top-slime"><rect x="0" y="30" width="480" height="58"/></clipPath>
+            <clipPath id="clip-top-abyss"><rect x="0" y="178" width="480" height="52"/></clipPath>
+          </defs>
+        <g class="logo-word">
+          <text class="logo-depth" x="16" y="150" font-size="156" transform="translate(0 10)">Slime</text>
+          <g class="logo-drips-outline logo-depth" transform="translate(0 10)"></g>
+          <g class="logo-drips-outline logo-outline"></g>
+          <text class="logo-outline" x="16" y="150" font-size="156">Slime</text>
+          <g class="logo-drips-fill" fill="url(#logo-slime)"></g>
+          <text class="logo-fill" data-word="slime" x="16" y="150" font-size="156" fill="url(#logo-slime)">Slime</text>
+          <text class="logo-gloss" x="16" y="150" font-size="156" fill="url(#logo-gloss)" clip-path="url(#clip-top-slime)">Slime</text>
+        </g>
+        <g class="logo-word">
+          <text class="logo-depth" x="16" y="292" font-size="140" transform="translate(0 10)">Abyss</text>
+          
+          
+          <text class="logo-outline" x="16" y="292" font-size="140">Abyss</text>
+          
+          <text class="logo-fill" data-word="abyss" x="16" y="292" font-size="140" fill="url(#logo-abyss)">Abyss</text>
+          <text class="logo-gloss" x="16" y="292" font-size="140" fill="url(#logo-gloss)" clip-path="url(#clip-top-abyss)">Abyss</text>
+        </g>
+        </svg>
+      </h1>
     </div>
     <div class="main-actions">
       <button id="btn-story" class="big-btn" data-i18n="menu.story" disabled></button>
@@ -176,6 +228,13 @@
         <div class="control-pick" role="group">
           <button class="pick-btn" data-mode="joystick" data-i18n="options.joystick"></button>
           <button class="pick-btn" data-mode="gyro" data-i18n="options.gyro"></button>
+        </div>
+      </div>
+      <div class="setting-row joy-only">
+        <span data-i18n="options.joysticks"></span>
+        <div class="control-pick" role="group">
+          <button class="pick-btn joy-pick" data-joy="floating" data-i18n="options.floating"></button>
+          <button class="pick-btn joy-pick" data-joy="fixed" data-i18n="options.fixed"></button>
         </div>
       </div>
       <div class="setting-row gyro-only">

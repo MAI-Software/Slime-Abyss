@@ -6,5 +6,29 @@
   "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#140f2b",
-  "theme_color": "#140f2b"
+  "theme_color": "#140f2b",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "description": "Juego de un limo líquido que desciende por el abismo."
 }

@@ -24,6 +24,8 @@ export interface Save {
   collectibles: string[];
   /** aspecto elegido en Mi limo */
   look: SlimeLook;
+  /** joysticks fijos en vez de flotantes */
+  joyFixed: boolean;
   /** ya se enseñó el aviso del joystick de cámara */
   cameraHint: boolean;
 }
@@ -33,7 +35,7 @@ const KEY = 'slime-abyss-save';
 const OLD_KEY = 'blub-save';
 
 export function loadSave(): Save {
-  const fresh: Save = { v: 3, control: 'joystick', sound: true, vibration: true, lang: null, floors: {}, collectibles: [], look: { ...DEFAULT_LOOK }, cameraHint: false };
+  const fresh: Save = { v: 3, control: 'joystick', sound: true, vibration: true, lang: null, floors: {}, collectibles: [], look: { ...DEFAULT_LOOK }, joyFixed: false, cameraHint: false };
   try {
     const s = JSON.parse(localStorage.getItem(KEY) ?? localStorage.getItem(OLD_KEY) ?? '');
     if (s?.v === 3) {

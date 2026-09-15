@@ -68,6 +68,14 @@ export class Input {
     btn.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
+  /** Joysticks fijos: la base no se mueve al dedo (se arrastra desde su sitio). */
+  setFixed(fixed: boolean) {
+    this.move.fixed = this.look.fixed = fixed;
+    document.body.dataset.joy = fixed ? 'fixed' : 'floating';
+    this.move.release();
+    this.look.release();
+  }
+
   setMode(mode: ControlMode) {
     this.mode = mode;
     document.body.dataset.control = mode;
@@ -176,8 +184,12 @@ function shape(v: number, dead: number): number {
   return Math.sign(v) * ((a - dead) / (1 - dead));
 }
 
-/** Joystick flotante: aparece donde se pone el dedo dentro de su zona y la base sigue al dedo. */
+/**
+  Joystick de pantalla. Flotante (por defecto): aparece donde se pone el dedo y la base sigue al dedo.
+  Fijo: la base se queda en su sitio y el mando se arrastra desde ella.
+*/
 class Stick {
+  fixed = false;
   private x = 0;
   private y = 0;
   private pointer: number | null = null;
@@ -198,6 +210,13 @@ class Stick {
       e.preventDefault();
       this.zone.setPointerCapture(e.pointerId);
       this.pointer = e.pointerId;
+      if (this.fixed) {
+        const b = this.base.getBoundingClientRect();
+        this.origin = { x: b.left + b.width / 2, y: b.top + b.height / 2 };
+        this.base.classList.add('active');
+        this.moveTo(e.clientX, e.clientY);
+        return;
+      }
       const r = this.zone.getBoundingClientRect();
       // el mando aparece donde pones el dedo (sin salirse de la zona)
       const x = Math.min(Math.max(e.clientX - r.left, JOY_RADIUS + 12), r.width - JOY_RADIUS - 12);
@@ -223,7 +242,10 @@ class Stick {
     let dx = cx - this.origin.x;
     let dy = cy - this.origin.y;
     const len = Math.hypot(dx, dy);
-    if (len > JOY_RADIUS) {
+    if (len > JOY_RADIUS && this.fixed) {
+      dx = (dx / len) * JOY_RADIUS;
+      dy = (dy / len) * JOY_RADIUS;
+    } else if (len > JOY_RADIUS) {
       // la base sigue al dedo: nunca se "choca" con el borde del mando
       const excess = len - JOY_RADIUS;
       this.origin.x += (dx / len) * excess;

@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import '@fontsource/fredoka/500.css';
 import '@fontsource/fredoka/600.css';
 import '@fontsource/fredoka/700.css';
@@ -18,6 +17,7 @@ import { LiquidGauge } from './hud-liquid';
 import { AbyssAmbience } from './abyss';
 import { Trail } from './trail';
 import { LightPool, flicker } from './lights';
+import { decorateLogo, drawLogo } from './logo';
 import { setMuted, sfx, unlockAudio } from './audio';
 import { LANGS, applyDom, detectLang, getLang, levelName, levelTip, setLang, t, type Lang } from './i18n';
 import { loadSave, writeSave } from './save';
@@ -54,9 +54,37 @@ const scene = new THREE.Scene();
 scene.background = skyTexture();
 scene.fog = new THREE.Fog(0x191336, 18, 40);
 const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environment = pmrem.fromScene(abyssEnvironment(), 0.02).texture;
 scene.environmentIntensity = 0.5;
 pmrem.dispose();
+
+/**
+  Entorno para los reflejos: cielo en degradado del abismo con dos focos redondos.
+  (El entorno "habitación" de three tiene paneles rectangulares que dejaban reflejos cuadrados en el limo.)
+*/
+function abyssEnvironment(): THREE.Scene {
+  const env = new THREE.Scene();
+  const sky = new THREE.SphereGeometry(10, 32, 16);
+  const pos = sky.getAttribute('position');
+  const colors = new Float32Array(pos.count * 3);
+  const top = new THREE.Color(0xdfe9ff), mid = new THREE.Color(0x7a6bc4), low = new THREE.Color(0x140f2b), c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i) / 10;
+    if (y > 0) c.copy(mid).lerp(top, Math.pow(y, 0.8));
+    else c.copy(mid).lerp(low, Math.min(1, -y * 1.6));
+    colors.set([c.r, c.g, c.b], i * 3);
+  }
+  sky.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  env.add(new THREE.Mesh(sky, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, toneMapped: false })));
+  const lamp = (x: number, y: number, z: number, r: number, color: number, power: number) => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 24, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(power), toneMapped: false }));
+    m.position.set(x, y, z);
+    env.add(m);
+  };
+  lamp(-4, 6.5, 5, 1.5, 0xfff1dc, 7);
+  lamp(5.5, 3, 4, 0.8, 0xbcd4ff, 3);
+  return env;
+}
 
 /** Fondo: degradado morado, pintado una vez en un canvas. */
 function skyTexture(): THREE.CanvasTexture {
@@ -690,14 +718,25 @@ $<HTMLSelectElement>('lang-select').addEventListener('change', (e) => {
 function setControl(m: ControlMode) {
   input.setMode(m);
   if (m === 'gyro') input.requestPermission();
-  document.querySelectorAll<HTMLButtonElement>('.pick-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
+  document.querySelectorAll<HTMLButtonElement>('.pick-btn[data-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
   save.control = m;
   store();
 }
-document.querySelectorAll<HTMLButtonElement>('.pick-btn').forEach((b) => {
+document.querySelectorAll<HTMLButtonElement>('.pick-btn[data-mode]').forEach((b) => {
   b.addEventListener('click', () => { sfx.click(); setControl(b.dataset.mode as ControlMode); });
 });
 setControl(save.control);
+
+function setJoyFixed(fixed: boolean) {
+  input.setFixed(fixed);
+  document.querySelectorAll<HTMLButtonElement>('.joy-pick').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.joy === 'fixed') === fixed)));
+  save.joyFixed = fixed;
+  store();
+}
+document.querySelectorAll<HTMLButtonElement>('.joy-pick').forEach((b) => {
+  b.addEventListener('click', () => { sfx.click(); setJoyFixed(b.dataset.joy === 'fixed'); });
+});
+setJoyFixed(save.joyFixed);
 setMuted(!save.sound);
 
 $('btn-sound').addEventListener('click', () => { save.sound = !save.sound; setMuted(!save.sound); store(); renderOptions(); sfx.click(); });
@@ -1031,11 +1070,13 @@ function tick(dt: number) {
       case 'fall': sfx.fall(); break;
       case 'evaporate': sfx.sizzle(); fx.steam(e.x, e.y, e.z); break;
       case 'pad': sfx.pad(); fx.splat(e.x, e.y, e.z); break;
-      case 'board': sfx.pad(); fx.splat(e.x, e.y, e.z); buzz(20); break;
-      case 'unboard': sfx.pad(); fx.splat(e.x, e.y, e.z); buzz(15); break;
+      case 'board': sfx.board(); fx.splat(e.x, e.y, e.z); buzz(20); break;
+      case 'unboard': sfx.unboard(); fx.splat(e.x, e.y, e.z); buzz(15); break;
+      case 'land': sfx.land(); buzz(10); break;
+      case 'merge': sfx.merge(); break;
       case 'coin': sfx.coin(); fx.sparkle(e.x, e.y + 0.4, e.z); buzz(15); break;
       case 'cut': sfx.cut(); buzz(8); break;
-      case 'oil': sfx.pad(); fx.sparkle(e.x, e.y + 0.3, e.z, 0xf5a524); break;
+      case 'oil': sfx.oil(); fx.sparkle(e.x, e.y + 0.3, e.z, 0xf5a524); break;
       case 'gem':
         sfx.gem();
         for (let k = 0; k < 3; k++) fx.sparkle(e.x, e.y + 0.3 + k * 0.25, e.z, 0xc4b5fd);
@@ -1050,13 +1091,15 @@ function tick(dt: number) {
       case 'state': {
         const key = STATE_TOASTS[e.to] ?? (e.from === 'frozen' ? 'toast.thaw' : e.from === 'burning' ? 'toast.extinguish' : null);
         if (key) toast(t(key), 2600);
-        if (e.to === 'burning') { sfx.sizzle(); buzz([15, 30, 15]); }
-        if (e.to === 'frozen') { sfx.gem(); buzz(40); }
+        if (e.to === 'burning') { sfx.ignite(); buzz([15, 30, 15]); }
+        if (e.to === 'frozen') { sfx.freeze(); buzz(40); }
+        if (e.from === 'frozen' && e.to === 'normal') sfx.thaw();
         break;
       }
     }
   }
   slime.events.length = 0;
+  if (input.squeeze && slime.groups.length > 1) sfx.squeeze();
 
   // efectos continuos del estado
   if (slime.state === 'burning') {
@@ -1267,6 +1310,34 @@ if (import.meta.env.DEV) {
       focus: (id: string | null) => { menuFocus = id; },
       cam: (yaw: number, pitch = DEFAULT_PITCH) => { camYaw = yaw; camPitch = pitch; },
       drive: (fn: (() => [number, number]) | null) => { devDrive = fn; },
+      /** imagen para compartir el enlace (1200x630): el limo en su habitación y el título */
+      shareImage: (w = 1200, h = 630) => {
+        renderer.setPixelRatio(1);
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        frame(1 / 60);
+        if (room) {
+          const o = room.position;
+          camera.position.set(o.x - 1.05, o.y + 1.15, o.z + 2.7);
+          camera.lookAt(o.x - 0.8, o.y + 0.5, o.z);
+          renderer.render(scene, camera);
+        }
+        const shot = document.createElement('canvas');
+        shot.width = w;
+        shot.height = h;
+        const g = shot.getContext('2d')!;
+        g.drawImage(renderer.domElement, 0, 0, w, h);
+        const shade = g.createLinearGradient(0, 0, w * 0.62, 0);
+        shade.addColorStop(0, 'rgba(12, 8, 30, 0.7)');
+        shade.addColorStop(1, 'rgba(12, 8, 30, 0)');
+        g.fillStyle = shade;
+        g.fillRect(0, 0, w, h);
+        drawLogo(g, 64, 118, 172);
+        const url = shot.toDataURL('image/jpeg', 0.9);
+        applyQuality(quality);
+        return url;
+      },
       run: (seconds: number) => { for (let s = 0; s < seconds && mode === 'play'; s += FIXED) frame(FIXED); return mode; },
       state: () => ({ mode, alive: slime?.aliveCount, slimeState: slime?.state, groups: slime?.groups.map((g) => g.ids.length), coins: world && `${world.coinsCollected}/${world.coinsTotal}`, lead: slime?.groups[0] && { x: slime.groups[0].cx.toFixed(2), y: slime.groups[0].cy.toFixed(2), z: slime.groups[0].cz.toFixed(2) } }),
     },
@@ -1276,6 +1347,7 @@ if (import.meta.env.DEV) {
 // ------------------------------------------------------------------ arranque
 
 applyDom();
+decorateLogo(document.querySelector<SVGSVGElement>('.logo-art')!);
 grantCollectibles(); // progreso anterior a los coleccionables
 applyLook();
 show('main');

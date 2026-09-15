@@ -84,7 +84,7 @@ const XRAY_LIFT = 0.2;
 export type SlimeEvent =
   | { type: 'fall' | 'evaporate' | 'pad'; x: number; y: number; z: number }
   | { type: 'coin' | 'gem' | 'oil'; x: number; y: number; z: number }
-  | { type: 'board' | 'unboard'; x: number; y: number; z: number }
+  | { type: 'board' | 'unboard' | 'land' | 'merge'; x: number; y: number; z: number }
   | { type: 'cut'; x: number; z: number }
   | { type: 'burn'; x: number; z: number; what: 'plant' | 'iceblock' }
   | { type: 'state'; from: SlimeState; to: SlimeState };
@@ -156,6 +156,10 @@ export class Slime {
   /** tiempo sin empuje del mando tras quemarse */
   private stunT = 0;
   private fireHits: number[] = [];
+  /** limitos que han tocado suelo tras ir por el aire (para el sonido de aterrizaje) */
+  private landHits = 0;
+  /** trozos de al menos 3 limitos en el último agrupado (si bajan, se han unido) */
+  private bigGroups = 1;
   private time = 0;
   private readonly uniforms = { uTime: { value: 0 }, uWobble: { value: 1 }, uRim: { value: new THREE.Vector3(0.45, 0.8, 1.0) } };
   state: SlimeState = 'normal';
@@ -252,13 +256,34 @@ export class Slime {
         transformed += objectNormal * wob * 0.022 * uWobble;
         vSlimePos = wp;`,
       );
-      shader.fragmentShader = `uniform float uTime;\nuniform vec3 uRim;\nvarying vec3 vSlimePos;\n${shader.fragmentShader}`.replace(
+      shader.fragmentShader = `uniform float uTime;\nuniform vec3 uRim;\nvarying vec3 vSlimePos;
+        float slimeHash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+        float slimeNoise(vec3 p) {
+          vec3 i = floor(p), f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(mix(slimeHash(i), slimeHash(i + vec3(1, 0, 0)), f.x), mix(slimeHash(i + vec3(0, 1, 0)), slimeHash(i + vec3(1, 1, 0)), f.x), f.y),
+                     mix(mix(slimeHash(i + vec3(0, 0, 1)), slimeHash(i + vec3(1, 0, 1)), f.x), mix(slimeHash(i + vec3(0, 1, 1)), slimeHash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+        }
+        ${shader.fragmentShader}`.replace(
         '#include <opaque_fragment>',
         `float slimeRim = 1.0 - max(dot(normalize(normal), normalize(vViewPosition)), 0.0);
-        outgoingLight += uRim * pow(slimeRim, 2.2) * 0.55;
+        outgoingLight += uRim * pow(slimeRim, 2.2) * 0.5;
         // luz que atraviesa la gelatina: el centro algo más claro que los bordes
         outgoingLight += diffuseColor.rgb * pow(1.0 - slimeRim, 3.0) * 0.12;
+        // brillo de gelatina: un punto nítido y un halo ancho que siguen la forma del limo
+        vec3 slimeH = normalize(normalize(vec3(-0.45, 0.75, 0.5)) + normalize(vViewPosition));
+        float slimeSpec = max(dot(normalize(normal), slimeH), 0.0);
+        outgoingLight += vec3(1.0) * (pow(slimeSpec, 90.0) * 0.75 + pow(slimeSpec, 10.0) * 0.07);
         #include <opaque_fragment>`,
+      ).replace(
+        '#include <normal_fragment_maps>',
+        `#include <normal_fragment_maps>
+        {
+          // textura viva: ondulaciones diminutas que se mueven y hacen titilar los brillos
+          vec3 q = vSlimePos * 7.0 + vec3(0.0, uTime * 0.6, uTime * 0.4);
+          vec3 bump = vec3(slimeNoise(q), slimeNoise(q + 17.3), slimeNoise(q + 41.7)) - 0.5;
+          normal = normalize(normal + bump * 0.16);
+        }`,
       );
     };
 
@@ -780,6 +805,7 @@ export class Slime {
           }
         }
         if (ny > 0.5) {
+          if (this.air[i] > 0.35) this.landHits++;
           this.air[i] = 0;
           this.groundCell[i] = cj * w.w + ci;
         }
@@ -976,6 +1002,11 @@ export class Slime {
       if (dx * dx + dz * dz < 0.55 && y < t.y + 1.2 && chunk >= pickMin) this.touchedTreasure = true;
     }
     this.stunT = Math.max(0, this.stunT - dt);
+    if (this.landHits >= 6 && this.groups[0]) {
+      const g = this.groups[0];
+      this.events.push({ type: 'land', x: g.cx, y: g.cy, z: g.cz });
+    }
+    this.landHits = 0;
     if (this.fireHits.length) this.recoilFromFire();
     this.updateStations(dt);
     if (!anyPad) return;
@@ -1061,6 +1092,10 @@ export class Slime {
       if (pz[i] > g.maxZ) g.maxZ = pz[i];
     }
     groups.sort(Slime.bySize);
+    let big = 0;
+    for (const g of groups) if (g.ids.length >= 3) big++;
+    if (big < this.bigGroups && groups[0]) this.events.push({ type: 'merge', x: groups[0].cx, y: groups[0].cy, z: groups[0].cz });
+    this.bigGroups = big;
     this.gid.fill(-1);
     for (let k = 0; k < groups.length; k++) {
       const g = groups[k];
@@ -1218,8 +1253,12 @@ class Face {
     o.traverse((c) => {
       const m = c as THREE.Mesh;
       if (!m.isMesh) return;
-      this.materials.push(m.material as THREE.Material);
-      m.renderOrder = 5;
+      const mat = m.material as THREE.Material;
+      // la cara va en la cola transparente, después de la silueta de rayos X (renderOrder 20):
+      // si no, contaba como "algo delante del limo" y la silueta se pintaba encima de los ojos
+      mat.transparent = true;
+      this.materials.push(mat);
+      m.renderOrder = 30;
     });
     this.root.add(o);
     return o;
