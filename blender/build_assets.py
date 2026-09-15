@@ -520,10 +520,16 @@ shines("face_eye_star", look, 0.011, 0.006, y=-0.026)
 
 heart_pts = [(0.0032 * 16 * math.sin(t) ** 3, 0.0032 * (13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)))
              for t in [2 * math.pi * i / 40 for i in range(40)]]
-eye = eye_base("face_eye_heart", 0.064, 0.084, M["white"])
-look = empty("face_eye_heart_look", parent=eye, loc=(0, -0.02, -0.004))
-flat_shape("face_eye_heart_iris", heart_pts, 0.008, M["heart_iris"], front=-0.017, parent=look)
-shines("face_eye_heart", look, 0.012, 0.006, y=-0.026)
+# ojos enamorados: el ojo entero es un corazón relleno con contorno y brillos (se mueve entero al mirar)
+def heart_shape(k, dz):
+    return [(k * 16 * math.sin(t) ** 3, k * (13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)) + dz)
+            for t in [2 * math.pi * i / 48 for i in range(48)]]
+
+
+eye = empty("face_eye_heart")
+flat_shape("face_eye_heart_outline", heart_shape(0.0056, 0.013), 0.006, M["black"], front=-0.02, parent=eye)
+flat_shape("face_eye_heart_fill", heart_shape(0.0044, 0.013), 0.006, M["heart_iris"], front=-0.028, parent=eye)
+shines("face_eye_heart", eye, 0.013, 0.006, y=-0.034)
 
 # sonrisota: boca abierta ancha con fila de dientes
 mouth = empty("face_mouth_grin")
