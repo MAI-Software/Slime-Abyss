@@ -13,6 +13,7 @@ las caras y frentes miran a -Y (hacia la cámara del juego). El juego busca los 
 """
 
 import math
+import random
 import os
 
 import bmesh
@@ -368,17 +369,29 @@ def teardrop(name, radius, mat):
     return mesh_object(name, bm, mat, smooth=True)
 
 
-# Ojo: óvalo negro brillante con dos reflejos.
+# Ojo: contorno oscuro, blanco, iris azul marino con pupila y dos brillos.
+# El juego mueve face_eye_look (iris + pupila + brillos) para que mire hacia donde va el limo.
+M["iris"] = material("Iris", "1e3a8a", 0.3)
 eye = empty("face_eye")
 bm = bmesh.new()
+ellipsoid(bm, (0.071, 0.03, 0.092), (0, 0, 0), 20, 12)
+mesh_object("face_eye_outline", bm, M["black"], smooth=True, parent=eye, loc=(0, 0.006, 0))
+bm = bmesh.new()
 ellipsoid(bm, (0.062, 0.03, 0.082), (0, 0, 0), 20, 12)
-mesh_object("face_eye_ball", bm, M["black"], smooth=True, parent=eye)
+mesh_object("face_eye_white", bm, M["white"], smooth=True, parent=eye)
+look = empty("face_eye_look", parent=eye, loc=(0, -0.02, -0.01))
 bm = bmesh.new()
-ellipsoid(bm, (0.024, 0.01, 0.028), (0, 0, 0), 12, 8)
-mesh_object("face_eye_shine", bm, M["white"], smooth=True, parent=eye, loc=(-0.02, -0.026, 0.03))
+ellipsoid(bm, (0.043, 0.012, 0.054), (0, 0, 0), 16, 10)
+mesh_object("face_eye_iris", bm, M["iris"], smooth=True, parent=look)
 bm = bmesh.new()
-ellipsoid(bm, (0.011, 0.008, 0.011), (0, 0, 0), 10, 6)
-mesh_object("face_eye_shine2", bm, M["white"], smooth=True, parent=eye, loc=(0.022, -0.026, -0.025))
+ellipsoid(bm, (0.025, 0.008, 0.031), (0, 0, 0), 12, 8)
+mesh_object("face_eye_pupil", bm, M["black"], smooth=True, parent=look, loc=(0, -0.006, 0))
+bm = bmesh.new()
+ellipsoid(bm, (0.015, 0.006, 0.018), (0, 0, 0), 10, 6)
+mesh_object("face_eye_shine", bm, M["white"], smooth=True, parent=look, loc=(-0.017, -0.013, 0.021))
+bm = bmesh.new()
+ellipsoid(bm, (0.007, 0.005, 0.007), (0, 0, 0), 8, 6)
+mesh_object("face_eye_shine2", bm, M["white"], smooth=True, parent=look, loc=(0.016, -0.013, -0.019))
 
 # Ojo de dolor ">" con esquina marcada (el juego lo refleja para "<").
 tube("face_eye_pain", [(-0.04, 0.045), (0.035, 0.0), (-0.04, -0.045)], 0.017, M["black"], poly=True)
@@ -388,8 +401,8 @@ tube("face_eye_happy", [(-0.05, -0.02), (-0.025, 0.025), (0.0, 0.04), (0.025, 0.
      M["black"])
 
 # Boquita sonriente.
-tube("face_mouth_smile", [(-0.035, 0.012), (-0.018, -0.008), (0.0, -0.013), (0.018, -0.008), (0.035, 0.012)],
-     0.012, M["black"])
+tube("face_mouth_smile", [(-0.046, 0.012), (-0.032, -0.012), (-0.013, -0.012), (0.0, 0.004), (0.013, -0.012),
+                          (0.032, -0.012), (0.046, 0.012)], 0.009, M["black"])
 
 # Boca abierta en "D" con lengua.
 mouth_open = empty("face_mouth_open")
@@ -406,7 +419,12 @@ tube("face_mouth_pain", [(-0.05, 0.0), (-0.033, 0.014), (-0.017, -0.01), (0.0, 0
                           (0.033, 0.014), (0.05, 0.0)], 0.011, M["black"])
 
 # Mofletes, sudor y lágrima.
-flat_shape("face_blush", ellipse_pts(0.034, 0.02), 0.004, M["blush"])
+blush = empty("face_blush")
+M["blush_line"] = material("BlushLine", "f0508f", 0.8)
+flat_shape("face_blush_spot", ellipse_pts(0.036, 0.02), 0.004, M["blush"], parent=blush)
+for k, x in enumerate((-0.018, 0.0, 0.018)):
+    tube(f"face_blush_line{k}", [(x - 0.007, -0.01), (x + 0.007, 0.01)], 0.0045, M["blush_line"], parent=blush,
+         loc=(0, -0.006, 0), poly=True)
 teardrop("face_sweat", 0.03, M["sweat"])
 teardrop("face_tear", 0.016, M["sweat"])
 
@@ -571,74 +589,196 @@ bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=24, radius=0
 bmesh.ops.translate(bm, vec=(0, 0, 0.012), verts=bm.verts)
 mesh_object("cold_vent_glow", bm, M["cold"], parent=vent)
 
-# ================================================================== ACCESORIOS DE CABEZA (solo visuales)
-# Origen en la base del accesorio; tamaño para una cabeza de ~0.5 de radio.
-M["wool"] = material("Wool", "6d5bd0", 0.95)
-M["wool_light"] = material("WoolLight", "f5f3ff", 0.95)
-M["felt_black"] = material("FeltBlack", "1f1b2e", 0.7)
-M["ribbon_red"] = material("RibbonRed", "e11d48", 0.5)
-M["bow_pink"] = material("BowPink", "f472b6", 0.45)
-M["party"] = material("PartyTeal", "14b8a6", 0.55)
-M["party_star"] = material("PartyYellow", "facc15", 0.5)
-M["gold_hat"] = material("CrownGold", "fbbf24", 0.25, 1.0, emit="7a4a00", strength=0.3)
-M["ruby"] = material("Ruby", "e11d48", 0.1, 0.2, emit="7f1d1d", strength=0.4)
+# ================================================================== COLECCIONABLES
+# Piezas pequeñas (~0.4 de alto, origen en la base) que se exponen en la habitación del menú.
+M["crystal"] = material("Crystal", "b9f0ff", 0.05, 0.1, emit="4cc9f0", strength=0.6)
+M["dark_hole"] = material("DarkHole", "0b1a2e", 0.6)
+M["terracotta"] = material("Terracotta", "c2663a", 0.75)
+M["gold_col"] = material("GoldCollectible", "fbbf24", 0.22, 1.0, emit="6b4200", strength=0.25)
+M["orb"] = material("Orb", "3b82f6", 0.08, 0.0, emit="1d4ed8", strength=1.1)
+M["bronze"] = material("Bronze", "b7793a", 0.3, 1.0)
+M["wood_col"] = material("WoodCollectible", "8a5a32", 0.8)
 
-hat = empty("hat_beanie")
+col = empty("col_crystal_skull")
 bm = bmesh.new()
-ellipsoid(bm, (0.3, 0.3, 0.24), (0, 0, 0.0), 20, 12)
-bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < -1e-4], context="VERTS")
-mesh_object("hat_beanie_dome", bm, M["wool"], smooth=True, parent=hat, loc=(0, 0, 0.05))
+ellipsoid(bm, (0.15, 0.14, 0.14), (0, 0, 0.2), 18, 12)
+box(bm, (0.16, 0.12, 0.09), (0, -0.04, 0.07))
+mesh_object("col_crystal_skull_bone", bm, M["crystal"], smooth=True, parent=col)
 bm = bmesh.new()
-cylinder(bm, 0.315, 0.09, (0, 0, 0.05), 24)
-mesh_object("hat_beanie_band", bm, M["wool_light"], smooth=True, parent=hat)
-bm = bmesh.new()
-ellipsoid(bm, (0.085, 0.085, 0.085), (0, 0, 0), 14, 10)
-mesh_object("hat_beanie_pompom", bm, M["wool_light"], smooth=True, parent=hat, loc=(0, 0, 0.33))
+for x in (-0.055, 0.055):
+    ellipsoid(bm, (0.035, 0.02, 0.04), (x, -0.125, 0.2), 10, 6)
+ellipsoid(bm, (0.018, 0.02, 0.025), (0, -0.135, 0.13), 8, 6)
+mesh_object("col_crystal_skull_holes", bm, M["dark_hole"], smooth=True, parent=col)
 
-hat = empty("hat_crown")
+col = empty("col_ancient_vase")
 bm = bmesh.new()
-cylinder(bm, 0.24, 0.12, (0, 0, 0.06), 28)
-for k in range(5):
-    ang = k * math.tau / 5
-    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=8, radius1=0.06, radius2=0.0, depth=0.16,
-                          matrix=Matrix.Translation((0.22 * math.cos(ang), 0.22 * math.sin(ang), 0.2)))
-mesh_object("hat_crown_gold", bm, M["gold_hat"], parent=hat)
+ellipsoid(bm, (0.14, 0.14, 0.16), (0, 0, 0.18), 20, 12)
+cylinder(bm, 0.06, 0.12, (0, 0, 0.36), 16)
+cylinder(bm, 0.085, 0.03, (0, 0, 0.43), 16)
+cylinder(bm, 0.08, 0.04, (0, 0, 0.02), 16)
+mesh_object("col_ancient_vase_body", bm, M["terracotta"], smooth=True, parent=col)
 bm = bmesh.new()
-ellipsoid(bm, (0.035, 0.02, 0.035), (0, -0.245, 0.06), 10, 6)
-mesh_object("hat_crown_ruby", bm, M["ruby"], smooth=True, parent=hat)
+cylinder(bm, 0.143, 0.035, (0, 0, 0.2), 24)
+mesh_object("col_ancient_vase_band", bm, M["gold_col"], smooth=True, parent=col)
 
-hat = empty("hat_top")
+col = empty("col_blue_orb")
 bm = bmesh.new()
-cylinder(bm, 0.34, 0.03, (0, 0, 0.015), 28)
-cylinder(bm, 0.2, 0.34, (0, 0, 0.2), 28)
-mesh_object("hat_top_felt", bm, M["felt_black"], parent=hat)
+cylinder(bm, 0.11, 0.04, (0, 0, 0.02), 20)
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=16, radius1=0.05, radius2=0.1, depth=0.12,
+                      matrix=Matrix.Translation((0, 0, 0.1)))
+mesh_object("col_blue_orb_stand", bm, M["gold_col"], smooth=True, parent=col)
 bm = bmesh.new()
-cylinder(bm, 0.205, 0.06, (0, 0, 0.08), 28)
-mesh_object("hat_top_band", bm, M["ribbon_red"], parent=hat)
+ellipsoid(bm, (0.12, 0.12, 0.12), (0, 0, 0.27), 20, 14)
+mesh_object("col_blue_orb_sphere", bm, M["orb"], smooth=True, parent=col)
 
-hat = empty("hat_bow")
+col = empty("col_crypt_key")
+ring = [(0.07 * math.cos(a * math.tau / 20), 0.07 * math.sin(a * math.tau / 20) + 0.33) for a in range(20)]
+tube("col_crypt_key_ring", ring, 0.018, M["bronze"], parent=col, poly=True, cyclic=True)
 bm = bmesh.new()
-ellipsoid(bm, (0.14, 0.05, 0.1), (-0.13, 0, 0.1), 14, 8)
-ellipsoid(bm, (0.14, 0.05, 0.1), (0.13, 0, 0.1), 14, 8)
-ellipsoid(bm, (0.05, 0.06, 0.05), (0, 0, 0.1), 10, 6)
-mesh_object("hat_bow_mesh", bm, M["bow_pink"], smooth=True, parent=hat)
+box(bm, (0.035, 0.03, 0.25), (0, 0, 0.14))
+box(bm, (0.07, 0.03, 0.03), (0.035, 0, 0.04))
+box(bm, (0.05, 0.03, 0.03), (0.025, 0, 0.1))
+mesh_object("col_crypt_key_shaft", bm, M["bronze"], parent=col)
 
-hat = empty("hat_party")
+col = empty("col_coin_chest")
 bm = bmesh.new()
-bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=20, radius1=0.18, radius2=0.0, depth=0.42,
-                      matrix=Matrix.Translation((0, 0, 0.21)))
-mesh_object("hat_party_cone", bm, M["party"], smooth=True, parent=hat)
+box(bm, (0.3, 0.2, 0.16), (0, 0, 0.08))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.012, segments=1, affect="EDGES")
+mesh_object("col_coin_chest_box", bm, M["wood_col"], parent=col)
 bm = bmesh.new()
-ellipsoid(bm, (0.06, 0.06, 0.06), (0, 0, 0.44), 12, 8)
-mesh_object("hat_party_pompom", bm, M["party_star"], smooth=True, parent=hat)
+for k in range(9):
+    ang = k * 2.4
+    r = 0.03 + 0.02 * (k % 3)
+    cylinder(bm, 0.035, 0.012, (r * math.cos(ang), r * math.sin(ang), 0.17 + (k % 4) * 0.012), 12,
+             rot=Matrix.Rotation(math.radians(15 * (k % 3 - 1)), 4, "X"))
+box(bm, (0.31, 0.21, 0.025), (0, 0, 0.12))
+mesh_object("col_coin_chest_gold", bm, M["gold_col"], smooth=True, parent=col)
 
-hat = empty("hat_leaf")
+col = empty("col_trophy")
 bm = bmesh.new()
-cylinder(bm, 0.018, 0.14, (0, 0, 0.07), 8)
-mesh_object("hat_leaf_stem", bm, M["thorn"], parent=hat)
+box(bm, (0.2, 0.2, 0.05), (0, 0, 0.025))
+cylinder(bm, 0.03, 0.12, (0, 0, 0.11), 12)
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=20, radius1=0.05, radius2=0.14, depth=0.2,
+                      matrix=Matrix.Translation((0, 0, 0.27)))
+mesh_object("col_trophy_cup", bm, M["gold_col"], smooth=True, parent=col)
+for side in (-1, 1):
+    arc = [(side * (0.13 + 0.06 * math.sin(t * math.pi / 8)), 0.33 - t * 0.02) for t in range(9)]
+    tube(f"col_trophy_handle{side}", arc, 0.014, M["gold_col"], parent=col)
+
+# ================================================================== HABITACIÓN DEL MENÚ
+# Suelo de 9x7 centrado en el origen (donde está el limo), paredes al fondo (+Y) y a los lados; sin pared delantera.
+# Los huecos slot_<coleccionable> marcan dónde se expone cada pieza.
+M["plank"] = material("Plank", "a8764a", 0.75)
+M["plank_dark"] = material("PlankDark", "8c5f3a", 0.8)
+M["wallpaper"] = material("Wallpaper", "5b4b8a", 0.9)
+M["wall_trim"] = material("WallTrim", "3b2f63", 0.7)
+M["shelf_wood"] = material("ShelfWood", "6b4226", 0.7)
+M["rug"] = material("Rug", "c2410c", 0.95)
+M["rug_edge"] = material("RugEdge", "fbbf24", 0.9)
+M["glass"] = material("Glass", "d6f2ff", 0.05)
+M["pedestal"] = material("Pedestal", "e7e0f5", 0.5)
+M["candle"] = material("CandleFlame", "ffd27a", 0.4, emit="ffb347", strength=4.0)
+
+room = empty("menu_room")
 bm = bmesh.new()
-ellipsoid(bm, (0.16, 0.02, 0.08), (0.14, 0, 0.16), 14, 6)
-mesh_object("hat_leaf_blade", bm, M["leaf"], smooth=True, parent=hat)
+for k in range(-9, 9):
+    box(bm, (9.0, 0.48, 0.12), (0, k * 0.5 + 0.25, -0.06))
+mesh_object("room_floor", bm, M["plank"], parent=room)
+bm = bmesh.new()
+for k in range(-9, 9, 3):
+    box(bm, (9.0, 0.02, 0.121), (0, k * 0.5, -0.06))
+mesh_object("room_floor_seams", bm, M["plank_dark"], parent=room)
+bm = bmesh.new()
+box(bm, (9.4, 0.3, 4.2), (0, 3.65, 2.1))
+box(bm, (0.3, 7.4, 4.2), (-4.65, 0, 2.1))
+box(bm, (0.3, 7.4, 4.2), (4.65, 0, 2.1))
+mesh_object("room_walls", bm, M["wallpaper"], parent=room)
+bm = bmesh.new()
+box(bm, (9.4, 0.34, 0.25), (0, 3.63, 0.125))
+box(bm, (0.34, 7.4, 0.25), (-4.63, 0, 0.125))
+box(bm, (0.34, 7.4, 0.25), (4.63, 0, 0.125))
+box(bm, (9.4, 0.34, 0.12), (0, 3.63, 4.2))
+mesh_object("room_trim", bm, M["wall_trim"], parent=room)
+bm = bmesh.new()
+bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=40, radius=1.55)
+bmesh.ops.translate(bm, vec=(0, 0, 0.005), verts=bm.verts)
+mesh_object("room_rug_edge", bm, M["rug_edge"], parent=room)
+bm = bmesh.new()
+bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=40, radius=1.4)
+bmesh.ops.translate(bm, vec=(0, 0, 0.01), verts=bm.verts)
+mesh_object("room_rug", bm, M["rug"], parent=room)
+
+
+def bookcase(name, x):
+    bm = bmesh.new()
+    w, d, h = 2.2, 0.45, 2.5
+    y = 3.5 - d / 2
+    box(bm, (w, 0.04, h), (x, 3.48, h / 2))
+    box(bm, (0.08, d, h), (x - w / 2, y, h / 2))
+    box(bm, (0.08, d, h), (x + w / 2, y, h / 2))
+    for z in (0.04, 0.85, 1.65, 2.46):
+        box(bm, (w, d, 0.08), (x, y, z))
+    mesh_object(name, bm, M["shelf_wood"], parent=room)
+
+
+bookcase("room_bookcase_left", -2.55)
+bookcase("room_bookcase_right", 2.55)
+
+# libros de relleno en los extremos de las baldas (el centro queda libre para los coleccionables)
+BOOK_COLORS = ["b91c1c", "1d4ed8", "15803d", "a16207", "7e22ce"]
+book_mats = [material(f"Book{k}", c, 0.8) for k, c in enumerate(BOOK_COLORS)]
+rng = random.Random(7)
+books = [bmesh.new() for _ in book_mats]
+for cx in (-2.55, 2.55):
+    for shelf_top in (0.89, 1.69, 2.50):
+        spans = [(-1.02, -0.5), (0.5, 1.02)] if shelf_top < 2.4 else [(-1.02, 1.02)]
+        for x0, x1 in spans:
+            x = x0
+            while x < x1 - 0.06:
+                w = rng.uniform(0.05, 0.09)
+                h = rng.uniform(0.3, 0.46)
+                k = rng.randrange(len(book_mats))
+                box(books[k], (w - 0.008, rng.uniform(0.26, 0.32), h), (cx + x + w / 2, 3.28, shelf_top + h / 2))
+                x += w
+for k, bm in enumerate(books):
+    mesh_object(f"room_books{k}", bm, book_mats[k], parent=room)
+
+
+def vitrina(name, x, y, z_top):
+    bm = bmesh.new()
+    box(bm, (0.7, 0.7, z_top), (x, y, z_top / 2))
+    bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.03, segments=1, affect="EDGES")
+    mesh_object(name + "_pedestal", bm, M["pedestal"], parent=room)
+    bm = bmesh.new()
+    box(bm, (0.62, 0.62, 0.62), (x, y, z_top + 0.31))
+    mesh_object(name + "_glass", bm, M["glass"], parent=room)
+    bm = bmesh.new()
+    box(bm, (0.66, 0.66, 0.04), (x, y, z_top + 0.64))
+    mesh_object(name + "_lid", bm, M["shelf_wood"], parent=room)
+
+
+vitrina("room_vitrina_center", 0.0, 3.0, 0.95)
+vitrina("room_vitrina_left", -3.7, 0.9, 0.8)
+vitrina("room_vitrina_right", 3.7, 0.9, 0.8)
+
+# velas en la pared del fondo
+bm = bmesh.new()
+for x in (-1.2, 1.2):
+    cylinder(bm, 0.05, 0.25, (x, 3.4, 2.2), 10)
+mesh_object("room_candles", bm, M["pedestal"], parent=room)
+bm = bmesh.new()
+for x in (-1.2, 1.2):
+    ellipsoid(bm, (0.04, 0.04, 0.08), (x, 3.4, 2.4), 10, 8)
+mesh_object("room_candle_flames", bm, M["candle"], smooth=True, parent=room)
+
+# la escala del hueco es la escala con la que se expone la pieza
+for slot, loc, size in (("slot_col_trophy", (0.0, 3.0, 0.95), 1.3),
+                        ("slot_col_crystal_skull", (-3.7, 0.9, 0.8), 1.35),
+                        ("slot_col_ancient_vase", (3.7, 0.9, 0.8), 1.25),
+                        ("slot_col_crypt_key", (-2.55, 3.25, 0.89), 1.6),
+                        ("slot_col_blue_orb", (-2.55, 3.25, 1.69), 1.6),
+                        ("slot_col_coin_chest", (2.55, 3.25, 0.89), 1.8)):
+    empty(slot, parent=room, loc=loc).scale = (size, size, size)
 
 # ================================================================== guardar y exportar
 

@@ -138,8 +138,6 @@ export class Slime {
   private blob: BlobMesh;
   private spheres: THREE.InstancedMesh;
   private faces: Face[] = [];
-  private hat: THREE.Object3D | null = null;
-  private hatPos = new THREE.Vector3();
   private contactShadows: THREE.Mesh[] = [];
   private shadowTex = createContactShadowTexture();
 
@@ -272,17 +270,6 @@ export class Slime {
     this.state = to;
     this.stateT = to === 'burning' ? BURN_TIME : to === 'frozen' ? FREEZE_TIME : 0;
     if (from !== to) this.events.push({ type: 'state', from, to });
-  }
-
-  /** Accesorio de cabeza (solo visual). null para quitarlo. */
-  setHat(id: string | null) {
-    if (this.hat) { this.group.remove(this.hat); this.hat = null; }
-    if (!id) return;
-    try {
-      this.hat = this.assets.clone(id);
-      this.hat.visible = false;
-      this.group.add(this.hat);
-    } catch { this.hat = null; }
   }
 
   /** Un limito al azar (para que el juego ponga llamas o escarcha encima). */
@@ -824,22 +811,6 @@ export class Slime {
       face.update(g, dt, lookX, lookZ, airborne / g.ids.length);
     }
 
-    // accesorio sobre el trozo principal
-    if (this.hat) {
-      const g = this.groups[0];
-      if (!g || g.ids.length < FACE_MIN_SIZE) this.hat.visible = false;
-      else {
-        const tx = g.cx, ty = g.maxY + 0.1, tz = g.cz + 0.05;
-        if (!this.hat.visible) this.hatPos.set(tx, ty, tz);
-        else this.hatPos.lerp(this.tmpRim.set(tx, ty, tz), 1 - Math.exp(-dt * 14));
-        const sc = Math.min(1.15, Math.max(0.45, 0.35 + g.ids.length / 100));
-        this.hat.position.copy(this.hatPos);
-        this.hat.scale.setScalar(sc);
-        this.hat.rotation.set(-0.2 + g.vz * 0.03, 0, -g.vx * 0.04);
-        this.hat.visible = true;
-      }
-    }
-
     // daño → cara de dolor en el trozo más cercano
     for (const h of this.hurts) {
       let best = 0;
@@ -871,13 +842,14 @@ export class Slime {
 type Expr = 'idle' | 'wee' | 'air' | 'happy' | 'pain' | 'dizzy' | 'frozen';
 
 /**
-  Cara kawaii modelada en Blender (face_*): ojos negros brillantes, boquita y mofletes.
+  Cara kawaii modelada en Blender (face_*): ojos grandes con iris que mira, boquita de gato y mofletes con rayitas.
   Expresiones: idle (sonrisa + parpadeo), wee (deslizándose rápido), air (en el aire),
   happy (salto / tesoro) y pain (daño: > <, lágrimas y gota de sudor).
 */
 class Face {
   readonly root = new THREE.Group();
   private eyes: THREE.Object3D[] = [];
+  private looks: THREE.Object3D[] = [];
   private eyesPain: THREE.Object3D[] = [];
   private eyesHappy: THREE.Object3D[] = [];
   private eyesDizzy: THREE.Object3D[] = [];
@@ -920,7 +892,11 @@ class Face {
       return o;
     };
     for (const side of [-1, 1]) {
-      this.eyes.push(part('face_eye', side * 0.1, 0.035, 0));
+      const eye = part('face_eye', side * 0.1, 0.035, 0);
+      const look = Assets.child(eye, 'face_eye_look');
+      look.userData.rest = look.position.clone();
+      this.eyes.push(eye);
+      this.looks.push(look);
       this.eyesPain.push(part('face_eye_pain', side * 0.1, 0.035, 0.01, side > 0));
       this.eyesHappy.push(part('face_eye_happy', side * 0.1, 0.045, 0.01));
       this.eyesDizzy.push(part('face_eye_dizzy', side * 0.1, 0.035, 0.012, side > 0));
@@ -1007,14 +983,16 @@ class Face {
     }
 
     const normalEyes = expr === 'idle' || expr === 'wee' || expr === 'air' || expr === 'frozen';
-    // mirada: los ojos enteros se desplazan un poco hacia donde va el limo
-    const lx = Math.max(-1, Math.min(1, g.vx * 0.2 + lookX * 0.5)) * 0.012;
-    const ly = (expr === 'air' ? 1 : Math.max(-1, Math.min(1, -g.vz * 0.12 - lookZ * 0.3))) * 0.01;
+    // mirada: el iris se desplaza dentro del blanco hacia donde va el limo
+    const lx = Math.max(-1, Math.min(1, g.vx * 0.2 + lookX * 0.5)) * 0.016;
+    const ly = (expr === 'air' ? 1 : Math.max(-1, Math.min(1, -g.vz * 0.12 - lookZ * 0.3))) * 0.022;
     const eyeScale = expr === 'air' ? 1.25 : expr === 'wee' ? 0.9 : 1;
+    for (const l of this.looks) {
+      const r = l.userData.rest as THREE.Vector3;
+      l.position.set(r.x + lx, r.y + ly, r.z);
+    }
     for (const e of this.eyes) {
       e.visible = normalEyes;
-      const r = e.userData.rest as THREE.Vector3;
-      e.position.set(r.x + lx, r.y + ly, r.z);
       const sx = e.scale.x < 0 ? -1 : 1;
       e.scale.set(sx * eyeScale, eyeScale * (expr === 'idle' ? open : expr === 'frozen' ? 0.55 : 1), eyeScale);
     }

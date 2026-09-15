@@ -51,13 +51,9 @@
     <div class="main-actions">
       <button id="btn-story" class="big-btn" data-i18n="menu.story" disabled></button>
       <div class="menu-grid">
-        <button class="small-btn with-icon" data-go="myslime">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>
-          <span data-i18n="menu.myslime"></span>
-        </button>
-        <button class="small-btn with-icon" data-go="shop">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg>
-          <span data-i18n="menu.shop"></span>
+        <button class="small-btn with-icon wide" data-go="collection">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/></svg>
+          <span data-i18n="menu.collection"></span>
         </button>
         <button class="small-btn with-icon" data-go="profile">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -98,36 +94,18 @@
     <button id="btn-chapter-breakdown" class="small-btn" data-i18n="story.breakdown" hidden></button>
   </div>
 
-  <!-- ====================================================== MI LIMO -->
-  <div id="screen-myslime" class="screen screen-side" hidden>
+  <!-- ====================================================== COLECCIÓN -->
+  <div id="screen-collection" class="screen screen-side" hidden>
     <div class="side-panel">
       <header class="screen-head">
         <button class="icon-btn" data-back="main" data-i18n-aria="common.back">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
         </button>
-        <h2 data-i18n="myslime.title"></h2>
+        <h2 data-i18n="collection.title"></h2>
+        <span id="collection-count" class="count-chip"></span>
       </header>
-      <p class="panel-label" data-i18n="myslime.head"></p>
-      <div id="myslime-list" class="item-grid"></div>
-      <p id="myslime-empty" class="panel-note" data-i18n="myslime.empty" hidden></p>
-    </div>
-  </div>
-
-  <!-- ====================================================== TIENDA -->
-  <div id="screen-shop" class="screen screen-side" hidden>
-    <div class="side-panel wide">
-      <header class="screen-head">
-        <button class="icon-btn" data-back="main" data-i18n-aria="common.back">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-        </button>
-        <h2 data-i18n="shop.title"></h2>
-        <div class="hud-chip coins wallet">
-          <svg class="ico coin-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/></svg>
-          <span id="shop-wallet"></span>
-        </div>
-      </header>
-      <div id="shop-list" class="item-grid"></div>
-      <p class="panel-note" data-i18n="shop.hint"></p>
+      <p class="panel-note" data-i18n="collection.hint"></p>
+      <div id="collection-list" class="item-grid"></div>
     </div>
   </div>
 
@@ -255,13 +233,14 @@
     </div>
   </div>
 
-  <!-- ====================================================== NUEVO ACCESORIO -->
+  <!-- ====================================================== NUEVO COLECCIONABLE -->
   <div id="screen-reward" class="screen" hidden>
     <div class="reward-card">
-      <p class="panel-label" data-i18n="breakdown.perfect"></p>
+      <p class="panel-label" data-i18n="collection.new"></p>
       <div class="reward-burst" aria-hidden="true"></div>
       <h2 id="reward-title"></h2>
-      <button id="btn-reward-ok" class="big-btn" data-i18n="shop.equip"></button>
+      <p class="panel-note" data-i18n="collection.place"></p>
+      <button id="btn-reward-ok" class="big-btn" data-i18n="collection.ok"></button>
     </div>
   </div>
 

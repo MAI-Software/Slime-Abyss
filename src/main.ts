@@ -17,7 +17,7 @@ import { LiquidGauge } from './hud-liquid';
 import { setMuted, sfx, unlockAudio } from './audio';
 import { LANGS, applyDom, detectLang, getLang, levelName, levelTip, setLang, t, type Lang } from './i18n';
 import { loadSave, writeSave } from './save';
-import { ACCESSORIES } from './cosmetics';
+import { COLLECTIBLES, type Collectible } from './collectibles';
 import { firebaseConfigured, signInWithGoogle, signOutPlayer, watchPlayer, type Player } from './firebase';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -159,7 +159,6 @@ const gemsTotalOf = (lv: LevelData) => lv.tiles.join('').split('G').length - 1;
 /** 100 %: todas las estrellas y todos los secretos del capítulo. */
 const chapterPerfect = (ch: ChapterDef) => ch.floors.every((f) => floorStars(f.id) === 3 && (gemsTotalOf(f) === 0 || !!floorSave(f.id)?.secret));
 const coinsEarned = () => Object.values(save.floors).reduce((a, f) => a + f.bestCoins, 0);
-const wallet = () => Math.max(0, coinsEarned() - save.spent);
 const chapterTitle = (ch: ChapterDef) => t('story.chapter', { n: CHAPTERS.indexOf(ch) + 1 });
 const chapterSubtitle = (ch: ChapterDef) => t(`chapters.${ch.id}`);
 
@@ -181,11 +180,17 @@ let lastAlive = 0;
 let winT = 0;
 let acc = 0;
 let menuAngle = 0;
-let menuZoom = 1;
-let menuShift = 0;
+let menuT = 0;
+/** coleccionable que enfoca la cámara en la pantalla Colección */
+let menuFocus: string | null = null;
+/** habitación del menú con las estanterías y vitrinas */
+let room: THREE.Object3D | null = null;
+const showcase: THREE.Object3D[] = [];
+const menuLook = new THREE.Vector3();
 let player: Player | null = null;
-/** recompensa ganada en el último piso, pendiente de mostrar */
-let pendingReward: { item: string; then: () => void } | null = null;
+/** coleccionables ganados en el último piso, pendientes de enseñar */
+const pendingRewards: string[] = [];
+let rewardThen: (() => void) | null = null;
 const camTarget = new THREE.Vector3();
 const camPos = new THREE.Vector3();
 const tmpCenter = new THREE.Vector3();
@@ -214,7 +219,7 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', 
 
 // ------------------------------------------------------------------ pantallas
 
-const SCREENS = ['main', 'story', 'chapter', 'myslime', 'shop', 'profile', 'options', 'pause', 'result', 'breakdown', 'reward'] as const;
+const SCREENS = ['main', 'story', 'chapter', 'collection', 'profile', 'options', 'pause', 'result', 'breakdown', 'reward'] as const;
 type ScreenId = (typeof SCREENS)[number];
 let currentScreen: ScreenId | null = 'main';
 
@@ -231,14 +236,12 @@ function show(id: ScreenId | null) {
     el.hidden = !visible;
   }
   $('hud').hidden = !(mode === 'play' || mode === 'pause' || mode === 'winning');
-  // en Mi limo y Tienda la cámara del menú se acerca al limo
-  menuZoom = id === 'myslime' || id === 'shop' ? 0.62 : 1;
+  if (id !== 'collection') menuFocus = null;
 }
 
 function openScreen(id: ScreenId) {
   if (id === 'story') renderStory();
-  if (id === 'shop') renderShop();
-  if (id === 'myslime') renderMySlime();
+  if (id === 'collection') renderCollection();
   if (id === 'profile') renderProfile();
   if (id === 'options') renderOptions();
   show(id);
@@ -299,9 +302,9 @@ function openChapter(ch: ChapterDef) {
   chapter = ch;
   $('chapter-title').textContent = chapterTitle(ch);
   $('chapter-sub').textContent = chapterSubtitle(ch);
-  const rewardEl = $('chapter-reward');
-  rewardEl.textContent = ch.reward
-    ? save.rewards.includes(ch.id) ? t('story.rewardOwned') : t('story.reward', { item: t(`items.${ch.reward}`) })
+  const cols = collectiblesOf(ch);
+  $('chapter-reward').textContent = cols.length
+    ? t('story.collectibles', { n: cols.filter((c) => save.collectibles.includes(c.id)).length, total: cols.length })
     : '';
   const list = $('floor-list');
   list.innerHTML = '';
@@ -330,64 +333,95 @@ $('btn-story').addEventListener('click', () => {
   openScreen('story');
 });
 
-// ------------------------------------------------------------------ tienda y Mi limo
+// ------------------------------------------------------------------ coleccionables
 
-function equip(id: string | null) {
-  save.equipped = id;
-  store();
-  slime?.setHat(id);
+const collectiblesOf = (ch: ChapterDef) => COLLECTIBLES.filter((c) => c.chapter === ch.id);
+
+function isUnlocked(c: Collectible): boolean {
+  const ch = CHAPTERS.find((x) => x.id === c.chapter);
+  if (!ch) return false;
+  switch (c.unlock.kind) {
+    case 'secret': return !!floorSave(c.unlock.floor)?.secret;
+    case 'chapterDone': return chapterDone(ch);
+    case 'allCoins': return ch.floors.every((f) => coinsTotalOf(f) === 0 || !!floorSave(f.id)?.allCoins);
+    case 'perfect': return chapterPerfect(ch);
+  }
 }
 
-function renderShop() {
-  $('shop-wallet').textContent = t('shop.wallet', { n: wallet() });
-  const list = $('shop-list');
-  list.innerHTML = '';
-  for (const item of ACCESSORIES) {
-    const owned = save.owned.includes(item.id);
-    const equipped = save.equipped === item.id;
-    const b = document.createElement('button');
-    b.className = `item-card${equipped ? ' equipped' : ''}`;
-    let state: string;
-    if (equipped) state = t('shop.equipped');
-    else if (owned) state = t('shop.equip');
-    else if (item.price === null) {
-      const ch = CHAPTERS.find((c) => c.id === item.reward);
-      state = t('shop.rewardOnly', { chapter: ch ? chapterTitle(ch) : '' });
-      b.disabled = true;
-    } else {
-      state = t('shop.buy', { n: item.price });
-      b.disabled = wallet() < item.price;
-      if (b.disabled) state = `${state} · ${t('shop.notEnough')}`;
+/** Entrega los coleccionables cuya condición ya se cumple y devuelve los nuevos. */
+function grantCollectibles(): string[] {
+  const fresh = COLLECTIBLES.filter((c) => !save.collectibles.includes(c.id) && isUnlocked(c)).map((c) => c.id);
+  if (fresh.length) {
+    save.collectibles.push(...fresh);
+    store();
+  }
+  return fresh;
+}
+
+function howToGet(c: Collectible): string {
+  const ch = CHAPTERS.find((x) => x.id === c.chapter)!;
+  const title = chapterTitle(ch);
+  switch (c.unlock.kind) {
+    case 'secret': {
+      const floor = c.unlock.floor;
+      return t('collection.howSecret', { n: ch.floors.findIndex((f) => f.id === floor) + 1 });
     }
-    b.innerHTML = `<span class="item-name">${t(`items.${item.id}`)}</span><span class="item-state">${state}</span>`;
+    case 'chapterDone': return t('collection.howDone', { chapter: title });
+    case 'allCoins': return t('collection.howCoins', { chapter: title });
+    case 'perfect': return t('collection.howPerfect', { chapter: title });
+  }
+}
+
+function renderCollection() {
+  $('collection-count').textContent = `${save.collectibles.length}/${COLLECTIBLES.length}`;
+  const list = $('collection-list');
+  list.innerHTML = '';
+  for (const c of COLLECTIBLES) {
+    const got = save.collectibles.includes(c.id);
+    const focused = menuFocus === c.id;
+    const b = document.createElement('button');
+    b.className = `item-card${got ? ' got' : ' missing'}${focused ? ' focused' : ''}`;
+    b.setAttribute('aria-pressed', String(focused));
+    b.innerHTML = `<span class="item-name">${got ? '' : lockSvg}${t(`collectibles.${c.id}`)}</span><span class="item-state">${got ? t('collection.got') : howToGet(c)}</span>`;
     b.addEventListener('click', () => {
-      if (owned) { equip(equipped ? null : item.id); sfx.click(); }
-      else if (item.price !== null && wallet() >= item.price) {
-        save.spent += item.price;
-        save.owned.push(item.id);
-        equip(item.id);
-        sfx.coin();
-        buzz(20);
-      }
-      renderShop();
+      sfx.click();
+      menuFocus = focused ? null : c.id;
+      renderCollection();
     });
     list.appendChild(b);
   }
 }
 
-function renderMySlime() {
-  const list = $('myslime-list');
-  list.innerHTML = '';
-  const owned = ACCESSORIES.filter((a) => save.owned.includes(a.id));
-  $('myslime-empty').hidden = owned.length > 0;
-  const options: (string | null)[] = [null, ...owned.map((a) => a.id)];
-  for (const id of options) {
-    const equipped = save.equipped === id;
-    const b = document.createElement('button');
-    b.className = `item-card${equipped ? ' equipped' : ''}`;
-    b.innerHTML = `<span class="item-name">${id ? t(`items.${id}`) : t('myslime.none')}</span><span class="item-state">${equipped ? t('shop.equipped') : t('shop.equip')}</span>`;
-    b.addEventListener('click', () => { sfx.click(); equip(id); renderMySlime(); });
-    list.appendChild(b);
+/** Habitación del menú (se crea una vez) con los coleccionables conseguidos en su sitio. */
+function refreshRoom() {
+  if (!assets) return;
+  if (!room) {
+    room = assets.clone('menu_room', { cloneMaterials: true });
+    room.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      const mat = m.material as THREE.MeshStandardMaterial;
+      if (mat.name === 'Glass') {
+        mat.transparent = true;
+        mat.opacity = 0.16;
+        mat.depthWrite = false;
+        m.castShadow = false;
+        m.renderOrder = 3;
+      }
+    });
+    content.add(room);
+  }
+  for (const o of showcase) room.remove(o);
+  showcase.length = 0;
+  for (const id of save.collectibles) {
+    const slot = room.getObjectByName(`slot_${id}`);
+    if (!slot) continue;
+    const item = assets.clone(id);
+    item.position.copy(slot.position);
+    item.scale.copy(slot.scale);
+    item.userData.phase = showcase.length * 1.3;
+    room.add(item);
+    showcase.push(item);
   }
 }
 
@@ -411,7 +445,7 @@ function renderProfile() {
     [t('profile.coinsTotal'), String(coinsEarned())],
     [t('profile.secretsTotal'), `${allFloors.filter((f) => floorSave(f.id)?.secret).length}/${allFloors.filter((f) => gemsTotalOf(f) > 0).length}`],
     [t('profile.chaptersDone'), `${CHAPTERS.filter(chapterPerfect).length}/${CHAPTERS.length}`],
-    [t('profile.items'), `${save.owned.length}/${ACCESSORIES.length}`],
+    [t('profile.collectibles'), `${save.collectibles.length}/${COLLECTIBLES.length}`],
   ];
   $('profile-stats').innerHTML = stats.map(([label, value]) => `<div class="stat"><b>${escapeHtml(value)}</b><span>${escapeHtml(label)}</span></div>`).join('');
 }
@@ -512,7 +546,6 @@ function loadLevel(def: LevelData) {
   clearLevel();
   world = new World(def, assets!);
   slime = new Slime(world, def.count, lowQuality, assets!);
-  slime.setHat(save.equipped);
   content.add(world.group, slime.group);
   camTarget.copy(world.start);
   camPos.set(0, 0, 0);
@@ -540,6 +573,8 @@ function startLevel(def: LevelData, ch: ChapterDef | null, k: number) {
   $('hud-coins').hidden = world!.coinsTotal === 0;
   input.reset();
   if (input.mode === 'gyro') input.calibrate();
+  if (room) room.visible = false;
+  world!.group.visible = true;
   mode = 'play';
   show(null);
   updateHud();
@@ -556,10 +591,16 @@ function leaveLevel() {
   else openScreen('options');
 }
 
-/** Fondo del menú: plataforma abierta con el limo en reposo. */
+/** Fondo del menú: el limo en su habitación, rodeado de sus coleccionables. */
 function toMenuScene() {
   mode = 'menu';
-  if (assets) loadLevel(MENU_STAGE);
+  if (!assets) return;
+  loadLevel(MENU_STAGE);
+  world!.group.visible = false; // el suelo lo pone la habitación; el nivel solo sostiene al limo
+  refreshRoom();
+  room!.visible = true;
+  room!.position.copy(world!.start);
+  camTarget.copy(world!.start);
 }
 
 // ------------------------------------------------------------------ HUD
@@ -641,13 +682,8 @@ function finish(win: boolean) {
       bestTime: prev?.done ? Math.min(prev.bestTime, elapsed) : elapsed,
       secret: gotGem || !!prev?.secret,
     };
-    // capítulo al 100 % por primera vez: su accesorio
-    if (chapter.reward && !save.rewards.includes(chapter.id) && chapterPerfect(chapter)) {
-      save.rewards.push(chapter.id);
-      if (!save.owned.includes(chapter.reward)) save.owned.push(chapter.reward);
-      pendingReward = { item: chapter.reward, then: () => {} };
-    }
     store();
+    pendingRewards.push(...grantCollectibles());
   }
 
   $('result-title').textContent = win ? t('result.done') : t('result.failed');
@@ -681,23 +717,21 @@ function finish(win: boolean) {
   show('result');
 }
 
-/** Si hay un accesorio recién ganado, lo enseña antes de seguir. */
+/** Enseña uno a uno los coleccionables recién ganados antes de seguir. */
 function afterReward(then: () => void) {
-  if (!pendingReward) { then(); return; }
-  const item = pendingReward.item;
-  pendingReward = { item, then };
-  $('reward-title').textContent = t('toast.reward', { item: t(`items.${item}`) });
+  const item = pendingRewards.shift();
+  if (!item) { then(); return; }
+  rewardThen = then;
+  $('reward-title').textContent = t(`collectibles.${item}`);
   sfx.win();
   buzz([30, 60, 30]);
   show('reward');
 }
 $('btn-reward-ok').addEventListener('click', () => {
   sfx.click();
-  if (!pendingReward) return;
-  const { item, then } = pendingReward;
-  pendingReward = null;
-  equip(item);
-  then();
+  const then = rewardThen;
+  rewardThen = null;
+  if (then) afterReward(then);
 });
 
 $('btn-next').addEventListener('click', () => {
@@ -846,7 +880,7 @@ function tick(dt: number) {
 
 function updateCamera(dt: number) {
   if (!slime || !world) return;
-  if (slime.center(tmpCenter)) {
+  if (mode !== 'menu' && slime.center(tmpCenter)) {
     const lead = slime.groups[0];
     const la = 1 - Math.exp(-dt * 2.5);
     lookAhead.x += ((mode === 'play' && lead ? lead.vx * 0.3 : 0) - lookAhead.x) * la;
@@ -859,15 +893,25 @@ function updateCamera(dt: number) {
     camTarget.y += (Math.max(tmpCenter.y, -2) - camTarget.y) * k;
     camTarget.z += (tmpCenter.z - camTarget.z) * k;
   }
-  if (mode === 'menu') {
-    // escaparate del menú: órbita lenta; en Mi limo y Tienda se para de frente, se acerca
-    // y deja al limo a la izquierda para que el panel no lo tape
-    const closeUp = menuZoom < 1;
-    if (closeUp) menuAngle += (Math.round(menuAngle / (Math.PI * 2)) * Math.PI * 2 - menuAngle) * (1 - Math.exp(-dt * 3));
-    else menuAngle += dt * 0.12;
-    const r = 3.6 * menuZoom, hgt = 6.2 * menuZoom;
-    menuShift += ((closeUp ? 1.15 : 0) - menuShift) * (1 - Math.exp(-dt * 4));
-    camWant.set(camTarget.x + Math.sin(menuAngle) * r + menuShift, camTarget.y + hgt, camTarget.z + Math.cos(menuAngle) * r);
+  if (mode === 'menu' && room) {
+    // habitación: plano fijo de frente con un vaivén suave; en Colección se va hacia las estanterías
+    // y, al elegir una pieza, se acerca dejándola a la izquierda para que el panel no la tape
+    menuT += dt;
+    const o = room.position;
+    const slot = menuFocus ? room.getObjectByName(`slot_${menuFocus}`) : null;
+    if (slot) {
+      menuLook.copy(slot.position).add(o);
+      camWant.set(menuLook.x + 0.2, menuLook.y + 1.0, menuLook.z + 2.8);
+      menuLook.x += 0.95;
+      menuLook.y += 0.2;
+    } else if (currentScreen === 'collection') {
+      menuLook.set(o.x + 1.5, o.y + 0.9, o.z - 1.6);
+      camWant.set(o.x + 0.4 + Math.sin(menuT * 0.2) * 0.3, o.y + 2.4, o.z + 3.4);
+    } else {
+      menuLook.set(o.x, o.y + 0.7, o.z - 1.6);
+      camWant.set(o.x + Math.sin(menuT * 0.25) * 0.7, o.y + 2.5, o.z + 3.9);
+    }
+    camTarget.lerp(menuLook, 1 - Math.exp(-dt * 3));
   } else {
     const dist = (camera.aspect < 1 ? 1.5 : 1) * camZoom;
     camWant.set(camTarget.x, camTarget.y + 8.6 * dist, camTarget.z + 4.6 * dist);
@@ -875,7 +919,7 @@ function updateCamera(dt: number) {
   if (camPos.lengthSq() === 0) camPos.copy(camWant);
   else camPos.lerp(camWant, 1 - Math.exp(-dt * (mode === 'menu' ? 2 : 5)));
   camera.position.copy(camPos);
-  camera.lookAt(camTarget.x + (mode === 'menu' ? menuShift : 0), camTarget.y + (mode === 'menu' ? 0.3 : 0), camTarget.z - (mode === 'menu' ? 0 : 0.3));
+  camera.lookAt(camTarget.x, camTarget.y, camTarget.z - (mode === 'menu' ? 0 : 0.3));
 
   // inclinación del escenario: suave con el mando a medias y muy marcada a fondo
   const mag2 = input.tiltX * input.tiltX + input.tiltZ * input.tiltZ;
@@ -914,6 +958,7 @@ function frame(dt: number) {
     slime.events.length = 0;
     if (winT > 1.5) finish(true);
   } else if (mode === 'menu' && world && slime) {
+    for (const item of showcase) item.rotation.y = menuT * 0.7 + item.userData.phase;
     world.update(dt, slime.switchCounts);
     slime.step(FIXED, 0, 0);
     slime.events.length = 0;
@@ -953,6 +998,8 @@ if (import.meta.env.DEV) {
       world: () => world,
       save: () => save,
       open: (id: ScreenId) => openScreen(id),
+      collect: (ids: string[] = COLLECTIBLES.map((c) => c.id)) => { save.collectibles = ids; store(); if (mode === 'menu') refreshRoom(); },
+      focus: (id: string | null) => { menuFocus = id; },
       state: () => ({ mode, alive: slime?.aliveCount, slimeState: slime?.state, groups: slime?.groups.map((g) => g.ids.length), coins: world && `${world.coinsCollected}/${world.coinsTotal}`, lead: slime?.groups[0] && { x: slime.groups[0].cx.toFixed(2), y: slime.groups[0].cy.toFixed(2), z: slime.groups[0].cz.toFixed(2) } }),
     },
   });
@@ -961,6 +1008,7 @@ if (import.meta.env.DEV) {
 // ------------------------------------------------------------------ arranque
 
 applyDom();
+grantCollectibles(); // progreso anterior a los coleccionables
 show('main');
 $('load-hint').textContent = t('common.loading', { pct: 0 });
 Assets.load(Math.min(4, renderer.capabilities.getMaxAnisotropy()), (p) => { $('load-hint').textContent = t('common.loading', { pct: Math.round(p * 100) }); })

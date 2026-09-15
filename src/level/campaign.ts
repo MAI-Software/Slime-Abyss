@@ -12,38 +12,27 @@ import c1f8 from './campaign/chapter1/08-c1-ventiladores.json';
 import c1f9 from './campaign/chapter1/09-c1-corriente-helada.json';
 import c1f10 from './campaign/chapter1/10-c1-gran-cripta.json';
 
-/** Modo historia: capítulos de 10 pisos. Completar uno al 100 % da su accesorio. */
+/** Modo historia: capítulos de 10 pisos. Sus coleccionables están en collectibles.ts. */
 export const CHAPTERS: ChapterDef[] = [
   {
     id: 'cripta-azul',
     name: 'Capítulo 1',
     subtitle: 'La Cripta Azul',
     floors: [c1f1, c1f2, c1f3, c1f4, c1f5, c1f6, c1f7, c1f8, c1f9, c1f10] as LevelData[],
-    reward: 'hat_beanie',
   },
 ];
 
 /** Capítulos anunciados que aún no se pueden jugar. */
 export const UPCOMING = [{ name: 'Capítulo 2', subtitle: 'Próximamente' }];
 
-/** Escenario del menú: plataforma abierta donde luce el limo (no se juega). */
+/** Suelo del menú: 9x7 casillas bajo la habitación (solo sostiene al limo; el mundo no se dibuja). */
 export const MENU_STAGE: LevelData = {
   format: 1,
   id: 'menu-stage',
   name: 'Menú',
   count: 80,
-  tiles: [
-    '.........',
-    '..00000..',
-    '.0C000C0.',
-    '.0000000.',
-    '.000P000.',
-    '.0000000.',
-    '.0C0G0C0.',
-    '..00000..',
-    '.........',
-  ],
-  heights: Array(9).fill('000000000'),
+  tiles: ['000000000', '000000000', '000000000', '0000P0000', '000000000', '000000000', '000000000'],
+  heights: Array(7).fill('000000000'),
 };
 
 /** Nivel de pruebas sin trampas (desde Ajustes). */

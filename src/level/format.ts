@@ -129,8 +129,6 @@ export interface ChapterDef {
   name: string;
   subtitle: string;
   floors: LevelData[];
-  /** Accesorio que se gana al completar el capítulo al 100 % (todas las estrellas y secretos). */
-  reward?: string;
 }
 
 export const LIMITS = { minSize: 3, maxSize: 96, minCount: 10, maxCount: 120 } as const;

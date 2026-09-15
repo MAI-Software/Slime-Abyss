@@ -149,7 +149,7 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
   flex-direction: row;
   justify-content: space-around;
   gap: 24px;
-  background: linear-gradient(90deg, rgba(12, 8, 30, 0.72) 0%, rgba(12, 8, 30, 0.25) 55%, rgba(12, 8, 30, 0.6) 100%);
+  background: linear-gradient(90deg, rgba(12, 8, 30, 0.55) 0%, rgba(12, 8, 30, 0) 32%, rgba(12, 8, 30, 0) 62%, rgba(12, 8, 30, 0.5) 100%);
 }
 .main-brand { display: flex; flex-direction: column; align-items: center; }
 .main-actions { display: flex; flex-direction: column; align-items: center; gap: 14px; }
@@ -547,6 +547,7 @@ body[data-control="gyro"] #joy-zone { display: none; }
 /* ---------- menú principal: accesos secundarios ---------- */
 .menu-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: min(360px, 100%); }
 .menu-grid .small-btn { min-width: 0; width: 100%; }
+.menu-grid .small-btn.wide { grid-column: 1 / -1; }
 
 /* ---------- pantallas con el limo visible a la izquierda ---------- */
 .screen-side { align-items: flex-end; background: linear-gradient(90deg, rgba(12, 8, 30, 0) 30%, rgba(12, 8, 30, 0.7) 100%); }
@@ -590,10 +591,22 @@ body[data-control="gyro"] #joy-zone { display: none; }
 .item-card:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 .item-card .item-name { font-weight: 800; font-size: 15px; }
 .item-card .item-state { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px; color: var(--slime-dark); }
-.item-card.equipped { background: #dbeafe; }
-.item-card.equipped .item-state { color: var(--ok); }
-.item-card:disabled { opacity: 0.6; cursor: not-allowed; }
-.item-swatch { width: 34px; height: 34px; border-radius: 10px; border: 2px solid var(--ink); display: grid; place-items: center; font-weight: 800; }
+.item-card .item-name { display: flex; align-items: center; gap: 6px; }
+.item-card .item-name .lock-ico { position: static; width: 16px; height: 16px; flex: none; }
+.item-card.got { background: #fef3c7; }
+.item-card.got .item-state { color: var(--ok); }
+.item-card.missing { background: #f1ecf7; }
+.item-card.missing .item-state { color: var(--muted); font-size: 13px; }
+.item-card.focused { outline: 3px solid var(--slime); outline-offset: 2px; }
+.count-chip {
+  padding: 4px 12px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: var(--gold-light);
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ---------- perfil ---------- */
 .profile-card {

@@ -38,7 +38,7 @@ se hacen en Blender. El cuerpo del limo es procedural (metaballs) porque tiene q
   → `src/textures/*.png` (256 px, repetibles, en gris: el juego las tiñe con el color de cada bloque). Se pueden repintar a mano.
 
 ## Menú
-Modo Historia · Mi limo (accesorios) · Tienda (con las monedas conseguidas) · Perfil (Google) · Opciones (idioma, control, sonido, vibración, nivel de pruebas).
+El menú es la habitación del limo, con estanterías y vitrinas donde se exponen sus coleccionables. Modo Historia · Colección · Perfil (Google) · Opciones (idioma, control, sonido, vibración, nivel de pruebas).
 Idiomas: castellano, inglés, francés, alemán e italiano (`src/i18n/`; castellano es la base y todas las traducciones tienen las mismas claves).
 
 ## Cómo se juega
@@ -54,7 +54,7 @@ Idiomas: castellano, inglés, francés, alemán e italiano (`src/i18n/`; castell
 - Plataformas de salto: lanzan todo el trozo que está sobre la tapa o pegado a ella; solo se quedan gotas lejanas.
 - Si el jugador agita mucho el mando, el limo se marea (ojos en espiral).
 - No hay mínimo para completar un piso: solo se pierde si no queda nada de limo. Lo conservado cuenta para la 3ª estrella.
-- Capítulos de 10 pisos. Completar uno al 100 % (todas las estrellas y secretos) regala un accesorio de cabeza, solo visual.
+- Capítulos de 10 pisos. Cada capítulo tiene coleccionables (`src/collectibles.ts`): tesoros secretos, completar el capítulo, todas las monedas y el 100 %. Se exponen en la habitación del menú (huecos `slot_col_*` del modelo `menu_room`).
 
 ## Reacciones
 | Casilla | Qué hace |
