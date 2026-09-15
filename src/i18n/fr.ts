@@ -159,7 +159,7 @@ export const fr: Dict = {
     },
     'c1-pasillo-de-fuego': {
       name: 'Couloir de feu',
-      tips: ['Pont étroit et sans murs : doucement', 'Le feu fait évaporer le slime et la glace glisse', "Ces flammes s'éteignent par moments : attends dans les zones sûres"],
+      tips: ['Le feu fait évaporer le slime : contourne les braseros', 'Ces flammes s’éteignent par moments : traverse quand elles s’éteignent', 'Attends dans la zone sûre entre les flammes'],
     },
     'c1-divide-y-venceras': {
       name: 'Diviser pour régner',
@@ -175,7 +175,7 @@ export const fr: Dict = {
     },
     'c1-hielo-que-arde': {
       name: 'Glace brûlante',
-      tips: ['Les flammes ne durent pas longtemps : dépêche-toi', 'En feu, tu fais fondre les blocs de glace'],
+      tips: ['Le sol gelé glisse : freine à l’avance', 'Les flammes ne durent pas longtemps : dépêche-toi', 'En feu, tu fais fondre les blocs de glace'],
     },
     'c1-ventiladores': {
       name: 'Ventilateurs',

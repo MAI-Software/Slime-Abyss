@@ -48,6 +48,11 @@ const WALL_DRAG = 5;
 // solo las gotas que van muy separadas se quedan atrás.
 const PAD_REACH = 1.3;
 const DIE_TIME = 0.35;
+// Quemarse duele pero enseña: el trozo que toca el fuego da un respingo hacia atrás y el mando deja de
+// empujar un instante, así solo se evapora la parte delantera en vez de meterse entero en las llamas.
+const FIRE_RECOIL = 5;
+const FIRE_RECOIL_REACH = 2.4;
+const FIRE_STUN = 0.4;
 const SUBSTEPS = 3;
 const STEP_UP = 0.56;       // escalón que el limo sube solo (0.5 de altura de losa)
 const CUT_COOLDOWN = 0.7;   // tiempo sin cohesión entre mitades tras pasar por un divisor
@@ -130,6 +135,9 @@ export class Slime {
   private gvx: Float32Array; private gvz: Float32Array; private gcnt: Float32Array;
   private padX: Float32Array; private padZ: Float32Array; private padTop: Float32Array;
   private lastCutEvent = -1;
+  /** tiempo sin empuje del mando tras quemarse */
+  private stunT = 0;
+  private fireHits: number[] = [];
   private time = 0;
   private readonly uniforms = { uTime: { value: 0 }, uWobble: { value: 1 }, uRim: { value: new THREE.Vector3(0.45, 0.8, 1.0) } };
   state: SlimeState = 'normal';
@@ -491,7 +499,8 @@ export class Slime {
     const cells = this.world.cells;
     const oily = this.state === 'oiled';
     const speed = MAX_SPEED * (oily ? OIL_SPEED : 1);
-    const tvx = tiltX * speed, tvz = tiltZ * speed;
+    const drive = this.stunT > 0 ? 0 : 1;
+    const tvx = tiltX * speed * drive, tvz = tiltZ * speed * drive;
     const kGroup = 1 - Math.exp(-DRIVE_GROUP * (oily ? OIL_DRIVE : 1) * h);
     const kSelf = 1 - Math.exp(-DRIVE_SELF * (oily ? OIL_DRIVE : 1) * h);
     const kIce = 1 - Math.exp(-DRIVE_ICE * h);
@@ -778,9 +787,12 @@ export class Slime {
         if (this.state === 'oiled') this.setState('burning');
         else if (this.state === 'frozen') this.setState('normal');
         else if (this.state !== 'burning') {
-          this.dying[i] = 1e-4;
-          this.hurts.push({ x, z });
-          continue;
+          if (this.fireHits.length < 6) this.fireHits.push(ci + 0.5, cj + 0.5);
+          if (w.fireLethal(ci, cj)) {
+            this.dying[i] = 1e-4;
+            this.hurts.push({ x, z });
+            continue;
+          }
         }
       }
       if (!this.fell[i] && y < -0.8) {
@@ -811,6 +823,8 @@ export class Slime {
       const dx = x - t.x, dz = z - t.z;
       if (dx * dx + dz * dz < 0.55 && y < t.y + 1.2 && chunk >= pickMin) this.touchedTreasure = true;
     }
+    this.stunT = Math.max(0, this.stunT - dt);
+    if (this.fireHits.length) this.recoilFromFire();
     if (!anyPad) return;
     // sale lanzado todo el trozo que está sobre la plataforma o pegado a ella;
     // solo las gotas que van lejos (cola larga, restos sueltos) se quedan
@@ -824,6 +838,27 @@ export class Slime {
         this.air[i] = 1;
       }
     }
+  }
+
+  /** Respingo: los limitos cerca del fuego que ha quemado salen despedidos hacia atrás. */
+  private recoilFromFire() {
+    const hits = this.fireHits;
+    const reach2 = FIRE_RECOIL_REACH * FIRE_RECOIL_REACH;
+    for (let i = 0; i < this.n; i++) {
+      if (!this.alive[i] || this.dying[i] > 0) continue;
+      for (let h = 0; h < hits.length; h += 2) {
+        const dx = this.px[i] - hits[h], dz = this.pz[i] - hits[h + 1];
+        const d2 = dx * dx + dz * dz;
+        if (d2 > reach2) continue;
+        const d = Math.sqrt(d2) || 1;
+        const push = FIRE_RECOIL * (1 - (d / FIRE_RECOIL_REACH) * 0.5);
+        this.vx[i] = this.vx[i] * 0.15 + (dx / d) * push;
+        this.vz[i] = this.vz[i] * 0.15 + (dz / d) * push;
+        break;
+      }
+    }
+    hits.length = 0;
+    this.stunT = FIRE_STUN;
   }
 
   private find(i: number): number {

@@ -159,7 +159,7 @@ export const en: Dict = {
     },
     'c1-pasillo-de-fuego': {
       name: 'Fire Corridor',
-      tips: ['Narrow bridge with no walls: take it easy', 'Fire evaporates slime and ice is slippery', 'These flames go out now and then: wait in the safe areas'],
+      tips: ['Fire evaporates slime: go around the braziers', 'These flames go out now and then: cross when they do', 'Wait in the safe spot between the flames'],
     },
     'c1-divide-y-venceras': {
       name: 'Divide and Conquer',
@@ -175,7 +175,7 @@ export const en: Dict = {
     },
     'c1-hielo-que-arde': {
       name: 'Burning Ice',
-      tips: ['The flames do not last long: hurry', 'While burning, you melt the ice blocks'],
+      tips: ['Icy floors are slippery: slow down early', 'The flames do not last long: hurry', 'While burning, you melt the ice blocks'],
     },
     'c1-ventiladores': {
       name: 'Fans',

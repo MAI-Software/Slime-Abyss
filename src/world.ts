@@ -191,6 +191,19 @@ export class World {
     return c.kind === 'firet' && this.timedPhase(i, j) < 1.7;
   }
 
+  /**
+    ¿Evapora el limo? El intermitente tarda 0.25 s en prender del todo: mientras sube solo empuja
+    (ver respingo en slime.ts), así no se evapora de golpe un limo que estaba encima al encenderse.
+  */
+  fireLethal(i: number, j: number): boolean {
+    const c = this.cell(i, j);
+    if (!c) return false;
+    if (c.kind === 'fire') return true;
+    if (c.kind !== 'firet') return false;
+    const p = this.timedPhase(i, j);
+    return p >= 0.25 && p < 1.7;
+  }
+
   /** Fuego intermitente: 1.7 s encendido, apagado y aviso 0.45 s antes de volver. */
   private timedPhase(i: number, j: number): number {
     return (this.time + (i + j) * 0.25) % 3.2;

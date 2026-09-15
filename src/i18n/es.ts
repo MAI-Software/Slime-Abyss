@@ -158,7 +158,7 @@ export const es = {
     },
     'c1-pasillo-de-fuego': {
       name: 'Pasillo de fuego',
-      tips: ['Puente estrecho y sin muros: con calma', 'El fuego evapora el limo y el hielo resbala', 'Estas llamas se apagan a ratos: espera en las zonas seguras'],
+      tips: ['El fuego evapora el limo: rodea los braseros', 'Estas llamas se apagan a ratos: cruza cuando se apaguen', 'Espera en la zona segura entre llamas'],
     },
     'c1-divide-y-venceras': {
       name: 'Divide y vencerás',
@@ -174,7 +174,7 @@ export const es = {
     },
     'c1-hielo-que-arde': {
       name: 'Hielo que arde',
-      tips: ['Las llamas duran poco: date prisa', 'Ardiendo, derrites los bloques de hielo'],
+      tips: ['El suelo helado resbala: frena con tiempo', 'Las llamas duran poco: date prisa', 'Ardiendo, derrites los bloques de hielo'],
     },
     'c1-ventiladores': {
       name: 'Ventiladores',

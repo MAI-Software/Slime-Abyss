@@ -159,7 +159,7 @@ export const it: Dict = {
     },
     'c1-pasillo-de-fuego': {
       name: 'Corridoio di fuoco',
-      tips: ['Ponte stretto e senza muri: con calma', 'Il fuoco fa evaporare lo slime e il ghiaccio scivola', 'Queste fiamme a volte si spengono: aspetta nelle zone sicure'],
+      tips: ['Il fuoco fa evaporare lo slime: aggira i bracieri', 'Queste fiamme a volte si spengono: attraversa quando si spengono', 'Aspetta nella zona sicura tra le fiamme'],
     },
     'c1-divide-y-venceras': {
       name: 'Dividi e conquista',
@@ -175,7 +175,7 @@ export const it: Dict = {
     },
     'c1-hielo-que-arde': {
       name: 'Ghiaccio ardente',
-      tips: ['Le fiamme durano poco: sbrigati', 'In fiamme sciogli i blocchi di ghiaccio'],
+      tips: ['Il pavimento ghiacciato scivola: frena in anticipo', 'Le fiamme durano poco: sbrigati', 'In fiamme sciogli i blocchi di ghiaccio'],
     },
     'c1-ventiladores': {
       name: 'Ventilatori',

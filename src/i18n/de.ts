@@ -159,7 +159,7 @@ export const de: Dict = {
     },
     'c1-pasillo-de-fuego': {
       name: 'Feuergang',
-      tips: ['Schmale Brücke ohne Wände: ganz ruhig', 'Feuer lässt Schleim verdampfen und Eis ist rutschig', 'Diese Flammen gehen ab und zu aus: Warte in den sicheren Zonen'],
+      tips: ['Feuer lässt Schleim verdampfen: umgehe die Feuerschalen', 'Diese Flammen gehen ab und zu aus: geh dann hindurch', 'Warte im sicheren Bereich zwischen den Flammen'],
     },
     'c1-divide-y-venceras': {
       name: 'Teile und herrsche',
@@ -175,7 +175,7 @@ export const de: Dict = {
     },
     'c1-hielo-que-arde': {
       name: 'Brennendes Eis',
-      tips: ['Die Flammen halten nicht lange: Beeil dich', 'Brennend schmilzt du die Eisblöcke'],
+      tips: ['Eisiger Boden ist rutschig: bremse rechtzeitig', 'Die Flammen halten nicht lange: Beeil dich', 'Brennend schmilzt du die Eisblöcke'],
     },
     'c1-ventiladores': {
       name: 'Ventilatoren',
