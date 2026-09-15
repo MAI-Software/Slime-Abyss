@@ -179,7 +179,7 @@ export const en: Dict = {
     },
     'c1-ventiladores': {
       name: 'Fans',
-      tips: ['Fan wind blows your slime apart into the void', 'Cross the air currents quickly'],
+      tips: ['Wind pushes your slime; here the wall stops you', 'With no wall, the wind blows you into the void: follow the coins and cross fast', 'Cross on the fan side, away from the edge'],
     },
     'c1-corriente-helada': {
       name: 'Frozen Current',

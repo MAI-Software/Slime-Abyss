@@ -179,7 +179,7 @@ export const de: Dict = {
     },
     'c1-ventiladores': {
       name: 'Ventilatoren',
-      tips: ['Der Wind der Ventilatoren weht deinen Schleim auseinander in den Abgrund', 'Durchquere die Luftströme schnell'],
+      tips: ['Der Wind schiebt den Schleim; hier bremst dich die Wand', 'Ohne Wand weht dich der Wind in den Abgrund: folge den Münzen und quere schnell', 'Quere auf der Seite des Ventilators, weg vom Rand'],
     },
     'c1-corriente-helada': {
       name: 'Eisige Strömung',

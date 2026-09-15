@@ -305,25 +305,39 @@ const CHAPTER1 = [
   {
     file: 'chapter1/08-c1-ventiladores.json',
     id: 'c1-ventiladores', name: 'Ventiladores', count: 80, keepPct: 0.6,
+    // Tres ráfagas de menos a más. Las monedas marcan la mejor línea (capítulo 1: guiar, no castigar):
+    // 1) viento contra un muro: no se puede caer; la moneda está justo donde te deja el viento
+    // 2) viento hacia el vacío: monedas antes y después en el lado del ventilador, lejos del borde
+    // 3) lo mismo desde el otro lado
     map: [
       '#############',
       '#00000T00000#',
-      '#00000000000#',
+      '#00C00000C00#',
       '#####000#####',
-      '....#000#....',
-      '...>0000C....',
       '....#000#....',
       '....#0C0#....',
       '....#000#....',
-      '...>C0000....',
+      '....#00C#....',
+      '....0000<....',
+      '....#00C#....',
       '....#000#....',
+      '....#000#....',
+      '....#C00#....',
+      '...>00000....',
+      '....#C00#....',
+      '....#000#....',
+      '....#000#....',
+      '...>000C#....',
+      '....#000#....',
+      '....#0C0#....',
       '....#000#....',
       '....#0P0#....',
       '....#####....',
     ],
     tips: [
-      { z: 12, text: 'El viento de los ventiladores deshace el limo hacia el vacío' },
-      { z: 10.2, text: 'Cruza las corrientes deprisa' },
+      { z: 19.5, text: 'El viento empuja al limo; aquí el muro te frena' },
+      { z: 15.5, text: 'Sin muro, el viento te tira al vacío: sigue las monedas y cruza deprisa' },
+      { z: 10.5, text: 'Cruza por el lado del ventilador, lejos del borde' },
     ],
   },
   {

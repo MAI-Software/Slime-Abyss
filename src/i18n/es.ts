@@ -178,7 +178,7 @@ export const es = {
     },
     'c1-ventiladores': {
       name: 'Ventiladores',
-      tips: ['El viento de los ventiladores deshace el limo hacia el vacío', 'Cruza las corrientes deprisa'],
+      tips: ['El viento empuja al limo; aquí el muro te frena', 'Sin muro, el viento te tira al vacío: sigue las monedas y cruza deprisa', 'Cruza por el lado del ventilador, lejos del borde'],
     },
     'c1-corriente-helada': {
       name: 'Corriente helada',

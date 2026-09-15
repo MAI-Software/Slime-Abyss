@@ -179,7 +179,7 @@ export const fr: Dict = {
     },
     'c1-ventiladores': {
       name: 'Ventilateurs',
-      tips: ['Le vent des ventilateurs disperse le slime vers le vide', 'Traverse vite les courants d’air'],
+      tips: ['Le vent pousse le slime ; ici le mur t’arrête', 'Sans mur, le vent te jette dans le vide : suis les pièces et traverse vite', 'Traverse du côté du ventilateur, loin du bord'],
     },
     'c1-corriente-helada': {
       name: 'Courant glacé',
