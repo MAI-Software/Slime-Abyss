@@ -341,6 +341,7 @@ export class Slime {
   setLook(look: SlimeLook) {
     this.body = BODY_COLORS[look.color];
     if (this.state === 'normal') {
+      this.material.metalness = this.body.metalness ?? 0;
       this.material.color.setHex(this.body.color);
       this.material.emissive.setHex(this.body.emissive);
       this.uniforms.uRim.value.set(...this.body.rim);
@@ -1126,7 +1127,10 @@ export class Slime {
     this.material.emissive.lerp(this.tmpColor.setHex(look.emissive), k);
     const flicker = this.state === 'burning' ? 0.5 + Math.sin(this.uniforms.uTime.value * 23) * 0.15 + Math.random() * 0.1 : 0.3;
     this.material.emissiveIntensity += (flicker - this.material.emissiveIntensity) * k;
-    this.material.roughness += ((this.state === 'frozen' ? 0.05 : 0.14) - this.material.roughness) * k;
+    const metal = this.state === 'normal' ? this.body.metalness ?? 0 : 0;
+    this.material.metalness += (metal - this.material.metalness) * k;
+    const rough = this.state === 'frozen' ? 0.05 : this.state === 'normal' ? this.body.roughness ?? 0.14 : 0.14;
+    this.material.roughness += (rough - this.material.roughness) * k;
     this.uniforms.uWobble.value += (STATE_LOOK[this.state].wobble - this.uniforms.uWobble.value) * k;
     this.uniforms.uRim.value.lerp(this.tmpRim.set(...look.rim), k);
     this.xrayColor.value.setRGB(...look.rim);

@@ -504,6 +504,45 @@ flat_shape("face_blush_spots", ellipse_pts(0.04, 0.024), 0.004, M["blush"])
 heart = [(0.0022 * 16 * math.sin(t) ** 3, 0.0022 * (13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)))
          for t in [2 * math.pi * i / 32 for i in range(32)]]
 flat_shape("face_blush_hearts", heart, 0.004, M["blush_line"])
+
+# Caras que se desbloquean con logros: ojos estrellados y enamorados, sonrisota, morritos, estrellitas y pecas.
+M["star_iris"] = material("StarIris", "facc15", 0.35, emit="a16207", strength=0.4)
+M["heart_iris"] = material("HeartIris", "f43f5e", 0.35)
+M["freckle"] = material("Freckle", "b45309", 0.8)
+
+eye = eye_base("face_eye_star", 0.064, 0.084, M["white"])
+look = empty("face_eye_star_look", parent=eye, loc=(0, -0.02, -0.008))
+flat_shape("face_eye_star_iris", star_pts(0.052, 0.022, 5), 0.008, M["star_iris"], front=-0.017, parent=look)
+bm = bmesh.new()
+ellipsoid(bm, (0.016, 0.006, 0.016), (0, 0, 0), 20, 12)
+mesh_object("face_eye_star_pupil", bm, M["black"], smooth=True, parent=look, loc=(0, -0.02, 0))
+shines("face_eye_star", look, 0.011, 0.006, y=-0.026)
+
+heart_pts = [(0.0032 * 16 * math.sin(t) ** 3, 0.0032 * (13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)))
+             for t in [2 * math.pi * i / 40 for i in range(40)]]
+eye = eye_base("face_eye_heart", 0.064, 0.084, M["white"])
+look = empty("face_eye_heart_look", parent=eye, loc=(0, -0.02, -0.004))
+flat_shape("face_eye_heart_iris", heart_pts, 0.008, M["heart_iris"], front=-0.017, parent=look)
+shines("face_eye_heart", look, 0.012, 0.006, y=-0.026)
+
+# sonrisota: boca abierta ancha con fila de dientes
+mouth = empty("face_mouth_grin")
+grin = [(0.058 * math.cos(math.pi * i / 20), -0.045 * math.sin(math.pi * i / 20) + 0.008) for i in range(21)]
+flat_shape("face_mouth_grin_hole", grin, 0.01, M["mouth"], parent=mouth)
+flat_shape("face_mouth_grin_teeth", [(-0.046, 0.006), (0.046, 0.006), (0.04, -0.012), (-0.04, -0.012)], 0.004, M["white"],
+           front=-0.003, parent=mouth)
+tube("face_mouth_grin_line", [(x, z) for x, z in grin] + [(-0.058, 0.008)], 0.006, M["black"], parent=mouth, poly=True)
+
+# morritos: un "3" tumbado, de beso
+tube("face_mouth_pout", [(-0.012, 0.024), (0.014, 0.018), (0.004, 0.0), (0.014, -0.018), (-0.012, -0.024)], 0.008, M["black"])
+
+# mofletes: estrellitas y pecas
+flat_shape("face_blush_stars", star_pts(0.03, 0.012, 5), 0.004, M["blush_line"])
+freckles = empty("face_blush_freckles")
+bm = bmesh.new()
+for x, z in ((-0.02, 0.006), (0.004, -0.008), (0.022, 0.01), (-0.004, 0.016)):
+    ellipsoid(bm, (0.0065, 0.003, 0.0065), (x, -0.004, z), 12, 8)
+mesh_object("face_blush_freckles_dots", bm, M["freckle"], smooth=True, parent=freckles)
 teardrop("face_sweat", 0.03, M["sweat"])
 teardrop("face_tear", 0.016, M["sweat"])
 
@@ -779,6 +818,54 @@ for side in (-1, 1):
     arc = [(side * (0.13 + 0.06 * math.sin(t * math.pi / 8)), 0.33 - t * 0.02) for t in range(9)]
     tube(f"col_trophy_handle{side}", arc, 0.014, M["gold_col"], parent=col)
 
+
+# ================================================================== PARCHES DE LOGROS
+# Parches de tela con costura alrededor (el juego los tiñe y les pone el bordado del icono delante).
+# Miran a -Y y su cara trasera queda en Y = 0 (se cosen a una superficie).
+M["patch_fabric"] = material("PatchFabric", "ffffff", 0.95)
+M["patch_thread"] = material("PatchThread", "fdf6e3", 0.9)
+
+
+def stitches(name, outline, parent, gap=0.022, dash=0.012, y=-0.034):
+    """Puntadas cortas repartidas a lo largo de un contorno cerrado (puntos XZ)."""
+    bm = bmesh.new()
+    pts = outline + [outline[0]]
+    seglen = [math.dist(a, b) for a, b in zip(pts, pts[1:])]
+    total = sum(seglen)
+    d = 0.0
+    while d < total:
+        acc, k = d, 0
+        while acc > seglen[k]:
+            acc -= seglen[k]
+            k += 1
+        (ax, az), (bx, bz) = pts[k], pts[k + 1]
+        f = acc / seglen[k]
+        x, z = ax + (bx - ax) * f, az + (bz - az) * f
+        ang = math.atan2(bz - az, bx - ax)
+        m = Matrix.Translation((x, y, z)) @ Matrix.Rotation(-ang, 4, "Y")
+        bmesh.ops.create_cube(bm, size=1.0, matrix=m @ Matrix.Diagonal((dash, 0.008, 0.006, 1)))
+        d += gap
+    mesh_object(name, bm, M["patch_thread"], parent=parent)
+
+
+def patch(name, outline, inner):
+    root = empty(name)
+    flat_shape(name + "_cloth", outline, 0.03, M["patch_fabric"], front=-0.03, parent=root)
+    stitches(name + "_stitch", inner, root)
+
+
+def scaled(pts, k):
+    return [(x * k, z * k) for x, z in pts]
+
+
+round_pts = ellipse_pts(0.29, 0.29, 0, 0, 56)
+patch("patch_round", round_pts, scaled(round_pts, 0.86))
+shield_pts = [(-0.26, 0.27), (0.26, 0.27), (0.26, 0.02)] + \
+    [(0.26 * math.cos(math.pi * i / 16) , -0.02 - 0.27 * math.sin(math.pi * i / 16)) for i in range(1, 16)] + [(-0.26, 0.02)]
+patch("patch_shield", shield_pts, scaled(shield_pts, 0.84))
+hex_pts = [(0.3 * math.cos(math.pi / 6 + i * math.pi / 3), 0.3 * math.sin(math.pi / 6 + i * math.pi / 3)) for i in range(6)]
+patch("patch_hex", hex_pts, scaled(hex_pts, 0.84))
+
 # ================================================================== HABITACIÓN DEL MENÚ
 # Suelo de 9x7 centrado en el origen (donde está el limo), paredes al fondo (+Y) y a los lados; sin pared delantera.
 # Todo se coloca respecto a unos planos fijos para que nada se cruce ni parpadee:
@@ -941,6 +1028,27 @@ for side, x in (("l", -1.1), ("r", 1.1)):
 mesh_object("room_sconces", bm_brass, M["brass"], smooth=True, parent=room)
 mesh_object("room_candles", bm_wax, M["pedestal"], smooth=True, parent=room)
 mesh_object("room_candle_flames", bm_flame, M["candle"], smooth=True, parent=room)
+
+
+# tablón de fieltro con marco en la pared derecha: los logros se cosen en él (huecos ach_slot_<n>, 4 x 3)
+M["board_felt"] = material("BoardFelt", "2f4f5f", 0.98)
+BOARD_Y0, BOARD_Y1, BOARD_Z0, BOARD_Z1 = -2.35, 1.95, 1.3, 3.5
+bm = bmesh.new()
+box(bm, (0.04, BOARD_Y1 - BOARD_Y0, BOARD_Z1 - BOARD_Z0), (WALL_X - 0.02, (BOARD_Y0 + BOARD_Y1) / 2, (BOARD_Z0 + BOARD_Z1) / 2))
+mesh_object("room_board_felt", bm, M["board_felt"], parent=room)
+bm = bmesh.new()
+FR = 0.09
+box(bm, (0.08, BOARD_Y1 - BOARD_Y0 + 2 * FR, FR), (WALL_X - 0.04, (BOARD_Y0 + BOARD_Y1) / 2, BOARD_Z1 + FR / 2))
+box(bm, (0.08, BOARD_Y1 - BOARD_Y0 + 2 * FR, FR), (WALL_X - 0.04, (BOARD_Y0 + BOARD_Y1) / 2, BOARD_Z0 - FR / 2))
+box(bm, (0.08, FR, BOARD_Z1 - BOARD_Z0), (WALL_X - 0.04, BOARD_Y0 - FR / 2, (BOARD_Z0 + BOARD_Z1) / 2))
+box(bm, (0.08, FR, BOARD_Z1 - BOARD_Z0), (WALL_X - 0.04, BOARD_Y1 + FR / 2, (BOARD_Z0 + BOARD_Z1) / 2))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.012, segments=1, affect="EDGES")
+mesh_object("room_board_frame", bm, M["shelf_wood"], parent=room)
+for r, z in enumerate((3.02, 2.4, 1.78)):
+    for c, y in enumerate((-1.65, -0.7, 0.25, 1.2)):
+        slot = empty(f"ach_slot_{r * 4 + c}", parent=room, loc=(WALL_X - 0.04, y, z))
+        slot.rotation_euler = (0, 0, -math.pi / 2)
+empty("board_view", parent=room, loc=(WALL_X - 0.04, (BOARD_Y0 + BOARD_Y1) / 2, (BOARD_Z0 + BOARD_Z1) / 2))
 
 # la escala del hueco es la escala con la que se expone la pieza
 for slot, loc, size in (("slot_col_trophy", (0.0, FURN_Y - 0.36, 0.95), 1.3),

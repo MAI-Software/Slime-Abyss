@@ -685,6 +685,54 @@ body[data-control="gyro"] .squeeze-btn { bottom: calc(26px + var(--safe-b)); rig
 .chip[aria-pressed="true"] { background: var(--slime); color: #fff; }
 .chip:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
 
+/* ---------- logros ---------- */
+.ach-list { display: flex; flex-direction: column; gap: 8px; }
+.ach-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px 8px 8px;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  background: #f1ecf7;
+  color: var(--ink);
+  text-align: left;
+  box-shadow: 0 4px 0 var(--ink);
+  font-family: 'Nunito', sans-serif;
+  transition: transform var(--press), box-shadow var(--press);
+}
+.ach-card:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.ach-card.got { background: #fef3c7; }
+.ach-card.focused { outline: 3px solid var(--slime); outline-offset: 2px; }
+.ach-badge {
+  flex: none;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  background: var(--patch);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.35);
+}
+.ach-badge.shield { border-radius: 10px 10px 50% 50%; }
+.ach-badge.hex { clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-radius: 0; }
+.ach-badge canvas { width: 46px; height: 46px; }
+.ach-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.ach-body .item-name { font-weight: 800; font-size: 15px; }
+.ach-desc { font-size: 13px; font-weight: 700; color: var(--muted); }
+.ach-reward { font-size: 12px; font-weight: 800; color: var(--secondary); }
+.ach-num { font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ach-body .progress { height: 8px; }
+.ach-card.got .item-state { color: var(--ok); font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px; }
+
+/* opciones raras de Mi limo */
+.swatch.metallic { background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0 14%, transparent 15%), linear-gradient(135deg, #fff 0%, var(--swatch) 35%, #5b6475 60%, var(--swatch) 80%, #fff 100%); }
+.swatch.locked, .chip.locked { opacity: 0.55; filter: grayscale(0.6); }
+.swatch.locked { display: grid; place-items: center; }
+.swatch .lock-ico, .chip .lock-ico { position: static; width: 16px; height: 16px; }
+.chip.locked { display: inline-flex; align-items: center; gap: 6px; }
+
 /* ---------- perfil ---------- */
 .profile-card {
   width: min(560px, 100%);

@@ -10,7 +10,8 @@ import { CHAPTERS, MENU_STAGE, PRACTICE, UPCOMING } from './level/campaign';
 import { DEFAULT_KEEP_PCT, starsOf, type ChapterDef, type FloorResult, type LevelData } from './level/format';
 import { World } from './world';
 import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
-import { BODY_COLORS, CHEEKS, EYES, MOUTHS, type SlimeLook } from './look';
+import { BODY_COLORS, CHEEKS, EYES, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
+import { ACHIEVEMENTS, drawPatchIcon, type Achievement, type AchievementContext } from './achievements';
 import { Input, type ControlMode } from './input';
 import { Fx } from './fx';
 import { LiquidGauge } from './hud-liquid';
@@ -304,7 +305,11 @@ const showcase: THREE.Object3D[] = [];
 const menuLook = new THREE.Vector3();
 let player: Player | null = null;
 /** coleccionables ganados en el último piso, pendientes de enseñar */
-const pendingRewards: string[] = [];
+const pendingRewards: { kind: 'collectible' | 'achievement'; id: string }[] = [];
+/** logro que enfoca la cámara en la pantalla Logros */
+let achFocus: string | null = null;
+/** parches cosidos en el tablón de la habitación */
+const patches = new Map<string, { root: THREE.Object3D; fabric: THREE.MeshStandardMaterial[]; thread: THREE.MeshStandardMaterial[]; decal: THREE.CanvasTexture; unlocked: boolean | null }>();
 let rewardThen: (() => void) | null = null;
 const camTarget = new THREE.Vector3();
 const camPos = new THREE.Vector3();
@@ -347,7 +352,7 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', 
 
 // ------------------------------------------------------------------ pantallas
 
-const SCREENS = ['main', 'story', 'chapter', 'collection', 'myslime', 'profile', 'options', 'pause', 'result', 'breakdown', 'reward'] as const;
+const SCREENS = ['main', 'story', 'chapter', 'collection', 'achievements', 'myslime', 'profile', 'options', 'pause', 'result', 'breakdown', 'reward'] as const;
 type ScreenId = (typeof SCREENS)[number];
 let currentScreen: ScreenId | null = 'main';
 
@@ -365,12 +370,14 @@ function show(id: ScreenId | null) {
   }
   $('hud').hidden = !(mode === 'play' || mode === 'pause' || mode === 'winning');
   if (id !== 'collection') menuFocus = null;
+  if (id !== 'achievements') achFocus = null;
 }
 
 function openScreen(id: ScreenId) {
   if (id === 'story') renderStory();
   if (id === 'collection') renderCollection();
   if (id === 'myslime') renderMySlime();
+  if (id === 'achievements') renderAchievements();
   if (id === 'profile') renderProfile();
   if (id === 'options') renderOptions();
   show(id);
@@ -498,6 +505,129 @@ function grantCollectibles(): string[] {
   return fresh;
 }
 
+// ------------------------------------------------------------------ logros
+
+function achievementContext(): AchievementContext {
+  const allFloors = CHAPTERS.flatMap((c) => c.floors);
+  return {
+    floorsDone: allFloors.filter((f) => floorSave(f.id)?.done).length,
+    stars: allFloors.reduce((a, f) => a + floorStars(f.id), 0),
+    coins: coinsEarned(),
+    secrets: allFloors.filter((f) => floorSave(f.id)?.secret).length,
+    fullSlime: allFloors.some((f) => (floorSave(f.id)?.bestPct ?? 0) >= 0.999),
+    chapterDone: (id) => { const ch = CHAPTERS.find((c) => c.id === id); return !!ch && chapterDone(ch); },
+    chapterAllCoins: (id) => { const ch = CHAPTERS.find((c) => c.id === id); return !!ch && ch.floors.every((f) => coinsTotalOf(f) === 0 || !!floorSave(f.id)?.allCoins); },
+    stats: save.stats,
+  };
+}
+
+/** Entrega los logros cumplidos y devuelve los nuevos. */
+function grantAchievements(): string[] {
+  const ctx = achievementContext();
+  const fresh = ACHIEVEMENTS.filter((a) => {
+    if (save.achievements.includes(a.id)) return false;
+    const [v, goal] = a.progress(ctx);
+    return v >= goal;
+  }).map((a) => a.id);
+  if (fresh.length) {
+    save.achievements.push(...fresh);
+    store();
+  }
+  return fresh;
+}
+
+/** Opción de Mi limo que regala un logro (texto "Color: Oro"), o null. */
+function achievementRewardText(id: string): string | null {
+  const entry = Object.entries(LOOK_UNLOCKS).find(([, ach]) => ach === id);
+  if (!entry) return null;
+  const [key, opt] = entry[0].split(':');
+  return `${t(`myslime.${key}`)}: ${t(`myslime.${key}Opt.${opt}`)}`;
+}
+
+const achName = (a: Achievement) => t(`achievements.names.${a.id}`);
+
+function patchCanvas(a: Achievement, size: number, unlocked: boolean) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  drawPatchIcon(c.getContext('2d')!, a.icon, size, !unlocked);
+  return c;
+}
+
+function renderAchievements() {
+  const ctx = achievementContext();
+  $('achievements-count').textContent = `${save.achievements.length}/${ACHIEVEMENTS.length}`;
+  const list = $('achievements-list');
+  list.innerHTML = '';
+  for (const a of ACHIEVEMENTS) {
+    const got = save.achievements.includes(a.id);
+    const [v, goal] = a.progress(ctx);
+    const b = document.createElement('button');
+    const focused = achFocus === a.id;
+    b.className = `ach-card${got ? ' got' : ''}${focused ? ' focused' : ''}`;
+    b.setAttribute('aria-pressed', String(focused));
+    const badge = document.createElement('span');
+    badge.className = `ach-badge ${a.patch}`;
+    badge.style.setProperty('--patch', got ? hexCss(a.color) : '#3b3552');
+    badge.appendChild(patchCanvas(a, 96, got));
+    const reward = achievementRewardText(a.id);
+    const pct = Math.min(1, v / goal);
+    const body = document.createElement('span');
+    body.className = 'ach-body';
+    body.innerHTML = `<span class="item-name">${escapeHtml(achName(a))}</span>
+      <span class="ach-desc">${escapeHtml(t(`achievements.descs.${a.id}`))}</span>
+      ${got ? `<span class="item-state">${t('achievements.done')}</span>` : `<span class="progress"><i style="width:${pct * 100}%"></i></span><span class="ach-num">${Math.min(v, goal)}/${goal}</span>`}
+      <span class="ach-reward">${escapeHtml(reward ? t('achievements.reward', { item: reward }) : t('achievements.noReward'))}</span>`;
+    b.append(badge, body);
+    b.addEventListener('click', () => {
+      sfx.click();
+      achFocus = focused ? null : a.id;
+      renderAchievements();
+    });
+    list.appendChild(b);
+  }
+}
+
+/** Parches del tablón: tela del color del logro con su icono bordado; los que faltan, apagados. */
+function refreshPatches() {
+  if (!room || !assets) return;
+  ACHIEVEMENTS.forEach((a, k) => {
+    let p = patches.get(a.id);
+    if (!p) {
+      const slot = room!.getObjectByName(`ach_slot_${k}`);
+      if (!slot) return;
+      const obj = assets!.clone(`patch_${a.patch}`, { cloneMaterials: true });
+      obj.position.copy(slot.position);
+      obj.quaternion.copy(slot.quaternion);
+      obj.rotateZ(((k * 37) % 13 - 6) * 0.012);
+      const fabric: THREE.MeshStandardMaterial[] = [];
+      const thread: THREE.MeshStandardMaterial[] = [];
+      obj.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh) return;
+        const mat = m.material as THREE.MeshStandardMaterial;
+        if (mat.name === 'PatchFabric') fabric.push(mat);
+        if (mat.name === 'PatchThread') thread.push(mat);
+      });
+      const decal = new THREE.CanvasTexture(document.createElement('canvas'));
+      decal.colorSpace = THREE.SRGBColorSpace;
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.44), new THREE.MeshStandardMaterial({ map: decal, transparent: true, roughness: 0.9, depthWrite: false }));
+      plane.position.z = 0.036;
+      plane.renderOrder = 2;
+      obj.add(plane);
+      room!.add(obj);
+      p = { root: obj, fabric, thread, decal, unlocked: null };
+      patches.set(a.id, p);
+    }
+    const got = save.achievements.includes(a.id);
+    if (p.unlocked === got) return;
+    p.unlocked = got;
+    for (const m of p.fabric) m.color.setHex(got ? a.color : 0x3b3552);
+    for (const m of p.thread) m.color.setHex(got ? 0xfdf6e3 : 0x6b6485);
+    p.decal.image = patchCanvas(a, 256, got);
+    p.decal.needsUpdate = true;
+  });
+}
+
 function howToGet(c: Collectible): string {
   const ch = CHAPTERS.find((x) => x.id === c.chapter)!;
   const title = chapterTitle(ch);
@@ -561,6 +691,7 @@ function refreshRoom() {
       candleHalos.push(halo);
     }
   }
+  refreshPatches();
   for (const o of showcase) room.remove(o);
   showcase.length = 0;
   for (const id of save.collectibles) {
@@ -600,17 +731,26 @@ function renderMySlime() {
     for (const opt of options) {
       const b = document.createElement('button');
       const name = t(`myslime.${key}Opt.${opt}`);
+      const open = lookOptionUnlocked(key, opt, save.achievements);
+      const needed = ACHIEVEMENTS.find((a) => a.id === LOOK_UNLOCKS[`${key}:${opt}`]);
       b.setAttribute('aria-pressed', String(save.look[key] === opt));
       if (key === 'color') {
-        b.className = 'swatch';
-        b.style.setProperty('--swatch', hexCss(BODY_COLORS[opt as keyof typeof BODY_COLORS].color));
-        b.setAttribute('aria-label', name);
+        const body = BODY_COLORS[opt as keyof typeof BODY_COLORS];
+        b.className = `swatch${'metalness' in body ? ' metallic' : ''}${open ? '' : ' locked'}`;
+        b.style.setProperty('--swatch', hexCss(body.color));
+        b.setAttribute('aria-label', open ? name : `${name} · ${t('achievements.locked')}`);
         b.title = name;
+        if (!open) b.innerHTML = lockSvg;
       } else {
-        b.className = 'chip';
-        b.textContent = name;
+        b.className = `chip${open ? '' : ' locked'}`;
+        b.innerHTML = `${open ? '' : lockSvg}${escapeHtml(name)}`;
       }
       b.addEventListener('click', () => {
+        if (!open) {
+          sfx.click();
+          if (needed) toast(t('achievements.unlockHint', { name: achName(needed) }), 2600);
+          return;
+        }
         sfx.click();
         (save.look as unknown as Record<string, string>)[key] = opt;
         store();
@@ -664,6 +804,7 @@ function renderProfile() {
     [t('profile.secretsTotal'), `${allFloors.filter((f) => floorSave(f.id)?.secret).length}/${allFloors.filter((f) => gemsTotalOf(f) > 0).length}`],
     [t('profile.chaptersDone'), `${CHAPTERS.filter(chapterPerfect).length}/${CHAPTERS.length}`],
     [t('profile.collectibles'), `${save.collectibles.length}/${COLLECTIBLES.length}`],
+    [t('profile.achievementsTotal'), `${save.achievements.length}/${ACHIEVEMENTS.length}`],
   ];
   $('profile-stats').innerHTML = stats.map(([label, value]) => `<div class="stat"><b>${escapeHtml(value)}</b><span>${escapeHtml(label)}</span></div>`).join('');
 }
@@ -832,6 +973,7 @@ function leaveLevel() {
 /** Fondo del menú: el limo en su habitación, rodeado de sus coleccionables. */
 function toMenuScene() {
   mode = 'menu';
+  store(); // contadores de la partida
   if (!assets) return;
   loadLevel(MENU_STAGE);
   world!.group.visible = false; // el suelo lo pone la habitación; el nivel solo sostiene al limo
@@ -928,7 +1070,8 @@ function finish(win: boolean) {
       secret: gotGem || !!prev?.secret,
     };
     store();
-    pendingRewards.push(...grantCollectibles());
+    pendingRewards.push(...grantCollectibles().map((id) => ({ kind: 'collectible' as const, id })));
+    pendingRewards.push(...grantAchievements().map((id) => ({ kind: 'achievement' as const, id })));
   }
 
   $('result-title').textContent = win ? t('result.done') : t('result.failed');
@@ -962,12 +1105,22 @@ function finish(win: boolean) {
   show('result');
 }
 
-/** Enseña uno a uno los coleccionables recién ganados antes de seguir. */
+/** Enseña uno a uno los coleccionables y logros recién ganados antes de seguir. */
 function afterReward(then: () => void) {
   const item = pendingRewards.shift();
   if (!item) { then(); return; }
   rewardThen = then;
-  $('reward-title').textContent = t(`collectibles.${item}`);
+  if (item.kind === 'collectible') {
+    $('reward-label').textContent = t('collection.new');
+    $('reward-title').textContent = t(`collectibles.${item.id}`);
+    $('reward-note').textContent = t('collection.place');
+  } else {
+    const a = ACHIEVEMENTS.find((x) => x.id === item.id)!;
+    const reward = achievementRewardText(a.id);
+    $('reward-label').textContent = t('achievements.new');
+    $('reward-title').textContent = achName(a);
+    $('reward-note').textContent = reward ? t('achievements.reward', { item: reward }) : t('achievements.noReward');
+  }
   sfx.win();
   buzz([30, 60, 30]);
   show('reward');
@@ -1070,8 +1223,8 @@ function tick(dt: number) {
       case 'fall': sfx.fall(); break;
       case 'evaporate': sfx.sizzle(); fx.steam(e.x, e.y, e.z); break;
       case 'pop': sfx.pop(); fx.splat(e.x, e.y, e.z); buzz(12); break;
-      case 'pad': sfx.pad(); fx.splat(e.x, e.y, e.z); break;
-      case 'board': sfx.board(); fx.splat(e.x, e.y, e.z); buzz(20); break;
+      case 'pad': sfx.pad(); fx.splat(e.x, e.y, e.z); save.stats.jumps++; break;
+      case 'board': sfx.board(); fx.splat(e.x, e.y, e.z); buzz(20); save.stats.rides++; break;
       case 'unboard': sfx.unboard(); fx.splat(e.x, e.y, e.z); buzz(15); break;
       case 'land': sfx.land(); buzz(10); break;
       case 'merge': sfx.merge(); break;
@@ -1085,6 +1238,7 @@ function tick(dt: number) {
         buzz([20, 40, 20]);
         break;
       case 'burn':
+        save.stats.burns++;
         sfx.sizzle();
         for (let k = 0; k < 3; k++) fx.steam(e.x, world.cell(Math.floor(e.x), Math.floor(e.z))!.base + 0.4 + k * 0.3, e.z);
         buzz(25);
@@ -1171,6 +1325,15 @@ function updateCamera(dt: number) {
       camWant.set(menuLook.x + 0.2, menuLook.y + 1.0, menuLook.z + 2.8);
       menuLook.x += 0.95;
       menuLook.y += 0.2;
+    } else if (currentScreen === 'achievements') {
+      // gira hacia el tablón de la pared derecha (a la izquierda del panel); al elegir un logro se acerca a su parche
+      const k = ACHIEVEMENTS.findIndex((a) => a.id === achFocus);
+      const target = room.getObjectByName(k >= 0 ? `ach_slot_${k}` : 'board_view');
+      const p = target ? target.position : menuLook.set(4.4, 2.4, 0.2);
+      const near = k >= 0;
+      // de lejos, todo el tablón ocupa la mitad izquierda de la pantalla (mirada paralela, desplazada a la derecha)
+      menuLook.set(o.x + p.x, o.y + p.y, o.z + p.z + (near ? 0.5 : 2.15));
+      camWant.set(o.x + p.x - (near ? 1.35 : 4.25), o.y + p.y + (near ? 0.05 : 0.1), o.z + p.z + (near ? 0.5 : 2.15));
     } else if (currentScreen === 'myslime') {
       // de cerca y de frente, con el limo a la izquierda del panel
       menuLook.set(o.x + 0.8, o.y + 0.45, o.z);
@@ -1350,6 +1513,7 @@ if (import.meta.env.DEV) {
 applyDom();
 decorateLogo(document.querySelector<SVGSVGElement>('.logo-art')!);
 grantCollectibles(); // progreso anterior a los coleccionables
+grantAchievements();
 applyLook();
 show('main');
 $('load-hint').textContent = t('common.loading', { pct: 0 });

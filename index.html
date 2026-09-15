@@ -112,6 +112,10 @@
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/></svg>
           <span data-i18n="menu.collection"></span>
         </button>
+        <button class="small-btn with-icon" data-go="achievements">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></svg>
+          <span data-i18n="menu.achievements"></span>
+        </button>
         <button class="small-btn with-icon" data-go="myslime">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>
           <span data-i18n="menu.myslime"></span>
@@ -120,7 +124,7 @@
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span data-i18n="menu.profile"></span>
         </button>
-        <button class="small-btn with-icon" data-go="options">
+        <button class="small-btn with-icon wide" data-go="options">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
           <span data-i18n="menu.options"></span>
         </button>
@@ -167,6 +171,21 @@
       </header>
       <p class="panel-note" data-i18n="collection.hint"></p>
       <div id="collection-list" class="item-grid"></div>
+    </div>
+  </div>
+
+  <!-- ====================================================== LOGROS -->
+  <div id="screen-achievements" class="screen screen-side" hidden>
+    <div class="side-panel">
+      <header class="screen-head">
+        <button class="icon-btn" data-back="main" data-i18n-aria="common.back">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        </button>
+        <h2 data-i18n="achievements.title"></h2>
+        <span id="achievements-count" class="count-chip"></span>
+      </header>
+      <p class="panel-note" data-i18n="achievements.hint"></p>
+      <div id="achievements-list" class="ach-list"></div>
     </div>
   </div>
 
@@ -317,10 +336,10 @@
   <!-- ====================================================== NUEVO COLECCIONABLE -->
   <div id="screen-reward" class="screen" hidden>
     <div class="reward-card">
-      <p class="panel-label" data-i18n="collection.new"></p>
+      <p id="reward-label" class="panel-label"></p>
       <div class="reward-burst" aria-hidden="true"></div>
       <h2 id="reward-title"></h2>
-      <p class="panel-note" data-i18n="collection.place"></p>
+      <p id="reward-note" class="panel-note"></p>
       <button id="btn-reward-ok" class="big-btn" data-i18n="collection.ok"></button>
     </div>
   </div>
