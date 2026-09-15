@@ -16,7 +16,7 @@
     <div class="hud-top">
       <div class="hud-left">
         <div class="hud-chip life">
-          <canvas id="life-flask" aria-hidden="true"></canvas>
+          <canvas id="life-bar" aria-hidden="true"></canvas>
           <span id="life-pct">100%</span>
         </div>
         <div class="hud-chip state" id="hud-state" hidden>
@@ -40,6 +40,9 @@
     <div id="joy-zone" aria-hidden="true">
       <div id="joy-base"><div id="joy-knob"></div></div>
     </div>
+    <div id="cam-zone" aria-hidden="true">
+      <div id="cam-base"><div id="cam-knob"><svg class="ico" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div></div>
+    </div>
   </div>
 
   <!-- ====================================================== MENÚ PRINCIPAL -->
@@ -51,9 +54,13 @@
     <div class="main-actions">
       <button id="btn-story" class="big-btn" data-i18n="menu.story" disabled></button>
       <div class="menu-grid">
-        <button class="small-btn with-icon wide" data-go="collection">
+        <button class="small-btn with-icon" data-go="collection">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/></svg>
           <span data-i18n="menu.collection"></span>
+        </button>
+        <button class="small-btn with-icon" data-go="myslime">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>
+          <span data-i18n="menu.myslime"></span>
         </button>
         <button class="small-btn with-icon" data-go="profile">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -106,6 +113,19 @@
       </header>
       <p class="panel-note" data-i18n="collection.hint"></p>
       <div id="collection-list" class="item-grid"></div>
+    </div>
+  </div>
+
+  <!-- ====================================================== MI LIMO -->
+  <div id="screen-myslime" class="screen screen-side" hidden>
+    <div class="side-panel">
+      <header class="screen-head">
+        <button class="icon-btn" data-back="main" data-i18n-aria="common.back">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        </button>
+        <h2 data-i18n="myslime.title"></h2>
+      </header>
+      <div id="myslime-options" class="look-options"></div>
     </div>
   </div>
 

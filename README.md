@@ -1,8 +1,9 @@
 # Slime Abyss
 
-Juego 3D para móvil controlado con el giroscopio (inspirado en Mercury y LocoRoco).
-Un limo azul formado por muchos limitos se desliza por mazmorras de bloques hasta el tesoro.
-Se puede dividir y reagrupar; los trozos que caen al vacío o se evaporan en el fuego se pierden.
+Juego 3D para móvil (joystick doble o giroscopio), inspirado en Mercury y LocoRoco.
+Un limo formado por muchos limitos desciende por un abismo lleno de tesoros, capas y pruebas de todo tipo
+(a veces, con enemigos). Se divide y se reagrupa; lo que cae al vacío o se evapora en el fuego se pierde.
+Las gotitas sueltas pisan interruptores y saltan en plataformas, pero solo los trozos grandes recogen objetos.
 
 ## Stack
 Vite + TypeScript + Three.js (sin motor de físicas: partículas con cohesión propia, render con MarchingCubes).
@@ -38,7 +39,7 @@ se hacen en Blender. El cuerpo del limo es procedural (metaballs) porque tiene q
   → `src/textures/*.png` (256 px, repetibles, en gris: el juego las tiñe con el color de cada bloque). Se pueden repintar a mano.
 
 ## Menú
-El menú es la habitación del limo, con estanterías y vitrinas donde se exponen sus coleccionables. Modo Historia · Colección · Perfil (Google) · Opciones (idioma, control, sonido, vibración, nivel de pruebas).
+El menú es la habitación del limo, con estanterías y vitrinas donde se exponen sus coleccionables. Modo Historia · Colección · Mi limo (color, ojos, boca y mofletes; `src/look.ts`) · Perfil (Google) · Opciones (idioma, control, sonido, vibración, nivel de pruebas).
 Idiomas: castellano, inglés, francés, alemán e italiano (`src/i18n/`; castellano es la base y todas las traducciones tienen las mismas claves).
 
 ## Cómo se juega

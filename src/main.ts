@@ -10,10 +10,12 @@ import { Assets } from './assets';
 import { CHAPTERS, MENU_STAGE, PRACTICE, UPCOMING } from './level/campaign';
 import { DEFAULT_KEEP_PCT, starsOf, type ChapterDef, type FloorResult, type LevelData } from './level/format';
 import { World } from './world';
-import { Slime, type SlimeState } from './slime';
+import { DEFAULT_PITCH, Slime, type SlimeState } from './slime';
+import { BODY_COLORS, CHEEKS, EYES, MOUTHS, type SlimeLook } from './look';
 import { Input, type ControlMode } from './input';
 import { Fx } from './fx';
 import { LiquidGauge } from './hud-liquid';
+import { AbyssAmbience } from './abyss';
 import { setMuted, sfx, unlockAudio } from './audio';
 import { LANGS, applyDom, detectLang, getLang, levelName, levelTip, setLang, t, type Lang } from './i18n';
 import { loadSave, writeSave } from './save';
@@ -165,7 +167,9 @@ const chapterSubtitle = (ch: ChapterDef) => t(`chapters.${ch.id}`);
 // ------------------------------------------------------------------ estado
 
 const input = new Input();
-const gauge = new LiquidGauge($<HTMLCanvasElement>('life-flask'));
+const gauge = new LiquidGauge($<HTMLCanvasElement>('life-bar'));
+const abyss = new AbyssAmbience(lowQuality ? 70 : 140);
+scene.add(abyss.group);
 
 type Mode = 'menu' | 'play' | 'pause' | 'winning' | 'result';
 let mode: Mode = 'menu';
@@ -198,6 +202,17 @@ const tmpFx = new THREE.Vector3();
 const camWant = new THREE.Vector3();
 const lookAhead = new THREE.Vector2();
 let camZoom = 1;
+// cámara de juego: el joystick derecho la gira (yaw) y la inclina (pitch); en giroscopio vuelve sola a su sitio
+const CAM_DIST = Math.hypot(8.6, 4.6);
+const CAM_YAW_SPEED = 2.3;
+const CAM_PITCH_SPEED = 1.1;
+const CAM_PITCH_MIN = 0.5;
+const CAM_PITCH_MAX = 1.4;
+let camYaw = 0;
+let camPitch = DEFAULT_PITCH;
+/** dirección del mando pasada a ejes del mundo según hacia dónde mira la cámara */
+let moveX = 0;
+let moveZ = 0;
 
 // ------------------------------------------------------------------ iconos
 
@@ -219,7 +234,7 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', 
 
 // ------------------------------------------------------------------ pantallas
 
-const SCREENS = ['main', 'story', 'chapter', 'collection', 'profile', 'options', 'pause', 'result', 'breakdown', 'reward'] as const;
+const SCREENS = ['main', 'story', 'chapter', 'collection', 'myslime', 'profile', 'options', 'pause', 'result', 'breakdown', 'reward'] as const;
 type ScreenId = (typeof SCREENS)[number];
 let currentScreen: ScreenId | null = 'main';
 
@@ -242,6 +257,7 @@ function show(id: ScreenId | null) {
 function openScreen(id: ScreenId) {
   if (id === 'story') renderStory();
   if (id === 'collection') renderCollection();
+  if (id === 'myslime') renderMySlime();
   if (id === 'profile') renderProfile();
   if (id === 'options') renderOptions();
   show(id);
@@ -425,6 +441,62 @@ function refreshRoom() {
   }
 }
 
+// ------------------------------------------------------------------ Mi limo
+
+type LookKey = keyof SlimeLook;
+const LOOK_OPTIONS: { key: LookKey; options: readonly string[] }[] = [
+  { key: 'color', options: Object.keys(BODY_COLORS) },
+  { key: 'eyes', options: EYES },
+  { key: 'mouth', options: MOUTHS },
+  { key: 'cheeks', options: CHEEKS },
+];
+const hexCss = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
+
+function renderMySlime() {
+  const root = $('myslime-options');
+  root.innerHTML = '';
+  for (const { key, options } of LOOK_OPTIONS) {
+    const label = document.createElement('p');
+    label.className = 'panel-label';
+    label.textContent = t(`myslime.${key}`);
+    const row = document.createElement('div');
+    row.className = key === 'color' ? 'swatch-row' : 'chip-row';
+    row.setAttribute('role', 'group');
+    row.setAttribute('aria-label', label.textContent);
+    for (const opt of options) {
+      const b = document.createElement('button');
+      const name = t(`myslime.${key}Opt.${opt}`);
+      b.setAttribute('aria-pressed', String(save.look[key] === opt));
+      if (key === 'color') {
+        b.className = 'swatch';
+        b.style.setProperty('--swatch', hexCss(BODY_COLORS[opt as keyof typeof BODY_COLORS].color));
+        b.setAttribute('aria-label', name);
+        b.title = name;
+      } else {
+        b.className = 'chip';
+        b.textContent = name;
+      }
+      b.addEventListener('click', () => {
+        sfx.click();
+        (save.look as unknown as Record<string, string>)[key] = opt;
+        store();
+        applyLook();
+        slime?.poke();
+        renderMySlime();
+      });
+      row.appendChild(b);
+    }
+    root.append(label, row);
+  }
+}
+
+/** Aplica el aspecto guardado al limo y a la barra de vida. */
+function applyLook() {
+  slime?.setLook(save.look);
+  const c = new THREE.Color(BODY_COLORS[save.look.color].color);
+  gauge.setColors(c.clone().offsetHSL(0, 0, 0.16).getStyle(), c.clone().offsetHSL(0, 0.05, -0.12).getStyle());
+}
+
 // ------------------------------------------------------------------ perfil
 
 function renderProfile() {
@@ -545,7 +617,7 @@ function clearLevel() {
 function loadLevel(def: LevelData) {
   clearLevel();
   world = new World(def, assets!);
-  slime = new Slime(world, def.count, lowQuality, assets!);
+  slime = new Slime(world, def.count, lowQuality, assets!, save.look);
   content.add(world.group, slime.group);
   camTarget.copy(world.start);
   camPos.set(0, 0, 0);
@@ -573,6 +645,14 @@ function startLevel(def: LevelData, ch: ChapterDef | null, k: number) {
   $('hud-coins').hidden = world!.coinsTotal === 0;
   input.reset();
   if (input.mode === 'gyro') input.calibrate();
+  camYaw = 0;
+  camPitch = DEFAULT_PITCH;
+  moveX = moveZ = 0;
+  if (input.mode === 'joystick' && !save.cameraHint) {
+    save.cameraHint = true;
+    store();
+    setTimeout(() => { if (mode === 'play') toast(t('toast.camera')); }, 4200);
+  }
   if (room) room.visible = false;
   world!.group.visible = true;
   mode = 'play';
@@ -811,7 +891,11 @@ const STATE_TOASTS: Partial<Record<SlimeState, string>> = { oiled: 'toast.oil', 
 function tick(dt: number) {
   if (!world || !slime) return;
   input.update();
-  slime.step(dt, input.tiltX, input.tiltZ);
+  // el mando va en ejes de pantalla: se gira con la cámara para que "arriba" sea siempre "hacia el fondo"
+  const cs = Math.cos(camYaw), sn = Math.sin(camYaw);
+  moveX = input.tiltX * cs + input.tiltZ * sn;
+  moveZ = -input.tiltX * sn + input.tiltZ * cs;
+  slime.step(dt, moveX, moveZ);
   world.update(dt, slime.switchCounts);
   elapsed += dt;
 
@@ -904,6 +988,10 @@ function updateCamera(dt: number) {
       camWant.set(menuLook.x + 0.2, menuLook.y + 1.0, menuLook.z + 2.8);
       menuLook.x += 0.95;
       menuLook.y += 0.2;
+    } else if (currentScreen === 'myslime') {
+      // de cerca y de frente, con el limo a la izquierda del panel
+      menuLook.set(o.x + 0.8, o.y + 0.45, o.z);
+      camWant.set(o.x + 0.15, o.y + 1.3, o.z + 2.6);
     } else if (currentScreen === 'collection') {
       menuLook.set(o.x + 1.5, o.y + 0.9, o.z - 1.6);
       camWant.set(o.x + 0.4 + Math.sin(menuT * 0.2) * 0.3, o.y + 2.4, o.z + 3.4);
@@ -913,13 +1001,31 @@ function updateCamera(dt: number) {
     }
     camTarget.lerp(menuLook, 1 - Math.exp(-dt * 3));
   } else {
-    const dist = (camera.aspect < 1 ? 1.5 : 1) * camZoom;
-    camWant.set(camTarget.x, camTarget.y + 8.6 * dist, camTarget.z + 4.6 * dist);
+    if (mode === 'play') {
+      if (input.mode === 'gyro') {
+        // giroscopio: la cámara sigue al limo desde su posición de siempre
+        camYaw = Math.atan2(Math.sin(camYaw), Math.cos(camYaw));
+        const back = 1 - Math.exp(-dt * 2);
+        camYaw -= camYaw * back;
+        camPitch += (DEFAULT_PITCH - camPitch) * back;
+      } else {
+        camYaw -= input.camX * CAM_YAW_SPEED * dt;
+        camPitch = Math.min(CAM_PITCH_MAX, Math.max(CAM_PITCH_MIN, camPitch + input.camY * CAM_PITCH_SPEED * dt));
+      }
+    }
+    const dist = (camera.aspect < 1 ? 1.5 : 1) * camZoom * CAM_DIST;
+    const flat = Math.cos(camPitch) * dist;
+    camWant.set(camTarget.x + Math.sin(camYaw) * flat, camTarget.y + Math.sin(camPitch) * dist, camTarget.z + Math.cos(camYaw) * flat);
   }
   if (camPos.lengthSq() === 0) camPos.copy(camWant);
   else camPos.lerp(camWant, 1 - Math.exp(-dt * (mode === 'menu' ? 2 : 5)));
   camera.position.copy(camPos);
-  camera.lookAt(camTarget.x, camTarget.y, camTarget.z - (mode === 'menu' ? 0 : 0.3));
+  const lead = mode === 'menu' ? 0 : 0.3;
+  camera.lookAt(camTarget.x - Math.sin(camYaw) * lead, camTarget.y, camTarget.z - Math.cos(camYaw) * lead);
+  // la cara del limo se orienta hacia donde está de verdad la cámara
+  const offX = camPos.x - camTarget.x, offZ = camPos.z - camTarget.z;
+  slime.camYaw = mode === 'menu' ? 0 : Math.atan2(offX, offZ);
+  slime.camPitch = mode === 'menu' ? DEFAULT_PITCH : Math.atan2(camPos.y - camTarget.y, Math.hypot(offX, offZ));
 
   // inclinación del escenario: suave con el mando a medias y muy marcada a fondo
   const mag2 = input.tiltX * input.tiltX + input.tiltZ * input.tiltZ;
@@ -927,8 +1033,8 @@ function updateCamera(dt: number) {
   tiltRoot.position.copy(camTarget);
   content.position.copy(camTarget).negate();
   const tk = 1 - Math.exp(-dt * 7);
-  tiltRoot.rotation.x += (input.tiltZ * sway - tiltRoot.rotation.x) * tk;
-  tiltRoot.rotation.z += (-input.tiltX * sway - tiltRoot.rotation.z) * tk;
+  tiltRoot.rotation.x += (moveZ * sway - tiltRoot.rotation.x) * tk;
+  tiltRoot.rotation.z += (-moveX * sway - tiltRoot.rotation.z) * tk;
 
   sun.position.set(camTarget.x + 5, camTarget.y + 12, camTarget.z + 4);
   sun.target.position.copy(camTarget);
@@ -968,6 +1074,8 @@ function frame(dt: number) {
   const alpha = mode === 'play' ? Math.min(acc / FIXED, 1) : 1;
   fx.update(dt);
   updateCamera(dt);
+  abyss.group.visible = mode !== 'menu';
+  if (abyss.group.visible) abyss.update(dt, camTarget);
   slime?.render(dt, alpha, input.tiltX, input.tiltZ);
   if (!$('hud').hidden && slime && world) {
     const pct = slime.aliveCount / slime.n;
@@ -1000,6 +1108,7 @@ if (import.meta.env.DEV) {
       open: (id: ScreenId) => openScreen(id),
       collect: (ids: string[] = COLLECTIBLES.map((c) => c.id)) => { save.collectibles = ids; store(); if (mode === 'menu') refreshRoom(); },
       focus: (id: string | null) => { menuFocus = id; },
+      cam: (yaw: number, pitch = DEFAULT_PITCH) => { camYaw = yaw; camPitch = pitch; },
       state: () => ({ mode, alive: slime?.aliveCount, slimeState: slime?.state, groups: slime?.groups.map((g) => g.ids.length), coins: world && `${world.coinsCollected}/${world.coinsTotal}`, lead: slime?.groups[0] && { x: slime.groups[0].cx.toFixed(2), y: slime.groups[0].cy.toFixed(2), z: slime.groups[0].cz.toFixed(2) } }),
     },
   });
@@ -1009,6 +1118,7 @@ if (import.meta.env.DEV) {
 
 applyDom();
 grantCollectibles(); // progreso anterior a los coleccionables
+applyLook();
 show('main');
 $('load-hint').textContent = t('common.loading', { pct: 0 });
 Assets.load(Math.min(4, renderer.capabilities.getMaxAnisotropy()), (p) => { $('load-hint').textContent = t('common.loading', { pct: Math.round(p * 100) }); })

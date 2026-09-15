@@ -1,11 +1,13 @@
 /*
-  Vida del limo como líquido dentro de un frasco (canvas 2D, muy barato).
-  - El nivel baja suavemente cuando se pierde limo.
-  - La superficie se inclina con el control (muelle amortiguado) y ondula.
-  - Al recibir daño salpica; con poca vida el líquido se vuelve rojo y burbujea más.
+  Vida del limo como una barra: un tubo de cristal tumbado lleno de limo (canvas 2D, muy barato).
+  - El frente del líquido retrocede suavemente cuando se pierde limo y ondula como un menisco.
+  - La superficie se inclina con el control (muelle amortiguado) y hace olas.
+  - Al recibir daño salpica; con poca vida el líquido se vuelve rojo, burbujea más y el tubo late.
 */
 
-const CSS_SIZE = 64;
+const CSS_W = 132;
+const CSS_H = 30;
+const X0 = 3, Y0 = 5, TW = 126, TH = 20;
 
 interface Bubble { x: number; y: number; r: number; v: number }
 
@@ -19,14 +21,22 @@ export class LiquidGauge {
   private t = 0;
   private bubbles: Bubble[] = [];
   private lastInput = 0;
+  private top = '#7cc0ff';
+  private bottom = '#1d6fe0';
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.scale = Math.min(devicePixelRatio || 1, 2);
-    canvas.width = CSS_SIZE * this.scale;
-    canvas.height = CSS_SIZE * this.scale;
-    canvas.style.width = `${CSS_SIZE}px`;
-    canvas.style.height = `${CSS_SIZE}px`;
+    canvas.width = CSS_W * this.scale;
+    canvas.height = CSS_H * this.scale;
+    canvas.style.width = `${CSS_W}px`;
+    canvas.style.height = `${CSS_H}px`;
     this.ctx = canvas.getContext('2d')!;
+  }
+
+  /** Colores del líquido (claro arriba, oscuro abajo): siguen al color del limo. */
+  setColors(top: string, bottom: string) {
+    this.top = top;
+    this.bottom = bottom;
   }
 
   reset() {
@@ -47,104 +57,110 @@ export class LiquidGauge {
     // muelle: la superficie tiende a inclinarse contra el movimiento
     const kick = (input - this.lastInput) * 6;
     this.lastInput = input;
-    const target = -input * 0.38;
-    this.angleVel += ((target - this.angle) * 38 - this.angleVel * 5.5) * dt + kick * 0.35;
+    const target = -input * 0.16;
+    this.angleVel += ((target - this.angle) * 38 - this.angleVel * 5.5) * dt + kick * 0.2;
     this.angle += this.angleVel * dt;
-    this.wave = Math.max(0.08, this.wave - dt * 0.9);
+    this.wave = Math.max(0.1, this.wave - dt * 0.9);
 
-    if (Math.random() < dt * (danger ? 7 : 2.5) && this.level > 0.05) {
-      this.bubbles.push({ x: 22 + Math.random() * 20, y: 54, r: 1.2 + Math.random() * 2, v: 10 + Math.random() * 14 });
+    const front = X0 + TW * this.level;
+    if (Math.random() < dt * (danger ? 9 : 3.5) && this.level > 0.06) {
+      this.bubbles.push({ x: X0 + 4 + Math.random() * Math.max(4, front - X0 - 10), y: Y0 + TH - 2, r: 0.8 + Math.random() * 1.6, v: 6 + Math.random() * 9 });
     }
-    this.draw(danger);
+    this.draw(dt, danger);
   }
 
-  private draw(danger: boolean) {
+  private draw(dt: number, danger: boolean) {
     const c = this.ctx;
-    const s = this.scale;
-    c.setTransform(s, 0, 0, s, 0, 0);
-    c.clearRect(0, 0, CSS_SIZE, CSS_SIZE);
-
-    const cx = 32, cy = 38, r = 22;
+    c.setTransform(this.scale, 0, 0, this.scale, 0, 0);
+    c.clearRect(0, 0, CSS_W, CSS_H);
     const ink = '#0f172a';
+    const r = TH / 2;
 
-    // cuello y tapón
-    c.fillStyle = 'rgba(255,255,255,0.35)';
-    c.strokeStyle = ink;
-    c.lineWidth = 3;
-    roundRect(c, cx - 7, 8, 14, 12, 3);
+    // tubo de cristal
+    c.beginPath();
+    c.roundRect(X0, Y0, TW, TH, r);
+    c.fillStyle = 'rgba(15, 23, 42, 0.16)';
     c.fill();
-    c.stroke();
-    c.fillStyle = '#b07a4a';
-    roundRect(c, cx - 9, 3, 18, 7, 3);
-    c.fill();
-    c.stroke();
 
-    // cuerpo del frasco
     c.save();
     c.beginPath();
-    c.arc(cx, cy, r, 0, Math.PI * 2);
-    c.fillStyle = 'rgba(253,242,248,0.9)';
-    c.fill();
+    c.roundRect(X0, Y0, TW, TH, r);
     c.clip();
 
-    // líquido: plano inclinado con dos ondas
-    const surfaceY = cy + r - this.level * r * 2;
-    const top = danger ? '#fb7185' : '#7cc0ff';
-    const bottom = danger ? '#dc2626' : '#1d6fe0';
-    const grad = c.createLinearGradient(0, surfaceY - 4, 0, cy + r);
-    grad.addColorStop(0, top);
-    grad.addColorStop(1, bottom);
-    c.fillStyle = grad;
-    c.beginPath();
-    const amp = 1.2 + this.wave * 4;
-    for (let x = cx - r - 2; x <= cx + r + 2; x += 2) {
-      const tilt = (x - cx) * Math.tan(this.angle);
-      const y = surfaceY + tilt
-        + Math.sin(x * 0.28 + this.t * 5) * amp * 0.6
-        + Math.sin(x * 0.13 - this.t * 3.4) * amp * 0.4;
-      if (x === cx - r - 2) c.moveTo(x, y);
-      else c.lineTo(x, y);
-    }
-    c.lineTo(cx + r + 2, cy + r + 2);
-    c.lineTo(cx - r - 2, cy + r + 2);
-    c.closePath();
-    c.fill();
+    const front = X0 + TW * this.level + this.angle * -10;
+    const amp = 0.8 + this.wave * 2.4;
+    const surface = (x: number) => Y0 + 3.2 + (x - (X0 + TW / 2)) * Math.tan(this.angle) * 0.35
+      + Math.sin(x * 0.22 + this.t * 5) * amp * 0.5 + Math.sin(x * 0.09 - this.t * 3.1) * amp * 0.4;
 
-    // espuma clara en la superficie
-    c.strokeStyle = 'rgba(255,255,255,0.55)';
-    c.lineWidth = 2;
-    c.stroke();
-
-    // burbujas
-    c.fillStyle = 'rgba(255,255,255,0.7)';
-    const dt = 1 / 60;
-    this.bubbles = this.bubbles.filter((b) => {
-      b.y -= b.v * dt;
-      b.x += Math.sin(this.t * 6 + b.r * 3) * 0.3;
-      if (b.y < surfaceY + 2) return false;
+    if (this.level > 0.004) {
+      const grad = c.createLinearGradient(0, Y0, 0, Y0 + TH);
+      grad.addColorStop(0, danger ? '#fb7185' : this.top);
+      grad.addColorStop(1, danger ? '#b91c1c' : this.bottom);
+      c.fillStyle = grad;
       c.beginPath();
-      c.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      c.moveTo(X0 - 2, Y0 + TH + 2);
+      c.lineTo(X0 - 2, surface(X0 - 2));
+      for (let x = X0; x < front; x += 2) c.lineTo(x, surface(x));
+      // frente del líquido: menisco redondeado que tiembla
+      const fy = surface(front);
+      for (let k = 0; k <= 8; k++) {
+        const y = fy + ((Y0 + TH + 2 - fy) * k) / 8;
+        const bulge = Math.sin((k / 8) * Math.PI) * 3;
+        c.lineTo(front + bulge + Math.sin(y * 0.6 + this.t * 7) * amp * 0.5, y);
+      }
+      c.closePath();
       c.fill();
-      return true;
-    });
+
+      // brillo de la superficie
+      c.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+      c.lineWidth = 1.5;
+      c.beginPath();
+      c.moveTo(X0, surface(X0));
+      for (let x = X0; x < front - 2; x += 2) c.lineTo(x, surface(x));
+      c.stroke();
+
+      // burbujas dentro del limo
+      c.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      this.bubbles = this.bubbles.filter((b) => {
+        b.y -= b.v * dt;
+        b.x += Math.sin(this.t * 6 + b.r * 3) * 0.2;
+        if (b.y < surface(b.x) + 1.5 || b.x > front - 2) return false;
+        c.beginPath();
+        c.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        c.fill();
+        return true;
+      });
+    } else this.bubbles.length = 0;
+
+    // marcas de cuarto de vida
+    c.strokeStyle = 'rgba(15, 23, 42, 0.35)';
+    c.lineWidth = 1.5;
+    for (const q of [0.25, 0.5, 0.75]) {
+      const x = X0 + TW * q;
+      c.beginPath();
+      c.moveTo(x, Y0 + TH - 5);
+      c.lineTo(x, Y0 + TH);
+      c.stroke();
+    }
     c.restore();
 
-    // brillo del cristal y contorno
-    c.strokeStyle = 'rgba(255,255,255,0.8)';
-    c.lineWidth = 3;
+    // reflejo del cristal y contorno (late en rojo con poca vida)
+    c.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    c.lineWidth = 2.5;
     c.lineCap = 'round';
     c.beginPath();
-    c.arc(cx, cy, r - 6, Math.PI * 1.1, Math.PI * 1.45);
+    c.moveTo(X0 + r, Y0 + 4.5);
+    c.lineTo(X0 + TW * 0.55, Y0 + 4.5);
     c.stroke();
-    c.strokeStyle = ink;
+    c.beginPath();
+    c.moveTo(X0 + TW * 0.62, Y0 + 4.5);
+    c.lineTo(X0 + TW * 0.68, Y0 + 4.5);
+    c.stroke();
+    const pulse = danger ? 0.5 + Math.sin(this.t * 9) * 0.5 : 0;
+    c.strokeStyle = pulse > 0 ? `rgb(${Math.round(15 + 200 * pulse)}, ${Math.round(23 + 10 * pulse)}, ${Math.round(42 + 10 * pulse)})` : ink;
     c.lineWidth = 3;
     c.beginPath();
-    c.arc(cx, cy, r, 0, Math.PI * 2);
+    c.roundRect(X0, Y0, TW, TH, r);
     c.stroke();
   }
-}
-
-function roundRect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  c.beginPath();
-  c.roundRect(x, y, w, h, r);
 }

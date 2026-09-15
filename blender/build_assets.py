@@ -369,29 +369,88 @@ def teardrop(name, radius, mat):
     return mesh_object(name, bm, mat, smooth=True)
 
 
-# Ojo: contorno oscuro, blanco, iris azul marino con pupila y dos brillos.
-# El juego mueve face_eye_look (iris + pupila + brillos) para que mire hacia donde va el limo.
+# Ojos personalizables (Mi limo). Cada estilo es face_eye_<id> y su hijo face_eye_<id>_look
+# (iris, pupila, brillos) es lo que el juego desplaza para que el limo mire hacia donde va.
 M["iris"] = material("Iris", "1e3a8a", 0.3)
-eye = empty("face_eye")
-bm = bmesh.new()
-ellipsoid(bm, (0.071, 0.03, 0.092), (0, 0, 0), 20, 12)
-mesh_object("face_eye_outline", bm, M["black"], smooth=True, parent=eye, loc=(0, 0.006, 0))
-bm = bmesh.new()
-ellipsoid(bm, (0.062, 0.03, 0.082), (0, 0, 0), 20, 12)
-mesh_object("face_eye_white", bm, M["white"], smooth=True, parent=eye)
-look = empty("face_eye_look", parent=eye, loc=(0, -0.02, -0.01))
+M["iris_light"] = material("IrisLight", "60a5fa", 0.3)
+M["cat_iris"] = material("CatIris", "a3e635", 0.3)
+
+
+def star_pts(r_out, r_in, n=4, cx=0.0, cz=0.0):
+    pts = []
+    for k in range(n * 2):
+        r = r_out if k % 2 == 0 else r_in
+        a = math.pi / 2 + k * math.pi / n
+        pts.append((cx + r * math.cos(a), cz + r * math.sin(a)))
+    return pts
+
+
+def eye_base(name, rx, rz, white_mat):
+    eye = empty(name)
+    bm = bmesh.new()
+    ellipsoid(bm, (rx + 0.009, 0.03, rz + 0.01), (0, 0, 0), 22, 12)
+    mesh_object(name + "_outline", bm, M["black"], smooth=True, parent=eye, loc=(0, 0.006, 0))
+    bm = bmesh.new()
+    ellipsoid(bm, (rx, 0.03, rz), (0, 0, 0), 22, 12)
+    mesh_object(name + "_white", bm, white_mat, smooth=True, parent=eye)
+    return eye
+
+
+def shines(name, parent, big, small, y=-0.013):
+    bm = bmesh.new()
+    ellipsoid(bm, (big, 0.006, big * 1.2), (0, 0, 0), 10, 6)
+    mesh_object(name + "_shine", bm, M["white"], smooth=True, parent=parent, loc=(-big * 1.15, y, big * 1.4))
+    bm = bmesh.new()
+    ellipsoid(bm, (small, 0.005, small), (0, 0, 0), 8, 6)
+    mesh_object(name + "_shine2", bm, M["white"], smooth=True, parent=parent, loc=(big * 1.05, y, -big * 1.25))
+
+
+# redondos (por defecto): blanco, iris azul marino, pupila y brillos
+eye = eye_base("face_eye_round", 0.062, 0.082, M["white"])
+look = empty("face_eye_round_look", parent=eye, loc=(0, -0.02, -0.01))
 bm = bmesh.new()
 ellipsoid(bm, (0.043, 0.012, 0.054), (0, 0, 0), 16, 10)
-mesh_object("face_eye_iris", bm, M["iris"], smooth=True, parent=look)
+mesh_object("face_eye_round_iris", bm, M["iris"], smooth=True, parent=look)
 bm = bmesh.new()
 ellipsoid(bm, (0.025, 0.008, 0.031), (0, 0, 0), 12, 8)
-mesh_object("face_eye_pupil", bm, M["black"], smooth=True, parent=look, loc=(0, -0.006, 0))
+mesh_object("face_eye_round_pupil", bm, M["black"], smooth=True, parent=look, loc=(0, -0.006, 0))
+shines("face_eye_round", look, 0.015, 0.007)
+
+# puntitos: óvalo negro brillante (el estilo clásico)
+eye = empty("face_eye_dot")
 bm = bmesh.new()
-ellipsoid(bm, (0.015, 0.006, 0.018), (0, 0, 0), 10, 6)
-mesh_object("face_eye_shine", bm, M["white"], smooth=True, parent=look, loc=(-0.017, -0.013, 0.021))
+ellipsoid(bm, (0.05, 0.03, 0.066), (0, 0, 0), 20, 12)
+mesh_object("face_eye_dot_ball", bm, M["black"], smooth=True, parent=eye)
+look = empty("face_eye_dot_look", parent=eye, loc=(0, -0.026, 0))
+shines("face_eye_dot", look, 0.016, 0.008, y=0.0)
+
+# brillantes: ojazos con reflejo de estrella y media luna clara abajo
+eye = eye_base("face_eye_sparkle", 0.07, 0.092, M["white"])
+look = empty("face_eye_sparkle_look", parent=eye, loc=(0, -0.02, -0.012))
 bm = bmesh.new()
-ellipsoid(bm, (0.007, 0.005, 0.007), (0, 0, 0), 8, 6)
-mesh_object("face_eye_shine2", bm, M["white"], smooth=True, parent=look, loc=(0.016, -0.013, -0.019))
+ellipsoid(bm, (0.053, 0.012, 0.066), (0, 0, 0), 18, 10)
+mesh_object("face_eye_sparkle_iris", bm, M["iris"], smooth=True, parent=look)
+bm = bmesh.new()
+ellipsoid(bm, (0.038, 0.008, 0.026), (0, 0, 0), 14, 8)
+mesh_object("face_eye_sparkle_low", bm, M["iris_light"], smooth=True, parent=look, loc=(0, -0.006, -0.03))
+bm = bmesh.new()
+ellipsoid(bm, (0.028, 0.008, 0.034), (0, 0, 0), 12, 8)
+mesh_object("face_eye_sparkle_pupil", bm, M["black"], smooth=True, parent=look, loc=(0, -0.009, 0.004))
+flat_shape("face_eye_sparkle_star", star_pts(0.024, 0.007), 0.002, M["white"], front=-0.016, parent=look,
+           loc=(-0.02, 0, 0.026))
+bm = bmesh.new()
+ellipsoid(bm, (0.009, 0.005, 0.009), (0, 0, 0), 8, 6)
+mesh_object("face_eye_sparkle_shine2", bm, M["white"], smooth=True, parent=look, loc=(0.02, -0.015, -0.018))
+
+# gatunos: iris verde lima con pupila rasgada
+eye = eye_base("face_eye_cat", 0.062, 0.08, M["cat_iris"])
+look = empty("face_eye_cat_look", parent=eye, loc=(0, -0.026, 0))
+bm = bmesh.new()
+ellipsoid(bm, (0.012, 0.008, 0.058), (0, 0, 0), 10, 10)
+mesh_object("face_eye_cat_slit", bm, M["black"], smooth=True, parent=look)
+bm = bmesh.new()
+ellipsoid(bm, (0.012, 0.005, 0.014), (0, 0, 0), 8, 6)
+mesh_object("face_eye_cat_shine", bm, M["white"], smooth=True, parent=look, loc=(-0.026, -0.006, 0.03))
 
 # Ojo de dolor ">" con esquina marcada (el juego lo refleja para "<").
 tube("face_eye_pain", [(-0.04, 0.045), (0.035, 0.0), (-0.04, -0.045)], 0.017, M["black"], poly=True)
@@ -400,9 +459,24 @@ tube("face_eye_pain", [(-0.04, 0.045), (0.035, 0.0), (-0.04, -0.045)], 0.017, M[
 tube("face_eye_happy", [(-0.05, -0.02), (-0.025, 0.025), (0.0, 0.04), (0.025, 0.025), (0.05, -0.02)], 0.017,
      M["black"])
 
-# Boquita sonriente.
-tube("face_mouth_smile", [(-0.046, 0.012), (-0.032, -0.012), (-0.013, -0.012), (0.0, 0.004), (0.013, -0.012),
-                          (0.032, -0.012), (0.046, 0.012)], 0.009, M["black"])
+# Bocas personalizables (Mi limo): face_mouth_<id>.
+# gatito "ω" (por defecto)
+tube("face_mouth_cat", [(-0.046, 0.012), (-0.032, -0.012), (-0.013, -0.012), (0.0, 0.004), (0.013, -0.012),
+                        (0.032, -0.012), (0.046, 0.012)], 0.009, M["black"])
+# sonrisa sencilla
+tube("face_mouth_smile", [(-0.04, 0.01), (-0.02, -0.01), (0.0, -0.016), (0.02, -0.01), (0.04, 0.01)], 0.009, M["black"])
+# sonrisa con colmillo
+mouth = empty("face_mouth_fang")
+tube("face_mouth_fang_line", [(-0.042, 0.01), (-0.02, -0.01), (0.0, -0.015), (0.02, -0.01), (0.042, 0.01)], 0.009,
+     M["black"], parent=mouth)
+flat_shape("face_mouth_fang_tooth", [(0.006, -0.012), (0.024, -0.009), (0.016, -0.03)], 0.004, M["white"],
+           front=-0.004, parent=mouth)
+# lengua fuera
+mouth = empty("face_mouth_tongue")
+tube("face_mouth_tongue_line", [(-0.042, 0.008), (-0.02, -0.01), (0.0, -0.014), (0.02, -0.01), (0.042, 0.008)], 0.009,
+     M["black"], parent=mouth)
+flat_shape("face_mouth_tongue_tip", [(0.028 * math.cos(math.pi * (1 + i / 12)), -0.012 + 0.03 * math.sin(math.pi * (1 + i / 12)))
+                                     for i in range(13)], 0.004, M["tongue"], front=-0.001, parent=mouth, loc=(0.008, 0, 0))
 
 # Boca abierta en "D" con lengua.
 mouth_open = empty("face_mouth_open")
@@ -419,12 +493,17 @@ tube("face_mouth_pain", [(-0.05, 0.0), (-0.033, 0.014), (-0.017, -0.01), (0.0, 0
                           (0.033, 0.014), (0.05, 0.0)], 0.011, M["black"])
 
 # Mofletes, sudor y lágrima.
-blush = empty("face_blush")
+# Mofletes personalizables (Mi limo): face_blush_<id> (el estilo "none" no tiene modelo).
 M["blush_line"] = material("BlushLine", "f0508f", 0.8)
-flat_shape("face_blush_spot", ellipse_pts(0.036, 0.02), 0.004, M["blush"], parent=blush)
+blush = empty("face_blush_lines")
+flat_shape("face_blush_lines_spot", ellipse_pts(0.036, 0.02), 0.004, M["blush"], parent=blush)
 for k, x in enumerate((-0.018, 0.0, 0.018)):
-    tube(f"face_blush_line{k}", [(x - 0.007, -0.01), (x + 0.007, 0.01)], 0.0045, M["blush_line"], parent=blush,
+    tube(f"face_blush_lines_line{k}", [(x - 0.007, -0.01), (x + 0.007, 0.01)], 0.0045, M["blush_line"], parent=blush,
          loc=(0, -0.006, 0), poly=True)
+flat_shape("face_blush_spots", ellipse_pts(0.04, 0.024), 0.004, M["blush"])
+heart = [(0.0022 * 16 * math.sin(t) ** 3, 0.0022 * (13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)))
+         for t in [2 * math.pi * i / 32 for i in range(32)]]
+flat_shape("face_blush_hearts", heart, 0.004, M["blush_line"])
 teardrop("face_sweat", 0.03, M["sweat"])
 teardrop("face_tear", 0.016, M["sweat"])
 
@@ -724,25 +803,36 @@ def bookcase(name, x):
 bookcase("room_bookcase_left", -2.55)
 bookcase("room_bookcase_right", 2.55)
 
-# libros de relleno en los extremos de las baldas (el centro queda libre para los coleccionables)
-BOOK_COLORS = ["b91c1c", "1d4ed8", "15803d", "a16207", "7e22ce"]
-book_mats = [material(f"Book{k}", c, 0.8) for k, c in enumerate(BOOK_COLORS)]
-rng = random.Random(7)
-books = [bmesh.new() for _ in book_mats]
-for cx in (-2.55, 2.55):
-    for shelf_top in (0.89, 1.69, 2.50):
-        spans = [(-1.02, -0.5), (0.5, 1.02)] if shelf_top < 2.4 else [(-1.02, 1.02)]
-        for x0, x1 in spans:
-            x = x0
-            while x < x1 - 0.06:
-                w = rng.uniform(0.05, 0.09)
-                h = rng.uniform(0.3, 0.46)
-                k = rng.randrange(len(book_mats))
-                box(books[k], (w - 0.008, rng.uniform(0.26, 0.32), h), (cx + x + w / 2, 3.28, shelf_top + h / 2))
-                x += w
-for k, bm in enumerate(books):
-    mesh_object(f"room_books{k}", bm, book_mats[k], parent=room)
+# zócalo de madera con paneles y moldura alta: la habitación de un limo aventurero en lo hondo del abismo
+M["wainscot"] = material("Wainscot", "7a4a2a", 0.7)
+M["wainscot_panel"] = material("WainscotPanel", "8f5a34", 0.75)
+bm = bmesh.new()
+box(bm, (9.0, 0.06, 1.0), (0, 3.47, 0.5))
+box(bm, (0.06, 7.0, 1.0), (-4.47, 0, 0.5))
+box(bm, (0.06, 7.0, 1.0), (4.47, 0, 0.5))
+box(bm, (9.0, 0.1, 0.06), (0, 3.45, 1.02))
+box(bm, (0.1, 7.0, 0.06), (-4.45, 0, 1.02))
+box(bm, (0.1, 7.0, 0.06), (4.45, 0, 1.02))
+box(bm, (9.0, 0.12, 0.1), (0, 3.44, 3.95))
+mesh_object("room_wainscot", bm, M["wainscot"], parent=room)
+bm = bmesh.new()
+for k in range(-4, 4):
+    box(bm, (0.9, 0.03, 0.62), (k * 1.1 + 0.55, 3.43, 0.5))
+for k in range(-3, 3):
+    for x in (-4.43, 4.43):
+        box(bm, (0.03, 0.9, 0.62), (x, k * 1.1 + 0.55, 0.5))
+mesh_object("room_wainscot_panels", bm, M["wainscot_panel"], parent=room)
 
+# ventana redonda al abismo en la pared del fondo (brilla desde abajo)
+M["abyss_glass"] = material("AbyssGlass", "1e1b4b", 0.2, emit="3b82f6", strength=0.9)
+M["window_frame"] = material("WindowFrame", "4a2d18", 0.6)
+ring = [(0.62 * math.cos(a * math.tau / 32), 0.62 * math.sin(a * math.tau / 32) + 2.55) for a in range(32)]
+tube("room_window_frame", ring, 0.07, M["window_frame"], parent=room, loc=(0, 3.44, 0), poly=True, cyclic=True)
+bm = bmesh.new()
+box(bm, (0.05, 0.05, 1.24), (0, 3.44, 2.55))
+box(bm, (1.24, 0.05, 0.05), (0, 3.44, 2.55))
+mesh_object("room_window_bars", bm, M["window_frame"], parent=room)
+flat_shape("room_window_glass", ellipse_pts(0.6, 0.6, 0, 2.55, 32), 0.02, M["abyss_glass"], front=3.47, parent=room)
 
 def vitrina(name, x, y, z_top):
     bm = bmesh.new()
@@ -763,11 +853,11 @@ vitrina("room_vitrina_right", 3.7, 0.9, 0.8)
 
 # velas en la pared del fondo
 bm = bmesh.new()
-for x in (-1.2, 1.2):
+for x in (-1.25, 1.25):
     cylinder(bm, 0.05, 0.25, (x, 3.4, 2.2), 10)
 mesh_object("room_candles", bm, M["pedestal"], parent=room)
 bm = bmesh.new()
-for x in (-1.2, 1.2):
+for x in (-1.25, 1.25):
     ellipsoid(bm, (0.04, 0.04, 0.08), (x, 3.4, 2.4), 10, 8)
 mesh_object("room_candle_flames", bm, M["candle"], smooth=True, parent=room)
 

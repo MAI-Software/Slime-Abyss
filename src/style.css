@@ -346,7 +346,7 @@ body[data-control="joystick"] .gyro-only { display: none !important; }
 
 /* ---------- HUD ---------- */
 #hud { position: fixed; inset: 0; z-index: 20; pointer-events: none; }
-#hud[hidden] { display: none; }
+#hud[hidden], #hud [hidden] { display: none !important; }
 .hud-top {
   position: absolute;
   top: calc(8px + var(--safe-t));
@@ -370,8 +370,8 @@ body[data-control="joystick"] .gyro-only { display: none !important; }
   font-size: 17px;
   font-variant-numeric: tabular-nums;
 }
-.hud-chip.life { padding: 0 14px 0 0; border-radius: 40px; }
-#life-flask { display: block; margin: -6px -2px -6px -4px; }
+.hud-chip.life { padding: 1px 12px 1px 4px; }
+#life-bar { display: block; margin: -2px 0; }
 #life-pct { min-width: 44px; }
 .hud-chip.coins { padding: 6px 12px 6px 8px; }
 .hud-chip.bump { animation: bump 380ms cubic-bezier(0.2, 1.6, 0.4, 1); }
@@ -434,8 +434,18 @@ body[data-control="joystick"] .gyro-only { display: none !important; }
   pointer-events: auto;
   touch-action: none;
 }
-body[data-control="gyro"] #joy-zone { display: none; }
-#joy-base {
+/* joystick derecho: cámara */
+#cam-zone {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  height: 78%;
+  pointer-events: auto;
+  touch-action: none;
+}
+body[data-control="gyro"] #joy-zone, body[data-control="gyro"] #cam-zone { display: none; }
+#joy-base, #cam-base {
   position: absolute;
   left: calc(100px + var(--safe-l));
   top: calc(100% - 100px - var(--safe-b));
@@ -448,8 +458,10 @@ body[data-control="gyro"] #joy-zone { display: none; }
   opacity: 0.5;
   transition: opacity var(--press);
 }
-#joy-base.active { opacity: 1; background: rgba(253, 242, 248, 0.2); }
-#joy-knob {
+#cam-base { left: auto; right: calc(100px + var(--safe-r)); transform: translate(50%, -50%); width: 128px; height: 128px; }
+#cam-base[style*="left"] { right: auto; transform: translate(-50%, -50%); }
+#joy-base.active, #cam-base.active { opacity: 1; background: rgba(253, 242, 248, 0.2); }
+#joy-knob, #cam-knob {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -461,6 +473,9 @@ body[data-control="gyro"] #joy-zone { display: none; }
   border: 3px solid var(--ink);
   box-shadow: 0 4px 0 var(--ink), inset 0 -4px 0 rgba(0, 0, 0, 0.12);
 }
+
+#cam-knob { width: 56px; height: 56px; display: grid; place-items: center; }
+#cam-knob .ico { width: 24px; height: 24px; }
 
 /* ---------- girar el móvil ---------- */
 #rotate-overlay {
@@ -607,6 +622,36 @@ body[data-control="gyro"] #joy-zone { display: none; }
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- Mi limo ---------- */
+.look-options { display: flex; flex-direction: column; gap: 6px; }
+.swatch-row, .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.7) 0 12%, transparent 13%), var(--swatch);
+  box-shadow: 0 3px 0 var(--ink);
+  transition: transform var(--press), box-shadow var(--press);
+}
+.swatch[aria-pressed="true"] { outline: 3px solid var(--slime); outline-offset: 3px; }
+.swatch:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.chip {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 3px 0 var(--ink);
+  transition: transform var(--press), box-shadow var(--press);
+}
+.chip[aria-pressed="true"] { background: var(--slime); color: #fff; }
+.chip:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
 
 /* ---------- perfil ---------- */
 .profile-card {

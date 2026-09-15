@@ -4,6 +4,7 @@ import { World } from './world';
 import type { Channel } from './level/format';
 import { Assets } from './assets';
 import { createContactShadowTexture } from './materials';
+import { BODY_COLORS, DEFAULT_LOOK, type BodyColor, type SlimeLook } from './look';
 
 // --- física ---
 // El limo grande es un montón de limitos pequeños unidos por cohesión.
@@ -50,7 +51,16 @@ const CUT_TAG_BASE = 1_000_000;
 
 // --- render ---
 const FACE_GROUPS = 4;
-const FACE_MIN_SIZE = 6;
+const FACE_MIN_SIZE = 8;
+/** Inclinación de cámara por defecto (rad sobre la horizontal); la cara se orienta según ella. */
+export const DEFAULT_PITCH = 1.08;
+// Recoger objetos: las gotitas sueltas (sin cara) solo pisan interruptores y saltan en plataformas.
+// Para el tesoro hace falta además un trozo con buena parte del limo, así una gota no acaba el piso.
+const PICKUP_MIN = FACE_MIN_SIZE;
+const TREASURE_SHARE = 0.3;
+// Contorno: trazo de tinta alrededor del limo y silueta clara cuando un muro lo tapa.
+const OUTLINE_WIDTH = 0.026;
+const XRAY_LIFT = 0.2;
 
 export type SlimeEvent =
   | { type: 'fall' | 'evaporate' | 'pad'; x: number; y: number; z: number }
@@ -121,6 +131,13 @@ export class Slime {
   state: SlimeState = 'normal';
   stateT = 0;
   private material!: THREE.MeshStandardMaterial;
+  private body: BodyColor = BODY_COLORS.blue;
+  private readonly xrayColor = { value: new THREE.Color(0.6, 0.85, 1.0) };
+  private outlineMaterials: THREE.Material[] = [];
+  private sphereOutlines: THREE.InstancedMesh[] = [];
+  /** orientación de la cámara (la pone el juego): la cara del limo mira hacia ella */
+  camYaw = 0;
+  camPitch = DEFAULT_PITCH;
   private burnHits: number[] = [];
   private tmpColor = new THREE.Color();
   private tmpRim = new THREE.Vector3();
@@ -141,7 +158,7 @@ export class Slime {
   private contactShadows: THREE.Mesh[] = [];
   private shadowTex = createContactShadowTexture();
 
-  constructor(private world: World, count: number, lowQuality: boolean, private assets: Assets) {
+  constructor(private world: World, count: number, lowQuality: boolean, private assets: Assets, look: SlimeLook = DEFAULT_LOOK) {
     const n = (this.n = count);
     const f = () => new Float32Array(n);
     this.px = f(); this.py = f(); this.pz = f();
@@ -219,6 +236,16 @@ export class Slime {
       : new BlobMesh(72, 0.15, material, n, 24000);
     this.blob.castShadow = true;
     this.group.add(this.blob);
+    const hull = this.createHullMaterial();
+    const xray = this.createXrayMaterial();
+    this.outlineMaterials.push(hull, xray);
+    // hijos del mallador: comparten geometría, posición y visibilidad
+    for (const m of [hull, xray]) {
+      const o = new THREE.Mesh(this.blob.geometry, m);
+      o.frustumCulled = false;
+      o.renderOrder = m === xray ? 20 : 0;
+      this.blob.add(o);
+    }
 
     const shadowGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
     const shadowMat = new THREE.MeshBasicMaterial({ map: this.shadowTex, transparent: true, depthWrite: false });
@@ -237,8 +264,89 @@ export class Slime {
     this.spheres.frustumCulled = false;
     this.spheres.count = 0;
     this.group.add(this.spheres);
+    for (const m of [hull, xray]) {
+      const o = new THREE.InstancedMesh(this.spheres.geometry, m, n);
+      o.instanceMatrix = this.spheres.instanceMatrix;
+      o.frustumCulled = false;
+      o.count = 0;
+      o.renderOrder = m === xray ? 20 : 0;
+      this.spheres.add(o);
+      this.sphereOutlines.push(o);
+    }
 
     this.computeGroups();
+    this.setLook(look);
+  }
+
+  /** Color y cara elegidos en Mi limo. */
+  setLook(look: SlimeLook) {
+    this.body = BODY_COLORS[look.color];
+    if (this.state === 'normal') {
+      this.material.color.setHex(this.body.color);
+      this.material.emissive.setHex(this.body.emissive);
+      this.uniforms.uRim.value.set(...this.body.rim);
+    }
+    for (const f of this.faces) f.setLook(look);
+  }
+
+  /** Trazo de tinta: la cara trasera inflada un poco (con la misma ondulación que el cuerpo). */
+  private createHullMaterial() {
+    return new THREE.ShaderMaterial({
+      uniforms: { uTime: this.uniforms.uTime, uWobble: this.uniforms.uWobble, uWidth: { value: OUTLINE_WIDTH } },
+      side: THREE.BackSide,
+      vertexShader: `
+        #include <common>
+        uniform float uTime; uniform float uWobble; uniform float uWidth;
+        void main() {
+          vec3 objectNormal = normal;
+          vec3 transformed = position;
+          #ifdef USE_INSTANCING
+            vec3 wp = (modelMatrix * instanceMatrix * vec4(position, 1.0)).xyz;
+          #else
+            vec3 wp = (modelMatrix * vec4(position, 1.0)).xyz;
+          #endif
+          float wob = sin(uTime * 5.0 + wp.x * 4.0 + wp.z * 3.0) * 0.5 + sin(uTime * 3.3 - wp.z * 5.0 + wp.y * 6.0) * 0.5;
+          transformed += objectNormal * (wob * 0.022 * uWobble + uWidth);
+          #include <project_vertex>
+        }`,
+      fragmentShader: `void main() { gl_FragColor = vec4(0.055, 0.07, 0.16, 1.0); }`,
+    });
+  }
+
+  /** Silueta cuando algo lo tapa: solo se pinta donde hay algo delante (profundidad mayor). */
+  private createXrayMaterial() {
+    return new THREE.ShaderMaterial({
+      uniforms: { uColor: this.xrayColor },
+      transparent: true,
+      depthWrite: false,
+      depthFunc: THREE.GreaterDepth,
+      vertexShader: `
+        #include <common>
+        varying vec3 vN;
+        varying vec3 vV;
+        void main() {
+          vec3 transformed = position;
+          #include <project_vertex>
+          // un poco hacia la cámara: el propio limo y el suelo que pisa no cuentan como obstáculo
+          mvPosition.xyz += normalize(-mvPosition.xyz) * ${XRAY_LIFT.toFixed(3)};
+          gl_Position = projectionMatrix * mvPosition;
+          #ifdef USE_INSTANCING
+            vN = normalize(normalMatrix * mat3(instanceMatrix) * normal);
+          #else
+            vN = normalize(normalMatrix * normal);
+          #endif
+          vV = normalize(-mvPosition.xyz);
+        }`,
+      fragmentShader: `
+        uniform vec3 uColor;
+        varying vec3 vN;
+        varying vec3 vV;
+        void main() {
+          float rim = 1.0 - max(dot(normalize(vN), vV), 0.0);
+          float a = mix(0.22, 0.95, smoothstep(0.35, 0.85, rim));
+          gl_FragColor = vec4(mix(uColor, vec3(1.0), rim * 0.4), a);
+        }`,
+    });
   }
 
   /** Centro de masa de los trozos visibles (para la cámara). */
@@ -263,6 +371,8 @@ export class Slime {
   // ---------------------------------------------------------------- reacciones
 
   celebrate() { for (const f of this.faces) f.cheer(10); }
+  /** Rebote de la cara (al cambiarle el aspecto). */
+  poke() { for (const f of this.faces) f.poke(); }
 
   private setState(to: SlimeState) {
     if (to === this.state && to !== 'frozen' && to !== 'burning') return;
@@ -596,6 +706,9 @@ export class Slime {
     this.switchCounts.B = 0;
     this.touchedTreasure = false;
     const t = w.treasure;
+    const largest = this.groups[0]?.ids.length ?? 0;
+    const pickMin = Math.min(largest, PICKUP_MIN);
+    const treasureMin = Math.min(largest, Math.max(PICKUP_MIN, this.aliveCount * TREASURE_SHARE));
     const pad = this.padFlags;
     pad.fill(0);
     let anyPad = false;
@@ -629,7 +742,8 @@ export class Slime {
       else if (inWind) this.grip[i] = WIND_GRIP;
       else this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : this.loose[i] > 0 ? CORNER_GRIP : 1;
 
-      if (under && (under.kind === 'coin' || under.kind === 'gem' || under.kind === 'oil') && y < under.base + 1.3) {
+      const chunk = this.gid[i] >= 0 ? this.groups[this.gid[i]].ids.length : 0;
+      if (under && (under.kind === 'coin' || under.kind === 'gem' || under.kind === 'oil') && y < under.base + 1.3 && chunk >= pickMin) {
         const got = w.collectCoin(ci, cj);
         if (got) {
           const c = w.coinPosition(ci, cj, this.tmpCoin);
@@ -678,7 +792,7 @@ export class Slime {
       }
 
       const dx = x - t.x, dz = z - t.z;
-      if (dx * dx + dz * dz < 0.55 && y < t.y + 1.2) this.touchedTreasure = true;
+      if (dx * dx + dz * dz < 0.55 && y < t.y + 1.2 && chunk >= treasureMin) this.touchedTreasure = true;
     }
     if (!anyPad) return;
     // sale lanzado todo el trozo que está sobre la plataforma o pegado a ella;
@@ -756,15 +870,16 @@ export class Slime {
   /** alpha: fracción entre el paso de física anterior y el actual (0..1). */
   render(dt: number, alpha: number, lookX: number, lookZ: number) {
     this.uniforms.uTime.value += dt;
-    const look = STATE_LOOK[this.state];
+    const look = this.state === 'normal' ? this.body : STATE_LOOK[this.state];
     const k = 1 - Math.exp(-dt * 6);
     this.material.color.lerp(this.tmpColor.setHex(look.color), k);
     this.material.emissive.lerp(this.tmpColor.setHex(look.emissive), k);
     const flicker = this.state === 'burning' ? 0.5 + Math.sin(this.uniforms.uTime.value * 23) * 0.15 + Math.random() * 0.1 : 0.3;
     this.material.emissiveIntensity += (flicker - this.material.emissiveIntensity) * k;
     this.material.roughness += ((this.state === 'frozen' ? 0.05 : 0.14) - this.material.roughness) * k;
-    this.uniforms.uWobble.value += (look.wobble - this.uniforms.uWobble.value) * k;
+    this.uniforms.uWobble.value += (STATE_LOOK[this.state].wobble - this.uniforms.uWobble.value) * k;
     this.uniforms.uRim.value.lerp(this.tmpRim.set(...look.rim), k);
+    this.xrayColor.value.setRGB(...look.rim);
     for (const f of this.faces) f.frozen = this.state === 'frozen';
     const { n, px, py, pz, ox, oy, oz, alive, dying } = this;
     const lead = this.groups[0];
@@ -790,6 +905,7 @@ export class Slime {
       this.blob.visible = false;
     }
     this.spheres.count = used;
+    for (const o of this.sphereOutlines) o.count = used;
     if (used) this.spheres.instanceMatrix.needsUpdate = true;
 
     for (let k = 0; k < FACE_GROUPS; k++) {
@@ -808,7 +924,7 @@ export class Slime {
       }
       let airborne = 0;
       for (const i of g.ids) if (this.air[i] > 0.15) airborne++;
-      face.update(g, dt, lookX, lookZ, airborne / g.ids.length);
+      face.update(g, dt, lookX, lookZ, airborne / g.ids.length, this.camYaw, this.camPitch);
     }
 
     // daño → cara de dolor en el trozo más cercano
@@ -834,6 +950,7 @@ export class Slime {
     this.spheres.geometry.dispose();
     (this.spheres.material as THREE.Material).dispose();
     for (const f of this.faces) f.dispose();
+    for (const m of this.outlineMaterials) m.dispose();
   }
 }
 
@@ -842,7 +959,8 @@ export class Slime {
 type Expr = 'idle' | 'wee' | 'air' | 'happy' | 'pain' | 'dizzy' | 'frozen';
 
 /**
-  Cara kawaii modelada en Blender (face_*): ojos grandes con iris que mira, boquita de gato y mofletes con rayitas.
+  Cara kawaii modelada en Blender (face_*). Ojos, boca en reposo y mofletes se eligen en Mi limo (setLook);
+  las demás expresiones son comunes.
   Expresiones: idle (sonrisa + parpadeo), wee (deslizándose rápido), air (en el aire),
   happy (salto / tesoro) y pain (daño: > <, lágrimas y gota de sudor).
 */
@@ -853,7 +971,8 @@ class Face {
   private eyesPain: THREE.Object3D[] = [];
   private eyesHappy: THREE.Object3D[] = [];
   private eyesDizzy: THREE.Object3D[] = [];
-  private mouths: Record<'smile' | 'open' | 'o' | 'pain', THREE.Object3D>;
+  private mouths: Record<'open' | 'o' | 'pain', THREE.Object3D>;
+  private idleMouth: THREE.Object3D | null = null;
   private blush: THREE.Object3D[] = [];
   private tears: THREE.Object3D[] = [];
   private sweat: THREE.Object3D;
@@ -876,43 +995,69 @@ class Face {
   private bounce = 0;
   private t = 0;
 
-  constructor(assets: Assets) {
-    const part = (name: string, x: number, y: number, z: number, mirror = false) => {
-      const o = assets.clone(name, { unlit: true });
-      o.position.set(x, y, z);
-      if (mirror) o.scale.x = -1;
-      o.userData.rest = o.position.clone();
-      o.traverse((c) => {
-        const m = c as THREE.Mesh;
-        if (!m.isMesh) return;
-        this.materials.push(m.material as THREE.Material);
-        m.renderOrder = 5;
-      });
-      this.root.add(o);
-      return o;
-    };
+  constructor(private assets: Assets) {
+    const part = this.part.bind(this);
     for (const side of [-1, 1]) {
-      const eye = part('face_eye', side * 0.1, 0.035, 0);
-      const look = Assets.child(eye, 'face_eye_look');
-      look.userData.rest = look.position.clone();
-      this.eyes.push(eye);
-      this.looks.push(look);
       this.eyesPain.push(part('face_eye_pain', side * 0.1, 0.035, 0.01, side > 0));
       this.eyesHappy.push(part('face_eye_happy', side * 0.1, 0.045, 0.01));
       this.eyesDizzy.push(part('face_eye_dizzy', side * 0.1, 0.035, 0.012, side > 0));
-      this.blush.push(part('face_blush', side * 0.175, -0.035, -0.005));
       this.tears.push(part('face_tear', side * 0.155, 0.0, 0.01));
     }
     this.mouths = {
-      smile: part('face_mouth_smile', 0, -0.055, 0.01),
       open: part('face_mouth_open', 0, -0.05, 0.005),
       o: part('face_mouth_o', 0, -0.065, 0.005),
       pain: part('face_mouth_pain', 0, -0.065, 0.01),
     };
     this.sweat = part('face_sweat', 0.2, 0.13, 0.01);
+    this.root.rotation.order = 'YXZ';
     this.root.visible = false;
+    this.setLook(DEFAULT_LOOK);
   }
 
+  private part(name: string, x: number, y: number, z: number, mirror = false) {
+    const o = this.assets.clone(name, { unlit: true });
+    o.position.set(x, y, z);
+    if (mirror) o.scale.x = -1;
+    o.userData.rest = o.position.clone();
+    o.traverse((c) => {
+      const m = c as THREE.Mesh;
+      if (!m.isMesh) return;
+      this.materials.push(m.material as THREE.Material);
+      m.renderOrder = 5;
+    });
+    this.root.add(o);
+    return o;
+  }
+
+  private removePart(o: THREE.Object3D) {
+    this.root.remove(o);
+    o.traverse((c) => {
+      const m = c as THREE.Mesh;
+      if (!m.isMesh) return;
+      const mat = m.material as THREE.Material;
+      mat.dispose();
+      this.materials.splice(this.materials.indexOf(mat), 1);
+    });
+  }
+
+  setLook(look: SlimeLook) {
+    for (const o of [...this.eyes, ...this.blush]) this.removePart(o);
+    if (this.idleMouth) this.removePart(this.idleMouth);
+    this.eyes = [];
+    this.looks = [];
+    this.blush = [];
+    for (const side of [-1, 1]) {
+      const eye = this.part(`face_eye_${look.eyes}`, side * 0.1, 0.035, 0);
+      const lookAt = eye.getObjectByName(`face_eye_${look.eyes}_look`) ?? eye;
+      lookAt.userData.rest = lookAt.position.clone();
+      this.eyes.push(eye);
+      this.looks.push(lookAt);
+      if (look.cheeks !== 'none') this.blush.push(this.part(`face_blush_${look.cheeks}`, side * 0.175, -0.035, -0.005));
+    }
+    this.idleMouth = this.part(`face_mouth_${look.mouth}`, 0, -0.055, 0.01);
+  }
+
+  poke() { this.bounce = 1; }
   hurt() { this.painT = 0.9; this.happyT = 0; this.bounce = 1; }
   cheer(t: number) {
     if (this.painT > 0) return;
@@ -920,7 +1065,7 @@ class Face {
     this.happyT = Math.max(this.happyT, t);
   }
 
-  update(g: Group, dt: number, lookX: number, lookZ: number, airFrac: number) {
+  update(g: Group, dt: number, lookX: number, lookZ: number, airFrac: number, yaw: number, pitch: number) {
     this.t += dt;
     this.painT -= dt;
     this.happyT -= dt;
@@ -951,10 +1096,15 @@ class Face {
       this.agitation = 0.8;
     }
 
-    // arriba y hacia delante del trozo, inclinada hacia la cámara cenital
-    const tx = g.cx;
+    // arriba y en el lado del trozo que da a la cámara, inclinada hacia ella
+    const sy = Math.sin(yaw), cy = Math.cos(yaw);
+    const out = Math.max(0.2, g.maxZ - g.cz) + 0.24;
+    const tx = g.cx + sy * out;
     const ty = g.maxY * 0.6 + g.cy * 0.4 + 0.16;
-    const tz = g.maxZ + 0.24;
+    const tz = g.cz + cy * out;
+    // velocidad vista desde la cámara (x: derecha de la pantalla, z: hacia la cámara)
+    const svx = g.vx * cy - g.vz * sy;
+    const svz = g.vx * sy + g.vz * cy;
     const k = 1 - Math.exp(-dt * 18);
     if (!this.initialized) { this.pos.set(tx, ty, tz); this.initialized = true; }
     else {
@@ -984,8 +1134,8 @@ class Face {
 
     const normalEyes = expr === 'idle' || expr === 'wee' || expr === 'air' || expr === 'frozen';
     // mirada: el iris se desplaza dentro del blanco hacia donde va el limo
-    const lx = Math.max(-1, Math.min(1, g.vx * 0.2 + lookX * 0.5)) * 0.016;
-    const ly = (expr === 'air' ? 1 : Math.max(-1, Math.min(1, -g.vz * 0.12 - lookZ * 0.3))) * 0.022;
+    const lx = Math.max(-1, Math.min(1, svx * 0.2 + lookX * 0.5)) * 0.016;
+    const ly = (expr === 'air' ? 1 : Math.max(-1, Math.min(1, -svz * 0.12 - lookZ * 0.3))) * 0.022;
     const eyeScale = expr === 'air' ? 1.25 : expr === 'wee' ? 0.9 : 1;
     for (const l of this.looks) {
       const r = l.userData.rest as THREE.Vector3;
@@ -1002,7 +1152,7 @@ class Face {
       e.visible = expr === 'dizzy';
       e.rotation.z = this.t * (k === 0 ? 7 : -7);
     });
-    this.mouths.smile.visible = expr === 'idle';
+    if (this.idleMouth) this.idleMouth.visible = expr === 'idle';
     this.mouths.open.visible = expr === 'wee' || expr === 'happy';
     this.mouths.o.visible = expr === 'air' || expr === 'frozen';
     this.mouths.pain.visible = expr === 'pain' || expr === 'dizzy';
@@ -1039,7 +1189,7 @@ class Face {
     const pop = 1 + Math.sin(this.bounce * Math.PI) * 0.18;
 
     this.root.position.set(this.pos.x + shakeX, this.pos.y, this.pos.z);
-    this.root.rotation.set(-0.75, 0, wobble);
+    this.root.rotation.set(-0.75 * (pitch / DEFAULT_PITCH), yaw, wobble);
     this.root.scale.set(this.scale * pop, this.scale * (2 - pop), this.scale);
     this.root.visible = true;
   }
