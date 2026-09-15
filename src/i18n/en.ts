@@ -20,6 +20,7 @@ export const en: Dict = {
   },
   story: {
     title: 'Story Mode',
+    unlockHint: 'Complete {chapter} to unlock',
     chapter: 'Chapter {n}',
     floor: 'Floor {n}',
     breakdown: 'See chapter summary',
@@ -27,6 +28,7 @@ export const en: Dict = {
   },
   chapters: {
     'cripta-azul': 'The Blue Crypt',
+    'raices-colgantes': 'The Hanging Roots',
   },
   options: {
     title: 'Options',
@@ -52,6 +54,7 @@ export const en: Dict = {
   },
   hud: {
     pause: 'Pause',
+    squeeze: 'Squeeze',
     oiled: 'Oil',
     burning: 'On fire {s}',
     frozen: 'Frozen {s}',
@@ -155,7 +158,7 @@ export const en: Dict = {
     },
     'c1-filo-de-cuchilla': {
       name: 'Blade Edge',
-      tips: ['Blades split your slime in two', 'Both halves move at the same time', 'When the pieces touch, they merge again', 'Spikes split it too'],
+      tips: ['Blades split your slime in two', 'Both halves move at the same time', 'Pieces rejoin when they touch; you can also hold the squeeze button', 'Spikes split it too'],
     },
     'c1-pasillo-de-fuego': {
       name: 'Fire Corridor',
@@ -188,6 +191,46 @@ export const en: Dict = {
     'c1-gran-cripta': {
       name: 'The Great Crypt',
       tips: ['Final test: use everything you have learned', 'Oil, fire… and burn those plants'],
+    },
+    'c2-todos-a-una': {
+      name: 'All Together',
+      tips: ['The blade cuts you into pieces', 'Hold the squeeze button: the pieces slowly come back together', 'Squeeze before narrow exits'],
+    },
+    'c2-sobre-railes': {
+      name: 'On Rails',
+      tips: ['Step into the station: the slime turns into a ball and rolls along the track', 'At the other station you turn back into slime'],
+    },
+    'c2-curvas': {
+      name: 'Bends',
+      tips: ['Tracks can turn: the ball follows them on its own', 'Grab the coins and find the next station'],
+    },
+    'c2-cuesta-arriba': {
+      name: 'Uphill',
+      tips: ['Tracks can go up too: they are the only way to the top', 'From up high you can only go down: find the next station'],
+    },
+    'c2-todos-a-bordo': {
+      name: 'All Aboard',
+      tips: ['Only the piece standing on the station gets on the ball', 'Squeeze to gather your slime before boarding'],
+    },
+    'c2-plantas-en-la-via': {
+      name: 'Plants on the Track',
+      tips: ['Grab the oil and catch fire at a brazier', 'While burning, you burn the plants blocking the station'],
+    },
+    'c2-salto-a-la-estacion': {
+      name: 'Leap to the Station',
+      tips: ['The pads launch you to the station island', 'Gather your slime before boarding: whatever stays behind will have to ride later'],
+    },
+    'c2-puente-de-viento': {
+      name: 'Windy Bridge',
+      tips: ['The bridge is windy: the track is the safe way', 'As a ball, the wind cannot move you'],
+    },
+    'c2-bifurcacion': {
+      name: 'Crossroads',
+      tips: ['Two stations, two destinations', 'The green switch needs weight: squeeze to gather your slime on it'],
+    },
+    'c2-gran-raiz': {
+      name: 'The Great Root',
+      tips: ['Final trial of the chapter: use everything you have learned', 'Squeeze before jumping', 'Grab the oil and catch fire on the other side to burn the plants'],
     },
   },
 };

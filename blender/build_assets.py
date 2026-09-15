@@ -1,4 +1,4 @@
-﻿"""
+"""
 Genera todos los modelos del juego en Blender y los exporta a src/models/assets.glb.
 
 Uso (desde la carpeta del proyecto):
@@ -667,6 +667,39 @@ bm = bmesh.new()
 bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=24, radius=0.3)
 bmesh.ops.translate(bm, vec=(0, 0, 0.012), verts=bm.verts)
 mesh_object("cold_vent_glow", bm, M["cold"], parent=vent)
+
+# ================================================================== RAÍLES
+# rail_piece: tramo de 1 de largo a lo largo de X (el juego lo estira y lo inclina entre casillas); origen = altura del raíl.
+# rail_station: estación redonda con aro brillante donde el limo se hace bola.
+M["rail_metal"] = material("RailMetal", "9aa3b5", 0.3, 1.0)
+M["rail_wood"] = material("RailWood", "6b4226", 0.8)
+M["rail_glow"] = material("RailGlow", "7dd3fc", 0.3, emit="38bdf8", strength=2.5)
+M["station_stone"] = material("StationStone", "cfc6e6", 0.6)
+
+rail = empty("rail_piece")
+bm = bmesh.new()
+for y in (-0.15, 0.15):
+    box(bm, (1.0, 0.05, 0.05), (0, y, 0.0))
+mesh_object("rail_piece_rails", bm, M["rail_metal"], parent=rail)
+bm = bmesh.new()
+for x in (-0.25, 0.25):
+    box(bm, (0.09, 0.44, 0.04), (x, 0, -0.045))
+box(bm, (1.0, 0.1, 0.07), (0, 0, -0.1))
+mesh_object("rail_piece_wood", bm, M["rail_wood"], parent=rail)
+
+station = empty("rail_station")
+bm = bmesh.new()
+cylinder(bm, 0.44, 0.06, (0, 0, 0.03), 40)
+mesh_object("rail_station_base", bm, M["station_stone"], smooth=True, parent=station)
+ring = [(0.36 * math.cos(a * math.tau / 40), 0.36 * math.sin(a * math.tau / 40)) for a in range(40)]
+tube("rail_station_ring", ring, 0.025, M["rail_glow"], parent=station, loc=(0, 0, 0.075), poly=True, cyclic=True, plane="XY")
+bm = bmesh.new()
+for a in (0.25, 0.75):
+    cylinder(bm, 0.035, 0.5, (0.42 * math.cos(a * math.tau + math.pi / 2), 0.42 * math.sin(a * math.tau + math.pi / 2), 0.28), 12)
+mesh_object("rail_station_posts", bm, M["rail_metal"], smooth=True, parent=station)
+arch = [(0.42 * math.cos(math.pi * t / 16), 0.0, 0.53 + 0.12 * math.sin(math.pi * t / 16)) for t in range(17)]
+cu_pts = [(x, z) for x, _, z in arch]
+tube("rail_station_arch", cu_pts, 0.03, M["rail_metal"], parent=station)
 
 # ================================================================== COLECCIONABLES
 # Piezas pequeñas (~0.4 de alto, origen en la base) que se exponen en la habitación del menú.

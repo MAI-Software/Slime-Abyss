@@ -5,7 +5,8 @@
   Modos: joystick virtual (por defecto) o giroscopio.
   Joystick derecho (solo en modo joystick): gira la cámara (camX) y la sube o baja (camY).
   Sin botones de acción: dividir y reunir lo hace el propio escenario.
-  En ordenador, para pruebas: flechas/WASD mueven, Q/E giran la cámara y R/F la inclinan.
+  Botón "apretar" (mantener): los trozos del limo se juntan poco a poco. Funciona con joystick y giroscopio.
+  En ordenador, para pruebas: flechas/WASD mueven, Q/E giran la cámara, R/F la inclinan y Espacio aprieta.
 */
 
 export type ControlMode = 'joystick' | 'gyro';
@@ -28,6 +29,9 @@ export class Input {
   private neutral: Pair | null = null;
   private keys = new Set<string>();
 
+  /** botón de apretar pulsado (o Espacio) */
+  squeeze = false;
+  private squeezeHeld = false;
   /** joystick derecho: cámara, en [-1, 1] */
   camX = 0;
   camY = 0;
@@ -45,6 +49,23 @@ export class Input {
     const enabled = () => this.mode === 'joystick';
     this.move.bind(enabled);
     this.look.bind(enabled);
+    this.bindSqueeze();
+  }
+
+  private bindSqueeze() {
+    const btn = document.getElementById('btn-squeeze');
+    if (!btn) return;
+    btn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      btn.setPointerCapture(e.pointerId);
+      this.squeezeHeld = true;
+      btn.classList.add('held');
+    });
+    const end = () => { this.squeezeHeld = false; btn.classList.remove('held'); };
+    btn.addEventListener('pointerup', end);
+    btn.addEventListener('pointercancel', end);
+    btn.addEventListener('lostpointercapture', end);
+    btn.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
   setMode(mode: ControlMode) {
@@ -120,6 +141,7 @@ export class Input {
     if (this.keys.has('KeyF')) cy = 1;
     this.camX = cx;
     this.camY = cy;
+    this.squeeze = this.squeezeHeld || this.keys.has('Space');
     if (this.keys.has('ArrowLeft') || this.keys.has('KeyA')) x = -1;
     if (this.keys.has('ArrowRight') || this.keys.has('KeyD')) x = 1;
     if (this.keys.has('ArrowUp') || this.keys.has('KeyW')) z = -1;
@@ -136,6 +158,8 @@ export class Input {
     this.move.release();
     this.look.release();
     this.tiltX = this.tiltZ = this.camX = this.camY = 0;
+    this.squeezeHeld = this.squeeze = false;
+    document.getElementById('btn-squeeze')?.classList.remove('held');
   }
 }
 

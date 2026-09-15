@@ -144,7 +144,7 @@ const CHAPTER1 = [
     tips: [
       { z: 21.5, text: 'Las cuchillas parten al limo en dos' },
       { z: 16.5, text: 'Las dos mitades se mueven a la vez' },
-      { z: 9.5, text: 'Al tocarse, los trozos vuelven a unirse' },
+      { z: 9.5, text: 'Al tocarse, los trozos vuelven a unirse; también puedes mantener el botón de apretar' },
       { z: 5.5, text: 'Los pinchos también dividen' },
     ],
   },
@@ -401,6 +401,292 @@ const CHAPTER1 = [
   },
 ];
 
+/**
+  Capítulo 2 · Las Raíces Colgantes (mismo decorado de rocas y plantas del abismo).
+  Mecánicas nuevas: botón de apretar y raíles (R estación, = vía). Una idea nueva por piso y luego mezclas.
+*/
+const CHAPTER2 = [
+  {
+    file: 'chapter2/01-c2-todos-a-una.json',
+    id: 'c2-todos-a-una', name: 'Todos a una', count: 80, keepPct: 0.75,
+    // Botón de apretar: la cuchilla y los pinchos desperdigan el limo en una sala sin peligros.
+    map: [
+      '#############',
+      '#00000T00000#',
+      '#00C00000C00#',
+      '#####000#####',
+      '....#0C0#....',
+      '..###000###..',
+      '..#0Y000Y0#..',
+      '..#000Y000#..',
+      '..#0Y000Y0#..',
+      '..#C00000C#..',
+      '..###000###..',
+      '....#000#....',
+      '....#0K0#....',
+      '....#000#....',
+      '....#0C0#....',
+      '....#000#....',
+      '....#0P0#....',
+      '....#####....',
+    ],
+    tips: [
+      { z: 14, text: 'La cuchilla te parte en trozos' },
+      { z: 11.5, text: 'Mantén pulsado el botón de apretar: los trozos se juntan poco a poco' },
+      { z: 5, text: 'Aprieta antes de las salidas estrechas' },
+    ],
+  },
+  {
+    file: 'chapter2/02-c2-sobre-railes.json',
+    id: 'c2-sobre-railes', name: 'Sobre raíles', count: 80, keepPct: 0.8,
+    // Raíles: una vía recta y corta entre dos estaciones; no hay forma de caerse.
+    map: [
+      '...#######...',
+      '...#0C0T0#...',
+      '...#00000#...',
+      '...###R###...',
+      '......=......',
+      '......=......',
+      '......=......',
+      '......=......',
+      '...###R###...',
+      '...#00000#...',
+      '...#0C0C0#...',
+      '...#00P00#...',
+      '...#######...',
+    ],
+    tips: [
+      { z: 10.5, text: 'Entra en la estación: el limo se hace bola y rueda por la vía' },
+      { z: 2.8, text: 'Al llegar a la otra estación vuelves a ser limo' },
+    ],
+  },
+  {
+    file: 'chapter2/03-c2-curvas.json',
+    id: 'c2-curvas', name: 'Curvas', count: 80, keepPct: 0.8,
+    // Vías con curvas y dos trayectos seguidos con una isla en medio.
+    map: [
+      '#######........',
+      '#0T0C0#........',
+      '#00000#........',
+      '###R###........',
+      '...=...........',
+      '...======......',
+      '........=......',
+      '........=......',
+      '......##R##....',
+      '......#222#....',
+      '......#2C2#....',
+      '......#222#....',
+      '......#2C2#....',
+      '......##R##....',
+      '........=......',
+      '........===....',
+      '..........=....',
+      '........##R##..',
+      '........#444#..',
+      '........#4P4#..',
+      '........#####..',
+    ],
+    tips: [
+      { z: 19, text: 'Las vías pueden girar: la bola las sigue sola' },
+      { z: 12.5, text: 'Recoge las monedas y busca la siguiente estación' },
+    ],
+  },
+  {
+    file: 'chapter2/04-c2-cuesta-arriba.json',
+    id: 'c2-cuesta-arriba', name: 'Cuesta arriba', count: 80, keepPct: 0.8,
+    // Las vías suben: a pie solo se baja, en bola se sube.
+    map: [
+      '...#######...',
+      '...#8C8T8#...',
+      '...#88888#...',
+      '...###R###...',
+      '......=......',
+      '......=......',
+      '......=......',
+      '...###R###...',
+      '...#44C44#...',
+      '...#44444#...',
+      '...#66666#...',
+      '...#6C666#...',
+      '...###R###...',
+      '......=......',
+      '......=......',
+      '...###R###...',
+      '...#00000#...',
+      '...#0C0P0#...',
+      '...#######...',
+    ],
+    tips: [
+      { z: 17, text: 'Las vías también suben: son el único camino a lo alto' },
+      { z: 9.5, text: 'Desde lo alto solo se baja: busca la siguiente estación' },
+    ],
+  },
+  {
+    file: 'chapter2/05-c2-todos-a-bordo.json',
+    id: 'c2-todos-a-bordo', name: 'Todos a bordo', count: 80, keepPct: 0.75,
+    // Apretar + raíles: solo sube el trozo que pisa la estación; los que se quedan pueden subir después.
+    map: [
+      '...#######...',
+      '...#0C0T0#...',
+      '...#00000#...',
+      '...###R###...',
+      '......=......',
+      '......=......',
+      '......=......',
+      '...###R###...',
+      '...#00000#...',
+      '...#0Y0Y0#...',
+      '...#00K00#...',
+      '...#C000C#...',
+      '...#00000#...',
+      '...#00P00#...',
+      '...#######...',
+    ],
+    tips: [
+      { z: 12.5, text: 'Solo sube a la bola el trozo que está en la estación' },
+      { z: 9, text: 'Aprieta para juntar el limo antes de subir' },
+    ],
+  },
+  {
+    file: 'chapter2/06-c2-plantas-en-la-via.json',
+    id: 'c2-plantas-en-la-via', name: 'Plantas en la vía', count: 80, keepPct: 0.75,
+    // Aceite y fuego (capítulo 1) para despejar la entrada de una estación.
+    map: [
+      '...#######...',
+      '...#0C0T0#...',
+      '...#00000#...',
+      '...###R###...',
+      '......=......',
+      '......=......',
+      '......=......',
+      '...###R###...',
+      '...###W###...',
+      '...#00000#...',
+      '...#F000F#...',
+      '...#0C0C0#...',
+      '...#00O00#...',
+      '...#00P00#...',
+      '...#######...',
+    ],
+    tips: [
+      { z: 13, text: 'Coge el aceite y préndete en un brasero' },
+      { z: 9.5, text: 'Ardiendo, quemas las plantas que tapan la estación' },
+    ],
+  },
+  {
+    file: 'chapter2/07-c2-salto-a-la-estacion.json',
+    id: 'c2-salto-a-la-estacion', name: 'Salto a la estación', count: 80, keepPct: 0.5,
+    // Plataformas de salto hasta una isla con estación que sube.
+    map: [
+      '...#######...',
+      '...#8C8T8#...',
+      '...#88888#...',
+      '...###R###...',
+      '......=......',
+      '......=......',
+      '......=......',
+      '...###R###...',
+      '...#22222#...',
+      '...#2C2C2#...',
+      '.............',
+      '.............',
+      '...#JJJJJ#...',
+      '...#22222#...',
+      '...#22P22#...',
+      '...#######...',
+    ],
+    tips: [
+      { z: 14, text: 'Las plataformas te lanzan hasta la isla de la estación' },
+      { z: 9.5, text: 'Junta el limo antes de subir: lo que se quede tendrá que subir después' },
+    ],
+  },
+  {
+    file: 'chapter2/08-c2-puente-de-viento.json',
+    id: 'c2-puente-de-viento', name: 'Puente de viento', count: 80, keepPct: 0.7,
+    // Dos caminos: puente con ventiladores o vía; las monedas llevan a la vía.
+    map: [
+      '#############',
+      '#00000T00000#',
+      '#0C0000000C0#',
+      '###R#####0###',
+      '...=.....0<..',
+      '...=....>0...',
+      '...=.....0<..',
+      '...=.....0...',
+      '###R#####0###',
+      '#00000000000#',
+      '#00C00000000#',
+      '#00000P00000#',
+      '#############',
+    ],
+    tips: [
+      { z: 10.5, text: 'El puente tiene viento: la vía es el camino seguro' },
+      { z: 8.8, text: 'En bola, el viento no te mueve' },
+    ],
+  },
+  {
+    file: 'chapter2/09-c2-bifurcacion.json',
+    id: 'c2-bifurcacion', name: 'Bifurcación', count: 80, keepPct: 0.75,
+    // Secreto: la vía de la izquierda lleva a un interruptor que pide peso (apretar) y a la gema; se vuelve en bola.
+    need: { B: 14 }, latch: { B: true },
+    map: [
+      '#####...#######',
+      '#G#s#...#00T00#',
+      '#d00#...#00000#',
+      '#00R#...###R###',
+      '...=.......=...',
+      '...=.......=...',
+      '...=.......=...',
+      '###R#######R###',
+      '#0000000000000#',
+      '#00C000P000C00#',
+      '###############',
+    ],
+    tips: [
+      { z: 8.5, text: 'Dos estaciones, dos destinos' },
+      { z: 3.5, text: 'El interruptor verde pide peso: aprieta para juntar el limo encima' },
+    ],
+  },
+  {
+    file: 'chapter2/10-c2-gran-raiz.json',
+    id: 'c2-gran-raiz', name: 'La gran raíz', count: 80, keepPct: 0.5,
+    // Final: apretar tras la cuchilla, aceite, saltar, prenderse lejos del borde, quemar plantas y vía hacia lo alto.
+    map: [
+      '...#######.....',
+      '...#8C8T8#.....',
+      '...#88888#.....',
+      '...###R###.....',
+      '......=........',
+      '......=........',
+      '......=........',
+      '...###R###.....',
+      '...###W###.....',
+      '...#F222F#.....',
+      '...#22222#.....',
+      '...#22222#.....',
+      '...#2C2C2#.....',
+      '...............',
+      '...............',
+      '...#JJJJJ#.....',
+      '...#22O22#.....',
+      '...#22222#.....',
+      '...#2C2C2#.....',
+      '...#22222#.....',
+      '...#2Y2Y2#.....',
+      '...#22K22#.....',
+      '...#C222C#.....',
+      '...#22P22#.....',
+      '...#######.....',
+    ],
+    tips: [
+      { z: 23, text: 'Última prueba del capítulo: usa todo lo aprendido' },
+      { z: 19, text: 'Aprieta antes de saltar' },
+      { z: 17, text: 'Coge el aceite y préndete al otro lado para quemar las plantas' },
+    ],
+  },
+];
+
 function build(def) {
   const d = def.map.length;
   const w = def.map[0].length;
@@ -417,9 +703,11 @@ function build(def) {
       if (def.h) { h += def.h[j][i]; continue; }
       if (ch === '#') { h += '0'; continue; }
       const votes = {};
-      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
-        const n = def.map[j + dj]?.[i + di];
-        if (n && isDigit(n)) votes[n] = (votes[n] ?? 0) + 1;
+      for (let r = 1; r <= 2 && !Object.keys(votes).length; r++) {
+        for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) {
+          const n = def.map[j + dj]?.[i + di];
+          if (n && isDigit(n)) votes[n] = (votes[n] ?? 0) + 1;
+        }
       }
       const best = Object.entries(votes).sort((a, b) => b[1] - a[1] || Number(b[0]) - Number(a[0]))[0];
       h += best ? best[0] : '0';
@@ -451,13 +739,27 @@ function build(def) {
 */
 function checkNoDeadEnds(def, tiles, heights) {
   const H = tiles.length, W = tiles[0].length;
-  const at = (i, j) => (j >= 0 && j < H && i >= 0 && i < W ? tiles[j][i] : '.');
-  const walk = (i, j) => at(i, j) !== '.' && at(i, j) !== '#';
-  const top = (i, j) => Number(heights[j][i]);
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const at = (i, j) => (j >= 0 && j < H && i >= 0 && i < W ? tiles[j][i] : '.');
+  const walk = (i, j) => at(i, j) !== '.' && at(i, j) !== '#' && at(i, j) !== '=';
+  const top = (i, j) => Number(heights[j][i]);
+  // estación → estación del otro extremo de su vía
+  const partner = (i, j) => {
+    let prev = [i, j];
+    let cur = DIRS.map(([di, dj]) => [i + di, j + dj]).find(([a, b]) => at(a, b) === '=');
+    for (let guard = 0; cur && guard < W * H; guard++) {
+      if (at(...cur) === 'R') return cur;
+      const nxt = DIRS.map(([di, dj]) => [cur[0] + di, cur[1] + dj])
+        .find(([a, b]) => (a !== prev[0] || b !== prev[1]) && (at(a, b) === '=' || at(a, b) === 'R'));
+      prev = cur;
+      cur = nxt;
+    }
+    return null;
+  };
   const WIND = { '^': [0, -1], v: [0, 1], '<': [-1, 0], '>': [1, 0] };
   const next = (i, j) => {
     const out = [];
+    if (at(i, j) === 'R') { const other = partner(i, j); if (other) out.push(other); }
     const reach = at(i, j) === 'J' ? 6 : WIND[at(i, j)] || at(i, j) === 'Q' ? 10 : 1;
     const dirs = WIND[at(i, j)] ? [WIND[at(i, j)]] : DIRS;
     for (const [di, dj] of reach > 1 ? [...dirs, ...(dirs === DIRS ? [] : DIRS)] : DIRS) {
@@ -486,7 +788,8 @@ function checkNoDeadEnds(def, tiles, heights) {
 /** Avisa si hay suelo contiguo que sube (el diseño pide solo bajadas). */
 function checkNoStepsUp(def, tiles, heights) {
   if (def.h) return;
-  const walk = (t) => t !== '.' && t !== '#';
+  // la vía no se pisa y las estaciones pueden estar a cualquier altura (la bola sube)
+  const walk = (t) => t !== '.' && t !== '#' && t !== '=' && t !== 'R';
   for (let j = 0; j < tiles.length; j++) for (let i = 0; i < tiles[0].length; i++) {
     if (!walk(tiles[j][i])) continue;
     // hacia el tesoro se avanza a filas menores: la fila de arriba no puede ser más alta
@@ -503,7 +806,8 @@ function pretty(data) {
 }
 
 mkdirSync(join(root, 'chapter1'), { recursive: true });
-for (const def of [PRACTICE, ...CHAPTER1]) {
+mkdirSync(join(root, 'chapter2'), { recursive: true });
+for (const def of [PRACTICE, ...CHAPTER1, ...CHAPTER2]) {
   writeFileSync(join(root, def.file), pretty(build(def)) + '\n');
   console.log('ok', def.file);
 }

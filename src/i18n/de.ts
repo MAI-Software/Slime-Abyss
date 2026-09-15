@@ -20,6 +20,7 @@ export const de: Dict = {
   },
   story: {
     title: 'Story-Modus',
+    unlockHint: 'Schließe {chapter} ab, um es zu öffnen',
     chapter: 'Kapitel {n}',
     floor: 'Ebene {n}',
     breakdown: 'Kapitelübersicht ansehen',
@@ -27,6 +28,7 @@ export const de: Dict = {
   },
   chapters: {
     'cripta-azul': 'Die Blaue Gruft',
+    'raices-colgantes': 'Die hängenden Wurzeln',
   },
   options: {
     title: 'Optionen',
@@ -52,6 +54,7 @@ export const de: Dict = {
   },
   hud: {
     pause: 'Pause',
+    squeeze: 'Zusammenziehen',
     oiled: 'Öl',
     burning: 'Brennt {s}',
     frozen: 'Gefroren {s}',
@@ -155,7 +158,7 @@ export const de: Dict = {
     },
     'c1-filo-de-cuchilla': {
       name: 'Klingenkante',
-      tips: ['Klingen teilen deinen Schleim in zwei Hälften', 'Beide Hälften bewegen sich gleichzeitig', 'Berühren sich die Teile, verbinden sie sich wieder', 'Stacheln teilen ihn auch'],
+      tips: ['Klingen teilen deinen Schleim in zwei Hälften', 'Beide Hälften bewegen sich gleichzeitig', 'Stücke verbinden sich bei Berührung; du kannst auch die Zusammenziehen-Taste halten', 'Stacheln teilen ihn auch'],
     },
     'c1-pasillo-de-fuego': {
       name: 'Feuergang',
@@ -188,6 +191,46 @@ export const de: Dict = {
     'c1-gran-cripta': {
       name: 'Die große Gruft',
       tips: ['Letzte Prüfung: Nutze alles, was du gelernt hast', 'Öl, Feuer… und die Pflanzen abfackeln'],
+    },
+    'c2-todos-a-una': {
+      name: 'Alle zusammen',
+      tips: ['Die Klinge schneidet dich in Stücke', 'Halte die Zusammenziehen-Taste: Die Stücke finden langsam wieder zusammen', 'Zieh dich vor engen Ausgängen zusammen'],
+    },
+    'c2-sobre-railes': {
+      name: 'Auf Schienen',
+      tips: ['Fahr in die Station: Der Schleim wird zur Kugel und rollt über die Schiene', 'An der anderen Station wirst du wieder zu Schleim'],
+    },
+    'c2-curvas': {
+      name: 'Kurven',
+      tips: ['Schienen können abbiegen: Die Kugel folgt ihnen von allein', 'Sammle die Münzen und finde die nächste Station'],
+    },
+    'c2-cuesta-arriba': {
+      name: 'Bergauf',
+      tips: ['Schienen führen auch nach oben: Sie sind der einzige Weg hinauf', 'Von oben geht es nur nach unten: Finde die nächste Station'],
+    },
+    'c2-todos-a-bordo': {
+      name: 'Alle einsteigen',
+      tips: ['Nur das Stück auf der Station steigt in die Kugel', 'Zieh dich zusammen, bevor du einsteigst'],
+    },
+    'c2-plantas-en-la-via': {
+      name: 'Pflanzen auf dem Gleis',
+      tips: ['Nimm das Öl und entzünde dich an einer Feuerschale', 'Brennend verbrennst du die Pflanzen vor der Station'],
+    },
+    'c2-salto-a-la-estacion': {
+      name: 'Sprung zur Station',
+      tips: ['Die Plattformen schleudern dich zur Stationsinsel', 'Sammle den Schleim vor dem Einsteigen: Was zurückbleibt, muss später fahren'],
+    },
+    'c2-puente-de-viento': {
+      name: 'Windige Brücke',
+      tips: ['Auf der Brücke ist es windig: Die Schiene ist der sichere Weg', 'Als Kugel bewegt dich der Wind nicht'],
+    },
+    'c2-bifurcacion': {
+      name: 'Weggabelung',
+      tips: ['Zwei Stationen, zwei Ziele', 'Der grüne Schalter braucht Gewicht: Zieh den Schleim darauf zusammen'],
+    },
+    'c2-gran-raiz': {
+      name: 'Die große Wurzel',
+      tips: ['Letzte Prüfung des Kapitels: Nutze alles, was du gelernt hast', 'Zieh dich vor dem Sprung zusammen', 'Nimm das Öl und entzünde dich drüben, um die Pflanzen zu verbrennen'],
     },
   },
 };

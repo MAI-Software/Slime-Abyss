@@ -19,6 +19,7 @@ export const es = {
   },
   story: {
     title: 'Modo Historia',
+    unlockHint: 'Completa el {chapter} para abrirlo',
     chapter: 'Capítulo {n}',
     floor: 'Piso {n}',
     breakdown: 'Ver desglose del capítulo',
@@ -26,6 +27,7 @@ export const es = {
   },
   chapters: {
     'cripta-azul': 'La Cripta Azul',
+    'raices-colgantes': 'Las Raíces Colgantes',
   },
   options: {
     title: 'Opciones',
@@ -51,6 +53,7 @@ export const es = {
   },
   hud: {
     pause: 'Pausa',
+    squeeze: 'Apretar',
     oiled: 'Aceite',
     burning: 'En llamas {s}',
     frozen: 'Congelado {s}',
@@ -154,7 +157,7 @@ export const es = {
     },
     'c1-filo-de-cuchilla': {
       name: 'Filo de cuchilla',
-      tips: ['Las cuchillas parten al limo en dos', 'Las dos mitades se mueven a la vez', 'Al tocarse, los trozos vuelven a unirse', 'Los pinchos también dividen'],
+      tips: ['Las cuchillas parten al limo en dos', 'Las dos mitades se mueven a la vez', 'Al tocarse, los trozos vuelven a unirse; también puedes mantener el botón de apretar', 'Los pinchos también dividen'],
     },
     'c1-pasillo-de-fuego': {
       name: 'Pasillo de fuego',
@@ -187,6 +190,46 @@ export const es = {
     'c1-gran-cripta': {
       name: 'La gran cripta',
       tips: ['Última prueba: usa todo lo que has aprendido', 'Aceite, fuego… y a quemar las plantas'],
+    },
+    'c2-todos-a-una': {
+      name: 'Todos a una',
+      tips: ['La cuchilla te parte en trozos', 'Mantén pulsado el botón de apretar: los trozos se juntan poco a poco', 'Aprieta antes de las salidas estrechas'],
+    },
+    'c2-sobre-railes': {
+      name: 'Sobre raíles',
+      tips: ['Entra en la estación: el limo se hace bola y rueda por la vía', 'Al llegar a la otra estación vuelves a ser limo'],
+    },
+    'c2-curvas': {
+      name: 'Curvas',
+      tips: ['Las vías pueden girar: la bola las sigue sola', 'Recoge las monedas y busca la siguiente estación'],
+    },
+    'c2-cuesta-arriba': {
+      name: 'Cuesta arriba',
+      tips: ['Las vías también suben: son el único camino a lo alto', 'Desde lo alto solo se baja: busca la siguiente estación'],
+    },
+    'c2-todos-a-bordo': {
+      name: 'Todos a bordo',
+      tips: ['Solo sube a la bola el trozo que está en la estación', 'Aprieta para juntar el limo antes de subir'],
+    },
+    'c2-plantas-en-la-via': {
+      name: 'Plantas en la vía',
+      tips: ['Coge el aceite y préndete en un brasero', 'Ardiendo, quemas las plantas que tapan la estación'],
+    },
+    'c2-salto-a-la-estacion': {
+      name: 'Salto a la estación',
+      tips: ['Las plataformas te lanzan hasta la isla de la estación', 'Junta el limo antes de subir: lo que se quede tendrá que subir después'],
+    },
+    'c2-puente-de-viento': {
+      name: 'Puente de viento',
+      tips: ['El puente tiene viento: la vía es el camino seguro', 'En bola, el viento no te mueve'],
+    },
+    'c2-bifurcacion': {
+      name: 'Bifurcación',
+      tips: ['Dos estaciones, dos destinos', 'El interruptor verde pide peso: aprieta para juntar el limo encima'],
+    },
+    'c2-gran-raiz': {
+      name: 'La gran raíz',
+      tips: ['Última prueba del capítulo: usa todo lo aprendido', 'Aprieta antes de saltar', 'Coge el aceite y préndete al otro lado para quemar las plantas'],
     },
   } as Record<string, { name: string; tips: string[] }>,
 };

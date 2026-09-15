@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BlobMesh } from './blob-mesh';
-import { World } from './world';
+import { World, type RailPath } from './world';
 import type { Channel } from './level/format';
 import { Assets } from './assets';
 import { createContactShadowTexture } from './materials';
@@ -59,8 +59,18 @@ const CUT_COOLDOWN = 0.7;   // tiempo sin cohesión entre mitades tras pasar por
 const CUT_TAG_BASE = 1_000_000;
 
 // --- render ---
+/** trozos con sombra de contacto (la cara solo la lleva el trozo principal: es un único limo) */
 const FACE_GROUPS = 4;
 const FACE_MIN_SIZE = 8;
+// Raíles: el trozo que se para en una estación se hace bola y rueda por la vía.
+const RIDE_SPEED = 4;
+const RIDE_ACCEL = 8;
+const RIDE_EXIT = 2.2;
+/** segundos sin limo encima para que la estación de llegada vuelva a funcionar */
+const STATION_REARM = 0.5;
+// Apretar: los trozos sueltos se acercan poco a poco al principal y este se compacta.
+const SQUEEZE_PULL = 20;
+const SQUEEZE_TIGHT = 6;
 /** Inclinación de cámara por defecto (rad sobre la horizontal); la cara se orienta según ella. */
 export const DEFAULT_PITCH = 1.2;
 // Recoger objetos y tocar el tesoro: solo trozos con cara. Las gotitas sueltas pisan interruptores y
@@ -74,6 +84,7 @@ const XRAY_LIFT = 0.2;
 export type SlimeEvent =
   | { type: 'fall' | 'evaporate' | 'pad'; x: number; y: number; z: number }
   | { type: 'coin' | 'gem' | 'oil'; x: number; y: number; z: number }
+  | { type: 'board' | 'unboard'; x: number; y: number; z: number }
   | { type: 'cut'; x: number; z: number }
   | { type: 'burn'; x: number; z: number; what: 'plant' | 'iceblock' }
   | { type: 'state'; from: SlimeState; to: SlimeState };
@@ -135,6 +146,13 @@ export class Slime {
   private gvx: Float32Array; private gvz: Float32Array; private gcnt: Float32Array;
   private padX: Float32Array; private padZ: Float32Array; private padTop: Float32Array;
   private lastCutEvent = -1;
+  /** limitos que van en una bola por la vía (no siguen la física) */
+  private riding: Uint8Array;
+  private rides: { path: RailPath; s: number; speed: number; angle: number; radius: number; ids: number[]; off: Float32Array }[] = [];
+  /** estaciones de llegada bloqueadas hasta que el limo se aparta (tiempo despejadas) */
+  private stationLock = new Map<number, number>();
+  /** el jugador mantiene pulsado "apretar" */
+  squeezing = false;
   /** tiempo sin empuje del mando tras quemarse */
   private stunT = 0;
   private fireHits: number[] = [];
@@ -179,6 +197,7 @@ export class Slime {
     this.ax = f(); this.ay = f(); this.az = f();
     this.dying = f(); this.air = f(); this.noAttr = f();
     this.alive = new Uint8Array(n).fill(1);
+    this.riding = new Uint8Array(n);
     this.groundCell = new Int32Array(n).fill(-1);
     this.tag = new Uint32Array(n);
     this.parent = new Int32Array(n);
@@ -262,10 +281,10 @@ export class Slime {
 
     const shadowGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
     const shadowMat = new THREE.MeshBasicMaterial({ map: this.shadowTex, transparent: true, depthWrite: false });
+    const face = new Face(assets);
+    this.faces.push(face);
+    this.group.add(face.root);
     for (let k = 0; k < FACE_GROUPS; k++) {
-      const face = new Face(assets);
-      this.faces.push(face);
-      this.group.add(face.root);
       const shadow = new THREE.Mesh(shadowGeo, shadowMat);
       shadow.renderOrder = 1;
       shadow.visible = false;
@@ -417,8 +436,9 @@ export class Slime {
 
   // ---------------------------------------------------------------- simulación
 
-  /** tiltX/tiltZ: dirección del mando en [-1, 1] (x derecha, z hacia la cámara). */
-  step(dt: number, tiltX: number, tiltZ: number) {
+  /** tiltX/tiltZ: dirección del mando en [-1, 1] (x derecha, z hacia la cámara). squeeze: botón de apretar. */
+  step(dt: number, tiltX: number, tiltZ: number, squeeze = false) {
+    this.squeezing = squeeze;
     this.ox.set(this.px);
     this.oy.set(this.py);
     this.oz.set(this.pz);
@@ -442,7 +462,7 @@ export class Slime {
       ax[i] = 0;
       ay[i] = -GRAVITY;
       az[i] = 0;
-      if (!alive[i]) continue;
+      if (!alive[i] || this.riding[i]) continue;
       // corriente de un ventilador
       const ci = Math.floor(px[i]), cj = Math.floor(pz[i]);
       if (ci < 0 || cj < 0 || ci >= w.w || cj >= w.d) continue;
@@ -464,11 +484,26 @@ export class Slime {
       }
     }
 
+    // apretar: los trozos sueltos van hacia el principal y este se compacta un poco
+    const lead = this.groups[0];
+    if (this.squeezing && lead) {
+      const { gid, riding, dying } = this;
+      for (let i = 0; i < n; i++) {
+        if (!alive[i] || riding[i] || dying[i] > 0) continue;
+        const dx = lead.cx - px[i], dz = lead.cz - pz[i];
+        const d = Math.hypot(dx, dz);
+        if (d < 1e-3) continue;
+        const k = gid[i] === 0 ? SQUEEZE_TIGHT * Math.min(1, d / 0.6) : SQUEEZE_PULL;
+        ax[i] += (dx / d) * k;
+        az[i] += (dz / d) * k;
+      }
+    }
+
     for (let i = 0; i < n; i++) {
-      if (!alive[i]) continue;
+      if (!alive[i] || this.riding[i]) continue;
       const pxi = px[i], pyi = py[i], pzi = pz[i];
       for (let j = i + 1; j < n; j++) {
-        if (!alive[j]) continue;
+        if (!alive[j] || this.riding[j]) continue;
         const dx = px[j] - pxi;
         const dy = py[j] - pyi;
         const dz = pz[j] - pzi;
@@ -520,7 +555,7 @@ export class Slime {
     for (let g = 0; g < n; g++) if (gcnt[g] > 0) { gvx[g] /= gcnt[g]; gvz[g] /= gcnt[g]; }
 
     for (let i = 0; i < n; i++) {
-      if (!alive[i]) continue;
+      if (!alive[i] || this.riding[i]) continue;
       const a2 = ax[i] * ax[i] + ay[i] * ay[i] + az[i] * az[i];
       if (a2 > MAX_A * MAX_A) {
         const k = MAX_A / Math.sqrt(a2);
@@ -565,6 +600,123 @@ export class Slime {
         vx[i] = (vx[i] + (tvx - avx) * gk + (tvx - vx[i]) * kSelf) * fric;
         vz[i] = (vz[i] + (tvz - avz) * gk + (tvz - vz[i]) * kSelf) * fric;
       }
+    }
+    if (this.rides.length) this.updateRides(h);
+  }
+
+  // ---------------------------------------------------------------- raíles
+
+  /** Estaciones: el trozo parado encima se hace bola; las de llegada esperan a que el limo se aparte. */
+  private updateStations(dt: number) {
+    const w = this.world;
+    if (!w.rails.size) return;
+    for (const [idx, t] of this.stationLock) {
+      const si = idx % w.w, sj = Math.floor(idx / w.w);
+      let occupied = false;
+      for (let i = 0; i < this.n && !occupied; i++) {
+        occupied = !!this.alive[i] && !this.riding[i] && Math.floor(this.px[i]) === si && Math.floor(this.pz[i]) === sj;
+      }
+      const next = occupied ? 0 : t + dt;
+      if (next > STATION_REARM) this.stationLock.delete(idx);
+      else this.stationLock.set(idx, next);
+    }
+    for (const g of this.groups) {
+      const ci = Math.floor(g.cx), cj = Math.floor(g.cz);
+      const path = w.railAt(ci, cj);
+      if (!path || this.stationLock.has(path.from)) continue;
+      if (Math.hypot(g.cx - (ci + 0.5), g.cz - (cj + 0.5)) > 0.42) continue;
+      let grounded = 0, onBoard = false;
+      for (const i of g.ids) {
+        if (this.riding[i]) onBoard = true;
+        if (this.air[i] < 0.1) grounded++;
+      }
+      // basta con que se apoye (en un montón apilado solo la capa de abajo toca el suelo)
+      if (onBoard || grounded < Math.min(3, g.ids.length)) continue;
+      this.board(g, path);
+    }
+  }
+
+  private board(g: Group, path: RailPath) {
+    // los de dentro del trozo ocupan el centro de la bola y los de fuera la superficie
+    const ids = g.ids
+      .filter((i) => this.dying[i] === 0)
+      .map((i) => [i, (this.px[i] - g.cx) ** 2 + (this.py[i] - g.cy) ** 2 + (this.pz[i] - g.cz) ** 2] as const)
+      .sort((a, b) => a[1] - b[1])
+      .map(([i]) => i);
+    const m = ids.length;
+    if (!m) return;
+    const radius = Math.max(0.2, 0.62 * REST * Math.cbrt(m));
+    const off = new Float32Array(m * 3);
+    // dirección (espiral de Fibonacci) y radio (otra secuencia) independientes: esfera llena y redonda
+    for (let k = 0; k < m; k++) {
+      const r = radius * Math.cbrt((k * 0.7548776662 + 0.5) % 1) * 0.92 + radius * 0.08;
+      const y = 1 - (2 * (k + 0.5)) / m;
+      const ring = Math.sqrt(Math.max(0, 1 - y * y));
+      const phi = k * 2.39996;
+      off[k * 3] = Math.cos(phi) * ring * r;
+      off[k * 3 + 1] = y * r;
+      off[k * 3 + 2] = Math.sin(phi) * ring * r;
+    }
+    for (const i of ids) {
+      this.riding[i] = 1;
+      this.tag[i] = 0;
+      this.noAttr[i] = 0;
+      this.grip[i] = 1;
+      this.groundCell[i] = -1;
+    }
+    this.rides.push({ path, s: 0, speed: 0, angle: 0, radius, ids, off });
+    this.events.push({ type: 'board', x: g.cx, y: g.cy, z: g.cz });
+  }
+
+  /** Mueve cada bola por su vía, rodando, y la suelta como limo al llegar. */
+  private updateRides(h: number) {
+    for (let r = this.rides.length - 1; r >= 0; r--) {
+      const ride = this.rides[r];
+      const p = ride.path;
+      ride.speed = Math.min(RIDE_SPEED, ride.speed + RIDE_ACCEL * h);
+      ride.s = Math.min(p.total, ride.s + ride.speed * h);
+      let k = 0;
+      while (k < p.dist.length - 2 && p.dist[k + 1] < ride.s) k++;
+      const seg = p.dist[k + 1] - p.dist[k] || 1;
+      const f = (ride.s - p.dist[k]) / seg;
+      const cx = p.xs[k] + (p.xs[k + 1] - p.xs[k]) * f;
+      const cz = p.zs[k] + (p.zs[k + 1] - p.zs[k]) * f;
+      const cy = p.ys[k] + (p.ys[k + 1] - p.ys[k]) * f + ride.radius + 0.06;
+      const dx = (p.xs[k + 1] - p.xs[k]) / seg, dz = (p.zs[k + 1] - p.zs[k]) / seg;
+      ride.angle += (ride.speed * h) / ride.radius;
+      // gira alrededor del eje horizontal perpendicular al avance (arriba × dirección)
+      const axX = dz, axZ = -dx;
+      const c = Math.cos(ride.angle), sn = Math.sin(ride.angle);
+      ride.ids.forEach((i, n) => {
+        const vx0 = ride.off[n * 3], vy0 = ride.off[n * 3 + 1], vz0 = ride.off[n * 3 + 2];
+        const dot = axX * vx0 + axZ * vz0;
+        const rx = vx0 * c + -axZ * vy0 * sn + axX * dot * (1 - c);
+        const ry = vy0 * c + (axZ * vx0 - axX * vz0) * sn;
+        const rz = vz0 * c + axX * vy0 * sn + axZ * dot * (1 - c);
+        this.px[i] = cx + rx;
+        this.py[i] = cy + ry;
+        this.pz[i] = cz + rz;
+        this.vx[i] = dx * ride.speed;
+        this.vy[i] = 0;
+        this.vz[i] = dz * ride.speed;
+        this.air[i] = 0;
+      });
+      if (ride.s < p.total) continue;
+      // llegada: vuelve a ser limo sobre la estación y sale empujado hacia delante
+      const w = this.world;
+      const sx = (p.to % w.w) + 0.5, sz = Math.floor(p.to / w.w) + 0.5, top = w.cells[p.to].base;
+      ride.ids.forEach((i, n) => {
+        this.riding[i] = 0;
+        this.px[i] = sx + ride.off[n * 3] * 0.9;
+        this.pz[i] = sz + ride.off[n * 3 + 2] * 0.9;
+        this.py[i] = top + R + 0.05 + (ride.off[n * 3 + 1] + ride.radius) * 0.75;
+        this.vx[i] = p.exitX * RIDE_EXIT;
+        this.vy[i] = 0;
+        this.vz[i] = p.exitZ * RIDE_EXIT;
+      });
+      this.stationLock.set(p.to, 0);
+      this.rides.splice(r, 1);
+      this.events.push({ type: 'unboard', x: sx, y: top + 0.3, z: sz });
     }
   }
 
@@ -739,7 +891,7 @@ export class Slime {
     pad.fill(0);
     let anyPad = false;
     for (let i = 0; i < this.n; i++) {
-      if (!this.alive[i]) continue;
+      if (!this.alive[i] || this.riding[i]) continue;
       const x = this.px[i], y = this.py[i], z = this.pz[i];
 
       if (this.dying[i] > 0) {
@@ -825,6 +977,7 @@ export class Slime {
     }
     this.stunT = Math.max(0, this.stunT - dt);
     if (this.fireHits.length) this.recoilFromFire();
+    this.updateStations(dt);
     if (!anyPad) return;
     // sale lanzado todo el trozo que está sobre la plataforma o pegado a ella;
     // solo las gotas que van lejos (cola larga, restos sueltos) se quedan
@@ -960,37 +1113,28 @@ export class Slime {
     for (const o of this.sphereOutlines) o.count = used;
     if (used) this.spheres.instanceMatrix.needsUpdate = true;
 
+    const face = this.faces[0];
     for (let k = 0; k < FACE_GROUPS; k++) {
       const g = this.groups[k];
-      const face = this.faces[k];
       const shadow = this.contactShadows[k];
-      if (!g || g.ids.length < FACE_MIN_SIZE) { face.hide(); shadow.visible = false; continue; }
+      if (!g || g.ids.length < FACE_MIN_SIZE) { if (k === 0) face.hide(); shadow.visible = false; continue; }
       // sombra de contacto sobre la casilla de debajo (se desvanece al alejarse del suelo)
       const floorY = this.world.top(Math.floor(g.cx), Math.floor(g.cz));
       const above = g.cy - floorY;
-      shadow.visible = floorY !== -Infinity && above < 3;
+      shadow.visible = floorY !== -Infinity && above < 3 && above > -0.3;
       if (shadow.visible) {
         const size = (1.1 + g.ids.length / 28) * (1 - Math.min(above, 3) / 4.5);
         shadow.position.set(g.cx, floorY + 0.015, g.cz + 0.05);
         shadow.scale.set(size, 1, size * 0.9);
       }
+      if (k > 0) continue;
       let airborne = 0;
       for (const i of g.ids) if (this.air[i] > 0.15) airborne++;
-      face.update(g, dt, lookX, lookZ, airborne / g.ids.length, this.camYaw, this.camPitch);
+      face.update(g, dt, lookX, lookZ, airborne / g.ids.length, this.camYaw, this.camPitch, this.squeezing);
     }
 
-    // daño → cara de dolor en el trozo más cercano
-    for (const h of this.hurts) {
-      let best = 0;
-      let bestD = Infinity;
-      for (let k = 0; k < FACE_GROUPS; k++) {
-        const g = this.groups[k];
-        if (!g || !this.faces[k].root.visible) continue;
-        const d = (g.cx - h.x) ** 2 + (g.cz - h.z) ** 2;
-        if (d < bestD) { bestD = d; best = k; }
-      }
-      this.faces[best].hurt();
-    }
+    // daño → cara de dolor (un único limo, una única cara)
+    if (this.hurts.length) face.hurt();
     this.hurts.length = 0;
   }
 
@@ -1008,7 +1152,7 @@ export class Slime {
 
 // ------------------------------------------------------------------ cara
 
-type Expr = 'idle' | 'wee' | 'air' | 'happy' | 'pain' | 'dizzy' | 'frozen';
+type Expr = 'idle' | 'wee' | 'air' | 'happy' | 'pain' | 'dizzy' | 'frozen' | 'squeeze';
 
 /**
   Cara kawaii modelada en Blender (face_*). Ojos, boca en reposo y mofletes se eligen en Mi limo (setLook);
@@ -1117,7 +1261,7 @@ class Face {
     this.happyT = Math.max(this.happyT, t);
   }
 
-  update(g: Group, dt: number, lookX: number, lookZ: number, airFrac: number, yaw: number, pitch: number) {
+  update(g: Group, dt: number, lookX: number, lookZ: number, airFrac: number, yaw: number, pitch: number, squeeze = false) {
     this.t += dt;
     this.painT -= dt;
     this.happyT -= dt;
@@ -1169,6 +1313,7 @@ class Face {
     let expr: Expr = 'idle';
     if (this.painT > 0) expr = 'pain';
     else if (this.happyT > 0) expr = 'happy';
+    else if (squeeze) expr = 'squeeze';
     else if (this.frozen) expr = 'frozen';
     else if (this.dizzyT > 0) expr = 'dizzy';
     else if (airFrac > 0.6) expr = 'air';
@@ -1198,7 +1343,7 @@ class Face {
       const sx = e.scale.x < 0 ? -1 : 1;
       e.scale.set(sx * eyeScale, eyeScale * (expr === 'idle' ? open : expr === 'frozen' ? 0.55 : 1), eyeScale);
     }
-    for (const e of this.eyesPain) e.visible = expr === 'pain';
+    for (const e of this.eyesPain) e.visible = expr === 'pain' || expr === 'squeeze';
     for (const e of this.eyesHappy) e.visible = expr === 'happy';
     this.eyesDizzy.forEach((e, k) => {
       e.visible = expr === 'dizzy';
@@ -1206,12 +1351,12 @@ class Face {
     });
     if (this.idleMouth) this.idleMouth.visible = expr === 'idle';
     this.mouths.open.visible = expr === 'wee' || expr === 'happy';
-    this.mouths.o.visible = expr === 'air' || expr === 'frozen';
+    this.mouths.o.visible = expr === 'air' || expr === 'frozen' || expr === 'squeeze';
     this.mouths.pain.visible = expr === 'pain' || expr === 'dizzy';
     this.sweat.visible = expr === 'pain';
     for (const b of this.blush) {
       b.visible = expr !== 'air';
-      const s = expr === 'happy' || expr === 'pain' ? 1.2 : 1;
+      const s = expr === 'happy' || expr === 'pain' || expr === 'squeeze' ? 1.25 : 1;
       b.scale.set(s, s, s);
     }
 
@@ -1231,6 +1376,10 @@ class Face {
     if (expr === 'pain') {
       shakeX = Math.sin(this.t * 70) * 0.02;
       wobble = Math.sin(this.t * 30) * 0.08;
+    } else if (expr === 'squeeze') {
+      // esfuerzo: tiembla un poquito
+      shakeX = Math.sin(this.t * 45) * 0.008;
+      wobble = Math.sin(this.t * 38) * 0.03;
     } else if (expr === 'dizzy') {
       // balanceo lento y amplio, como quien ha dado vueltas
       shakeX = Math.sin(this.t * 3.2) * 0.05;

@@ -20,6 +20,7 @@ export const it: Dict = {
   },
   story: {
     title: 'Modalità Storia',
+    unlockHint: 'Completa il {chapter} per aprirlo',
     chapter: 'Capitolo {n}',
     floor: 'Piano {n}',
     breakdown: 'Vedi il riepilogo del capitolo',
@@ -27,6 +28,7 @@ export const it: Dict = {
   },
   chapters: {
     'cripta-azul': 'La Cripta Blu',
+    'raices-colgantes': 'Le Radici Sospese',
   },
   options: {
     title: 'Opzioni',
@@ -52,6 +54,7 @@ export const it: Dict = {
   },
   hud: {
     pause: 'Pausa',
+    squeeze: 'Stringere',
     oiled: 'Olio',
     burning: 'In fiamme {s}',
     frozen: 'Congelato {s}',
@@ -155,7 +158,7 @@ export const it: Dict = {
     },
     'c1-filo-de-cuchilla': {
       name: 'Filo della lama',
-      tips: ['Le lame dividono lo slime in due', 'Le due metà si muovono insieme', 'Quando i pezzi si toccano, si riuniscono', 'Anche le punte lo dividono'],
+      tips: ['Le lame dividono lo slime in due', 'Le due metà si muovono insieme', 'I pezzi si riuniscono toccandosi; puoi anche tenere premuto il pulsante stringere', 'Anche le punte lo dividono'],
     },
     'c1-pasillo-de-fuego': {
       name: 'Corridoio di fuoco',
@@ -188,6 +191,46 @@ export const it: Dict = {
     'c1-gran-cripta': {
       name: 'La grande cripta',
       tips: ['Ultima prova: usa tutto ciò che hai imparato', 'Olio, fuoco… e brucia quelle piante'],
+    },
+    'c2-todos-a-una': {
+      name: 'Tutti insieme',
+      tips: ['La lama ti taglia a pezzi', 'Tieni premuto il pulsante stringere: i pezzi si riuniscono poco a poco', 'Stringi prima delle uscite strette'],
+    },
+    'c2-sobre-railes': {
+      name: 'Sui binari',
+      tips: ['Entra nella stazione: lo slime diventa una palla e rotola sul binario', 'All’altra stazione torni slime'],
+    },
+    'c2-curvas': {
+      name: 'Curve',
+      tips: ['I binari possono curvare: la palla li segue da sola', 'Raccogli le monete e cerca la stazione successiva'],
+    },
+    'c2-cuesta-arriba': {
+      name: 'In salita',
+      tips: ['I binari salgono anche: sono l’unica via verso l’alto', 'Dall’alto si può solo scendere: cerca la stazione successiva'],
+    },
+    'c2-todos-a-bordo': {
+      name: 'Tutti a bordo',
+      tips: ['Sale sulla palla solo il pezzo che sta sulla stazione', 'Stringi per riunire lo slime prima di salire'],
+    },
+    'c2-plantas-en-la-via': {
+      name: 'Piante sui binari',
+      tips: ['Prendi l’olio e prendi fuoco a un braciere', 'In fiamme bruci le piante che bloccano la stazione'],
+    },
+    'c2-salto-a-la-estacion': {
+      name: 'Salto alla stazione',
+      tips: ['Le piattaforme ti lanciano sull’isola della stazione', 'Riunisci lo slime prima di salire: ciò che resta dovrà salire dopo'],
+    },
+    'c2-puente-de-viento': {
+      name: 'Ponte ventoso',
+      tips: ['Il ponte è ventoso: il binario è la via sicura', 'Da palla, il vento non ti sposta'],
+    },
+    'c2-bifurcacion': {
+      name: 'Biforcazione',
+      tips: ['Due stazioni, due destinazioni', 'L’interruttore verde vuole peso: stringi per riunire lo slime sopra'],
+    },
+    'c2-gran-raiz': {
+      name: 'La grande radice',
+      tips: ['Ultima prova del capitolo: usa tutto ciò che hai imparato', 'Stringi prima di saltare', 'Prendi l’olio e prendi fuoco dall’altra parte per bruciare le piante'],
     },
   },
 };

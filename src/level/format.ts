@@ -16,7 +16,8 @@ export type Channel = 'A' | 'B';
 export type CellKind =
   | 'void' | 'floor' | 'wall' | 'fire' | 'firet' | 'ice' | 'jump' | 'switch' | 'door' | 'start' | 'treasure'
   | 'coin' | 'blade' | 'spike' | 'gem'
-  | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet';
+  | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet'
+  | 'station' | 'rail';
 
 export interface TileDef {
   char: string;
@@ -69,6 +70,10 @@ export const TILES: readonly TileDef[] = [
   { char: '>', kind: 'fan', label: 'Ventilador (sopla a la derecha)', dir: 'e', raise: 1.0, color: '#3d4a66' },
   { char: '<', kind: 'fan', label: 'Ventilador (sopla a la izquierda)', dir: 'w', raise: 1.0, color: '#3d4a66' },
   { char: 'Q', kind: 'coldjet', label: 'Chorro de aire frío (congela 30 s)', color: '#bfefff' },
+  // Raíles: el trozo que pisa una estación se hace bola y rueda por la vía hasta la otra estación.
+  // La vía (casillas '=' seguidas, puede girar y subir) no se pisa: hace de valla para el limo a pie.
+  { char: 'R', kind: 'station', label: 'Estación de raíl', color: '#7dd3fc' },
+  { char: '=', kind: 'rail', label: 'Raíl', raise: 1.2, color: '#9aa3b5' },
 ];
 
 export const TILE_BY_CHAR: ReadonlyMap<string, TileDef> = new Map(TILES.map((t) => [t.char, t]));
@@ -128,7 +133,38 @@ export interface ChapterDef {
   id: string;
   name: string;
   subtitle: string;
+  /** Decorado del abismo (fondo, materiales): cambia cada 4 capítulos. */
+  biome: 'raices';
   floors: LevelData[];
+}
+
+/**
+  Recorre las vías de un nivel: para cada estación, la lista de casillas hasta la estación del otro extremo.
+  Devuelve también los errores (estación sin vía, vía que no acaba en estación, vías con ramales).
+*/
+export function traceRails(level: LevelData): { paths: Map<number, number[]>; errors: string[] } {
+  const { w, d } = levelSize(level);
+  const at = (i: number, j: number) => (i >= 0 && j >= 0 && i < w && j < d ? level.tiles[j][i] : '.');
+  const paths = new Map<number, number[]>();
+  const errors: string[] = [];
+  const N = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) {
+    if (at(i, j) !== 'R') continue;
+    const rails = N.filter(([di, dj]) => at(i + di, j + dj) === '=');
+    if (rails.length !== 1) { errors.push(`La estación de (${i}, ${j}) debe tocar exactamente una vía.`); continue; }
+    const path = [j * w + i];
+    let [ci, cj] = [i + rails[0][0], j + rails[0][1]];
+    let [pi, pj] = [i, j];
+    for (let guard = 0; guard < w * d; guard++) {
+      path.push(cj * w + ci);
+      if (at(ci, cj) === 'R') break;
+      const next = N.map(([di, dj]) => [ci + di, cj + dj]).filter(([a, b]) => (a !== pi || b !== pj) && (at(a, b) === '=' || at(a, b) === 'R'));
+      if (next.length !== 1) { errors.push(`La vía de (${ci}, ${cj}) ${next.length ? 'tiene ramales' : 'no acaba en una estación'}.`); path.length = 0; break; }
+      [pi, pj, ci, cj] = [ci, cj, next[0][0], next[0][1]];
+    }
+    if (path.length) paths.set(j * w + i, path);
+  }
+  return { paths, errors };
 }
 
 export const LIMITS = { minSize: 3, maxSize: 96, minCount: 10, maxCount: 120 } as const;
@@ -169,6 +205,7 @@ export function validateLevel(level: LevelData): string[] {
     const need = level.need?.[ch];
     if (sw && need !== undefined && (need < 1 || need > level.count)) errors.push(`El interruptor ${ch} pide un peso imposible (${need}).`);
   }
+  errors.push(...traceRails(level).errors);
   if (level.count < LIMITS.minCount || level.count > LIMITS.maxCount) {
     errors.push(`El limo debe tener entre ${LIMITS.minCount} y ${LIMITS.maxCount} limitos.`);
   }

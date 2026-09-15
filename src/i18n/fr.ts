@@ -20,6 +20,7 @@ export const fr: Dict = {
   },
   story: {
     title: 'Mode Histoire',
+    unlockHint: 'Termine le {chapter} pour l’ouvrir',
     chapter: 'Chapitre {n}',
     floor: 'Étage {n}',
     breakdown: 'Voir le bilan du chapitre',
@@ -27,6 +28,7 @@ export const fr: Dict = {
   },
   chapters: {
     'cripta-azul': 'La Crypte Bleue',
+    'raices-colgantes': 'Les Racines Suspendues',
   },
   options: {
     title: 'Options',
@@ -52,6 +54,7 @@ export const fr: Dict = {
   },
   hud: {
     pause: 'Pause',
+    squeeze: 'Serrer',
     oiled: 'Huile',
     burning: 'En feu {s}',
     frozen: 'Gelé {s}',
@@ -155,7 +158,7 @@ export const fr: Dict = {
     },
     'c1-filo-de-cuchilla': {
       name: 'Fil de la lame',
-      tips: ['Les lames coupent ton slime en deux', 'Les deux moitiés bougent en même temps', 'Quand les morceaux se touchent, ils se rassemblent', 'Les pointes le divisent aussi'],
+      tips: ['Les lames coupent ton slime en deux', 'Les deux moitiés bougent en même temps', 'Les morceaux se rejoignent en se touchant ; tu peux aussi maintenir le bouton serrer', 'Les pointes le divisent aussi'],
     },
     'c1-pasillo-de-fuego': {
       name: 'Couloir de feu',
@@ -188,6 +191,46 @@ export const fr: Dict = {
     'c1-gran-cripta': {
       name: 'La grande crypte',
       tips: ["Dernière épreuve : utilise tout ce que tu as appris", 'Huile, feu… et brûle ces plantes'],
+    },
+    'c2-todos-a-una': {
+      name: 'Tous ensemble',
+      tips: ['La lame te coupe en morceaux', 'Maintiens le bouton serrer : les morceaux se rassemblent peu à peu', 'Serre avant les sorties étroites'],
+    },
+    'c2-sobre-railes': {
+      name: 'Sur les rails',
+      tips: ['Entre dans la gare : le slime devient une boule et roule sur la voie', 'À l’autre gare, tu redeviens slime'],
+    },
+    'c2-curvas': {
+      name: 'Virages',
+      tips: ['Les voies peuvent tourner : la boule les suit toute seule', 'Ramasse les pièces et trouve la gare suivante'],
+    },
+    'c2-cuesta-arriba': {
+      name: 'La montée',
+      tips: ['Les voies montent aussi : c’est le seul chemin vers le haut', 'D’en haut, on ne peut que descendre : trouve la gare suivante'],
+    },
+    'c2-todos-a-bordo': {
+      name: 'Tous à bord',
+      tips: ['Seul le morceau posé sur la gare monte dans la boule', 'Serre pour rassembler le slime avant de monter'],
+    },
+    'c2-plantas-en-la-via': {
+      name: 'Plantes sur la voie',
+      tips: ['Prends l’huile et enflamme-toi sur un brasero', 'En feu, tu brûles les plantes qui bloquent la gare'],
+    },
+    'c2-salto-a-la-estacion': {
+      name: 'Saut vers la gare',
+      tips: ['Les plateformes te lancent vers l’île de la gare', 'Rassemble le slime avant de monter : ce qui reste devra monter après'],
+    },
+    'c2-puente-de-viento': {
+      name: 'Pont venteux',
+      tips: ['Le pont est venteux : la voie est le chemin sûr', 'En boule, le vent ne te déplace pas'],
+    },
+    'c2-bifurcacion': {
+      name: 'Bifurcation',
+      tips: ['Deux gares, deux destinations', 'L’interrupteur vert demande du poids : serre pour rassembler le slime dessus'],
+    },
+    'c2-gran-raiz': {
+      name: 'La grande racine',
+      tips: ['Dernière épreuve du chapitre : utilise tout ce que tu as appris', 'Serre avant de sauter', 'Prends l’huile et enflamme-toi de l’autre côté pour brûler les plantes'],
     },
   },
 };

@@ -11,6 +11,16 @@ import c1f7 from './campaign/chapter1/07-c1-hielo-que-arde.json';
 import c1f8 from './campaign/chapter1/08-c1-ventiladores.json';
 import c1f9 from './campaign/chapter1/09-c1-corriente-helada.json';
 import c1f10 from './campaign/chapter1/10-c1-gran-cripta.json';
+import c2f1 from './campaign/chapter2/01-c2-todos-a-una.json';
+import c2f2 from './campaign/chapter2/02-c2-sobre-railes.json';
+import c2f3 from './campaign/chapter2/03-c2-curvas.json';
+import c2f4 from './campaign/chapter2/04-c2-cuesta-arriba.json';
+import c2f5 from './campaign/chapter2/05-c2-todos-a-bordo.json';
+import c2f6 from './campaign/chapter2/06-c2-plantas-en-la-via.json';
+import c2f7 from './campaign/chapter2/07-c2-salto-a-la-estacion.json';
+import c2f8 from './campaign/chapter2/08-c2-puente-de-viento.json';
+import c2f9 from './campaign/chapter2/09-c2-bifurcacion.json';
+import c2f10 from './campaign/chapter2/10-c2-gran-raiz.json';
 
 /** Modo historia: capítulos de 10 pisos. Sus coleccionables están en collectibles.ts. */
 export const CHAPTERS: ChapterDef[] = [
@@ -18,12 +28,21 @@ export const CHAPTERS: ChapterDef[] = [
     id: 'cripta-azul',
     name: 'Capítulo 1',
     subtitle: 'La Cripta Azul',
+    biome: 'raices',
     floors: [c1f1, c1f2, c1f3, c1f4, c1f5, c1f6, c1f7, c1f8, c1f9, c1f10] as LevelData[],
+  },
+  {
+    // raíles y botón de apretar; mismo decorado (el decorado cambia cada 4 capítulos)
+    id: 'raices-colgantes',
+    name: 'Capítulo 2',
+    subtitle: 'Las Raíces Colgantes',
+    biome: 'raices',
+    floors: [c2f1, c2f2, c2f3, c2f4, c2f5, c2f6, c2f7, c2f8, c2f9, c2f10] as LevelData[],
   },
 ];
 
 /** Capítulos anunciados que aún no se pueden jugar. */
-export const UPCOMING = [{ name: 'Capítulo 2', subtitle: 'Próximamente' }];
+export const UPCOMING = [{ name: 'Capítulo 3', subtitle: 'Próximamente' }];
 
 /** Suelo del menú: 9x7 casillas bajo la habitación (solo sostiene al limo; el mundo no se dibuja). */
 export const MENU_STAGE: LevelData = {

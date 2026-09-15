@@ -378,7 +378,18 @@ function refreshScreen() {
 function renderStory() {
   const list = $('chapter-list');
   list.innerHTML = '';
-  CHAPTERS.forEach((ch) => {
+  CHAPTERS.forEach((ch, idx) => {
+    // cada capítulo se abre al terminar el anterior
+    const prev = CHAPTERS[idx - 1];
+    if (prev && !chapterDone(prev)) {
+      const b = document.createElement('button');
+      b.className = 'card chapter-card locked';
+      b.disabled = true;
+      b.innerHTML = `${lockSvg}<span class="eyebrow">${chapterTitle(ch)}</span><span class="title">${chapterSubtitle(ch)}</span>
+        <span class="meta"><span class="m">${t('story.unlockHint', { chapter: chapterTitle(prev) })}</span></span>`;
+      list.appendChild(b);
+      return;
+    }
     const stars = ch.floors.reduce((a, f) => a + floorStars(f.id), 0);
     const coins = ch.floors.reduce((a, f) => a + (floorSave(f.id)?.bestCoins ?? 0), 0);
     const coinsTotal = ch.floors.reduce((a, f) => a + coinsTotalOf(f), 0);
@@ -1011,7 +1022,7 @@ function tick(dt: number) {
   const cs = Math.cos(camYaw), sn = Math.sin(camYaw);
   moveX = input.tiltX * cs + input.tiltZ * sn;
   moveZ = -input.tiltX * sn + input.tiltZ * cs;
-  slime.step(dt, moveX, moveZ);
+  slime.step(dt, moveX, moveZ, input.squeeze);
   world.update(dt, slime.switchCounts);
   elapsed += dt;
 
@@ -1020,6 +1031,8 @@ function tick(dt: number) {
       case 'fall': sfx.fall(); break;
       case 'evaporate': sfx.sizzle(); fx.steam(e.x, e.y, e.z); break;
       case 'pad': sfx.pad(); fx.splat(e.x, e.y, e.z); break;
+      case 'board': sfx.pad(); fx.splat(e.x, e.y, e.z); buzz(20); break;
+      case 'unboard': sfx.pad(); fx.splat(e.x, e.y, e.z); buzz(15); break;
       case 'coin': sfx.coin(); fx.sparkle(e.x, e.y + 0.4, e.z); buzz(15); break;
       case 'cut': sfx.cut(); buzz(8); break;
       case 'oil': sfx.pad(); fx.sparkle(e.x, e.y + 0.3, e.z, 0xf5a524); break;

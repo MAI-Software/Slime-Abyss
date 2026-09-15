@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Assets } from './assets';
 import { FireFx, type FireCell, type FireState } from './fire';
 import { AO_E, AO_N, AO_NE, AO_NW, AO_S, AO_SE, AO_SW, AO_W, createBlockMaterial, createGlowMaterial } from './materials';
-import { HEIGHT_STEP, TILE_BY_CHAR, TILES, type CellKind, type Channel, type LevelData } from './level/format';
+import { HEIGHT_STEP, TILE_BY_CHAR, TILES, traceRails, type CellKind, type Channel, type LevelData } from './level/format';
 
 export type { CellKind };
 
@@ -26,6 +26,23 @@ interface Breakable {
 }
 
 const DIRS = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] } as const;
+/** altura de colisión de la vía: valla invisible para el limo a pie */
+const RAIL_FENCE = 50;
+
+/** Recorrido de una vía desde una estación hasta la del otro extremo (centros de casilla). */
+export interface RailPath {
+  from: number;
+  to: number;
+  xs: Float32Array;
+  zs: Float32Array;
+  ys: Float32Array;
+  /** distancia acumulada hasta cada punto */
+  dist: Float32Array;
+  total: number;
+  /** dirección con la que se sale de la estación de llegada */
+  exitX: number;
+  exitZ: number;
+}
 const WIND_LEN = 9;
 
 /** Obstáculo que no ocupa toda la casilla (cuchillas, pinchos): caja para colisión y zona de corte. */
@@ -141,6 +158,8 @@ export class World {
   private windCells: { i: number; j: number; dx: number; dz: number; base: number; pow: number }[] = [];
   private mistFx: THREE.Points | null = null;
   private fire: FireFx | null = null;
+  /** vías por estación de salida (índice de casilla) */
+  readonly rails = new Map<number, RailPath>();
   /** focos de fuego para iluminar: grupos de casillas de fuego cercanas (bloques de 3x3) */
   readonly fireSpots: { x: number; y: number; z: number; cells: FireCell[] }[] = [];
   private chest: THREE.Object3D | null = null;
@@ -371,6 +390,12 @@ export class World {
             this.add('cold_vent', x, c.base, z);
             this.coldCells.push(j * this.w + i);
             break;
+          case 'station':
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            break;
+          case 'rail':
+            c.top = RAIL_FENCE; // no se dibuja bloque: la vía se monta en buildRails
+            break;
           case 'blade': case 'spike':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.addDivider(i, j, c);
@@ -381,6 +406,7 @@ export class World {
     }
 
     this.buildBlocks(solids);
+    this.buildRails();
     this.buildWind();
     this.buildMist();
 
@@ -480,6 +506,47 @@ export class World {
   }
 
   /** Corriente de cada ventilador: avanza por casillas (también sobre el vacío) hasta chocar con algo alto. */
+  private buildRails() {
+    const { paths } = traceRails(this.def);
+    for (const [from, cellsPath] of paths) {
+      const n = cellsPath.length;
+      const xs = new Float32Array(n), zs = new Float32Array(n), ys = new Float32Array(n), dist = new Float32Array(n);
+      cellsPath.forEach((idx, k) => {
+        xs[k] = (idx % this.w) + 0.5;
+        zs[k] = Math.floor(idx / this.w) + 0.5;
+        if (k) dist[k] = dist[k - 1] + Math.hypot(xs[k] - xs[k - 1], zs[k] - zs[k - 1]);
+      });
+      const to = cellsPath[n - 1];
+      const y0 = this.cells[from].base, y1 = this.cells[to].base;
+      const total = dist[n - 1];
+      for (let k = 0; k < n; k++) ys[k] = y0 + (y1 - y0) * (dist[k] / total);
+      const ex = xs[n - 1] - xs[n - 2], ez = zs[n - 1] - zs[n - 2];
+      const el = Math.hypot(ex, ez) || 1;
+      this.rails.set(from, { from, to, xs, zs, ys, dist, total, exitX: ex / el, exitZ: ez / el });
+
+      // estación: el arco queda de través a la vía
+      const dx = xs[1] - xs[0], dz = zs[1] - zs[0];
+      const st = this.add('rail_station', xs[0], y0, zs[0]);
+      st.rotation.y = Math.atan2(-dx, -dz);
+      if (from > to) continue; // cada vía se monta una sola vez
+      for (let k = 0; k < n - 1; k++) {
+        const ax = xs[k], az = zs[k], bx = xs[k + 1], bz = zs[k + 1];
+        const hx = bx - ax, hz = bz - az, hy = ys[k + 1] - ys[k];
+        const flat = Math.hypot(hx, hz);
+        const piece = this.add('rail_piece', (ax + bx) / 2, (ys[k] + ys[k + 1]) / 2, (az + bz) / 2);
+        piece.rotation.order = 'YZX';
+        piece.rotation.set(0, Math.atan2(-hz, hx), Math.atan2(hy, flat));
+        piece.scale.x = Math.hypot(flat, hy) + 0.02;
+      }
+    }
+  }
+
+  /** Vía que sale de la estación de esta casilla, si la hay. */
+  railAt(i: number, j: number): RailPath | null {
+    if (i < 0 || j < 0 || i >= this.w || j >= this.d) return null;
+    return this.rails.get(j * this.w + i) ?? null;
+  }
+
   private buildWind() {
     for (const f of this.fans) {
       const [dx, dz] = DIRS[f.dir];
@@ -487,7 +554,7 @@ export class World {
         const ci = f.i + dx * k, cj = f.j + dz * k;
         const cell = this.cell(ci, cj);
         if (!cell) break;
-        if (cell.top !== -Infinity && cell.top > f.base + 0.6) break;
+        if (cell.kind !== 'rail' && cell.top !== -Infinity && cell.top > f.base + 0.6) break;
         const idx = cj * this.w + ci;
         const pow = 1 - (k - 1) / (WIND_LEN + 1);
         this.windX[idx] += dx * pow;
