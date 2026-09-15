@@ -296,6 +296,8 @@ let camPitch = DEFAULT_PITCH;
 /** dirección del mando pasada a ejes del mundo según hacia dónde mira la cámara */
 let moveX = 0;
 let moveZ = 0;
+/** depuración: piloto automático que sustituye al mando (ejes de pantalla) */
+let devDrive: (() => [number, number]) | null = null;
 
 // ------------------------------------------------------------------ iconos
 
@@ -1004,6 +1006,7 @@ const STATE_TOASTS: Partial<Record<SlimeState, string>> = { oiled: 'toast.oil', 
 function tick(dt: number) {
   if (!world || !slime) return;
   input.update();
+  if (import.meta.env.DEV && devDrive) [input.tiltX, input.tiltZ] = devDrive();
   // el mando va en ejes de pantalla: se gira con la cámara para que "arriba" sea siempre "hacia el fondo"
   const cs = Math.cos(camYaw), sn = Math.sin(camYaw);
   moveX = input.tiltX * cs + input.tiltZ * sn;
@@ -1250,6 +1253,8 @@ if (import.meta.env.DEV) {
       collect: (ids: string[] = COLLECTIBLES.map((c) => c.id)) => { save.collectibles = ids; store(); if (mode === 'menu') refreshRoom(); },
       focus: (id: string | null) => { menuFocus = id; },
       cam: (yaw: number, pitch = DEFAULT_PITCH) => { camYaw = yaw; camPitch = pitch; },
+      drive: (fn: (() => [number, number]) | null) => { devDrive = fn; },
+      run: (seconds: number) => { for (let s = 0; s < seconds && mode === 'play'; s += FIXED) frame(FIXED); return mode; },
       state: () => ({ mode, alive: slime?.aliveCount, slimeState: slime?.state, groups: slime?.groups.map((g) => g.ids.length), coins: world && `${world.coinsCollected}/${world.coinsTotal}`, lead: slime?.groups[0] && { x: slime.groups[0].cx.toFixed(2), y: slime.groups[0].cy.toFixed(2), z: slime.groups[0].cz.toFixed(2) } }),
     },
   });

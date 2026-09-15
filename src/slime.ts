@@ -58,10 +58,10 @@ const FACE_GROUPS = 4;
 const FACE_MIN_SIZE = 8;
 /** Inclinación de cámara por defecto (rad sobre la horizontal); la cara se orienta según ella. */
 export const DEFAULT_PITCH = 1.2;
-// Recoger objetos: las gotitas sueltas (sin cara) solo pisan interruptores y saltan en plataformas.
-// Para el tesoro hace falta además un trozo con buena parte del limo, así una gota no acaba el piso.
+// Recoger objetos y tocar el tesoro: solo trozos con cara. Las gotitas sueltas pisan interruptores y
+// saltan en plataformas, pero no acaban el piso por error. No se pide un porcentaje del limo: en pisos
+// como "Divide y vencerás" medio limo se queda pisando un interruptor mientras el resto llega al tesoro.
 const PICKUP_MIN = FACE_MIN_SIZE;
-const TREASURE_SHARE = 0.3;
 // Contorno: trazo de tinta alrededor del limo y silueta clara cuando un muro lo tapa.
 const OUTLINE_WIDTH = 0.026;
 const XRAY_LIFT = 0.2;
@@ -726,7 +726,6 @@ export class Slime {
     const t = w.treasure;
     const largest = this.groups[0]?.ids.length ?? 0;
     const pickMin = Math.min(largest, PICKUP_MIN);
-    const treasureMin = Math.min(largest, Math.max(PICKUP_MIN, this.aliveCount * TREASURE_SHARE));
     const pad = this.padFlags;
     pad.fill(0);
     let anyPad = false;
@@ -810,7 +809,7 @@ export class Slime {
       }
 
       const dx = x - t.x, dz = z - t.z;
-      if (dx * dx + dz * dz < 0.55 && y < t.y + 1.2 && chunk >= treasureMin) this.touchedTreasure = true;
+      if (dx * dx + dz * dz < 0.55 && y < t.y + 1.2 && chunk >= pickMin) this.touchedTreasure = true;
     }
     if (!anyPad) return;
     // sale lanzado todo el trozo que está sobre la plataforma o pegado a ella;
