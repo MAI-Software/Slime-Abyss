@@ -13,13 +13,16 @@ export interface BodyColor {
   rim: [number, number, number];
 }
 
+/**
+  Colores elegibles: ninguno puede confundirse con un estado del juego
+  (aceite marrón amarillento, llamas naranjas, congelado celeste).
+*/
 export const BODY_COLORS = {
   blue: { color: 0x2f8cff, emissive: 0x0b3a8c, rim: [0.45, 0.8, 1.0] },
   green: { color: 0x2fcf6a, emissive: 0x0b5a2a, rim: [0.6, 1.0, 0.65] },
   pink: { color: 0xff5fa8, emissive: 0x8c1d4f, rim: [1.0, 0.72, 0.88] },
   purple: { color: 0x9b5cff, emissive: 0x3d1a8c, rim: [0.8, 0.66, 1.0] },
-  red: { color: 0xf0384e, emissive: 0x7a0f1c, rim: [1.0, 0.62, 0.62] },
-  obsidian: { color: 0x474d7a, emissive: 0x1a1d40, rim: [0.7, 0.76, 1.0] },
+  black: { color: 0x2e3144, emissive: 0x0e1020, rim: [0.62, 0.68, 0.95] },
 } satisfies Record<string, BodyColor>;
 
 export type BodyColorId = keyof typeof BODY_COLORS;
@@ -41,7 +44,8 @@ export const DEFAULT_LOOK: SlimeLook = { color: 'blue', eyes: 'round', mouth: 'c
 export function sanitizeLook(raw: Partial<SlimeLook> | undefined): SlimeLook {
   const pick = <T extends string>(list: readonly T[], v: unknown, def: T): T => (list.includes(v as T) ? (v as T) : def);
   return {
-    color: pick(Object.keys(BODY_COLORS) as BodyColorId[], raw?.color, DEFAULT_LOOK.color),
+    // 'obsidian' se llamaba así antes de ser 'black'; 'red' se quitó (se confundía con las llamas)
+    color: pick(Object.keys(BODY_COLORS) as BodyColorId[], (raw?.color as string) === 'obsidian' ? 'black' : raw?.color, DEFAULT_LOOK.color),
     eyes: pick(EYES, raw?.eyes, DEFAULT_LOOK.eyes),
     mouth: pick(MOUTHS, raw?.mouth, DEFAULT_LOOK.mouth),
     cheeks: pick(CHEEKS, raw?.cheeks, DEFAULT_LOOK.cheeks),

@@ -19,9 +19,9 @@
           <canvas id="life-bar" aria-hidden="true"></canvas>
           <span id="life-pct">100%</span>
         </div>
-        <div class="hud-chip state" id="hud-state" hidden>
+        <div class="state-badge" id="hud-state" role="img" hidden>
           <svg class="ico" id="state-ico" viewBox="0 0 24 24" aria-hidden="true"></svg>
-          <span id="state-text"></span>
+          <span id="state-sec" class="state-sec" aria-hidden="true"></span>
         </div>
       </div>
       <div id="level-name"></div>
@@ -49,7 +49,6 @@
   <div id="screen-main" class="screen screen-main">
     <div class="main-brand">
       <h1 class="logo"><span>Slime</span> <span>Abyss</span></h1>
-      <p class="subtitle" data-i18n="menu.subtitle"></p>
     </div>
     <div class="main-actions">
       <button id="btn-story" class="big-btn" data-i18n="menu.story" disabled></button>

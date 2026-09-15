@@ -60,5 +60,5 @@ export function levelTip(level: LevelData, k: number): string {
 export function applyDom(root: ParentNode = document) {
   root.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n!); });
   root.querySelectorAll<HTMLElement>('[data-i18n-aria]').forEach((el) => el.setAttribute('aria-label', t(el.dataset.i18nAria!)));
-  document.title = `Slime Abyss · ${t('menu.subtitle')}`;
+  document.title = 'Slime Abyss';
 }

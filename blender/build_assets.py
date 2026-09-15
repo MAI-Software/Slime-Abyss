@@ -140,7 +140,7 @@ def tube(name, points, radius, mat, parent=None, loc=(0, 0, 0), poly=False, cycl
     cu = bpy.data.curves.new(name + "_curve", "CURVE")
     cu.dimensions = "3D"
     cu.bevel_depth = radius
-    cu.bevel_resolution = 3
+    cu.bevel_resolution = 6
     cu.use_fill_caps = True
     sp = cu.splines.new("POLY" if poly else "NURBS")
     sp.points.add(len(points) - 1)
@@ -150,7 +150,7 @@ def tube(name, points, radius, mat, parent=None, loc=(0, 0, 0), poly=False, cycl
     if not poly:
         sp.use_endpoint_u = True
         sp.order_u = 3
-        sp.resolution_u = 6
+        sp.resolution_u = 16
     tmp = bpy.data.objects.new(name + "_tmp", cu)
     SCENE.objects.link(tmp)
     dg = bpy.context.evaluated_depsgraph_get()
@@ -352,13 +352,13 @@ def flat_shape(name, points, depth, mat, front=0.0, parent=None, loc=(0, 0, 0)):
     return mesh_object(name, bm, mat, parent=parent, loc=loc)
 
 
-def ellipse_pts(rx, rz, cx=0.0, cz=0.0, n=24):
+def ellipse_pts(rx, rz, cx=0.0, cz=0.0, n=48):
     return [(cx + rx * math.cos(2 * math.pi * i / n), cz + rz * math.sin(2 * math.pi * i / n)) for i in range(n)]
 
 
 def teardrop(name, radius, mat):
     bm = bmesh.new()
-    bmesh.ops.create_uvsphere(bm, u_segments=10, v_segments=8, radius=radius)
+    bmesh.ops.create_uvsphere(bm, u_segments=20, v_segments=14, radius=radius)
     for v in bm.verts:
         if v.co.z > 0:
             t = v.co.z / radius
@@ -388,20 +388,20 @@ def star_pts(r_out, r_in, n=4, cx=0.0, cz=0.0):
 def eye_base(name, rx, rz, white_mat):
     eye = empty(name)
     bm = bmesh.new()
-    ellipsoid(bm, (rx + 0.009, 0.03, rz + 0.01), (0, 0, 0), 22, 12)
+    ellipsoid(bm, (rx + 0.009, 0.03, rz + 0.01), (0, 0, 0), 36, 20)
     mesh_object(name + "_outline", bm, M["black"], smooth=True, parent=eye, loc=(0, 0.006, 0))
     bm = bmesh.new()
-    ellipsoid(bm, (rx, 0.03, rz), (0, 0, 0), 22, 12)
+    ellipsoid(bm, (rx, 0.03, rz), (0, 0, 0), 36, 20)
     mesh_object(name + "_white", bm, white_mat, smooth=True, parent=eye)
     return eye
 
 
 def shines(name, parent, big, small, y=-0.013):
     bm = bmesh.new()
-    ellipsoid(bm, (big, 0.006, big * 1.2), (0, 0, 0), 10, 6)
+    ellipsoid(bm, (big, 0.006, big * 1.2), (0, 0, 0), 20, 12)
     mesh_object(name + "_shine", bm, M["white"], smooth=True, parent=parent, loc=(-big * 1.15, y, big * 1.4))
     bm = bmesh.new()
-    ellipsoid(bm, (small, 0.005, small), (0, 0, 0), 8, 6)
+    ellipsoid(bm, (small, 0.005, small), (0, 0, 0), 16, 10)
     mesh_object(name + "_shine2", bm, M["white"], smooth=True, parent=parent, loc=(big * 1.05, y, -big * 1.25))
 
 
@@ -409,17 +409,17 @@ def shines(name, parent, big, small, y=-0.013):
 eye = eye_base("face_eye_round", 0.062, 0.082, M["white"])
 look = empty("face_eye_round_look", parent=eye, loc=(0, -0.02, -0.01))
 bm = bmesh.new()
-ellipsoid(bm, (0.043, 0.012, 0.054), (0, 0, 0), 16, 10)
+ellipsoid(bm, (0.043, 0.012, 0.054), (0, 0, 0), 32, 18)
 mesh_object("face_eye_round_iris", bm, M["iris"], smooth=True, parent=look)
 bm = bmesh.new()
-ellipsoid(bm, (0.025, 0.008, 0.031), (0, 0, 0), 12, 8)
+ellipsoid(bm, (0.025, 0.008, 0.031), (0, 0, 0), 24, 14)
 mesh_object("face_eye_round_pupil", bm, M["black"], smooth=True, parent=look, loc=(0, -0.006, 0))
 shines("face_eye_round", look, 0.015, 0.007)
 
 # puntitos: óvalo negro brillante (el estilo clásico)
 eye = empty("face_eye_dot")
 bm = bmesh.new()
-ellipsoid(bm, (0.05, 0.03, 0.066), (0, 0, 0), 20, 12)
+ellipsoid(bm, (0.05, 0.03, 0.066), (0, 0, 0), 36, 20)
 mesh_object("face_eye_dot_ball", bm, M["black"], smooth=True, parent=eye)
 look = empty("face_eye_dot_look", parent=eye, loc=(0, -0.026, 0))
 shines("face_eye_dot", look, 0.016, 0.008, y=0.0)
@@ -428,28 +428,28 @@ shines("face_eye_dot", look, 0.016, 0.008, y=0.0)
 eye = eye_base("face_eye_sparkle", 0.07, 0.092, M["white"])
 look = empty("face_eye_sparkle_look", parent=eye, loc=(0, -0.02, -0.012))
 bm = bmesh.new()
-ellipsoid(bm, (0.053, 0.012, 0.066), (0, 0, 0), 18, 10)
+ellipsoid(bm, (0.053, 0.012, 0.066), (0, 0, 0), 32, 18)
 mesh_object("face_eye_sparkle_iris", bm, M["iris"], smooth=True, parent=look)
 bm = bmesh.new()
-ellipsoid(bm, (0.038, 0.008, 0.026), (0, 0, 0), 14, 8)
+ellipsoid(bm, (0.038, 0.008, 0.026), (0, 0, 0), 28, 14)
 mesh_object("face_eye_sparkle_low", bm, M["iris_light"], smooth=True, parent=look, loc=(0, -0.006, -0.03))
 bm = bmesh.new()
-ellipsoid(bm, (0.028, 0.008, 0.034), (0, 0, 0), 12, 8)
+ellipsoid(bm, (0.028, 0.008, 0.034), (0, 0, 0), 24, 14)
 mesh_object("face_eye_sparkle_pupil", bm, M["black"], smooth=True, parent=look, loc=(0, -0.009, 0.004))
 flat_shape("face_eye_sparkle_star", star_pts(0.024, 0.007), 0.002, M["white"], front=-0.016, parent=look,
            loc=(-0.02, 0, 0.026))
 bm = bmesh.new()
-ellipsoid(bm, (0.009, 0.005, 0.009), (0, 0, 0), 8, 6)
+ellipsoid(bm, (0.009, 0.005, 0.009), (0, 0, 0), 16, 10)
 mesh_object("face_eye_sparkle_shine2", bm, M["white"], smooth=True, parent=look, loc=(0.02, -0.015, -0.018))
 
 # gatunos: iris verde lima con pupila rasgada
 eye = eye_base("face_eye_cat", 0.062, 0.08, M["cat_iris"])
 look = empty("face_eye_cat_look", parent=eye, loc=(0, -0.026, 0))
 bm = bmesh.new()
-ellipsoid(bm, (0.012, 0.008, 0.058), (0, 0, 0), 10, 10)
+ellipsoid(bm, (0.012, 0.008, 0.058), (0, 0, 0), 20, 16)
 mesh_object("face_eye_cat_slit", bm, M["black"], smooth=True, parent=look)
 bm = bmesh.new()
-ellipsoid(bm, (0.012, 0.005, 0.014), (0, 0, 0), 8, 6)
+ellipsoid(bm, (0.012, 0.005, 0.014), (0, 0, 0), 16, 10)
 mesh_object("face_eye_cat_shine", bm, M["white"], smooth=True, parent=look, loc=(-0.026, -0.006, 0.03))
 
 # Ojo de dolor ">" con esquina marcada (el juego lo refleja para "<").

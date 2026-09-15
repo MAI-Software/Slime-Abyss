@@ -12,7 +12,6 @@ export const en: Dict = {
     stars: '{n} of 3 stars',
   },
   menu: {
-    subtitle: 'Descend into the abyss',
     hint: 'Treasures, layers and trials await below',
     story: 'Story Mode',
     collection: 'Collection',
@@ -121,7 +120,7 @@ export const en: Dict = {
     eyes: 'Eyes',
     mouth: 'Mouth',
     cheeks: 'Cheeks',
-    colorOpt: { blue: 'Blue', green: 'Green', pink: 'Pink', purple: 'Purple', red: 'Red', obsidian: 'Obsidian' },
+    colorOpt: { blue: 'Blue', green: 'Green', pink: 'Pink', purple: 'Purple', black: 'Black' },
     eyesOpt: { round: 'Round', dot: 'Dots', sparkle: 'Sparkly', cat: 'Cat' },
     mouthOpt: { cat: 'Kitty', smile: 'Smile', fang: 'Fang', tongue: 'Tongue' },
     cheeksOpt: { lines: 'Lines', spots: 'Blush', hearts: 'Hearts', none: 'None' },

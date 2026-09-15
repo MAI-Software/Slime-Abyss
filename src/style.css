@@ -110,7 +110,7 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   gap: 14px;
   padding: calc(14px + var(--safe-t)) calc(20px + var(--safe-r)) calc(14px + var(--safe-b)) calc(20px + var(--safe-l));
   background: var(--scrim);
@@ -167,7 +167,6 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
   animation: wobble 2.4s ease-in-out infinite;
 }
 .logo span { display: block; }
-.subtitle { margin: 4px 0 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-shadow: 0 2px 0 var(--ink); }
 .hint { margin: 0; font-size: 15px; font-weight: 700; opacity: 0.9; max-width: 280px; }
 @keyframes wobble {
   0%, 100% { transform: scale(1, 1); }
@@ -548,8 +547,11 @@ body[data-control="gyro"] #joy-zone, body[data-control="gyro"] #cam-zone { displ
   .rank { font-size: 18px; }
   .medal { width: 32px; height: 32px; }
   .breakdown-card .big-btn { min-width: 0; min-height: 48px; font-size: 18px; padding: 8px 18px; }
-  .settings-panel { padding: 2px 16px; }
+  /* en horizontal con poca altura, ajustes en dos columnas para que quepan sin desplazar */
+  .settings-panel { width: min(820px, 100%); padding: 4px 14px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 22px; }
   .setting-row { padding: 6px 0; }
+  .setting-row + .setting-row { border-top: 0; }
+  .setting-row:nth-child(n + 3) { border-top: 2px dashed rgba(15, 23, 42, 0.18); }
   .floor-grid { gap: 8px; }
   .floor-card { min-height: 0; padding: 8px 10px; gap: 3px; }
   .floor-card .num { font-size: 13px; }
@@ -719,10 +721,42 @@ body[data-control="gyro"] #joy-zone, body[data-control="gyro"] #cam-zone { displ
 
 /* ---------- HUD: estado del limo ---------- */
 .hud-left { display: flex; align-items: center; gap: 8px; }
-.hud-chip.state { padding: 6px 12px 6px 8px; }
-.hud-chip.state.oiled { background: #fde68a; }
-.hud-chip.state.burning { background: #fdba74; animation: bump 900ms ease-in-out infinite; }
-.hud-chip.state.frozen { background: #cff4ff; }
+/* icono del estado junto a la vida: el aro se vacía con el tiempo que queda */
+.state-badge {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 0 4px 0 var(--ink);
+  background: conic-gradient(var(--ring) calc(var(--p, 1) * 360deg), rgba(253, 242, 248, 0.9) 0);
+}
+.state-badge::before { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: var(--fill); }
+.state-badge .ico { position: relative; width: 20px; height: 20px; }
+.state-sec {
+  position: absolute;
+  right: -10px;
+  bottom: -8px;
+  min-width: 22px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+  font-variant-numeric: tabular-nums;
+}
+.state-sec:empty { display: none; }
+.state-badge.oiled { --fill: #d9a441; --ring: #7a5212; }
+.state-badge.burning { --fill: #ffb15c; --ring: #e0461a; }
+.state-badge.frozen { --fill: #d8f4ff; --ring: #38a9e0; }
+.state-badge.burning .ico { animation: bump 900ms ease-in-out infinite; }
+.state-badge.bump { animation: bump 380ms cubic-bezier(0.2, 1.6, 0.4, 1); }
 
 /* ---------- recompensa ---------- */
 .reward-card {

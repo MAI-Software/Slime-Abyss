@@ -12,7 +12,6 @@ export const fr: Dict = {
     stars: '{n} étoiles sur 3',
   },
   menu: {
-    subtitle: 'Descends dans l’abîme',
     hint: 'Trésors, strates et épreuves t’attendent en bas',
     story: 'Mode Histoire',
     collection: 'Collection',
@@ -121,7 +120,7 @@ export const fr: Dict = {
     eyes: 'Yeux',
     mouth: 'Bouche',
     cheeks: 'Joues',
-    colorOpt: { blue: 'Bleu', green: 'Vert', pink: 'Rose', purple: 'Violet', red: 'Rouge', obsidian: 'Obsidienne' },
+    colorOpt: { blue: 'Bleu', green: 'Vert', pink: 'Rose', purple: 'Violet', black: 'Noir' },
     eyesOpt: { round: 'Ronds', dot: 'Petits points', sparkle: 'Brillants', cat: 'De chat' },
     mouthOpt: { cat: 'Chaton', smile: 'Sourire', fang: 'Canine', tongue: 'Langue' },
     cheeksOpt: { lines: 'Traits', spots: 'Rougeurs', hearts: 'Cœurs', none: 'Aucune' },

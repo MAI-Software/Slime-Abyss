@@ -12,7 +12,6 @@ export const de: Dict = {
     stars: '{n} von 3 Sternen',
   },
   menu: {
-    subtitle: 'Steig hinab in den Abgrund',
     hint: 'Unten warten Schätze, Schichten und Prüfungen',
     story: 'Story-Modus',
     collection: 'Sammlung',
@@ -121,7 +120,7 @@ export const de: Dict = {
     eyes: 'Augen',
     mouth: 'Mund',
     cheeks: 'Wangen',
-    colorOpt: { blue: 'Blau', green: 'Grün', pink: 'Rosa', purple: 'Lila', red: 'Rot', obsidian: 'Obsidian' },
+    colorOpt: { blue: 'Blau', green: 'Grün', pink: 'Rosa', purple: 'Lila', black: 'Schwarz' },
     eyesOpt: { round: 'Rund', dot: 'Pünktchen', sparkle: 'Glitzernd', cat: 'Katze' },
     mouthOpt: { cat: 'Kätzchen', smile: 'Lächeln', fang: 'Eckzahn', tongue: 'Zunge' },
     cheeksOpt: { lines: 'Striche', spots: 'Rouge', hearts: 'Herzen', none: 'Keine' },

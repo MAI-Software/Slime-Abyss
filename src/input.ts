@@ -77,16 +77,28 @@ export class Input {
     this.neutral = this.raw ? { ...this.raw } : null;
   }
 
+  /*
+    Con el móvil en horizontal, beta/gamma saltan 180° al acercarse a la vertical (gamma solo va de -90 a 90):
+    con ángulos sueltos el control se quedaba clavado a fondo. Por eso se usa la dirección "arriba" del mundo
+    vista desde el móvil (un vector, sin saltos) y de ella se sacan inclinación lateral y frontal.
+  */
   private onOrientation(e: DeviceOrientationEvent) {
     if (e.beta == null || e.gamma == null) return;
     this.hasGyro = true;
-    const angle = (screen.orientation?.angle ?? (window as unknown as { orientation?: number }).orientation ?? 0) as number;
-    const b = e.beta, g = e.gamma;
-    let roll: number, pitch: number;
+    const b = (e.beta * Math.PI) / 180, g = (e.gamma * Math.PI) / 180;
+    // "arriba" en ejes del dispositivo (x: borde derecho, y: borde superior, z: sale de la pantalla), orden Z-X'-Y''
+    const ux = -Math.cos(b) * Math.sin(g), uy = Math.sin(b), uz = Math.cos(b) * Math.cos(g);
+    // a ejes de la pantalla según cómo esté girada
+    const raw = screen.orientation?.angle ?? (window as unknown as { orientation?: number }).orientation ?? 0;
+    const angle = ((Math.round(raw / 90) * 90) % 360 + 360) % 360;
+    let sx: number, sy: number;
+    if (angle === 90) { sx = -uy; sy = ux; }
+    else if (angle === 270) { sx = uy; sy = -ux; }
+    else if (angle === 180) { sx = -ux; sy = -uy; }
+    else { sx = ux; sy = uy; }
     // roll: + inclina a la derecha de la pantalla; pitch: + borde superior hacia ti
-    if (angle === 90) { roll = b; pitch = -g; }
-    else if (angle === 270 || angle === -90) { roll = -b; pitch = g; }
-    else { roll = g; pitch = b; }
+    const roll = (Math.asin(Math.max(-1, Math.min(1, -sx))) * 180) / Math.PI;
+    const pitch = (Math.atan2(sy, uz) * 180) / Math.PI;
     this.raw = { roll, pitch };
     if (!this.neutral) this.calibrate();
   }

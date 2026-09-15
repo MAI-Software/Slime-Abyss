@@ -53,7 +53,7 @@ const CUT_TAG_BASE = 1_000_000;
 const FACE_GROUPS = 4;
 const FACE_MIN_SIZE = 8;
 /** Inclinación de cámara por defecto (rad sobre la horizontal); la cara se orienta según ella. */
-export const DEFAULT_PITCH = 1.08;
+export const DEFAULT_PITCH = 1.2;
 // Recoger objetos: las gotitas sueltas (sin cara) solo pisan interruptores y saltan en plataformas.
 // Para el tesoro hace falta además un trozo con buena parte del limo, así una gota no acaba el piso.
 const PICKUP_MIN = FACE_MIN_SIZE;
@@ -88,7 +88,7 @@ const HOVER_HEIGHT = 0.8;
 
 const STATE_LOOK: Record<SlimeState, { color: number; emissive: number; rim: [number, number, number]; wobble: number }> = {
   normal: { color: 0x2f8cff, emissive: 0x0b3a8c, rim: [0.45, 0.8, 1.0], wobble: 1 },
-  oiled: { color: 0xd49a1c, emissive: 0x5a3500, rim: [1.0, 0.85, 0.45], wobble: 0.8 },
+  oiled: { color: 0xb3842c, emissive: 0x4a2f08, rim: [1.0, 0.84, 0.48], wobble: 0.8 },
   burning: { color: 0xff6a1a, emissive: 0xd23a00, rim: [1.0, 0.75, 0.2], wobble: 1.3 },
   frozen: { color: 0xbfe9ff, emissive: 0x3f8fc2, rim: [0.85, 0.97, 1.0], wobble: 0 },
 };
@@ -212,7 +212,7 @@ export class Slime {
       shader.uniforms.uTime = this.uniforms.uTime;
       shader.uniforms.uWobble = this.uniforms.uWobble;
       shader.uniforms.uRim = this.uniforms.uRim;
-      // superficie viva: ondula suavemente y el interior brilla con vetas que se mueven
+      // superficie viva: ondula suavemente y brilla en el borde como una gelatina
       shader.vertexShader = `uniform float uTime;\nuniform float uWobble;\nvarying vec3 vSlimePos;\n${shader.vertexShader}`.replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
@@ -224,16 +224,17 @@ export class Slime {
       shader.fragmentShader = `uniform float uTime;\nuniform vec3 uRim;\nvarying vec3 vSlimePos;\n${shader.fragmentShader}`.replace(
         '#include <opaque_fragment>',
         `float slimeRim = 1.0 - max(dot(normalize(normal), normalize(vViewPosition)), 0.0);
-        float veins = sin(vSlimePos.x * 7.0 + uTime * 1.7) * sin(vSlimePos.z * 6.0 - uTime * 1.3) * sin(vSlimePos.y * 9.0 + uTime * 2.1);
-        outgoingLight += uRim * pow(slimeRim, 2.2) * 0.6;
-        outgoingLight += vec3(0.25, 0.55, 1.0) * smoothstep(0.35, 0.9, veins) * 0.12;
+        outgoingLight += uRim * pow(slimeRim, 2.2) * 0.55;
+        // luz que atraviesa la gelatina: el centro algo más claro que los bordes
+        outgoingLight += diffuseColor.rgb * pow(1.0 - slimeRim, 3.0) * 0.12;
         #include <opaque_fragment>`,
       );
     };
 
+    // celdas finas: superficie redonda sin facetas (la rejilla cubre ~10 unidades en ambos casos)
     this.blob = lowQuality
-      ? new BlobMesh(64, 0.17, material, n, 16000)
-      : new BlobMesh(72, 0.15, material, n, 24000);
+      ? new BlobMesh(82, 0.12, material, n, 32000)
+      : new BlobMesh(96, 0.105, material, n, 46000);
     this.blob.castShadow = true;
     this.group.add(this.blob);
     const hull = this.createHullMaterial();
@@ -259,7 +260,7 @@ export class Slime {
       this.contactShadows.push(shadow);
       this.group.add(shadow);
     }
-    this.spheres = new THREE.InstancedMesh(new THREE.SphereGeometry(0.25, 12, 9), material, n);
+    this.spheres = new THREE.InstancedMesh(new THREE.SphereGeometry(0.25, 20, 14), material, n);
     this.spheres.castShadow = true;
     this.spheres.frustumCulled = false;
     this.spheres.count = 0;

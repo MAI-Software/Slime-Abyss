@@ -10,7 +10,7 @@ import { Assets } from './assets';
 import { CHAPTERS, MENU_STAGE, PRACTICE, UPCOMING } from './level/campaign';
 import { DEFAULT_KEEP_PCT, starsOf, type ChapterDef, type FloorResult, type LevelData } from './level/format';
 import { World } from './world';
-import { DEFAULT_PITCH, Slime, type SlimeState } from './slime';
+import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
 import { BODY_COLORS, CHEEKS, EYES, MOUTHS, type SlimeLook } from './look';
 import { Input, type ControlMode } from './input';
 import { Fx } from './fx';
@@ -40,7 +40,8 @@ setLang(save.lang ?? detectLang());
 
 const lowQuality = matchMedia('(pointer: coarse)').matches;
 const canvas = $<HTMLCanvasElement>('game');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowQuality, powerPreference: 'high-performance' });
+// antialias también en móvil: sin él los bordes del limo, su contorno y la cara se ven dentados
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 // Neutral conserva los colores saturados del estilo cartoon
@@ -493,6 +494,18 @@ function renderMySlime() {
 /** Aplica el aspecto guardado al limo y a la barra de vida. */
 function applyLook() {
   slime?.setLook(save.look);
+  updateGaugeColors();
+}
+
+/** Líquido de la barra de vida: color del limo, o el de su estado (aceite, llamas, congelado). */
+const STATE_GAUGE: Record<Exclude<SlimeState, 'normal'>, [string, string]> = {
+  oiled: ['#e0b45a', '#8a5a14'],
+  burning: ['#ffb15c', '#e0461a'],
+  frozen: ['#e6f8ff', '#6cc4ec'],
+};
+function updateGaugeColors() {
+  const st = slime?.state ?? 'normal';
+  if (st !== 'normal') { gauge.setColors(...STATE_GAUGE[st]); return; }
   const c = new THREE.Color(BODY_COLORS[save.look.color].color);
   gauge.setColors(c.clone().offsetHSL(0, 0, 0.16).getStyle(), c.clone().offsetHSL(0, 0.05, -0.12).getStyle());
 }
@@ -689,7 +702,7 @@ const hudCache = { alive: -1, seconds: -1, coins: -1, state: '', stateSec: -1 };
 const hudEls = {
   pct: $('life-pct'), timer: $('timer'), coins: $('coins-count'), coinChip: $('hud-coins'),
   life: document.querySelector('.hud-chip.life') as HTMLElement,
-  stateChip: $('hud-state'), stateIco: $('state-ico'), stateText: $('state-text'),
+  stateChip: $('hud-state'), stateIco: $('state-ico'), stateSec: $('state-sec'),
 };
 
 /** Solo toca el DOM cuando cambia algo. */
@@ -713,13 +726,20 @@ function updateHud() {
   const st = slime.state;
   const sec = Math.ceil(slime.stateT);
   if (st !== hudCache.state || sec !== hudCache.stateSec) {
+    const changed = st !== hudCache.state;
     hudCache.state = st;
     hudCache.stateSec = sec;
     hudEls.stateChip.hidden = st === 'normal';
+    if (changed) updateGaugeColors();
     if (st !== 'normal') {
-      hudEls.stateChip.className = `hud-chip state ${st}`;
+      const chip = hudEls.stateChip;
+      chip.className = `state-badge ${st}`;
+      if (changed) bump(chip, 'bump');
       hudEls.stateIco.innerHTML = STATE_ICONS[st];
-      hudEls.stateText.textContent = st === 'oiled' ? t('hud.oiled') : t(`hud.${st}`, { s: `${sec}s` });
+      const total = st === 'burning' ? BURN_TIME : st === 'frozen' ? FREEZE_TIME : 0;
+      chip.style.setProperty('--p', total ? String(Math.max(0, slime.stateT / total)) : '1');
+      hudEls.stateSec.textContent = total ? String(sec) : '';
+      chip.setAttribute('aria-label', st === 'oiled' ? t('hud.oiled') : t(`hud.${st}`, { s: `${sec}s` }));
     }
   }
 }

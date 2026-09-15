@@ -12,7 +12,6 @@ export const it: Dict = {
     stars: '{n} stelle su 3',
   },
   menu: {
-    subtitle: 'Scendi nell’abisso',
     hint: 'Tesori, strati e prove ti aspettano in fondo',
     story: 'Modalità Storia',
     collection: 'Collezione',
@@ -121,7 +120,7 @@ export const it: Dict = {
     eyes: 'Occhi',
     mouth: 'Bocca',
     cheeks: 'Guance',
-    colorOpt: { blue: 'Blu', green: 'Verde', pink: 'Rosa', purple: 'Viola', red: 'Rosso', obsidian: 'Ossidiana' },
+    colorOpt: { blue: 'Blu', green: 'Verde', pink: 'Rosa', purple: 'Viola', black: 'Nero' },
     eyesOpt: { round: 'Tondi', dot: 'Puntini', sparkle: 'Brillanti', cat: 'Da gatto' },
     mouthOpt: { cat: 'Gattino', smile: 'Sorriso', fang: 'Canino', tongue: 'Lingua' },
     cheeksOpt: { lines: 'Linee', spots: 'Rossore', hearts: 'Cuori', none: 'Nessuna' },

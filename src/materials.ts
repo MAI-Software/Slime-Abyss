@@ -2,8 +2,10 @@ import * as THREE from 'three';
 
 /*
   Material de bloques de la mazmorra (Phong: color + relieve + brillo, 2 texturas por píxel).
-  - Proyección plana en coordenadas del nivel: arriba usa XZ, los lados XY o ZY.
+  - Proyección plana en coordenadas del nivel: arriba usa XZ, los lados XY o ZY; cada textura cubre
+    2x2 casillas y es continua (las losas cruzan de un bloque a otro sin cortes).
     No depende de UVs y la textura no se desliza cuando la escena se inclina.
+  - Variación de tono a gran escala (ruido en coordenadas del nivel) para que no se note la repetición.
   - Color por instancia (instanceColor) como tinte suave sobre la textura.
   - Mapa de normales orientado con los ejes del nivel y brillo especular sacado del color.
   - Lados más oscuros cuanto más bajan hacia el vacío.
@@ -80,6 +82,12 @@ export function createBlockMaterial(o: BlockMaterialOptions): THREE.MeshPhongMat
       vec3 blockBit;
       float blockGloss;
       vec3 levelToView(vec3 l) { return l.x * vViewX + l.y * vViewY + l.z * vViewZ; }
+      float blockHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float blockNoise(vec2 p) {
+        vec2 i = floor(p), f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(blockHash(i), blockHash(i + vec2(1.0, 0.0)), f.x), mix(blockHash(i + vec2(0.0, 1.0)), blockHash(i + vec2(1.0, 1.0)), f.x), f.y);
+      }
       #ifdef USE_BLOCK_AO
         varying float vAO;
         varying vec2 vCellOrigin;
@@ -91,21 +99,14 @@ export function createBlockMaterial(o: BlockMaterialOptions): THREE.MeshPhongMat
       vec3 bn = normalize(vLevelNormal);
       vec3 texel;
       if (bn.y > 0.5) {
-        // cada casilla gira la textura al azar (0/90/180/270°): rompe la repetición
-        vec2 cellId = floor(vLevelPos.xz);
-        vec2 lp = vLevelPos.xz - cellId;
-        int rot = int(fract(sin(dot(cellId, vec2(12.9898, 78.233))) * 43758.5453) * 4.0);
-        vec3 tl = vec3(1.0, 0.0, 0.0), bl = vec3(0.0, 0.0, 1.0);
-        if (rot == 1) { lp = vec2(1.0 - lp.y, lp.x); tl = vec3(0.0, 0.0, -1.0); bl = vec3(1.0, 0.0, 0.0); }
-        else if (rot == 2) { lp = 1.0 - lp; tl = vec3(-1.0, 0.0, 0.0); bl = vec3(0.0, 0.0, -1.0); }
-        else if (rot == 3) { lp = vec2(lp.y, 1.0 - lp.x); tl = vec3(0.0, 0.0, 1.0); bl = vec3(-1.0, 0.0, 0.0); }
-        vec2 gx = dFdx(vLevelPos.xz), gy = dFdy(vLevelPos.xz);
-        texel = textureGrad(uTopMap, lp, gx, gy).rgb;
-        blockNormalSample = textureGrad(uTopNormal, lp, gx, gy).xyz;
-        blockTan = tl; blockBit = bl;
+        vec2 lp = vLevelPos.xz * 0.5;
+        texel = texture2D(uTopMap, lp).rgb;
+        blockNormalSample = texture2D(uTopNormal, lp).xyz;
+        blockTan = vec3(1.0, 0.0, 0.0);
+        blockBit = vec3(0.0, 0.0, 1.0);
       } else {
         bool alongZ = abs(bn.x) > abs(bn.z);
-        vec2 suv = alongZ ? vec2(vLevelPos.z, -vLevelPos.y) : vec2(vLevelPos.x, -vLevelPos.y);
+        vec2 suv = (alongZ ? vec2(vLevelPos.z, -vLevelPos.y) : vec2(vLevelPos.x, -vLevelPos.y)) * 0.5;
         texel = texture2D(uSideMap, suv).rgb;
         blockNormalSample = texture2D(uSideNormal, suv).xyz;
         blockTan = alongZ ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
@@ -113,6 +114,9 @@ export function createBlockMaterial(o: BlockMaterialOptions): THREE.MeshPhongMat
         // más oscuro hacia abajo: da profundidad al vacío
         texel *= clamp(1.0 + vLevelPos.y * 0.32, 0.38, 1.0);
       }
+      // manchas de tono muy suaves a varias casillas de escala
+      float macro = blockNoise(vLevelPos.xz * 0.21 + vLevelPos.y * 0.13) * 0.65 + blockNoise(vLevelPos.xz * 0.63 - vLevelPos.y * 0.4) * 0.35;
+      texel *= 0.9 + 0.2 * macro;
       // la piedra clara brilla, las juntas oscuras no
       blockGloss = smoothstep(0.25, 0.85, dot(texel, vec3(0.333)));
       diffuseColor.rgb *= texel;

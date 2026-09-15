@@ -11,7 +11,6 @@ export const es = {
     stars: '{n} de 3 estrellas',
   },
   menu: {
-    subtitle: 'Desciende al abismo',
     hint: 'Tesoros, capas y pruebas te esperan abajo',
     story: 'Modo Historia',
     collection: 'Colección',
@@ -120,7 +119,7 @@ export const es = {
     eyes: 'Ojos',
     mouth: 'Boca',
     cheeks: 'Mofletes',
-    colorOpt: { blue: 'Azul', green: 'Verde', pink: 'Rosa', purple: 'Morado', red: 'Rojo', obsidian: 'Obsidiana' },
+    colorOpt: { blue: 'Azul', green: 'Verde', pink: 'Rosa', purple: 'Morado', black: 'Negro' },
     eyesOpt: { round: 'Redondos', dot: 'Puntitos', sparkle: 'Brillantes', cat: 'Gatunos' },
     mouthOpt: { cat: 'Gatito', smile: 'Sonrisa', fang: 'Colmillo', tongue: 'Lengua' },
     cheeksOpt: { lines: 'Rayitas', spots: 'Coloretes', hearts: 'Corazones', none: 'Sin mofletes' },
