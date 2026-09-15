@@ -962,7 +962,7 @@ function tick(dt: number) {
   // rastro: el aceite lo pringa todo; en llamas deja quemaduras con ascuas
   if (slime.state === 'oiled' || slime.state === 'burning') {
     trailT += dt;
-    for (; trailT > 0.02; trailT -= 0.02) {
+    for (; trailT > 0.045; trailT -= 0.045) {
       if (slime.randomGrounded(tmpFx)) trail.stamp(slime.state === 'oiled' ? 'oil' : 'fire', tmpFx.x, tmpFx.y, tmpFx.z);
     }
   } else trailT = 0;

@@ -2,15 +2,18 @@ import * as THREE from 'three';
 
 /*
   Rastro del limo en el suelo (manchas planas instanciadas, sin texturas):
-  - aceite: charcos pringosos marrón amarillento con brillo, que se secan despacio
-  - fuego: quemadura oscura + ascuas que brillan, parpadean y se apagan
-  Cada casilla de una rejilla fina solo guarda una mancha de cada tipo: al volver a pasar se renueva.
+  - aceite: charcos pringosos marrón amarillento con brillo
+  - fuego: quemadura oscura + ascuas que brillan y parpadean
+  Barato: cada mancha guarda solo su momento de nacimiento; aparecer, desvanecerse y desaparecer
+  lo calcula la GPU con el tiempo actual, así que por frame no hay bucles ni subida de datos.
+  Cada casilla de una rejilla solo guarda una mancha de cada tipo: al volver a pasar se renueva.
 */
 
-const GRID = 0.3;
+const GRID = 0.4;
 
 interface LayerDef {
   capacity: number;
+  /** segundos de vida (el último tercio se desvanece) */
   life: number;
   /** tamaño mínimo y máximo */
   size: [number, number];
@@ -30,9 +33,9 @@ const SHAPE = `
 `;
 
 const OIL: LayerDef = {
-  capacity: 280,
-  life: 14,
-  size: [0.55, 0.9],
+  capacity: 110,
+  life: 4.5,
+  size: [0.6, 0.95],
   blending: THREE.NormalBlending,
   fragment: `${SHAPE}
     float body = smoothstep(edge, edge - 0.3, r);
@@ -44,9 +47,9 @@ const OIL: LayerDef = {
 };
 
 const SCORCH: LayerDef = {
-  capacity: 220,
-  life: 11,
-  size: [0.42, 0.7],
+  capacity: 90,
+  life: 3.5,
+  size: [0.5, 0.8],
   blending: THREE.NormalBlending,
   fragment: `${SHAPE}
     float body = smoothstep(edge, edge - 0.32, r);
@@ -55,9 +58,9 @@ const SCORCH: LayerDef = {
 };
 
 const EMBER: LayerDef = {
-  capacity: 220,
-  life: 4,
-  size: [0.32, 0.5],
+  capacity: 90,
+  life: 2,
+  size: [0.38, 0.56],
   blending: THREE.AdditiveBlending,
   fragment: `
     vec2 g = vUv * 3.0;
@@ -76,27 +79,25 @@ const EMBER: LayerDef = {
 
 class Layer {
   readonly mesh: THREE.InstancedMesh;
-  private readonly fade: THREE.InstancedBufferAttribute;
+  private readonly birth: THREE.InstancedBufferAttribute;
   private readonly seed: THREE.InstancedBufferAttribute;
-  private readonly age: Float32Array;
-  private readonly keys: (string | null)[];
-  private readonly index = new Map<string, number>();
+  private readonly keys: Float64Array;
+  private readonly index = new Map<number, number>();
   private next = 0;
-  private live = 0;
   private readonly m = new THREE.Matrix4();
   private readonly q = new THREE.Quaternion();
   private readonly s = new THREE.Vector3();
   private readonly v = new THREE.Vector3();
   private static readonly UP = new THREE.Vector3(0, 1, 0);
 
-  constructor(private readonly def: LayerDef, time: { value: number }, order: number) {
+  constructor(private readonly def: LayerDef, private readonly time: { value: number }, order: number) {
     const geo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-    this.fade = new THREE.InstancedBufferAttribute(new Float32Array(def.capacity), 1).setUsage(THREE.DynamicDrawUsage);
+    this.birth = new THREE.InstancedBufferAttribute(new Float32Array(def.capacity).fill(-1e6), 1);
     this.seed = new THREE.InstancedBufferAttribute(new Float32Array(def.capacity), 1);
-    geo.setAttribute('aFade', this.fade);
+    geo.setAttribute('aBirth', this.birth);
     geo.setAttribute('aSeed', this.seed);
     const mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: time },
+      uniforms: { uTime: time, uLife: { value: def.life } },
       transparent: true,
       depthWrite: false,
       blending: def.blending,
@@ -105,14 +106,18 @@ class Layer {
       polygonOffsetUnits: -2,
       vertexShader: `
         #include <common>
-        attribute float aFade;
+        uniform float uTime;
+        uniform float uLife;
+        attribute float aBirth;
         attribute float aSeed;
         varying vec2 vUv;
         varying float vFade;
         varying float vSeed;
         void main() {
+          float age = uTime - aBirth;
+          if (age > uLife) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; } // caducada: fuera de pantalla
           vUv = uv;
-          vFade = aFade;
+          vFade = min(1.0, age * 8.0) * min(1.0, (uLife - age) / uLife * 3.0);
           vSeed = aSeed;
           vec3 transformed = position;
           #include <project_vertex>
@@ -129,64 +134,55 @@ class Layer {
     this.mesh = new THREE.InstancedMesh(geo, mat, def.capacity);
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = order;
-    this.age = new Float32Array(def.capacity).fill(Infinity);
-    this.keys = new Array(def.capacity).fill(null);
-    this.m.makeScale(0, 0, 0);
-    for (let i = 0; i < def.capacity; i++) this.mesh.setMatrixAt(i, this.m);
+    this.keys = new Float64Array(def.capacity).fill(NaN);
     this.mesh.count = 0;
   }
 
-  stamp(x: number, y: number, z: number, key: string) {
+  private alive(i: number) {
+    return this.time.value - this.birth.getX(i) < this.def.life;
+  }
+
+  stamp(x: number, y: number, z: number, key: number) {
+    const now = this.time.value;
     const existing = this.index.get(key);
-    if (existing !== undefined) {
-      this.age[existing] = Math.min(this.age[existing], this.def.life * 0.15);
+    if (existing !== undefined && this.alive(existing)) {
+      // se renueva sin crear otra (solo si ya ha perdido algo de vida, para no subir datos a cada paso)
+      if (now - this.birth.getX(existing) > this.def.life * 0.3) {
+        this.birth.setX(existing, now - 0.2);
+        this.birth.addUpdateRange(existing, 1);
+        this.birth.needsUpdate = true;
+      }
       return;
     }
     const i = this.next;
     this.next = (this.next + 1) % this.def.capacity;
     const old = this.keys[i];
-    if (old) this.index.delete(old);
+    if (!Number.isNaN(old) && this.index.get(old) === i) this.index.delete(old);
     this.keys[i] = key;
     this.index.set(key, i);
-    this.age[i] = 0;
     const [a, b] = this.def.size;
     this.q.setFromAxisAngle(Layer.UP, Math.random() * Math.PI * 2);
     this.s.setScalar(a + Math.random() * (b - a));
-    this.m.compose(this.v.set(x + (Math.random() - 0.5) * 0.1, y + 0.012, z + (Math.random() - 0.5) * 0.1), this.q, this.s);
+    this.m.compose(this.v.set(x + (Math.random() - 0.5) * 0.12, y + 0.012, z + (Math.random() - 0.5) * 0.12), this.q, this.s);
     this.mesh.setMatrixAt(i, this.m);
+    this.mesh.instanceMatrix.addUpdateRange(i * 16, 16);
     this.mesh.instanceMatrix.needsUpdate = true;
+    this.birth.setX(i, now);
+    this.birth.addUpdateRange(i, 1);
+    this.birth.needsUpdate = true;
     this.seed.setX(i, Math.random());
+    this.seed.addUpdateRange(i, 1);
     this.seed.needsUpdate = true;
-    this.live = Math.max(this.live, i + 1);
-    this.mesh.count = this.live;
+    if (this.mesh.count < i + 1) this.mesh.count = i + 1;
   }
 
-  update(dt: number) {
-    const life = this.def.life;
-    for (let i = 0; i < this.live; i++) {
-      if (this.age[i] === Infinity) continue;
-      this.age[i] += dt;
-      const left = 1 - this.age[i] / life;
-      if (left <= 0) {
-        this.age[i] = Infinity;
-        this.fade.setX(i, 0);
-        const key = this.keys[i];
-        if (key) this.index.delete(key);
-        this.keys[i] = null;
-        continue;
-      }
-      // aparece rápido y se desvanece al final de su vida
-      this.fade.setX(i, Math.min(1, this.age[i] * 8) * Math.min(1, left * 3.5));
-    }
-    this.fade.needsUpdate = true;
-  }
-
-  /** Una mancha viva al azar (para soltar chispas desde las ascuas). */
+  /** Una mancha joven al azar (para soltar chispas desde las ascuas). */
   random(out: THREE.Vector3): boolean {
-    if (!this.live) return false;
-    for (let t = 0; t < 4; t++) {
-      const i = (Math.random() * this.live) | 0;
-      if (this.age[i] === Infinity || this.age[i] > this.def.life * 0.7) continue;
+    const count = this.mesh.count;
+    if (!count) return false;
+    for (let t = 0; t < 3; t++) {
+      const i = (Math.random() * count) | 0;
+      if (this.time.value - this.birth.getX(i) > this.def.life * 0.6) continue;
       this.mesh.getMatrixAt(i, this.m);
       out.setFromMatrixPosition(this.m);
       return true;
@@ -195,18 +191,13 @@ class Layer {
   }
 
   reset() {
-    this.age.fill(Infinity);
-    this.fade.array.fill(0);
-    this.fade.needsUpdate = true;
-    this.keys.fill(null);
+    (this.birth.array as Float32Array).fill(-1e6);
+    this.birth.clearUpdateRanges();
+    this.birth.needsUpdate = true;
+    this.keys.fill(NaN);
     this.index.clear();
-    this.next = this.live = 0;
+    this.next = 0;
     this.mesh.count = 0;
-  }
-
-  dispose() {
-    this.mesh.geometry.dispose();
-    (this.mesh.material as THREE.Material).dispose();
   }
 }
 
@@ -216,6 +207,7 @@ export class Trail {
   private readonly oil = new Layer(OIL, this.time, 2);
   private readonly scorch = new Layer(SCORCH, this.time, 2);
   private readonly ember = new Layer(EMBER, this.time, 3);
+  private lastFire = -1e6;
 
   constructor() {
     this.group.add(this.oil.mesh, this.scorch.mesh, this.ember.mesh);
@@ -223,28 +215,29 @@ export class Trail {
 
   /** Mancha de aceite o quemadura con ascuas en (x, z) sobre un suelo a altura y. */
   stamp(kind: 'oil' | 'fire', x: number, y: number, z: number) {
-    const key = `${Math.round(x / GRID)},${Math.round(y * 2)},${Math.round(z / GRID)}`;
+    const ix = Math.round(x / GRID), iy = Math.round(y * 2), iz = Math.round(z / GRID);
+    const key = (ix * 73856093) ^ (iy * 83492791) ^ (iz * 19349663);
     if (kind === 'oil') this.oil.stamp(x, y, z, key);
     else {
       this.scorch.stamp(x, y, z, key);
       this.ember.stamp(x, y + 0.004, z, key);
+      this.lastFire = this.time.value;
     }
   }
 
+  /** Posición de una ascua viva (solo si hay fuego reciente). */
   randomEmber(out: THREE.Vector3) {
-    return this.ember.random(out);
+    return this.time.value - this.lastFire < EMBER.life && this.ember.random(out);
   }
 
   update(dt: number) {
     this.time.value += dt;
-    this.oil.update(dt);
-    this.scorch.update(dt);
-    this.ember.update(dt);
   }
 
   reset() {
     this.oil.reset();
     this.scorch.reset();
     this.ember.reset();
+    this.lastFire = -1e6;
   }
 }
