@@ -29,13 +29,21 @@ export const BODY_COLORS = {
   black: { color: 0x2e3144, emissive: 0x0e1020, rim: [0.62, 0.68, 0.95] },
   metal: { color: 0xe8edf5, emissive: 0x39424f, rim: [0.95, 0.98, 1.0], metalness: 0.6, roughness: 0.18 },
   gold: { color: 0xffd24a, emissive: 0x8a5a00, rim: [1.0, 0.93, 0.6], metalness: 0.55, roughness: 0.22 },
+  rosegold: { color: 0xf3b3a0, emissive: 0x6b3428, rim: [1.0, 0.86, 0.82], metalness: 0.55, roughness: 0.2 },
+  emerald: { color: 0x14b87a, emissive: 0x05402a, rim: [0.6, 1.0, 0.85], metalness: 0.35, roughness: 0.08 },
+  midnight: { color: 0x243a8f, emissive: 0x0a1238, rim: [0.6, 0.78, 1.0], roughness: 0.08 },
 } satisfies Record<string, BodyColor>;
 
 export type BodyColorId = keyof typeof BODY_COLORS;
 
-export const EYES = ['round', 'dot', 'sparkle', 'cat', 'star', 'heart'] as const;
-export const MOUTHS = ['cat', 'smile', 'fang', 'tongue', 'grin', 'pout'] as const;
-export const CHEEKS = ['lines', 'spots', 'hearts', 'none', 'stars', 'freckles'] as const;
+export const EYES = ['round', 'dot', 'cat', 'sparkle', 'star', 'heart', 'sleepy', 'wink', 'glasses'] as const;
+export const MOUTHS = ['cat', 'smile', 'tongue', 'fang', 'grin', 'pout', 'smirk', 'vampire', 'wobbly'] as const;
+export const CHEEKS = ['lines', 'spots', 'none', 'hearts', 'stars', 'freckles', 'swirls', 'bandage', 'sparkles'] as const;
+
+/** Ojos con modelo distinto a cada lado (face_eye_<id>_l / _r). */
+export const EYES_PER_SIDE = new Set<string>(['wink']);
+/** Ojos cuyo lado derecho es el izquierdo reflejado (las gafas llevan medio puente hacia el centro). */
+export const EYES_MIRRORED = new Set<string>(['glasses']);
 
 export interface SlimeLook {
   color: BodyColorId;
@@ -46,16 +54,31 @@ export interface SlimeLook {
 
 export const DEFAULT_LOOK: SlimeLook = { color: 'blue', eyes: 'round', mouth: 'cat', cheeks: 'lines' };
 
-/** Opciones raras: "apartado:opción" → logro que la desbloquea. */
+/** Opciones raras: "apartado:opción" → logro que la desbloquea (un logro puede dar varias). */
 export const LOOK_UNLOCKS: Record<string, string> = {
+  'mouth:grin': 'first-treasure',
+  'eyes:star': 'stars-10',
+  'eyes:sparkle': 'stars-10',
+  'cheeks:stars': 'coins-50',
+  'mouth:fang': 'coins-50',
+  'cheeks:freckles': 'secrets-2',
+  'cheeks:hearts': 'secrets-2',
+  'eyes:heart': 'full-slime',
+  'mouth:pout': 'rider-10',
+  'mouth:wobbly': 'jumper-20',
+  'cheeks:bandage': 'burner-10',
+  'eyes:wink': 'chapter-1',
   'color:gold': 'coins-c1',
   'color:metal': 'stars-30',
-  'eyes:star': 'stars-10',
-  'eyes:heart': 'full-slime',
-  'mouth:grin': 'first-treasure',
-  'mouth:pout': 'rider-10',
-  'cheeks:stars': 'coins-50',
-  'cheeks:freckles': 'secrets-2',
+  'mouth:smirk': 'chapter-2',
+  'eyes:sleepy': 'floors-10',
+  'color:midnight': 'floors-20',
+  'color:rosegold': 'stars-50',
+  'mouth:vampire': 'coins-150',
+  'cheeks:sparkles': 'secret-roots',
+  'eyes:glasses': 'rider-50',
+  'cheeks:swirls': 'squeeze-30',
+  'color:emerald': 'full-slime-5',
 };
 
 export function lookOptionUnlocked(key: keyof SlimeLook, opt: string, achievements: readonly string[]) {

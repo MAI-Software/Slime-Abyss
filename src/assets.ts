@@ -31,6 +31,11 @@ export class Assets {
     return a;
   }
 
+  /** ¿Existe este objeto en assets.glb? */
+  has(name: string): boolean {
+    return this.nodes.has(name);
+  }
+
   private node(name: string): THREE.Object3D {
     const n = this.nodes.get(name);
     if (!n) throw new Error(`Falta el modelo "${name}" en assets.glb`);

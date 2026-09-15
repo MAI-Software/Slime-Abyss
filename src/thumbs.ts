@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Assets } from './assets';
-import { BODY_COLORS, type BodyColorId, type SlimeLook } from './look';
+import { BODY_COLORS, EYES_MIRRORED, EYES_PER_SIDE, type BodyColorId, type SlimeLook } from './look';
 
 /**
   Miniaturas renderizadas con los modelos reales (para Mi limo y los avisos de premio):
@@ -43,14 +43,18 @@ export class Thumbs {
     const disc = new THREE.Mesh(new THREE.CircleGeometry(f * 0.47, 48), new THREE.MeshBasicMaterial({ color: BODY_COLORS[color].color }));
     disc.position.z = -0.08;
     group.add(disc);
-    const part = (name: string, x: number, y: number) => {
-      try {
-        const o = this.assets.clone(name, { unlit: true });
-        o.position.set(x, y, 0);
-        group.add(o);
-      } catch { /* sin modelo (p. ej. mofletes "none") */ }
+    const part = (name: string, x: number, y: number, mirror = false) => {
+      if (!this.assets.has(name)) return; // p. ej. mofletes "none"
+      const o = this.assets.clone(name, { unlit: true });
+      o.position.set(x, y, 0);
+      if (mirror) o.scale.x = -1;
+      group.add(o);
     };
-    if (kind === 'eyes') { part(`face_eye_${id}`, -0.1, 0); part(`face_eye_${id}`, 0.1, 0); }
+    if (kind === 'eyes') {
+      const sided = EYES_PER_SIDE.has(id);
+      part(sided ? `face_eye_${id}_l` : `face_eye_${id}`, -0.1, 0);
+      part(sided ? `face_eye_${id}_r` : `face_eye_${id}`, 0.1, 0, EYES_MIRRORED.has(id));
+    }
     else if (kind === 'mouth') part(`face_mouth_${id}`, 0, 0.004);
     else if (id !== 'none') part(`face_blush_${id}`, 0, 0);
     this.ortho.left = this.ortho.bottom = -f / 2;
@@ -79,15 +83,16 @@ export class Thumbs {
     const faceRoot = new THREE.Group();
     faceRoot.position.set(0, 0.02, 0.5);
     faceRoot.scale.setScalar(1.55);
-    const part = (name: string, x: number, y: number) => {
-      try {
-        const o = this.assets.clone(name, { unlit: true });
-        o.position.set(x, y, 0);
-        faceRoot.add(o);
-      } catch { /* sin modelo */ }
+    const part = (name: string, x: number, y: number, mirror = false) => {
+      if (!this.assets.has(name)) return;
+      const o = this.assets.clone(name, { unlit: true });
+      o.position.set(x, y, 0);
+      if (mirror) o.scale.x = -1;
+      faceRoot.add(o);
     };
     for (const side of [-1, 1]) {
-      part(`face_eye_${face.eyes}`, side * 0.1, 0.035);
+      const eye = EYES_PER_SIDE.has(face.eyes) ? `face_eye_${face.eyes}_${side < 0 ? 'l' : 'r'}` : `face_eye_${face.eyes}`;
+      part(eye, side * 0.1, 0.035, side > 0 && EYES_MIRRORED.has(face.eyes));
       if (face.cheeks !== 'none') part(`face_blush_${face.cheeks}`, side * 0.175, -0.035);
     }
     part(`face_mouth_${face.mouth}`, 0, -0.055);

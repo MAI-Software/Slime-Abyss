@@ -12,9 +12,11 @@ export interface PlayStats {
   burns: number;
   /** saltos en plataformas */
   jumps: number;
+  /** veces que se han unido trozos mientras se apretaba */
+  squeezes: number;
 }
 
-export const EMPTY_STATS: PlayStats = { rides: 0, burns: 0, jumps: 0 };
+export const EMPTY_STATS: PlayStats = { rides: 0, burns: 0, jumps: 0, squeezes: 0 };
 
 /** Datos para calcular el progreso (los prepara el juego a partir del guardado). */
 export interface AchievementContext {
@@ -24,13 +26,17 @@ export interface AchievementContext {
   secrets: number;
   /** algún piso completado sin perder limo */
   fullSlime: boolean;
+  /** pisos completados sin perder limo */
+  fullSlimeFloors: number;
+  secretFound: (floorId: string) => boolean;
   chapterDone: (id: string) => boolean;
   chapterAllCoins: (id: string) => boolean;
   stats: PlayStats;
 }
 
 export type PatchShape = 'round' | 'shield' | 'hex';
-export type PatchIcon = 'chest' | 'star' | 'coin' | 'gem' | 'drop' | 'rail' | 'spring' | 'flame' | 'trophy1' | 'coins' | 'stars' | 'trophy2';
+export type PatchIcon = 'chest' | 'star' | 'coin' | 'gem' | 'drop' | 'rail' | 'spring' | 'flame' | 'trophy1' | 'coins' | 'stars' | 'trophy2'
+  | 'flag' | 'medal' | 'galaxy' | 'bag' | 'leaf' | 'train' | 'hug' | 'drops';
 
 export interface Achievement {
   id: string;
@@ -55,6 +61,14 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'coins-c1', patch: 'round', color: 0xca8a04, icon: 'coins', progress: (c) => [c.chapterAllCoins('cripta-azul') ? 1 : 0, 1] },
   { id: 'stars-30', patch: 'shield', color: 0x64748b, icon: 'stars', progress: (c) => [c.stars, 30] },
   { id: 'chapter-2', patch: 'hex', color: 0x15803d, icon: 'trophy2', progress: (c) => [c.chapterDone('raices-colgantes') ? 1 : 0, 1] },
+  { id: 'floors-10', patch: 'shield', color: 0x0891b2, icon: 'flag', progress: (c) => [c.floorsDone, 10] },
+  { id: 'floors-20', patch: 'hex', color: 0x4338ca, icon: 'medal', progress: (c) => [c.floorsDone, 20] },
+  { id: 'stars-50', patch: 'round', color: 0x9333ea, icon: 'galaxy', progress: (c) => [c.stars, 50] },
+  { id: 'coins-150', patch: 'shield', color: 0xb45309, icon: 'bag', progress: (c) => [c.coins, 150] },
+  { id: 'secret-roots', patch: 'round', color: 0x65a30d, icon: 'leaf', progress: (c) => [c.secretFound('c2-bifurcacion') ? 1 : 0, 1] },
+  { id: 'rider-50', patch: 'hex', color: 0x0f766e, icon: 'train', progress: (c) => [c.stats.rides, 50] },
+  { id: 'squeeze-30', patch: 'round', color: 0xe11d48, icon: 'hug', progress: (c) => [c.stats.squeezes, 30] },
+  { id: 'full-slime-5', patch: 'shield', color: 0x0284c7, icon: 'drops', progress: (c) => [c.fullSlimeFloors, 5] },
 ];
 
 // ------------------------------------------------------------------ bordado del icono
@@ -71,12 +85,21 @@ const P = {
   spring: 'M5 3h14 M7 6l10 3-10 3 10 3-10 3 M5 21h14',
   trophy: 'M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978 M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978 M18 9h1.5a1 1 0 0 0 0-5H18 M4 22h16 M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z M6 9H4.5a1 1 0 0 1 0-5H6',
   question: 'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3 M12 17h.01',
+  flag: 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z M4 22v-7',
+  medal: 'M7.2 15 2.7 7.1a2 2 0 0 1 .1-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.1a2 2 0 0 1 .1 2.2L16.8 15 M11 12 5.1 2.2 M13 12l5.9-9.8 M8 7h8 M12 12a5 5 0 1 0 0 10a5 5 0 1 0 0-10z',
+  orbit: 'M2 12a10 4 0 1 0 20 0a10 4 0 1 0-20 0z',
+  bag: 'M8 3h8l-2 4h-4z M10 7C3 10 3 21 12 21s9-11 2-14 M12 11v6 M10 12.5h3a1.5 1.5 0 0 1 0 3h-2a1.5 1.5 0 0 0 0 3h3',
+  leaf: 'M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12',
+  train: 'M8 3.1V7a4 4 0 0 0 8 0V3.1 M9 15l-1-1 M15 15l1-1 M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5z M8 19l-2 3 M16 19l2 3',
+  hug: 'm15 15 6 6m-6-6v4.8m0-4.8h4.8 M9 19.8V15m0 0H4.2M9 15l-6 6 M15 4.2V9m0 0h4.8M15 9l6-6 M9 4.2V9m0 0H4.2M9 9 3 3',
 };
 
 function paths(icon: PatchIcon | 'question'): { d: string; t?: [number, number, number] }[] {
   switch (icon) {
     case 'stars': return [{ d: P.star, t: [0.5, 6, 1] }, { d: P.star, t: [0.36, 1, 13] }, { d: P.star, t: [0.36, 14.5, 13] }];
     case 'trophy1': case 'trophy2': return [{ d: P.trophy }];
+    case 'galaxy': return [{ d: P.orbit }, { d: P.star, t: [0.5, 6, 6] }];
+    case 'drops': return [{ d: P.drop, t: [0.75, 1, 3] }, { d: P.star, t: [0.36, 14.5, 1] }];
     default: return [{ d: P[icon] }];
   }
 }

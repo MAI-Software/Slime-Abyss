@@ -520,16 +520,21 @@ shines("face_eye_star", look, 0.011, 0.006, y=-0.026)
 
 heart_pts = [(0.0032 * 16 * math.sin(t) ** 3, 0.0032 * (13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)))
              for t in [2 * math.pi * i / 40 for i in range(40)]]
-# ojos enamorados: el ojo entero es un corazón relleno con contorno y brillos (se mueve entero al mirar)
-def heart_shape(k, dz):
-    return [(k * 16 * math.sin(t) ** 3, k * (13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)) + dz)
-            for t in [2 * math.pi * i / 48 for i in range(48)]]
+# ojos enamorados: el ojo entero es un corazón relleno con contorno (se mueve entero al mirar).
+# El corazón clásico se suaviza (media con los vecinos) para redondear la punta y los lóbulos.
+def heart_shape(k, dz, smooth=10):
+    pts = [(16 * math.sin(t) ** 3, 13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t))
+           for t in [2 * math.pi * i / 72 for i in range(72)]]
+    for _ in range(smooth):
+        n = len(pts)
+        pts = [((pts[i - 1][0] + 2 * pts[i][0] + pts[(i + 1) % n][0]) / 4, (pts[i - 1][1] + 2 * pts[i][1] + pts[(i + 1) % n][1]) / 4)
+               for i in range(n)]
+    return [(x * k, z * k + dz) for x, z in pts]
 
 
 eye = empty("face_eye_heart")
-flat_shape("face_eye_heart_outline", heart_shape(0.0056, 0.013), 0.006, M["black"], front=-0.02, parent=eye)
-flat_shape("face_eye_heart_fill", heart_shape(0.0044, 0.013), 0.006, M["heart_iris"], front=-0.028, parent=eye)
-shines("face_eye_heart", eye, 0.013, 0.006, y=-0.034)
+flat_shape("face_eye_heart_outline", heart_shape(0.0058, 0.012), 0.006, M["black"], front=-0.02, parent=eye)
+flat_shape("face_eye_heart_fill", heart_shape(0.0045, 0.012), 0.006, M["heart_iris"], front=-0.028, parent=eye)
 
 # sonrisota: boca abierta ancha con fila de dientes
 mouth = empty("face_mouth_grin")
@@ -549,6 +554,65 @@ bm = bmesh.new()
 for x, z in ((-0.02, 0.006), (0.004, -0.008), (0.022, 0.01), (-0.004, 0.016)):
     ellipsoid(bm, (0.0065, 0.003, 0.0065), (x, -0.004, z), 12, 8)
 mesh_object("face_blush_freckles_dots", bm, M["freckle"], smooth=True, parent=freckles)
+
+# Más rasgos desbloqueables: ojos dormilones, guiño (ojo izquierdo y derecho distintos) y gafas;
+# bocas pícara, vampiro y ondulada; mofletes de espirales, tirita y destellos.
+tube("face_eye_sleepy", [(-0.055, 0.004), (-0.03, -0.02), (0.0, -0.027), (0.03, -0.02), (0.055, 0.004)], 0.013, M["black"])
+for k, (x, z) in enumerate(((-0.05, -0.006), (-0.022, -0.028), (0.022, -0.028), (0.05, -0.006))):
+    tube(f"face_eye_sleepy_lash{k}", [(x, z), (x * 1.18, z - 0.02)], 0.006, M["black"], parent=bpy.data.objects["face_eye_sleepy"], poly=True)
+
+eye = eye_base("face_eye_wink_l", 0.062, 0.082, M["white"])
+look = empty("face_eye_wink_l_look", parent=eye, loc=(0, -0.02, -0.01))
+bm = bmesh.new()
+ellipsoid(bm, (0.043, 0.012, 0.054), (0, 0, 0), 32, 18)
+mesh_object("face_eye_wink_l_iris", bm, M["iris"], smooth=True, parent=look)
+bm = bmesh.new()
+ellipsoid(bm, (0.025, 0.008, 0.031), (0, 0, 0), 24, 14)
+mesh_object("face_eye_wink_l_pupil", bm, M["black"], smooth=True, parent=look, loc=(0, -0.006, 0))
+shines("face_eye_wink_l", look, 0.015, 0.007)
+tube("face_eye_wink_r", [(-0.05, -0.022), (-0.025, 0.016), (0.0, 0.03), (0.025, 0.016), (0.05, -0.022)], 0.016, M["black"])
+
+M["glasses"] = material("GlassesFrame", "1f2937", 0.35, 0.3)
+eye = eye_base("face_eye_glasses", 0.05, 0.064, M["white"])
+look = empty("face_eye_glasses_look", parent=eye, loc=(0, -0.02, -0.006))
+bm = bmesh.new()
+ellipsoid(bm, (0.034, 0.012, 0.042), (0, 0, 0), 32, 18)
+mesh_object("face_eye_glasses_iris", bm, M["iris"], smooth=True, parent=look)
+bm = bmesh.new()
+ellipsoid(bm, (0.02, 0.008, 0.025), (0, 0, 0), 24, 14)
+mesh_object("face_eye_glasses_pupil", bm, M["black"], smooth=True, parent=look, loc=(0, -0.006, 0))
+shines("face_eye_glasses", look, 0.012, 0.006)
+ring = [(0.088 * math.cos(a * math.tau / 40), 0.08 * math.sin(a * math.tau / 40)) for a in range(40)]
+tube("face_eye_glasses_frame", ring, 0.011, M["glasses"], parent=bpy.data.objects["face_eye_glasses"], loc=(0, -0.045, 0),
+     poly=True, cyclic=True)
+# medio puente hacia el centro de la cara (el ojo derecho se refleja)
+tube("face_eye_glasses_bridge", [(0.086, 0.012), (0.1, 0.018)], 0.009, M["glasses"], parent=bpy.data.objects["face_eye_glasses"],
+     loc=(0, -0.045, 0), poly=True)
+
+tube("face_mouth_smirk", [(-0.04, 0.0), (-0.018, -0.01), (0.012, -0.012), (0.036, 0.004), (0.046, 0.02)], 0.009, M["black"])
+mouth = empty("face_mouth_vampire")
+tube("face_mouth_vampire_line", [(-0.042, 0.008), (-0.02, -0.008), (0.0, -0.012), (0.02, -0.008), (0.042, 0.008)], 0.009,
+     M["black"], parent=mouth)
+for x in (-0.017, 0.017):
+    flat_shape(f"face_mouth_vampire_fang{'l' if x < 0 else 'r'}", [(x - 0.008, -0.009), (x + 0.008, -0.009), (x, -0.03)], 0.004,
+               M["white"], front=-0.004, parent=mouth)
+tube("face_mouth_wobbly", [(-0.046, -0.002), (-0.03, 0.01), (-0.012, -0.004), (0.006, -0.014), (0.024, -0.002), (0.044, 0.008)],
+     0.009, M["black"])
+
+swirl = [(0.0009 * t * math.cos(t), 0.0009 * t * math.sin(t)) for t in [i * 0.35 for i in range(4, 44)]]
+tube("face_blush_swirls", swirl, 0.0045, M["blush_line"])
+M["bandage"] = material("Bandage", "f3c9a0", 0.85)
+M["bandage_pad"] = material("BandagePad", "e7ae80", 0.9)
+bandage = empty("face_blush_bandage")
+band = [(0.04 * math.cos(a * math.tau / 36) * (1 if abs(math.cos(a * math.tau / 36)) < 0.9 else 1), 0.014 * math.sin(a * math.tau / 36))
+        for a in range(36)]
+flat_shape("face_blush_bandage_strip", [(x * 1.0, z * 1.25) for x, z in ellipse_pts(0.042, 0.016, 0, 0, 40)], 0.004, M["bandage"],
+           parent=bandage)
+flat_shape("face_blush_bandage_pad", ellipse_pts(0.014, 0.012, 0, 0, 24), 0.003, M["bandage_pad"], front=-0.002, parent=bandage)
+sparkles = empty("face_blush_sparkles")
+M["sparkle"] = material("SparkleWhite", "fff7d6", 0.4, emit="fde68a", strength=0.4)
+flat_shape("face_blush_sparkles_big", star_pts(0.02, 0.006, 4, -0.006, 0.006), 0.004, M["sparkle"], parent=sparkles)
+flat_shape("face_blush_sparkles_small", star_pts(0.011, 0.0035, 4, 0.02, -0.014), 0.004, M["sparkle"], parent=sparkles)
 teardrop("face_sweat", 0.03, M["sweat"])
 teardrop("face_tear", 0.016, M["sweat"])
 
@@ -1038,7 +1102,7 @@ mesh_object("room_candle_flames", bm_flame, M["candle"], smooth=True, parent=roo
 
 # tablón de fieltro con marco en la pared derecha: los logros se cosen en él (huecos ach_slot_<n>, 4 x 3)
 M["board_felt"] = material("BoardFelt", "2f4f5f", 0.98)
-BOARD_Y0, BOARD_Y1, BOARD_Z0, BOARD_Z1 = -2.35, 1.95, 1.3, 3.5
+BOARD_Y0, BOARD_Y1, BOARD_Z0, BOARD_Z1 = -2.35, 1.95, 1.22, 3.8
 bm = bmesh.new()
 box(bm, (0.04, BOARD_Y1 - BOARD_Y0, BOARD_Z1 - BOARD_Z0), (WALL_X - 0.02, (BOARD_Y0 + BOARD_Y1) / 2, (BOARD_Z0 + BOARD_Z1) / 2))
 mesh_object("room_board_felt", bm, M["board_felt"], parent=room)
@@ -1050,10 +1114,11 @@ box(bm, (0.08, FR, BOARD_Z1 - BOARD_Z0), (WALL_X - 0.04, BOARD_Y0 - FR / 2, (BOA
 box(bm, (0.08, FR, BOARD_Z1 - BOARD_Z0), (WALL_X - 0.04, BOARD_Y1 + FR / 2, (BOARD_Z0 + BOARD_Z1) / 2))
 bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.012, segments=1, affect="EDGES")
 mesh_object("room_board_frame", bm, M["shelf_wood"], parent=room)
-for r, z in enumerate((3.02, 2.4, 1.78)):
-    for c, y in enumerate((-1.65, -0.7, 0.25, 1.2)):
-        slot = empty(f"ach_slot_{r * 4 + c}", parent=room, loc=(WALL_X - 0.04, y, z))
+for r, z in enumerate((3.46, 2.84, 2.22, 1.6)):
+    for c, y in enumerate((-1.92, -1.06, -0.2, 0.66, 1.52)):
+        slot = empty(f"ach_slot_{r * 5 + c}", parent=room, loc=(WALL_X - 0.04, y, z))
         slot.rotation_euler = (0, 0, -math.pi / 2)
+        slot.scale = (0.9, 0.9, 0.9)
 empty("board_view", parent=room, loc=(WALL_X - 0.04, (BOARD_Y0 + BOARD_Y1) / 2, (BOARD_Z0 + BOARD_Z1) / 2))
 
 # la escala del hueco es la escala con la que se expone la pieza

@@ -4,7 +4,7 @@ import { World, type RailPath } from './world';
 import type { Channel } from './level/format';
 import { Assets } from './assets';
 import { createContactShadowTexture } from './materials';
-import { BODY_COLORS, DEFAULT_LOOK, type BodyColor, type SlimeLook } from './look';
+import { BODY_COLORS, DEFAULT_LOOK, EYES_MIRRORED, EYES_PER_SIDE, type BodyColor, type SlimeLook } from './look';
 
 // --- física ---
 // El limo grande es un montón de limitos pequeños unidos por cohesión.
@@ -1296,8 +1296,10 @@ class Face {
     this.looks = [];
     this.blush = [];
     for (const side of [-1, 1]) {
-      const eye = this.part(`face_eye_${look.eyes}`, side * 0.1, 0.035, 0);
-      const lookAt = eye.getObjectByName(`face_eye_${look.eyes}_look`) ?? eye;
+      // guiño: cada lado su modelo; gafas: el derecho es el izquierdo reflejado
+      const name = EYES_PER_SIDE.has(look.eyes) ? `face_eye_${look.eyes}_${side < 0 ? 'l' : 'r'}` : `face_eye_${look.eyes}`;
+      const eye = this.part(name, side * 0.1, 0.035, 0, side > 0 && EYES_MIRRORED.has(look.eyes));
+      const lookAt = eye.getObjectByName(`${name}_look`) ?? eye;
       lookAt.userData.rest = lookAt.position.clone();
       this.eyes.push(eye);
       this.looks.push(lookAt);

@@ -518,6 +518,8 @@ function achievementContext(): AchievementContext {
     coins: coinsEarned(),
     secrets: allFloors.filter((f) => floorSave(f.id)?.secret).length,
     fullSlime: allFloors.some((f) => (floorSave(f.id)?.bestPct ?? 0) >= 0.999),
+    fullSlimeFloors: allFloors.filter((f) => (floorSave(f.id)?.bestPct ?? 0) >= 0.999).length,
+    secretFound: (id) => !!floorSave(id)?.secret,
     chapterDone: (id) => { const ch = CHAPTERS.find((c) => c.id === id); return !!ch && chapterDone(ch); },
     chapterAllCoins: (id) => { const ch = CHAPTERS.find((c) => c.id === id); return !!ch && ch.floors.every((f) => coinsTotalOf(f) === 0 || !!floorSave(f.id)?.allCoins); },
     stats: save.stats,
@@ -539,18 +541,16 @@ function grantAchievements(): string[] {
   return fresh;
 }
 
-/** Opción de Mi limo que regala un logro: [apartado, opción], o null. */
-function achievementRewardOption(id: string): [LookKey, string] | null {
-  const entry = Object.entries(LOOK_UNLOCKS).find(([, ach]) => ach === id);
-  return entry ? (entry[0].split(':') as [LookKey, string]) : null;
+/** Opciones de Mi limo que regala un logro: [apartado, opción][]. */
+function achievementRewardOptions(id: string): [LookKey, string][] {
+  return Object.entries(LOOK_UNLOCKS).filter(([, ach]) => ach === id).map(([k]) => k.split(':') as [LookKey, string]);
 }
 
-/** Opción de Mi limo que regala un logro (texto "Color: Oro"), o null. */
+/** Opciones de Mi limo que regala un logro (texto "Ojos: Estrellados, Ojos: Brillantes"), o null. */
 function achievementRewardText(id: string): string | null {
-  const option = achievementRewardOption(id);
-  if (!option) return null;
-  const [key, opt] = option;
-  return `${t(`myslime.${key}`)}: ${t(`myslime.${key}Opt.${opt}`)}`;
+  const options = achievementRewardOptions(id);
+  if (!options.length) return null;
+  return options.map(([key, opt]) => `${t(`myslime.${key}`)}: ${t(`myslime.${key}Opt.${opt}`)}`).join(', ');
 }
 
 /** Vista previa de una opción de Mi limo (limo del color, o la parte de la cara sobre el color actual). */
@@ -620,6 +620,7 @@ function refreshPatches() {
       const obj = assets!.clone(`patch_${a.patch}`, { cloneMaterials: true });
       obj.position.copy(slot.position);
       obj.quaternion.copy(slot.quaternion);
+      obj.scale.copy(slot.scale);
       obj.rotateZ(((k * 37) % 13 - 6) * 0.012);
       const fabric: THREE.MeshStandardMaterial[] = [];
       const thread: THREE.MeshStandardMaterial[] = [];
@@ -1158,13 +1159,13 @@ function afterReward(then: () => void) {
     $('reward-title').textContent = achName(a);
     $('reward-note').textContent = reward ? t('achievements.reward', { item: reward }) : t('achievements.noReward');
     visual.appendChild(patchBadge(a, true, true));
-    const option = achievementRewardOption(a.id);
-    if (option) {
+    const options = achievementRewardOptions(a.id);
+    if (options.length) {
       const plus = document.createElement('span');
       plus.className = 'reward-plus';
       plus.textContent = '+';
       visual.appendChild(plus);
-      image(lookPreview(option[0], option[1]), `reward-look ${option[0]}`);
+      for (const [key, opt] of options) image(lookPreview(key, opt), `reward-look ${key}${options.length > 1 ? ' small' : ''}`);
     }
   }
   sfx.win();
@@ -1273,7 +1274,7 @@ function tick(dt: number) {
       case 'board': sfx.board(); fx.splat(e.x, e.y, e.z); buzz(20); save.stats.rides++; break;
       case 'unboard': sfx.unboard(); fx.splat(e.x, e.y, e.z); buzz(15); break;
       case 'land': sfx.land(); buzz(10); break;
-      case 'merge': sfx.merge(); break;
+      case 'merge': sfx.merge(); if (input.squeeze) save.stats.squeezes++; break;
       case 'coin': sfx.coin(); fx.sparkle(e.x, e.y + 0.4, e.z); buzz(15); break;
       case 'cut': sfx.cut(); buzz(8); break;
       case 'oil': sfx.oil(); fx.sparkle(e.x, e.y + 0.3, e.z, 0xf5a524); break;
@@ -1378,8 +1379,8 @@ function updateCamera(dt: number) {
       const p = target ? target.position : menuLook.set(4.4, 2.4, 0.2);
       const near = k >= 0;
       // de lejos, todo el tablón ocupa la mitad izquierda de la pantalla (mirada paralela, desplazada a la derecha)
-      menuLook.set(o.x + p.x, o.y + p.y, o.z + p.z + (near ? 0.5 : 2.15));
-      camWant.set(o.x + p.x - (near ? 1.35 : 4.25), o.y + p.y + (near ? 0.05 : 0.1), o.z + p.z + (near ? 0.5 : 2.15));
+      menuLook.set(o.x + p.x, o.y + p.y, o.z + p.z + (near ? 0.5 : 2.35));
+      camWant.set(o.x + p.x - (near ? 1.35 : 4.45), o.y + p.y + (near ? 0.05 : 0.05), o.z + p.z + (near ? 0.5 : 2.35));
     } else if (currentScreen === 'myslime') {
       // de cerca y de frente, con el limo a la izquierda del panel
       menuLook.set(o.x + 0.8, o.y + 0.45, o.z);
