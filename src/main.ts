@@ -12,6 +12,7 @@ import { World } from './world';
 import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
 import { BODY_COLORS, CHEEKS, EYES, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
 import { ACHIEVEMENTS, drawPatchIcon, type Achievement, type AchievementContext } from './achievements';
+import { Thumbs } from './thumbs';
 import { Input, type ControlMode } from './input';
 import { Fx } from './fx';
 import { LiquidGauge } from './hud-liquid';
@@ -286,6 +287,8 @@ scene.add(abyss.group);
 type Mode = 'menu' | 'play' | 'pause' | 'winning' | 'result';
 let mode: Mode = 'menu';
 let assets: Assets | null = null;
+/** miniaturas de rasgos, limos y coleccionables (se crean al cargar los modelos) */
+let thumbs: Thumbs | null = null;
 let world: World | null = null;
 let slime: Slime | null = null;
 let chapter: ChapterDef | null = null;
@@ -536,12 +539,34 @@ function grantAchievements(): string[] {
   return fresh;
 }
 
+/** Opción de Mi limo que regala un logro: [apartado, opción], o null. */
+function achievementRewardOption(id: string): [LookKey, string] | null {
+  const entry = Object.entries(LOOK_UNLOCKS).find(([, ach]) => ach === id);
+  return entry ? (entry[0].split(':') as [LookKey, string]) : null;
+}
+
 /** Opción de Mi limo que regala un logro (texto "Color: Oro"), o null. */
 function achievementRewardText(id: string): string | null {
-  const entry = Object.entries(LOOK_UNLOCKS).find(([, ach]) => ach === id);
-  if (!entry) return null;
-  const [key, opt] = entry[0].split(':');
+  const option = achievementRewardOption(id);
+  if (!option) return null;
+  const [key, opt] = option;
   return `${t(`myslime.${key}`)}: ${t(`myslime.${key}Opt.${opt}`)}`;
+}
+
+/** Vista previa de una opción de Mi limo (limo del color, o la parte de la cara sobre el color actual). */
+function lookPreview(key: LookKey, opt: string): string | null {
+  if (!thumbs) return null;
+  if (key === 'color') return thumbs.slime(opt as SlimeLook['color'], save.look);
+  return thumbs.face(key, opt, save.look.color);
+}
+
+/** Insignia del parche de un logro (tela con forma y bordado). */
+function patchBadge(a: Achievement, got: boolean, big = false) {
+  const badge = document.createElement('span');
+  badge.className = `ach-badge ${a.patch}${big ? ' big' : ''}`;
+  badge.style.setProperty('--patch', got ? hexCss(a.color) : '#3b3552');
+  badge.appendChild(patchCanvas(a, big ? 160 : 96, got));
+  return badge;
 }
 
 const achName = (a: Achievement) => t(`achievements.names.${a.id}`);
@@ -565,10 +590,7 @@ function renderAchievements() {
     const focused = achFocus === a.id;
     b.className = `ach-card${got ? ' got' : ''}${focused ? ' focused' : ''}`;
     b.setAttribute('aria-pressed', String(focused));
-    const badge = document.createElement('span');
-    badge.className = `ach-badge ${a.patch}`;
-    badge.style.setProperty('--patch', got ? hexCss(a.color) : '#3b3552');
-    badge.appendChild(patchCanvas(a, 96, got));
+    const badge = patchBadge(a, got);
     const reward = achievementRewardText(a.id);
     const pct = Math.min(1, v / goal);
     const body = document.createElement('span');
@@ -742,8 +764,12 @@ function renderMySlime() {
         b.title = name;
         if (!open) b.innerHTML = lockSvg;
       } else {
-        b.className = `chip${open ? '' : ' locked'}`;
-        b.innerHTML = `${open ? '' : lockSvg}${escapeHtml(name)}`;
+        // se elige viendo el rasgo, no leyendo su nombre
+        b.className = `chip thumb-chip${open ? '' : ' locked'}${opt === 'none' ? ' none-opt' : ''}`;
+        b.setAttribute('aria-label', open ? name : `${name} · ${t('achievements.locked')}`);
+        b.title = name;
+        const src = lookPreview(key, opt);
+        b.innerHTML = `${src ? `<img src="${src}" alt="" draggable="false">` : escapeHtml(name)}${open ? '' : lockSvg}`;
       }
       b.addEventListener('click', () => {
         if (!open) {
@@ -1110,16 +1136,36 @@ function afterReward(then: () => void) {
   const item = pendingRewards.shift();
   if (!item) { then(); return; }
   rewardThen = then;
+  const visual = $('reward-visual');
+  visual.replaceChildren();
+  const image = (src: string | null, cls: string) => {
+    if (!src) return;
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = '';
+    img.className = cls;
+    visual.appendChild(img);
+  };
   if (item.kind === 'collectible') {
     $('reward-label').textContent = t('collection.new');
     $('reward-title').textContent = t(`collectibles.${item.id}`);
     $('reward-note').textContent = t('collection.place');
+    image(thumbs?.model(item.id) ?? null, 'reward-model');
   } else {
     const a = ACHIEVEMENTS.find((x) => x.id === item.id)!;
     const reward = achievementRewardText(a.id);
     $('reward-label').textContent = t('achievements.new');
     $('reward-title').textContent = achName(a);
     $('reward-note').textContent = reward ? t('achievements.reward', { item: reward }) : t('achievements.noReward');
+    visual.appendChild(patchBadge(a, true, true));
+    const option = achievementRewardOption(a.id);
+    if (option) {
+      const plus = document.createElement('span');
+      plus.className = 'reward-plus';
+      plus.textContent = '+';
+      visual.appendChild(plus);
+      image(lookPreview(option[0], option[1]), `reward-look ${option[0]}`);
+    }
   }
   sfx.win();
   buzz([30, 60, 30]);
@@ -1520,6 +1566,7 @@ $('load-hint').textContent = t('common.loading', { pct: 0 });
 Assets.load(Math.min(4, renderer.capabilities.getMaxAnisotropy()), (p) => { $('load-hint').textContent = t('common.loading', { pct: Math.round(p * 100) }); })
   .then((a) => {
     assets = a;
+    thumbs = new Thumbs(renderer, a, scene.environment);
     toMenuScene();
     $('load-hint').textContent = '';
     $<HTMLButtonElement>('btn-story').disabled = false;
