@@ -16,6 +16,7 @@ import { Input, type ControlMode } from './input';
 import { Fx } from './fx';
 import { LiquidGauge } from './hud-liquid';
 import { AbyssAmbience } from './abyss';
+import { Trail } from './trail';
 import { setMuted, sfx, unlockAudio } from './audio';
 import { LANGS, applyDom, detectLang, getLang, levelName, levelTip, setLang, t, type Lang } from './i18n';
 import { loadSave, writeSave } from './save';
@@ -142,6 +143,10 @@ scene.add(tiltRoot);
 
 const fx = new Fx();
 content.add(fx.group);
+const trail = new Trail();
+content.add(trail.group);
+/** tiempo acumulado para dejar manchas de rastro a ritmo fijo */
+let trailT = 0;
 
 function resize() {
   renderer.setSize(innerWidth, innerHeight, false);
@@ -286,7 +291,7 @@ function toast(text: string, ms = 3200) {
 function refreshScreen() {
   applyDom();
   if (currentScreen && !['pause', 'result', 'breakdown', 'reward'].includes(currentScreen)) openScreen(currentScreen);
-  if (mode === 'menu') $('load-hint').textContent = assets ? t('menu.hint') : '';
+  if (mode === 'menu' && assets) $('load-hint').textContent = '';
 }
 
 // ------------------------------------------------------------------ historia
@@ -625,6 +630,7 @@ function clearLevel() {
   if (world) { content.remove(world.group); world.dispose(); world = null; }
   if (slime) { content.remove(slime.group); slime.dispose(); slime = null; }
   fx.reset();
+  trail.reset();
 }
 
 function loadLevel(def: LevelData) {
@@ -950,7 +956,17 @@ function tick(dt: number) {
   slime.events.length = 0;
 
   // efectos continuos del estado
-  if (slime.state === 'burning' && Math.random() < 0.7 && slime.randomParticle(tmpFx)) fx.flame(tmpFx.x, tmpFx.y, tmpFx.z);
+  if (slime.state === 'burning') {
+    for (let k = 0; k < 2; k++) if (Math.random() < 0.8 && slime.randomParticle(tmpFx)) fx.flame(tmpFx.x, tmpFx.y, tmpFx.z);
+  }
+  // rastro: el aceite lo pringa todo; en llamas deja quemaduras con ascuas
+  if (slime.state === 'oiled' || slime.state === 'burning') {
+    trailT += dt;
+    for (; trailT > 0.02; trailT -= 0.02) {
+      if (slime.randomGrounded(tmpFx)) trail.stamp(slime.state === 'oiled' ? 'oil' : 'fire', tmpFx.x, tmpFx.y, tmpFx.z);
+    }
+  } else trailT = 0;
+  if (Math.random() < dt * 7 && trail.randomEmber(tmpFx)) fx.spark(tmpFx.x, tmpFx.y, tmpFx.z);
   if (slime.state === 'frozen' && Math.random() < 0.15 && slime.randomParticle(tmpFx)) fx.frost(tmpFx.x, tmpFx.y + 0.1, tmpFx.z);
 
   const alive = slime.aliveCount;
@@ -1016,8 +1032,9 @@ function updateCamera(dt: number) {
       menuLook.set(o.x + 1.5, o.y + 0.9, o.z - 1.6);
       camWant.set(o.x + 0.4 + Math.sin(menuT * 0.2) * 0.3, o.y + 2.4, o.z + 3.4);
     } else {
-      menuLook.set(o.x, o.y + 0.7, o.z - 1.6);
-      camWant.set(o.x + Math.sin(menuT * 0.25) * 0.7, o.y + 2.5, o.z + 3.9);
+      // el limo abajo a la izquierda, fuera de los botones (derecha) y del logo (arriba a la izquierda)
+      menuLook.set(o.x + 1.35, o.y + 0.8, o.z - 0.6);
+      camWant.set(o.x + 0.75 + Math.sin(menuT * 0.25) * 0.2, o.y + 2.4, o.z + 3.9);
     }
     camTarget.lerp(menuLook, 1 - Math.exp(-dt * 3));
   } else {
@@ -1093,6 +1110,7 @@ function frame(dt: number) {
   }
   const alpha = mode === 'play' ? Math.min(acc / FIXED, 1) : 1;
   fx.update(dt);
+  trail.update(mode === 'play' || mode === 'winning' ? dt : dt * 0.3);
   updateCamera(dt);
   abyss.group.visible = mode !== 'menu';
   if (abyss.group.visible) abyss.update(dt, camTarget);
@@ -1145,7 +1163,7 @@ Assets.load(Math.min(4, renderer.capabilities.getMaxAnisotropy()), (p) => { $('l
   .then((a) => {
     assets = a;
     toMenuScene();
-    $('load-hint').textContent = t('menu.hint');
+    $('load-hint').textContent = '';
     $<HTMLButtonElement>('btn-story').disabled = false;
   })
   .catch((err) => {

@@ -34,6 +34,10 @@ const DRIVE_SELF = 2.2;
 const DRIVE_ICE = 0.9;
 const DRIVE_AIR = 1.0;
 const FLOOR_FRICTION = 1.1;
+// Aceite: agarra menos al suelo y frena peor, así que el limo resbala un poco más.
+const OIL_DRIVE = 0.5;
+const OIL_FRICTION = 0.35;
+const OIL_SPEED = 1.12;
 // Inclinación: con el mando a fondo el suelo "se inclina" y el líquido corre hacia el lado bajo.
 const SLOPE_ACC = 7;
 // Esquinas de muro: la gota que roza la arista se frena y se suelta un momento.
@@ -88,7 +92,7 @@ const HOVER_HEIGHT = 0.8;
 
 const STATE_LOOK: Record<SlimeState, { color: number; emissive: number; rim: [number, number, number]; wobble: number }> = {
   normal: { color: 0x2f8cff, emissive: 0x0b3a8c, rim: [0.45, 0.8, 1.0], wobble: 1 },
-  oiled: { color: 0xb3842c, emissive: 0x4a2f08, rim: [1.0, 0.84, 0.48], wobble: 0.8 },
+  oiled: { color: 0x9c7428, emissive: 0x352304, rim: [0.95, 0.8, 0.45], wobble: 0.8 },
   burning: { color: 0xff6a1a, emissive: 0xd23a00, rim: [1.0, 0.75, 0.2], wobble: 1.3 },
   frozen: { color: 0xbfe9ff, emissive: 0x3f8fc2, rim: [0.85, 0.97, 1.0], wobble: 0 },
 };
@@ -383,6 +387,17 @@ export class Slime {
     if (from !== to) this.events.push({ type: 'state', from, to });
   }
 
+  /** Un limito al azar que toca el suelo; out = su posición a ras de suelo (para el rastro). */
+  randomGrounded(out: THREE.Vector3): boolean {
+    for (let t = 0; t < 6; t++) {
+      const i = (Math.random() * this.n) | 0;
+      if (!this.alive[i] || this.dying[i] > 0 || this.air[i] > 0.08 || this.groundCell[i] < 0) continue;
+      out.set(this.px[i], this.world.cells[this.groundCell[i]].top, this.pz[i]);
+      return true;
+    }
+    return false;
+  }
+
   /** Un limito al azar (para que el juego ponga llamas o escarcha encima). */
   randomParticle(out: THREE.Vector3): boolean {
     for (let tries = 0; tries < 6; tries++) {
@@ -474,12 +489,14 @@ export class Slime {
 
     const dragK = 1 - DRAG * h;
     const cells = this.world.cells;
-    const tvx = tiltX * MAX_SPEED, tvz = tiltZ * MAX_SPEED;
-    const kGroup = 1 - Math.exp(-DRIVE_GROUP * h);
-    const kSelf = 1 - Math.exp(-DRIVE_SELF * h);
+    const oily = this.state === 'oiled';
+    const speed = MAX_SPEED * (oily ? OIL_SPEED : 1);
+    const tvx = tiltX * speed, tvz = tiltZ * speed;
+    const kGroup = 1 - Math.exp(-DRIVE_GROUP * (oily ? OIL_DRIVE : 1) * h);
+    const kSelf = 1 - Math.exp(-DRIVE_SELF * (oily ? OIL_DRIVE : 1) * h);
     const kIce = 1 - Math.exp(-DRIVE_ICE * h);
     const kAir = 1 - Math.exp(-DRIVE_AIR * h);
-    const fric = 1 - FLOOR_FRICTION * h;
+    const fric = 1 - FLOOR_FRICTION * (oily ? OIL_FRICTION : 1) * h;
     const mag2 = tiltX * tiltX + tiltZ * tiltZ;
     const slopeX = tiltX * mag2 * SLOPE_ACC, slopeZ = tiltZ * mag2 * SLOPE_ACC;
 

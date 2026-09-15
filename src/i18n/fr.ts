@@ -12,7 +12,6 @@ export const fr: Dict = {
     stars: '{n} étoiles sur 3',
   },
   menu: {
-    hint: 'Trésors, strates et épreuves t’attendent en bas',
     story: 'Mode Histoire',
     collection: 'Collection',
     myslime: 'Mon slime',

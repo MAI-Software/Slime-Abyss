@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-interface Puff { sprite: THREE.Sprite; life: number; max: number; vy: number; vx: number; vz: number; grow: number }
+interface Puff { sprite: THREE.Sprite; life: number; max: number; vy: number; vx: number; vz: number; grow: number; shrink: boolean }
 
 function puffTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas');
@@ -19,16 +19,18 @@ export class Fx {
   private pool: Puff[] = [];
   private tex = puffTexture();
 
-  private spawn(x: number, y: number, z: number, color: number, size: number, life: number, vy: number, spread: number) {
+  private spawn(x: number, y: number, z: number, color: number, size: number, life: number, vy: number, spread: number, glow = false, shrink = glow) {
     let p = this.pool.find((q) => q.life <= 0);
     if (!p) {
-      if (this.pool.length > 80) return;
+      if (this.pool.length > 160) return;
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.tex, transparent: true, depthWrite: false }));
       this.group.add(sprite);
-      p = { sprite, life: 0, max: 1, vy: 0, vx: 0, vz: 0, grow: 1 };
+      p = { sprite, life: 0, max: 1, vy: 0, vx: 0, vz: 0, grow: 1, shrink: false };
       this.pool.push(p);
     }
     p.sprite.material.color.setHex(color);
+    p.sprite.material.blending = glow ? THREE.AdditiveBlending : THREE.NormalBlending;
+    p.shrink = shrink;
     p.sprite.position.set(x, y, z);
     p.sprite.scale.setScalar(size);
     p.sprite.visible = true;
@@ -47,9 +49,15 @@ export class Fx {
     for (let k = 0; k < 4; k++) this.spawn(x, y, z, 0x7cc0ff, 0.22, 0.4, 2 + Math.random() * 2, 3);
   }
 
-  /** Lengua de fuego sobre el limo en llamas. */
+  /** Lengua de fuego sobre el limo en llamas: se encoge al subir (mezcla normal: el aditivo se lava en suelos claros). */
   flame(x: number, y: number, z: number) {
-    this.spawn(x, y + 0.1, z, Math.random() < 0.5 ? 0xff7a1a : 0xffc34d, 0.2, 0.35 + Math.random() * 0.2, 1.8 + Math.random() * 1.5, 0.6);
+    const r = Math.random();
+    this.spawn(x, y + 0.14, z, r < 0.4 ? 0xff4d0a : r < 0.8 ? 0xff8a1f : 0xffc54a, 0.34 + Math.random() * 0.18, 0.45 + Math.random() * 0.25, 1.5 + Math.random() * 1.4, 0.6, false, true);
+  }
+
+  /** Chispa que salta de una ascua del rastro. */
+  spark(x: number, y: number, z: number) {
+    this.spawn(x, y + 0.05, z, Math.random() < 0.5 ? 0xff7a1a : 0xffc34d, 0.07 + Math.random() * 0.05, 0.5 + Math.random() * 0.4, 0.8 + Math.random() * 1.2, 0.5, true);
   }
 
   /** Escarcha sobre el limo congelado. */
@@ -70,7 +78,7 @@ export class Fx {
       p.sprite.position.x += p.vx * dt;
       p.sprite.position.y += p.vy * dt;
       p.sprite.position.z += p.vz * dt;
-      p.sprite.scale.setScalar(p.grow * (0.55 + t * 0.45));
+      p.sprite.scale.setScalar(p.shrink ? p.grow * 0.6 * (1 - t * 0.7) : p.grow * (0.55 + t * 0.45));
       p.sprite.material.opacity = (1 - t) * 0.85;
     }
   }

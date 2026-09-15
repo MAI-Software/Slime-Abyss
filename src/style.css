@@ -145,14 +145,18 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
 }
 
 /* ---------- menú principal ---------- */
+/* logo arriba a la izquierda, botones a la derecha: el limo queda libre abajo a la izquierda */
 .screen-main {
   flex-direction: row;
-  justify-content: space-around;
+  justify-content: space-between;
+  align-items: stretch;
   gap: 24px;
-  background: linear-gradient(90deg, rgba(12, 8, 30, 0.55) 0%, rgba(12, 8, 30, 0) 32%, rgba(12, 8, 30, 0) 62%, rgba(12, 8, 30, 0.5) 100%);
+  background: linear-gradient(90deg, rgba(12, 8, 30, 0.3) 0%, rgba(12, 8, 30, 0) 28%, rgba(12, 8, 30, 0) 58%, rgba(12, 8, 30, 0.5) 100%);
 }
-.main-brand { display: flex; flex-direction: column; align-items: center; }
-.main-actions { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.main-brand { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; }
+.main-brand .logo { text-align: left; }
+.main-actions { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.hint:empty { display: none; }
 .logo {
   margin: 0;
   font-family: 'Fredoka', sans-serif;
@@ -516,7 +520,7 @@ body[data-control="gyro"] #joy-zone, body[data-control="gyro"] #cam-zone { displ
 /* ---------- horizontal en móvil: poco alto, tarjetas en dos columnas ---------- */
 @media (max-height: 520px) {
   .screen { justify-content: flex-start; gap: 10px; }
-  .screen.screen-main { justify-content: space-around; }
+  .screen.screen-main { justify-content: space-between; }
   .screen h2 { font-size: 24px; }
   .result-card {
     width: min(820px, 100%);

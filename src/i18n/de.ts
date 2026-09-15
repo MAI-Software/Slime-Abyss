@@ -12,7 +12,6 @@ export const de: Dict = {
     stars: '{n} von 3 Sternen',
   },
   menu: {
-    hint: 'Unten warten Schätze, Schichten und Prüfungen',
     story: 'Story-Modus',
     collection: 'Sammlung',
     myslime: 'Mein Schleim',

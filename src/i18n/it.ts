@@ -12,7 +12,6 @@ export const it: Dict = {
     stars: '{n} stelle su 3',
   },
   menu: {
-    hint: 'Tesori, strati e prove ti aspettano in fondo',
     story: 'Modalità Storia',
     collection: 'Collezione',
     myslime: 'Il mio slime',

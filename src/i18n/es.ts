@@ -11,7 +11,6 @@ export const es = {
     stars: '{n} de 3 estrellas',
   },
   menu: {
-    hint: 'Tesoros, capas y pruebas te esperan abajo',
     story: 'Modo Historia',
     collection: 'Colección',
     myslime: 'Mi limo',
