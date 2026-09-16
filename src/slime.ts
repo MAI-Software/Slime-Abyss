@@ -62,6 +62,17 @@ const CUT_COOLDOWN = 0.7;   // tiempo sin cohesión entre mitades tras pasar por
 const CUT_TAG_BASE = 1_000_000;
 
 // --- render ---
+// Mercurio: el limo dibujado se estira como una gota hacia donde se inclina (ya con muy poca inclinación)
+// y, por inercia, hacia delante al frenar o girar; un muelle con poco amortiguamiento lo hace rebotar.
+// Solo es dibujo: la física (y el equilibrio de los pisos) no cambia.
+const SLOSH_TILT = 0.85;      // deformación con el mando a fondo (raíz: la inclinación pequeña ya se nota)
+const SLOSH_INERTIA = 0.03;   // deformación por cada unidad de aceleración del trozo
+const SLOSH_FREQ = 11;        // rad/s del muelle
+const SLOSH_DAMP = 0.26;      // amortiguamiento (bajo: tiembla al soltar)
+const SLOSH_STRETCH = 1.25;   // alargamiento a lo largo (relativo al tamaño del trozo)
+const SLOSH_FRONT = 0.55;     // la parte delantera se abomba más: forma de gota
+const SLOSH_SHIFT = 0.12;     // el conjunto se vuelca un poco hacia el lado bajo
+const SLOSH_FLAT = 0.3;       // se aplana al estirarse
 /** trozos con sombra de contacto (la cara solo la lleva el trozo principal: es un único limo) */
 const FACE_GROUPS = 4;
 const FACE_MIN_SIZE = 8;
@@ -156,6 +167,12 @@ export class Slime {
   private stationLock = new Map<number, number>();
   /** el jugador mantiene pulsado "apretar" */
   squeezing = false;
+  // mercurio: dirección e intensidad de la deformación dibujada (muelle) y lo que la empuja
+  private slosh = { x: 0, z: 0, vx: 0, vz: 0 };
+  private driveX = 0;
+  private driveZ = 0;
+  private leadVx = 0;
+  private leadVz = 0;
   /** tiempo sin empuje del mando tras quemarse */
   private stunT = 0;
   private fireHits: number[] = [];
@@ -487,6 +504,42 @@ export class Slime {
     }
     this.postStep(dt);
     this.computeGroups();
+    this.driveX = tiltX;
+    this.driveZ = tiltZ;
+    this.updateSlosh(dt);
+  }
+
+  /** Muelle de la deformación de mercurio: tira hacia la inclinación y hacia delante al frenar. */
+  private updateSlosh(dt: number) {
+    const s = this.slosh;
+    const lead = this.groups[0];
+    let tx = 0, tz = 0;
+    if (lead && this.state !== 'frozen' && dt > 0) {
+      const m = Math.hypot(this.driveX, this.driveZ);
+      if (m > 1e-3) {
+        // contra un muro no se estira hacia dentro: cuenta solo lo que de verdad avanza hacia ese lado
+        const along = (lead.vx * this.driveX + lead.vz * this.driveZ) / m;
+        const free = Math.max(0.15, Math.min(1, along / (MAX_SPEED * Math.min(1, m) * 0.6)));
+        const k = (Math.sqrt(Math.min(1, m)) * SLOSH_TILT * free) / m;
+        tx = this.driveX * k;
+        tz = this.driveZ * k;
+      }
+      // inercia (acotada: al dividirse el trozo principal cambia y su velocidad salta)
+      let accX = (lead.vx - this.leadVx) / dt, accZ = (lead.vz - this.leadVz) / dt;
+      const acc = Math.hypot(accX, accZ);
+      if (acc > 12) { accX *= 12 / acc; accZ *= 12 / acc; }
+      tx -= accX * SLOSH_INERTIA;
+      tz -= accZ * SLOSH_INERTIA;
+      this.leadVx = lead.vx;
+      this.leadVz = lead.vz;
+    }
+    const len = Math.hypot(tx, tz);
+    if (len > 1) { tx /= len; tz /= len; }
+    const w = SLOSH_FREQ;
+    s.vx += ((tx - s.x) * w * w - s.vx * 2 * SLOSH_DAMP * w) * dt;
+    s.vz += ((tz - s.z) * w * w - s.vz * 2 * SLOSH_DAMP * w) * dt;
+    s.x += s.vx * dt;
+    s.z += s.vz * dt;
   }
 
   private substep(h: number, tiltX: number, tiltZ: number) {
@@ -1151,14 +1204,34 @@ export class Slime {
     const lead = this.groups[0];
     let used = 0;
 
+    // mercurio: intensidad y dirección de la deformación
+    const sl = this.slosh;
+    const sLen = Math.hypot(sl.x, sl.z);
+    const e = Math.min(1, sLen);
+    const ux = sLen > 1e-4 ? sl.x / sLen : 0, uz = sLen > 1e-4 ? sl.z / sLen : 0;
+    const { gid, riding } = this;
+
     if (lead) {
       this.blob.begin(lead.cx, lead.cy, lead.cz);
       const spheres = this.spheres;
       for (let i = 0; i < n; i++) {
         if (!alive[i]) continue;
-        const x = ox[i] + (px[i] - ox[i]) * alpha;
-        const y = oy[i] + (py[i] - oy[i]) * alpha;
-        const z = oz[i] + (pz[i] - oz[i]) * alpha;
+        let x = ox[i] + (px[i] - ox[i]) * alpha;
+        let y = oy[i] + (py[i] - oy[i]) * alpha;
+        let z = oz[i] + (pz[i] - oz[i]) * alpha;
+        const g = gid[i] >= 0 ? this.groups[gid[i]] : undefined;
+        if (e > 0.005 && g && !riding[i]) {
+          // respecto al centro del trozo (posiciones de física: sin temblor entre pasos)
+          const dx = px[i] - g.cx, dy = py[i] - g.cy, dz = pz[i] - g.cz;
+          const ee = g.ids.length < FACE_MIN_SIZE ? e * 0.35 : e;
+          const along = dx * ux + dz * uz;
+          const stretch = SLOSH_STRETCH * ee;
+          const thin = 1 / Math.sqrt(1 + stretch) - 1;
+          const push = along * stretch + (along > 0 ? along * SLOSH_FRONT * ee : 0) + SLOSH_SHIFT * ee;
+          x += ux * push + (dx - ux * along) * thin;
+          z += uz * push + (dz - uz * along) * thin;
+          if (dy > 0) y -= dy * SLOSH_FLAT * ee;
+        }
         const life = dying[i] > 0 ? Math.max(1 - dying[i] / DIE_TIME, 0.05) : 1;
         if (this.blob.addBall(x, y, z, life)) continue;
         // fuera de la rejilla (muy lejos o cayendo): esfera simple
@@ -1191,7 +1264,13 @@ export class Slime {
       if (k > 0) continue;
       let airborne = 0;
       for (const i of g.ids) if (this.air[i] > 0.15) airborne++;
-      face.update(g, dt, lookX, lookZ, airborne / g.ids.length, this.camYaw, this.camPitch, this.squeezing);
+      // la cara acompaña a la gota: se desplaza con el vuelco y sale más si el limo se estira hacia la cámara
+      const vx = Math.sin(this.camYaw), vz = Math.cos(this.camYaw);
+      const facing = ux * vx + uz * vz;
+      const ext = Math.max(0.2, g.maxZ - g.cz);
+      const bulge = ext * e * (SLOSH_STRETCH * Math.abs(facing) + SLOSH_FRONT * Math.max(0, facing));
+      const shiftX = ux * SLOSH_SHIFT * e + vx * bulge, shiftZ = uz * SLOSH_SHIFT * e + vz * bulge;
+      face.update(g, dt, lookX, lookZ, airborne / g.ids.length, this.camYaw, this.camPitch, this.squeezing, shiftX, shiftZ);
     }
 
     // daño → cara de dolor (un único limo, una única cara)
@@ -1340,7 +1419,7 @@ class Face {
     this.happyT = Math.max(this.happyT, t);
   }
 
-  update(g: Group, dt: number, lookX: number, lookZ: number, airFrac: number, yaw: number, pitch: number, squeeze = false) {
+  update(g: Group, dt: number, lookX: number, lookZ: number, airFrac: number, yaw: number, pitch: number, squeeze = false, shiftX = 0, shiftZ = 0) {
     this.t += dt;
     this.painT -= dt;
     this.happyT -= dt;
@@ -1374,9 +1453,9 @@ class Face {
     // arriba y en el lado del trozo que da a la cámara, inclinada hacia ella
     const sy = Math.sin(yaw), cy = Math.cos(yaw);
     const out = Math.max(0.2, g.maxZ - g.cz) + 0.24;
-    const tx = g.cx + sy * out;
+    const tx = g.cx + sy * out + shiftX;
     const ty = g.maxY * 0.6 + g.cy * 0.4 + 0.16;
-    const tz = g.cz + cy * out;
+    const tz = g.cz + cy * out + shiftZ;
     // velocidad vista desde la cámara (x: derecha de la pantalla, z: hacia la cámara)
     const svx = g.vx * cy - g.vz * sy;
     const svz = g.vx * sy + g.vz * cy;
