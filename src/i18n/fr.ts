@@ -34,6 +34,8 @@ export const fr: Dict = {
   chapters: {
     'cripta-azul': 'La Crypte Bleue',
     'raices-colgantes': 'Les Racines Suspendues',
+    'grietas-heladas': 'Les Failles Gelées',
+    'corazon-abismo': 'Le Cœur de l’Abîme',
   },
   options: {
     title: 'Options',
@@ -301,6 +303,86 @@ export const fr: Dict = {
     'c2-gran-raiz': {
       name: 'La grande racine',
       tips: ['Dernière épreuve du chapitre : utilise tout ce que tu as appris', 'Serre avant de sauter', 'Prends l’huile et enflamme-toi de l’autre côté pour brûler les plantes'],
+    },
+    'c3-suelo-fragil': {
+      name: 'Sol fragile',
+      tips: ['La roche fissurée se brise quand tu marches dessus : ne t’arrête pas', 'Ce qui se brise ne revient pas : traverse d’un coup'],
+    },
+    'c3-puente-quebradizo': {
+      name: 'Pont cassant',
+      tips: ['Traverse sans t’arrêter : chaque dalle tient peu', 'Tourne en douceur dans les virages'],
+    },
+    'c3-hielo-fundido': {
+      name: 'Glace fondue',
+      tips: ['Huile et feu : on s’enflamme à nouveau', 'En flammes, le sol de glace fond : traverse sans t’arrêter'],
+    },
+    'c3-pista-ardiente': {
+      name: 'Piste brûlante',
+      tips: ['Huile et feu pour brûler le lierre', 'En flammes, tu fais fondre le pont de glace : traverse d’un trait'],
+    },
+    'c3-grietas-entre-llamas': {
+      name: 'Failles entre les flammes',
+      tips: ['Attends sur un sol solide que les flammes s’éteignent', 'Après les flammes, la roche ne tient pas : continue sans t’arrêter'],
+    },
+    'c3-dos-puentes': {
+      name: 'Deux ponts',
+      tips: ['La lame te coupe : chaque moitié traverse son pont', 'Serre de l’autre côté pour rassembler le slime'],
+    },
+    'c3-saltos-fragiles': {
+      name: 'Sauts fragiles',
+      tips: ['Tu atterris sur de la roche fissurée : file vers la plateforme suivante', 'Saute encore sans t’arrêter'],
+    },
+    'c3-viento-y-grietas': {
+      name: 'Vent et failles',
+      tips: ['Le vent te plaque au mur pendant que la roche se brise', 'Ne t’arrête pas : le mur ne tombe pas'],
+    },
+    'c3-plaza-rota': {
+      name: 'Place brisée',
+      tips: ['La lame te coupe juste avant la roche brisée', 'Serre en avançant : pas le temps d’attendre'],
+    },
+    'c3-gran-grieta': {
+      name: 'La grande faille',
+      tips: ['Dernière épreuve du chapitre : utilise tout ce que tu as appris', 'En flammes, la glace cède : ne t’arrête pas', 'Attends que les flammes s’éteignent avant la roche fissurée'],
+    },
+    'c4-peso-fragil': {
+      name: 'Poids fragile',
+      tips: ['L’interrupteur demande du poids : serre dessus', 'Derrière la porte, la roche ne tient pas'],
+    },
+    'c4-pinchos-y-grietas': {
+      name: 'Pointes et failles',
+      tips: ['Évite les pointes sans t’arrêter sur la roche'],
+    },
+    'c4-resbalon': {
+      name: 'Glissade',
+      tips: ['Glace et pointes : va tout droit au centre', 'Huile et feu pour brûler le lierre', 'Le pont de glace fond sous tes flammes'],
+    },
+    'c4-estacion-fragil': {
+      name: 'Gare fragile',
+      tips: ['La voie te dépose sur de la roche fissurée', 'Traverse la faille sans t’arrêter et monte à la gare suivante'],
+    },
+    'c4-hielo-duro': {
+      name: 'Dur comme la glace',
+      tips: ['L’air froid te gèle', 'Gelé, tu es dur : les pointes ne te font rien'],
+    },
+    'c4-ola-de-fuego': {
+      name: 'Vague de feu',
+      tips: ['Les flammes s’éteignent en vague : traverse juste derrière elle'],
+    },
+    'c4-mitades-fragiles': {
+      name: 'Moitiés fragiles',
+      tips: ['Laisse une moitié sur l’interrupteur pendant que l’autre traverse', 'La moitié de droite ne peut pas s’arrêter sur la roche'],
+    },
+    'c4-aceite-helado': {
+      name: 'Huile gelée',
+      tips: ['Enflamme-toi pour brûler le lierre', 'L’air froid éteint les flammes : ainsi le pont de glace tient'],
+    },
+    'c4-caida-controlada': {
+      name: 'Descente contrôlée',
+      tips: ['Chaque marche a un bord fissuré', 'Évite les pointes en descendant'],
+    },
+    'c4-corazon-del-abismo': {
+      name: 'Le cœur de l’abîme',
+      tips: ['L’ultime épreuve de l’abîme', 'L’air froid éteint les flammes et te durcit', 'Gelé, les pointes ne te font rien'],
     },
   },
 };

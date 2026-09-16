@@ -34,6 +34,8 @@ export const en: Dict = {
   chapters: {
     'cripta-azul': 'The Blue Crypt',
     'raices-colgantes': 'The Hanging Roots',
+    'grietas-heladas': 'The Frozen Rifts',
+    'corazon-abismo': 'The Heart of the Abyss',
   },
   options: {
     title: 'Options',
@@ -301,6 +303,86 @@ export const en: Dict = {
     'c2-gran-raiz': {
       name: 'The Great Root',
       tips: ['Final trial of the chapter: use everything you have learned', 'Squeeze before jumping', 'Grab the oil and catch fire on the other side to burn the plants'],
+    },
+    'c3-suelo-fragil': {
+      name: 'Fragile Floor',
+      tips: ['Cracked rock breaks when you step on it: don’t stop on it', 'What breaks doesn’t come back: cross in one go'],
+    },
+    'c3-puente-quebradizo': {
+      name: 'Brittle Bridge',
+      tips: ['Cross without stopping: each slab holds only briefly', 'Turn gently at the corners'],
+    },
+    'c3-hielo-fundido': {
+      name: 'Melting Ice',
+      tips: ['Oil and fire: time to burn again', 'While burning, the ice floor melts: cross it without stopping'],
+    },
+    'c3-pista-ardiente': {
+      name: 'Blazing Track',
+      tips: ['Oil and fire to burn the ivy', 'Burning, you melt the ice bridge: cross it in one go'],
+    },
+    'c3-grietas-entre-llamas': {
+      name: 'Cracks Among Flames',
+      tips: ['Wait on solid ground for the flames to go out', 'Past the flames the rock won’t hold: keep going'],
+    },
+    'c3-dos-puentes': {
+      name: 'Two Bridges',
+      tips: ['The blade splits you: each half crosses its own bridge', 'Squeeze on the other side to bring the slime together'],
+    },
+    'c3-saltos-fragiles': {
+      name: 'Fragile Jumps',
+      tips: ['You land on cracked rock: head for the next pad', 'Jump again without stopping'],
+    },
+    'c3-viento-y-grietas': {
+      name: 'Wind and Cracks',
+      tips: ['The wind pins you to the wall while the rock breaks', 'Don’t stop: the wall won’t fall'],
+    },
+    'c3-plaza-rota': {
+      name: 'Broken Square',
+      tips: ['The blade splits you right before the broken rock', 'Squeeze as you move: there’s no time to wait'],
+    },
+    'c3-gran-grieta': {
+      name: 'The Great Rift',
+      tips: ['Final trial of the chapter: use everything you have learned', 'Burning, the ice gives way: don’t stop', 'Wait for the flames to go out before the cracked rock'],
+    },
+    'c4-peso-fragil': {
+      name: 'Fragile Weight',
+      tips: ['The switch needs weight: squeeze on top of it', 'Behind the door, the rock won’t hold'],
+    },
+    'c4-pinchos-y-grietas': {
+      name: 'Spikes and Cracks',
+      tips: ['Dodge the spikes without stopping on the rock'],
+    },
+    'c4-resbalon': {
+      name: 'Slip-Up',
+      tips: ['Ice and spikes: go straight down the middle', 'Oil and fire to burn the ivy', 'The ice bridge melts under your flames'],
+    },
+    'c4-estacion-fragil': {
+      name: 'Fragile Station',
+      tips: ['The track drops you on cracked rock', 'Cross the crack without stopping and board the next station'],
+    },
+    'c4-hielo-duro': {
+      name: 'Hard as Ice',
+      tips: ['The cold air freezes you', 'Frozen, you’re tough: spikes can’t hurt you'],
+    },
+    'c4-ola-de-fuego': {
+      name: 'Wave of Fire',
+      tips: ['The flames go out in a wave: cross right behind it'],
+    },
+    'c4-mitades-fragiles': {
+      name: 'Fragile Halves',
+      tips: ['Leave one half on the switch while the other crosses', 'The right half can’t stop on the rock'],
+    },
+    'c4-aceite-helado': {
+      name: 'Frozen Oil',
+      tips: ['Catch fire to burn the ivy', 'Cold air puts out the flames: that way the ice bridge holds'],
+    },
+    'c4-caida-controlada': {
+      name: 'Controlled Descent',
+      tips: ['Every step has a cracked edge', 'Dodge the spikes on the way down'],
+    },
+    'c4-corazon-del-abismo': {
+      name: 'The Heart of the Abyss',
+      tips: ['The final trial of the abyss', 'Cold air puts out the flames and hardens you', 'Frozen, spikes can’t hurt you'],
     },
   },
 };

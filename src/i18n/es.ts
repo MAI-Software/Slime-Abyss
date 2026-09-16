@@ -33,6 +33,8 @@ export const es = {
   chapters: {
     'cripta-azul': 'La Cripta Azul',
     'raices-colgantes': 'Las Raíces Colgantes',
+    'grietas-heladas': 'Las Grietas Heladas',
+    'corazon-abismo': 'El Corazón del Abismo',
   },
   options: {
     title: 'Opciones',
@@ -300,6 +302,86 @@ export const es = {
     'c2-gran-raiz': {
       name: 'La gran raíz',
       tips: ['Última prueba del capítulo: usa todo lo aprendido', 'Aprieta antes de saltar', 'Coge el aceite y préndete al otro lado para quemar las plantas'],
+    },
+    'c3-suelo-fragil': {
+      name: 'Suelo frágil',
+      tips: ['La roca agrietada se rompe al pisarla: no te pares encima', 'Lo que se rompe no vuelve: cruza de una vez'],
+    },
+    'c3-puente-quebradizo': {
+      name: 'Puente quebradizo',
+      tips: ['Cruza sin pararte: cada losa aguanta poco', 'Gira con suavidad en las esquinas'],
+    },
+    'c3-hielo-fundido': {
+      name: 'Hielo fundido',
+      tips: ['Aceite y fuego: a arder otra vez', 'Ardiendo, el suelo de hielo se derrite: crúzalo sin pararte'],
+    },
+    'c3-pista-ardiente': {
+      name: 'Pista ardiente',
+      tips: ['Aceite y fuego para quemar la hiedra', 'Ardiendo derrites el puente de hielo: crúzalo de un tirón'],
+    },
+    'c3-grietas-entre-llamas': {
+      name: 'Grietas entre llamas',
+      tips: ['Espera en suelo firme a que se apaguen las llamas', 'Detrás de las llamas la roca no aguanta: sigue sin parar'],
+    },
+    'c3-dos-puentes': {
+      name: 'Dos puentes',
+      tips: ['La cuchilla te divide: cada mitad cruza su puente', 'Aprieta al otro lado para juntar el limo'],
+    },
+    'c3-saltos-fragiles': {
+      name: 'Saltos frágiles',
+      tips: ['Aterrizas sobre roca agrietada: sigue hacia la siguiente plataforma', 'Salta otra vez sin pararte'],
+    },
+    'c3-viento-y-grietas': {
+      name: 'Viento y grietas',
+      tips: ['El viento te pega al muro mientras la roca se rompe', 'No te detengas: el muro no se cae'],
+    },
+    'c3-plaza-rota': {
+      name: 'Plaza rota',
+      tips: ['La cuchilla te parte justo antes de la roca rota', 'Aprieta mientras avanzas: no hay tiempo para esperar'],
+    },
+    'c3-gran-grieta': {
+      name: 'La gran grieta',
+      tips: ['Última prueba del capítulo: usa todo lo aprendido', 'En llamas, el hielo cede: no te pares', 'Espera a que se apaguen las llamas antes de la roca agrietada'],
+    },
+    'c4-peso-fragil': {
+      name: 'Peso frágil',
+      tips: ['El interruptor pide peso: aprieta encima', 'Detrás de la puerta, la roca no aguanta'],
+    },
+    'c4-pinchos-y-grietas': {
+      name: 'Pinchos y grietas',
+      tips: ['Esquiva los pinchos sin pararte en la roca'],
+    },
+    'c4-resbalon': {
+      name: 'Resbalón',
+      tips: ['Hielo y pinchos: ve recto por el centro', 'Aceite y fuego para quemar la hiedra', 'El puente de hielo se derrite bajo tus llamas'],
+    },
+    'c4-estacion-fragil': {
+      name: 'Estación frágil',
+      tips: ['La vía te deja sobre roca agrietada', 'Cruza la grieta sin pararte y sube a la siguiente estación'],
+    },
+    'c4-hielo-duro': {
+      name: 'Duro como el hielo',
+      tips: ['El aire frío te congela', 'Congelado eres duro: los pinchos no te hacen nada'],
+    },
+    'c4-ola-de-fuego': {
+      name: 'Ola de fuego',
+      tips: ['Las llamas se apagan en ola: cruza justo detrás de ella'],
+    },
+    'c4-mitades-fragiles': {
+      name: 'Mitades frágiles',
+      tips: ['Deja una mitad sobre el interruptor mientras la otra cruza', 'La mitad de la derecha no puede pararse en la roca'],
+    },
+    'c4-aceite-helado': {
+      name: 'Aceite helado',
+      tips: ['Arde para quemar la hiedra', 'El aire frío apaga las llamas: así el puente de hielo aguanta'],
+    },
+    'c4-caida-controlada': {
+      name: 'Caída controlada',
+      tips: ['Cada escalón tiene el borde agrietado', 'Esquiva los pinchos al bajar'],
+    },
+    'c4-corazon-del-abismo': {
+      name: 'El corazón del abismo',
+      tips: ['Última prueba del abismo', 'El aire frío apaga las llamas y te endurece', 'Congelado, los pinchos no te hacen nada'],
     },
   } as Record<string, { name: string; tips: string[] }>,
 };

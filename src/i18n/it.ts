@@ -34,6 +34,8 @@ export const it: Dict = {
   chapters: {
     'cripta-azul': 'La Cripta Blu',
     'raices-colgantes': 'Le Radici Sospese',
+    'grietas-heladas': 'Le Crepe Gelate',
+    'corazon-abismo': 'Il Cuore dell’Abisso',
   },
   options: {
     title: 'Opzioni',
@@ -301,6 +303,86 @@ export const it: Dict = {
     'c2-gran-raiz': {
       name: 'La grande radice',
       tips: ['Ultima prova del capitolo: usa tutto ciò che hai imparato', 'Stringi prima di saltare', 'Prendi l’olio e prendi fuoco dall’altra parte per bruciare le piante'],
+    },
+    'c3-suelo-fragil': {
+      name: 'Pavimento fragile',
+      tips: ['La roccia crepata si rompe quando la calpesti: non fermarti sopra', 'Ciò che si rompe non torna: attraversa in un colpo'],
+    },
+    'c3-puente-quebradizo': {
+      name: 'Ponte friabile',
+      tips: ['Attraversa senza fermarti: ogni lastra regge poco', 'Gira con dolcezza negli angoli'],
+    },
+    'c3-hielo-fundido': {
+      name: 'Ghiaccio fuso',
+      tips: ['Olio e fuoco: di nuovo in fiamme', 'In fiamme il pavimento di ghiaccio si scioglie: attraversalo senza fermarti'],
+    },
+    'c3-pista-ardiente': {
+      name: 'Pista ardente',
+      tips: ['Olio e fuoco per bruciare l’edera', 'In fiamme sciogli il ponte di ghiaccio: attraversalo tutto d’un fiato'],
+    },
+    'c3-grietas-entre-llamas': {
+      name: 'Crepe tra le fiamme',
+      tips: ['Aspetta su terreno solido che le fiamme si spengano', 'Dopo le fiamme la roccia non regge: continua senza fermarti'],
+    },
+    'c3-dos-puentes': {
+      name: 'Due ponti',
+      tips: ['La lama ti divide: ogni metà attraversa il suo ponte', 'Stringi dall’altra parte per riunire lo slime'],
+    },
+    'c3-saltos-fragiles': {
+      name: 'Salti fragili',
+      tips: ['Atterri su roccia crepata: vai verso la piattaforma successiva', 'Salta di nuovo senza fermarti'],
+    },
+    'c3-viento-y-grietas': {
+      name: 'Vento e crepe',
+      tips: ['Il vento ti spinge contro il muro mentre la roccia si rompe', 'Non fermarti: il muro non cade'],
+    },
+    'c3-plaza-rota': {
+      name: 'Piazza rotta',
+      tips: ['La lama ti divide proprio prima della roccia rotta', 'Stringi mentre avanzi: non c’è tempo per aspettare'],
+    },
+    'c3-gran-grieta': {
+      name: 'La grande crepa',
+      tips: ['Ultima prova del capitolo: usa tutto ciò che hai imparato', 'In fiamme il ghiaccio cede: non fermarti', 'Aspetta che le fiamme si spengano prima della roccia crepata'],
+    },
+    'c4-peso-fragil': {
+      name: 'Peso fragile',
+      tips: ['L’interruttore chiede peso: stringiti sopra', 'Dietro la porta la roccia non regge'],
+    },
+    'c4-pinchos-y-grietas': {
+      name: 'Spuntoni e crepe',
+      tips: ['Evita gli spuntoni senza fermarti sulla roccia'],
+    },
+    'c4-resbalon': {
+      name: 'Scivolone',
+      tips: ['Ghiaccio e spuntoni: vai dritto al centro', 'Olio e fuoco per bruciare l’edera', 'Il ponte di ghiaccio si scioglie sotto le tue fiamme'],
+    },
+    'c4-estacion-fragil': {
+      name: 'Stazione fragile',
+      tips: ['Il binario ti lascia su roccia crepata', 'Attraversa la crepa senza fermarti e sali alla stazione successiva'],
+    },
+    'c4-hielo-duro': {
+      name: 'Duro come il ghiaccio',
+      tips: ['L’aria fredda ti congela', 'Congelato sei duro: gli spuntoni non ti fanno nulla'],
+    },
+    'c4-ola-de-fuego': {
+      name: 'Onda di fuoco',
+      tips: ['Le fiamme si spengono a onda: attraversa subito dietro'],
+    },
+    'c4-mitades-fragiles': {
+      name: 'Metà fragili',
+      tips: ['Lascia una metà sull’interruttore mentre l’altra attraversa', 'La metà di destra non può fermarsi sulla roccia'],
+    },
+    'c4-aceite-helado': {
+      name: 'Olio gelato',
+      tips: ['Prendi fuoco per bruciare l’edera', 'L’aria fredda spegne le fiamme: così il ponte di ghiaccio regge'],
+    },
+    'c4-caida-controlada': {
+      name: 'Discesa controllata',
+      tips: ['Ogni gradino ha il bordo crepato', 'Evita gli spuntoni mentre scendi'],
+    },
+    'c4-corazon-del-abismo': {
+      name: 'Il cuore dell’abisso',
+      tips: ['L’ultima prova dell’abisso', 'L’aria fredda spegne le fiamme e ti indurisce', 'Congelato, gli spuntoni non ti fanno nulla'],
     },
   },
 };

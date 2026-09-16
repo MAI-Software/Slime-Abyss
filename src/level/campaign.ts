@@ -21,6 +21,26 @@ import c2f7 from './campaign/chapter2/07-c2-salto-a-la-estacion.json';
 import c2f8 from './campaign/chapter2/08-c2-puente-de-viento.json';
 import c2f9 from './campaign/chapter2/09-c2-bifurcacion.json';
 import c2f10 from './campaign/chapter2/10-c2-gran-raiz.json';
+import c3f1 from './campaign/chapter3/01-c3-suelo-fragil.json';
+import c3f2 from './campaign/chapter3/02-c3-puente-quebradizo.json';
+import c3f3 from './campaign/chapter3/03-c3-hielo-fundido.json';
+import c3f4 from './campaign/chapter3/04-c3-pista-ardiente.json';
+import c3f5 from './campaign/chapter3/05-c3-grietas-entre-llamas.json';
+import c3f6 from './campaign/chapter3/06-c3-dos-puentes.json';
+import c3f7 from './campaign/chapter3/07-c3-saltos-fragiles.json';
+import c3f8 from './campaign/chapter3/08-c3-viento-y-grietas.json';
+import c3f9 from './campaign/chapter3/09-c3-plaza-rota.json';
+import c3f10 from './campaign/chapter3/10-c3-gran-grieta.json';
+import c4f1 from './campaign/chapter4/01-c4-peso-fragil.json';
+import c4f2 from './campaign/chapter4/02-c4-pinchos-y-grietas.json';
+import c4f3 from './campaign/chapter4/03-c4-resbalon.json';
+import c4f4 from './campaign/chapter4/04-c4-estacion-fragil.json';
+import c4f5 from './campaign/chapter4/05-c4-hielo-duro.json';
+import c4f6 from './campaign/chapter4/06-c4-ola-de-fuego.json';
+import c4f7 from './campaign/chapter4/07-c4-mitades-fragiles.json';
+import c4f8 from './campaign/chapter4/08-c4-aceite-helado.json';
+import c4f9 from './campaign/chapter4/09-c4-caida-controlada.json';
+import c4f10 from './campaign/chapter4/10-c4-corazon-del-abismo.json';
 
 /** Modo historia: capítulos de 10 pisos. Sus coleccionables están en collectibles.ts. */
 export const CHAPTERS: ChapterDef[] = [
@@ -39,10 +59,26 @@ export const CHAPTERS: ChapterDef[] = [
     biome: 'raices',
     floors: [c2f1, c2f2, c2f3, c2f4, c2f5, c2f6, c2f7, c2f8, c2f9, c2f10] as LevelData[],
   },
+  {
+    // roca agrietada y hielo que se derrite bajo el limo en llamas
+    id: 'grietas-heladas',
+    name: 'Capítulo 3',
+    subtitle: 'Las Grietas Heladas',
+    biome: 'raices',
+    floors: [c3f1, c3f2, c3f3, c3f4, c3f5, c3f6, c3f7, c3f8, c3f9, c3f10] as LevelData[],
+  },
+  {
+    // sin mecánicas nuevas: combinaciones de todo; último capítulo con este decorado
+    id: 'corazon-abismo',
+    name: 'Capítulo 4',
+    subtitle: 'El Corazón del Abismo',
+    biome: 'raices',
+    floors: [c4f1, c4f2, c4f3, c4f4, c4f5, c4f6, c4f7, c4f8, c4f9, c4f10] as LevelData[],
+  },
 ];
 
 /** Capítulos anunciados que aún no se pueden jugar. */
-export const UPCOMING = [{ name: 'Capítulo 3', subtitle: 'Próximamente' }];
+export const UPCOMING = [{ name: 'Capítulo 5', subtitle: 'Próximamente' }];
 
 /** Suelo del menú: 9x7 casillas bajo la habitación (solo sostiene al limo; el mundo no se dibuja). */
 export const MENU_STAGE: LevelData = {

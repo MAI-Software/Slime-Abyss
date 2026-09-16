@@ -960,8 +960,10 @@ export class Slime {
       const under = w.cell(ci, cj);
       const idx = under ? cj * w.w + ci : -1;
       const inWind = idx >= 0 && (w.windX[idx] !== 0 || w.windZ[idx] !== 0) && y < w.windBase[idx] + 2.2;
-      // suelo que se hunde: la roca agrietada al pisarla, el hielo si el limo va en llamas
-      if (under && this.air[i] < 0.1 && y < under.top + 0.5) {
+      // suelo que se hunde: la roca agrietada al pisarla, el hielo si el limo va en llamas.
+      // Como con los objetos, las gotitas sueltas no pesan lo bastante (no rompen el camino por delante)
+      if (under && this.air[i] < 0.1 && y < under.top + 0.5 && (under.kind === 'crack' || under.kind === 'ice')
+        && this.gid[i] >= 0 && (this.groups[this.gid[i]]?.ids.length ?? 0) >= PICKUP_MIN) {
         if (under.kind === 'crack') w.crumble(ci, cj);
         else if (under.kind === 'ice' && this.state === 'burning') w.melt(ci, cj);
       }

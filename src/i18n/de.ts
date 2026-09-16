@@ -34,6 +34,8 @@ export const de: Dict = {
   chapters: {
     'cripta-azul': 'Die Blaue Gruft',
     'raices-colgantes': 'Die hängenden Wurzeln',
+    'grietas-heladas': 'Die gefrorenen Spalten',
+    'corazon-abismo': 'Das Herz des Abgrunds',
   },
   options: {
     title: 'Optionen',
@@ -301,6 +303,86 @@ export const de: Dict = {
     'c2-gran-raiz': {
       name: 'Die große Wurzel',
       tips: ['Letzte Prüfung des Kapitels: Nutze alles, was du gelernt hast', 'Zieh dich vor dem Sprung zusammen', 'Nimm das Öl und entzünde dich drüben, um die Pflanzen zu verbrennen'],
+    },
+    'c3-suelo-fragil': {
+      name: 'Brüchiger Boden',
+      tips: ['Rissiger Fels bricht, wenn du darauf trittst: bleib nicht stehen', 'Was bricht, kommt nicht zurück: überquere es in einem Zug'],
+    },
+    'c3-puente-quebradizo': {
+      name: 'Morsche Brücke',
+      tips: ['Überquere sie ohne Halt: jede Platte hält nur kurz', 'Lenke in den Kurven sanft'],
+    },
+    'c3-hielo-fundido': {
+      name: 'Schmelzendes Eis',
+      tips: ['Öl und Feuer: wieder brennen', 'Brennend schmilzt der Eisboden: überquere ihn ohne Halt'],
+    },
+    'c3-pista-ardiente': {
+      name: 'Glühende Bahn',
+      tips: ['Öl und Feuer, um den Efeu zu verbrennen', 'Brennend schmilzt du die Eisbrücke: überquere sie in einem Zug'],
+    },
+    'c3-grietas-entre-llamas': {
+      name: 'Risse zwischen Flammen',
+      tips: ['Warte auf festem Boden, bis die Flammen ausgehen', 'Hinter den Flammen hält der Fels nicht: lauf weiter'],
+    },
+    'c3-dos-puentes': {
+      name: 'Zwei Brücken',
+      tips: ['Die Klinge teilt dich: jede Hälfte nimmt ihre Brücke', 'Drück auf der anderen Seite, um den Schleim zu sammeln'],
+    },
+    'c3-saltos-fragiles': {
+      name: 'Brüchige Sprünge',
+      tips: ['Du landest auf rissigem Fels: weiter zur nächsten Plattform', 'Spring gleich noch einmal'],
+    },
+    'c3-viento-y-grietas': {
+      name: 'Wind und Risse',
+      tips: ['Der Wind drückt dich an die Wand, während der Fels bricht', 'Bleib nicht stehen: die Wand fällt nicht'],
+    },
+    'c3-plaza-rota': {
+      name: 'Zerbrochener Platz',
+      tips: ['Die Klinge teilt dich direkt vor dem brüchigen Fels', 'Drück beim Laufen: keine Zeit zum Warten'],
+    },
+    'c3-gran-grieta': {
+      name: 'Die große Spalte',
+      tips: ['Letzte Prüfung des Kapitels: nutze alles, was du gelernt hast', 'Brennend gibt das Eis nach: bleib nicht stehen', 'Warte, bis die Flammen ausgehen, bevor du auf den rissigen Fels gehst'],
+    },
+    'c4-peso-fragil': {
+      name: 'Brüchiges Gewicht',
+      tips: ['Der Schalter braucht Gewicht: drück dich darauf zusammen', 'Hinter der Tür hält der Fels nicht'],
+    },
+    'c4-pinchos-y-grietas': {
+      name: 'Stacheln und Risse',
+      tips: ['Weich den Stacheln aus, ohne auf dem Fels stehen zu bleiben'],
+    },
+    'c4-resbalon': {
+      name: 'Ausrutscher',
+      tips: ['Eis und Stacheln: geh gerade durch die Mitte', 'Öl und Feuer, um den Efeu zu verbrennen', 'Die Eisbrücke schmilzt unter deinen Flammen'],
+    },
+    'c4-estacion-fragil': {
+      name: 'Brüchiger Bahnhof',
+      tips: ['Die Schiene setzt dich auf rissigem Fels ab', 'Überquere den Riss ohne Halt und steig am nächsten Bahnhof ein'],
+    },
+    'c4-hielo-duro': {
+      name: 'Hart wie Eis',
+      tips: ['Die kalte Luft friert dich ein', 'Gefroren bist du hart: Stacheln können dir nichts'],
+    },
+    'c4-ola-de-fuego': {
+      name: 'Feuerwelle',
+      tips: ['Die Flammen gehen wellenartig aus: lauf direkt hinter der Welle'],
+    },
+    'c4-mitades-fragiles': {
+      name: 'Brüchige Hälften',
+      tips: ['Lass eine Hälfte auf dem Schalter, während die andere hinübergeht', 'Die rechte Hälfte darf auf dem Fels nicht stehen bleiben'],
+    },
+    'c4-aceite-helado': {
+      name: 'Gefrorenes Öl',
+      tips: ['Brenn, um den Efeu zu verbrennen', 'Kalte Luft löscht die Flammen: so hält die Eisbrücke'],
+    },
+    'c4-caida-controlada': {
+      name: 'Kontrollierter Abstieg',
+      tips: ['Jede Stufe hat einen rissigen Rand', 'Weich beim Abstieg den Stacheln aus'],
+    },
+    'c4-corazon-del-abismo': {
+      name: 'Das Herz des Abgrunds',
+      tips: ['Die letzte Prüfung des Abgrunds', 'Kalte Luft löscht die Flammen und härtet dich', 'Gefroren können dir Stacheln nichts anhaben'],
     },
   },
 };

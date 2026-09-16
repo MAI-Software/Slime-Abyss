@@ -1629,6 +1629,7 @@ renderer.setAnimationLoop((now: number) => {
 });
 
 if (import.meta.env.DEV) {
+  void import('./dev-autopilot');
   // depuración: avanzar la simulación sin requestAnimationFrame
   Object.assign(window, {
     __slime: {
