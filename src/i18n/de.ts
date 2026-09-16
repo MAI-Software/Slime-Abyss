@@ -294,6 +294,9 @@ export const de: Dict = {
       slabSE: 'Diagonaler Boden (vorne rechts)',
       hole: 'Loch (führt zu einem tieferen Ausgang)',
       exit: 'Lochausgang',
+      railLoop: 'Schiene mit Looping (macht schwindlig)',
+      railSpiral: 'Spiralschiene (macht schwindlig)',
+      spinner: 'Drehscheibe (macht schwindlig)',
     },
   },
   levels: {

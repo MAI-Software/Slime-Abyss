@@ -1565,6 +1565,7 @@ function tick(dt: number) {
       case 'unboard': sfx.unboard(); fx.splat(e.x, e.y, e.z); buzz(15); break;
       case 'land': sfx.land(); buzz(10); break;
       case 'merge': sfx.merge(); if (input.squeeze) save.stats.squeezes++; break;
+      case 'dizzy': sfx.dizzy(); buzz([20, 40, 20]); break;
       case 'coin': sfx.coin(); fx.sparkle(e.x, e.y + 0.4, e.z); buzz(15); break;
       case 'cut': sfx.cut(); buzz(8); break;
       case 'oil': sfx.oil(); fx.sparkle(e.x, e.y + 0.3, e.z, 0xf5a524); break;

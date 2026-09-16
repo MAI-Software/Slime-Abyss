@@ -232,6 +232,11 @@ export const sfx = {
     blup(460, 0.09, 0.07, 0.05, 1.7);
   },
   /** apretar: esfuerzo líquido, gorgoteos cortos mientras se mantiene */
+  /** mareo: gorgoteo que sube y baja */
+  dizzy: () => {
+    if (!throttle('dizzy', 1)) return;
+    [0, 0.18, 0.36, 0.54].forEach((d, k) => gulp(k % 2 ? 300 : 460, k % 2 ? 460 : 300, 0.16, 0.1, d));
+  },
   squeeze: () => {
     if (!throttle('squeeze', 0.22)) return;
     gulp(260 + Math.random() * 60, 200, 0.18, 0.06, 0, 0.5);

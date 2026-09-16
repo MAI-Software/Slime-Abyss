@@ -16,12 +16,12 @@ export const TILE_IDS: Record<string, string> = {
   S: 'switchA', s: 'switchB', D: 'doorA', d: 'doorB', C: 'coin', K: 'bladeZ', k: 'bladeX', Y: 'spike', G: 'gem',
   O: 'oil', W: 'plant', Z: 'iceblock', '^': 'fanN', v: 'fanS', '>': 'fanE', '<': 'fanW', Q: 'coldjet',
   R: 'station', '=': 'rail', B: 'crack', V: 'sawD1', A: 'sawD2',
-  n: 'rampN', u: 'rampS', e: 'rampE', o: 'rampW', q: 'slabNW', p: 'slabNE', z: 'slabSW', m: 'slabSE', H: 'hole', U: 'exit',
+  n: 'rampN', u: 'rampS', e: 'rampE', o: 'rampW', q: 'slabNW', p: 'slabNE', z: 'slabSW', m: 'slabSE', H: 'hole', U: 'exit', '@': 'railLoop', '%': 'railSpiral', E: 'spinner',
 };
 
 /** Orden de la paleta: lo básico primero. */
 export const PALETTE: string[] = ['0', '.', '#', 'P', 'T', 'C', 'G', 'n', 'u', 'e', 'o', 'q', 'p', 'z', 'm', 'H', 'U',
-  'B', 'I', 'Z', 'W', 'O', 'F', 'X', 'Y', 'K', 'k', 'V', 'A', 'J', 'S', 'D', 's', 'd', 'R', '=', '^', 'v', '<', '>', 'Q'];
+  'B', 'I', 'Z', 'W', 'O', 'F', 'X', 'Y', 'K', 'k', 'V', 'A', 'J', 'S', 'D', 's', 'd', 'R', '=', '@', '%', 'E', '^', 'v', '<', '>', 'Q'];
 
 const UNDO_MAX = 60;
 
@@ -252,7 +252,7 @@ export class LevelEditor {
   /** Vías vecinas (para dibujar la vía unida): bits n=1, e=2, s=4, w=8. */
   private neighbourRails(i: number, j: number) {
     const t = this.level.tiles;
-    const rail = (a: number, b: number) => { const c = t[b]?.[a]; return c === '=' || c === 'R'; };
+    const rail = (a: number, b: number) => { const c = t[b]?.[a]; return c === '=' || c === '@' || c === '%' || c === 'R'; };
     return (rail(i, j - 1) ? 1 : 0) | (rail(i + 1, j) ? 2 : 0) | (rail(i, j + 1) ? 4 : 0) | (rail(i - 1, j) ? 8 : 0);
   }
 }
@@ -398,6 +398,10 @@ export function drawCell(g: CanvasRenderingContext2D, ch: string, height: number
     case 'hole':
       disc(11.5 * u, '#07050f', '#3b3552');
       break;
+    case 'spinner':
+      for (let k = 0; k < 8; k++) { g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, 13 * u, (k / 8) * Math.PI * 2, ((k + 1) / 8) * Math.PI * 2); g.fillStyle = k % 2 ? '#f5d0fe' : '#c026d3'; g.fill(); }
+      disc(3.5 * u, '#fdf4ff', '#701a75');
+      break;
     case 'exit':
       g.beginPath(); g.arc(cx, cy, 11 * u, 0, Math.PI * 2);
       g.lineWidth = Math.max(2, 3.5 * u); g.strokeStyle = '#5b4b8a'; g.setLineDash([4 * u, 3 * u]); g.stroke(); g.setLineDash([]);
@@ -415,6 +419,12 @@ export function drawCell(g: CanvasRenderingContext2D, ch: string, height: number
       if (!ends.length) { g.moveTo(x + 4 * u, cy); g.lineTo(x + s - 4 * u, cy); }
       for (const [ex, ey] of ends) { g.moveTo(cx, cy); g.lineTo(ex, ey); }
       g.stroke();
+      if (tile.shape === 'loop') { g.beginPath(); g.arc(cx, cy, 8 * u, 0, Math.PI * 2); g.strokeStyle = '#a5b4fc'; g.stroke(); }
+      if (tile.shape === 'spiral') {
+        g.beginPath();
+        for (let q = 0; q <= 40; q++) { const a = (q / 40) * Math.PI * 4; const r = (3 + (q / 40) * 8) * u; if (q) g.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); else g.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); }
+        g.strokeStyle = '#a5b4fc'; g.stroke();
+      }
       break;
     }
     default: break;

@@ -294,6 +294,9 @@ export const it: Dict = {
       slabSE: 'Pavimento diagonale (davanti destra)',
       hole: 'Buco (porta a un’uscita più in basso)',
       exit: 'Uscita del buco',
+      railLoop: 'Binario con giro della morte (fa girare la testa)',
+      railSpiral: 'Binario a spirale (fa girare la testa)',
+      spinner: 'Piattaforma girevole (fa girare la testa)',
     },
   },
   levels: {

@@ -18,7 +18,7 @@ export type CellKind =
   | 'coin' | 'blade' | 'spike' | 'gem'
   | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet'
   | 'station' | 'rail' | 'crack'
-  | 'ramp' | 'slab' | 'hole' | 'exit';
+  | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner';
 
 export interface TileDef {
   char: string;
@@ -46,6 +46,8 @@ export interface TileDef {
   rise?: 'n' | 's' | 'e' | 'w';
   /** Suelos en diagonal: la esquina que conserva suelo (la otra media casilla es vacío). */
   corner?: 'nw' | 'ne' | 'sw' | 'se';
+  /** Vías con forma: bucle vertical o espiral que da dos vueltas (marean). */
+  shape?: 'loop' | 'spiral';
 }
 
 export const TILES: readonly TileDef[] = [
@@ -84,6 +86,9 @@ export const TILES: readonly TileDef[] = [
   // La vía (casillas '=' seguidas, puede girar y subir) no se pisa: hace de valla para el limo a pie.
   { char: 'R', kind: 'station', label: 'Estación de raíl', color: '#7dd3fc' },
   { char: '=', kind: 'rail', label: 'Raíl', raise: 1.2, color: '#9aa3b5' },
+  // tramos de vía con forma: la bola da la vuelta (bucle) o dos vueltas subiendo en espiral; tantas vueltas marean
+  { char: '@', kind: 'rail', label: 'Raíl con bucle', raise: 1.2, shape: 'loop', color: '#a5b4fc' },
+  { char: '%', kind: 'rail', label: 'Raíl en espiral', raise: 1.2, shape: 'spiral', color: '#a5b4fc' },
   // se agrieta al pisarla y cae al vacío poco después (mismo tiempo que el hielo derretido): solo se cruza una vez
   { char: 'B', kind: 'crack', label: 'Roca agrietada (se rompe al pasar)', color: '#a08c74' },
   // rampas: suben media altura en una casilla, hacia arriba o hacia abajo según se recorran
@@ -99,6 +104,8 @@ export const TILES: readonly TileDef[] = [
   // agujero redondo: el limo que cae por él aparece sobre la salida de agujero más cercana (mejor si está más abajo)
   { char: 'H', kind: 'hole', label: 'Agujero (lleva a una salida más abajo)', color: '#1f1a33' },
   { char: 'U', kind: 'exit', label: 'Salida de agujero', color: '#5b4b8a' },
+  // plataforma giratoria (centro de un disco que ocupa 3x3 casillas): hace girar al limo y lo marea
+  { char: 'E', kind: 'spinner', label: 'Plataforma giratoria (marea)', color: '#f0abfc' },
 ];
 
 export const TILE_BY_CHAR: ReadonlyMap<string, TileDef> = new Map(TILES.map((t) => [t.char, t]));
@@ -177,7 +184,8 @@ export function traceRails(level: LevelData): { paths: Map<number, number[]>; er
   const N = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) {
     if (at(i, j) !== 'R') continue;
-    const rails = N.filter(([di, dj]) => at(i + di, j + dj) === '=');
+    const isRail = (c: string) => TILE_BY_CHAR.get(c)?.kind === 'rail';
+    const rails = N.filter(([di, dj]) => isRail(at(i + di, j + dj)));
     if (rails.length !== 1) { errors.push(`La estación de (${i}, ${j}) debe tocar exactamente una vía.`); continue; }
     const path = [j * w + i];
     let [ci, cj] = [i + rails[0][0], j + rails[0][1]];
@@ -185,7 +193,7 @@ export function traceRails(level: LevelData): { paths: Map<number, number[]>; er
     for (let guard = 0; guard < w * d; guard++) {
       path.push(cj * w + ci);
       if (at(ci, cj) === 'R') break;
-      const next = N.map(([di, dj]) => [ci + di, cj + dj]).filter(([a, b]) => (a !== pi || b !== pj) && (at(a, b) === '=' || at(a, b) === 'R'));
+      const next = N.map(([di, dj]) => [ci + di, cj + dj]).filter(([a, b]) => (a !== pi || b !== pj) && (isRail(at(a, b)) || at(a, b) === 'R'));
       if (next.length !== 1) { errors.push(`La vía de (${ci}, ${cj}) ${next.length ? 'tiene ramales' : 'no acaba en una estación'}.`); path.length = 0; break; }
       [pi, pj, ci, cj] = [ci, cj, next[0][0], next[0][1]];
     }

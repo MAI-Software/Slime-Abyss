@@ -294,6 +294,9 @@ export const fr: Dict = {
       slabSE: 'Sol diagonal (avant droite)',
       hole: 'Trou (mène à une sortie plus basse)',
       exit: 'Sortie de trou',
+      railLoop: 'Voie avec boucle (donne le tournis)',
+      railSpiral: 'Voie en spirale (donne le tournis)',
+      spinner: 'Plateforme tournante (donne le tournis)',
     },
   },
   levels: {

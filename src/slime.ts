@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BlobMesh } from './blob-mesh';
-import { HOLE_DROP, HOLE_R, World, type RailPath } from './world';
+import { HOLE_DROP, HOLE_R, SPINNER_W, World, type RailPath } from './world';
 import type { Channel } from './level/format';
 import { Assets } from './assets';
 import { createContactShadowTexture } from './materials';
@@ -91,7 +91,7 @@ const XRAY_LIFT = 0.2;
 export type SlimeEvent =
   | { type: 'fall' | 'evaporate' | 'pad' | 'pop'; x: number; y: number; z: number }
   | { type: 'coin' | 'gem' | 'oil'; x: number; y: number; z: number }
-  | { type: 'board' | 'unboard' | 'land' | 'merge'; x: number; y: number; z: number }
+  | { type: 'board' | 'unboard' | 'land' | 'merge' | 'dizzy'; x: number; y: number; z: number }
   | { type: 'cut'; x: number; z: number }
   | { type: 'burn'; x: number; z: number; what: 'plant' | 'iceblock' }
   | { type: 'state'; from: SlimeState; to: SlimeState };
@@ -112,6 +112,12 @@ const WIND_SCATTER = 6;
 const WIND_GRIP = 0.6;
 const WIND_SINK = 20;
 const WIND_FROZEN_ACC = 9;
+// Mareo: al acumular vueltas (plataformas giratorias, curvas, bucles y espirales de las vías) el limo se marea
+// y durante unos segundos el mando responde torcido y flojo. Las vueltas se olvidan poco a poco.
+const DIZZY_TURNS = 2.5;
+const DIZZY_TIME = 3.2;
+const DIZZY_FORGET = 0.3;     // vueltas por segundo que se olvidan
+const SPINNER_GRIP = 7;       // lo que arrastra el disco al limo que lo pisa
 // Agujero: tira hacia abajo y hacia el centro de lo que está encima.
 const HOLE_PULL = 30;
 const HOLE_FUNNEL = 12;    // congelado: la corriente lo transporta entero
@@ -161,7 +167,10 @@ export class Slime {
   private riding: Uint8Array;
   /** agujero por el que está cayendo cada limito (-1 ninguno) */
   private holeIn: Int32Array;
-  private rides: { path: RailPath; s: number; speed: number; angle: number; radius: number; ids: number[]; off: Float32Array }[] = [];
+  private rides: { path: RailPath; s: number; speed: number; angle: number; radius: number; ids: number[]; off: Float32Array; seg: number; dirX: number; dirZ: number }[] = [];
+  /** vueltas acumuladas y tiempo de mareo restante */
+  private turns = 0;
+  dizzyT = 0;
   /** estaciones de llegada bloqueadas hasta que el limo se aparta (tiempo despejadas) */
   private stationLock = new Map<number, number>();
   /** el jugador mantiene pulsado "apretar" */
@@ -489,6 +498,13 @@ export class Slime {
   /** tiltX/tiltZ: dirección del mando en [-1, 1] (x derecha, z hacia la cámara). squeeze: botón de apretar. */
   step(dt: number, tiltX: number, tiltZ: number, squeeze = false) {
     this.squeezing = squeeze;
+    if (this.dizzyT > 0) {
+      // mareado: el mando gira de un lado a otro y empuja menos
+      const a = Math.sin(this.time * 2.3) * 1.1 + Math.sin(this.time * 5.1 + 1) * 0.45;
+      const k = 0.65 + Math.sin(this.time * 3.7) * 0.15;
+      const c = Math.cos(a), s = Math.sin(a);
+      [tiltX, tiltZ] = [(tiltX * c - tiltZ * s) * k, (tiltX * s + tiltZ * c) * k];
+    }
     this.ox.set(this.px);
     this.oy.set(this.py);
     this.oz.set(this.pz);
@@ -659,6 +675,16 @@ export class Slime {
         vx[i] = (vx[i] + (tvx - avx) * gk + (tvx - vx[i]) * kSelf) * fric;
         vz[i] = (vz[i] + (tvz - avz) * gk + (tvz - vz[i]) * kSelf) * fric;
       }
+      // plataforma giratoria: el disco arrastra al limo que está encima
+      if (this.air[i] < 0.08 && w.spinners.length) {
+        const sp = w.spinnerAt(px[i], pz[i], py[i] - R);
+        if (sp) {
+          const rx = px[i] - sp.x, rz = pz[i] - sp.z;
+          const k = 1 - Math.exp(-SPINNER_GRIP * h);
+          vx[i] += (-SPINNER_W * rz - vx[i]) * k * 0.6;
+          vz[i] += (SPINNER_W * rx - vz[i]) * k * 0.6;
+        }
+      }
     }
     if (this.rides.length) this.updateRides(h);
   }
@@ -723,7 +749,7 @@ export class Slime {
       this.grip[i] = 1;
       this.groundCell[i] = -1;
     }
-    this.rides.push({ path, s: 0, speed: 0, angle: 0, radius, ids, off });
+    this.rides.push({ path, s: 0, speed: 0, angle: 0, radius, ids, off, seg: 0, dirX: path.xs[1] - path.xs[0], dirZ: path.zs[1] - path.zs[0] });
     this.events.push({ type: 'board', x: g.cx, y: g.cy, z: g.cz });
   }
 
@@ -741,10 +767,22 @@ export class Slime {
       const cx = p.xs[k] + (p.xs[k + 1] - p.xs[k]) * f;
       const cz = p.zs[k] + (p.zs[k + 1] - p.zs[k]) * f;
       const cy = p.ys[k] + (p.ys[k + 1] - p.ys[k]) * f + ride.radius + 0.06;
-      const dx = (p.xs[k + 1] - p.xs[k]) / seg, dz = (p.zs[k + 1] - p.zs[k]) / seg;
+      // vueltas: el giro de la vía entre tramos (curvas, bucles, espirales) cuenta para el mareo
+      if (k !== ride.seg) {
+        const t0x = p.xs[ride.seg + 1] - p.xs[ride.seg], t0y = p.ys[ride.seg + 1] - p.ys[ride.seg], t0z = p.zs[ride.seg + 1] - p.zs[ride.seg];
+        const t1x = p.xs[k + 1] - p.xs[k], t1y = p.ys[k + 1] - p.ys[k], t1z = p.zs[k + 1] - p.zs[k];
+        const l0 = Math.hypot(t0x, t0y, t0z) || 1, l1 = Math.hypot(t1x, t1y, t1z) || 1;
+        const cos = Math.max(-1, Math.min(1, (t0x * t1x + t0y * t1y + t0z * t1z) / (l0 * l1)));
+        this.addTurns(Math.acos(cos) / (Math.PI * 2));
+        ride.seg = k;
+      }
+      // dirección horizontal de avance (en lo alto de un bucle casi no hay: se mantiene la anterior)
+      const hx = p.xs[k + 1] - p.xs[k], hz = p.zs[k + 1] - p.zs[k], hl = Math.hypot(hx, hz);
+      if (hl > 0.02) { ride.dirX = hx / hl; ride.dirZ = hz / hl; }
+      const dx = ride.dirX * (hl / seg), dz = ride.dirZ * (hl / seg);
       ride.angle += (ride.speed * h) / ride.radius;
       // gira alrededor del eje horizontal perpendicular al avance (arriba × dirección)
-      const axX = dz, axZ = -dx;
+      const axX = ride.dirZ, axZ = -ride.dirX;
       const c = Math.cos(ride.angle), sn = Math.sin(ride.angle);
       ride.ids.forEach((i, n) => {
         const vx0 = ride.off[n * 3], vy0 = ride.off[n * 3 + 1], vz0 = ride.off[n * 3 + 2];
@@ -953,8 +991,30 @@ export class Slime {
     return edge !== -Infinity && y < edge + R + 0.35;
   }
 
+  /** Suma vueltas; al pasar del límite, el limo se marea. */
+  private addTurns(t: number) {
+    if (this.state === 'frozen') return;
+    this.turns += t;
+    if (this.turns < DIZZY_TURNS) return;
+    this.turns = 0;
+    const fresh = this.dizzyT <= 0;
+    this.dizzyT = DIZZY_TIME;
+    for (const f of this.faces) f.makeDizzy(DIZZY_TIME);
+    const g = this.groups[0];
+    if (fresh && g) this.events.push({ type: 'dizzy', x: g.cx, y: g.cy, z: g.cz });
+  }
+
   private postStep(dt: number) {
     const w = this.world;
+    this.dizzyT = Math.max(0, this.dizzyT - dt);
+    this.turns = Math.max(0, this.turns - DIZZY_FORGET * dt);
+    // vueltas en la plataforma giratoria: según la parte del limo principal que va encima
+    const lead = this.groups[0];
+    if (lead && w.spinners.length) {
+      let on = 0;
+      for (const i of lead.ids) if (this.air[i] < 0.1 && w.spinnerAt(this.px[i], this.pz[i], this.py[i] - R)) on++;
+      if (on) this.addTurns(((SPINNER_W * dt) / (Math.PI * 2)) * (on / lead.ids.length) + DIZZY_FORGET * dt);
+    }
     if (this.lastCutEvent >= 0 && Math.random() < dt * 2) this.lastCutEvent = -1;
     // temporizadores de estado y obstáculos quemados
     if (this.stateT > 0) {
@@ -1441,6 +1501,12 @@ class Face {
 
   poke() { this.bounce = 1; }
   hurt() { this.painT = 0.9; this.happyT = 0; this.bounce = 1; }
+  /** Cara de mareo durante t segundos (vueltas de más). */
+  makeDizzy(t: number) {
+    if (this.dizzyT <= 0) this.bounce = 1;
+    this.dizzyT = Math.max(this.dizzyT, t);
+  }
+
   cheer(t: number) {
     if (this.painT > 0) return;
     if (this.happyT <= 0) this.bounce = 1;

@@ -16,7 +16,12 @@ export interface Cell {
   dir?: 'n' | 's' | 'e' | 'w';
   rise?: 'n' | 's' | 'e' | 'w';
   corner?: 'nw' | 'ne' | 'sw' | 'se';
+  shape?: 'loop' | 'spiral';
 }
+
+/** Plataforma giratoria: radio del disco y velocidad de giro (rad/s, en sentido antihorario visto desde arriba). */
+export const SPINNER_R = 1.35;
+export const SPINNER_W = 5.2;
 
 /** radio del agujero redondo (la casilla mide 1) */
 export const HOLE_R = 0.36;
@@ -181,6 +186,8 @@ export class World {
   private shapes: { i: number; j: number; c: Cell }[] = [];
   private holeExits = new Map<number, THREE.Vector3>();
   private floorTopMat: THREE.Material | null = null;
+  /** plataformas giratorias: centro, altura y disco dibujado */
+  readonly spinners: { x: number; z: number; y: number; disc: THREE.Object3D }[] = [];
   private coldCells: number[] = [];
   /** corriente de aire por casilla: dirección × fuerza y altura del ventilador */
   readonly windX: Float32Array;
@@ -222,7 +229,7 @@ export class World {
     if (tile.kind === 'void') return { kind: 'void', base: 0, top: -Infinity };
     const base = Number(this.def.heights[j][i]) * HEIGHT_STEP;
     const top = base + (tile.kind === 'ramp' ? RAMP_RISE : tile.raise ?? 0);
-    return { kind: tile.kind, base, top, channel: tile.channel, axis: tile.axis, dir: tile.dir, rise: tile.rise, corner: tile.corner };
+    return { kind: tile.kind, base, top, channel: tile.channel, axis: tile.axis, dir: tile.dir, rise: tile.rise, corner: tile.corner, shape: tile.shape };
   }
 
   cell(i: number, j: number): Cell | null {
@@ -491,8 +498,12 @@ export class World {
             this.shapes.push({ i, j, c });
             break;
           case 'exit':
+            // no se marca: el limo que cae por un agujero se ve caer desde arriba
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
-            this.addHoleExit(x, c.base, z);
+            break;
+          case 'spinner':
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            this.addSpinner(x, c.base, z);
             break;
           case 'crack': {
             // losa de roca más gris con grietas oscuras encima
@@ -750,22 +761,41 @@ export class World {
     }
   }
 
-  /** Salida de agujero: un aro oscuro en el aire del que cae el limo. */
-  private addHoleExit(x: number, y: number, z: number) {
-    const ringMat = new THREE.MeshStandardMaterial({ color: 0x3b3552, roughness: 0.7, metalness: 0.2 });
-    const holeMat = new THREE.MeshBasicMaterial({ color: 0x07050f, side: THREE.DoubleSide });
-    const ringGeo = new THREE.TorusGeometry(HOLE_R + 0.05, 0.07, 10, 28);
-    const holeGeo = new THREE.CircleGeometry(HOLE_R + 0.02, 28);
-    this.ownedMaterials.push(ringMat, holeMat);
-    this.ownedGeometries.push(ringGeo, holeGeo);
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = Math.PI / 2;
-    ring.position.set(x, y + 2.7, z);
-    ring.castShadow = true;
-    const hole = new THREE.Mesh(holeGeo, holeMat);
-    hole.rotation.x = Math.PI / 2;
-    hole.position.set(x, y + 2.68, z);
-    this.group.add(ring, hole);
+  /** Plataforma giratoria: disco con gajos de colores y borde, un poco por encima del suelo. */
+  private addSpinner(x: number, y: number, z: number) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 256;
+    const g = c.getContext('2d')!;
+    for (let k = 0; k < 12; k++) {
+      g.beginPath();
+      g.moveTo(128, 128);
+      g.arc(128, 128, 128, (k / 12) * Math.PI * 2, ((k + 1) / 12) * Math.PI * 2);
+      g.fillStyle = k % 2 ? '#f5d0fe' : '#c026d3';
+      g.fill();
+    }
+    g.beginPath(); g.arc(128, 128, 30, 0, Math.PI * 2); g.fillStyle = '#fdf4ff'; g.fill();
+    g.lineWidth = 10; g.strokeStyle = '#701a75'; g.stroke();
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const top = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55 });
+    const side = new THREE.MeshStandardMaterial({ color: 0x701a75, roughness: 0.6 });
+    const geo = new THREE.CylinderGeometry(SPINNER_R, SPINNER_R, 0.1, 48);
+    this.ownedMaterials.push(top, side);
+    this.ownedGeometries.push(geo);
+    const disc = new THREE.Mesh(geo, [side, top, side]);
+    disc.position.set(x, y + 0.03, z);
+    disc.receiveShadow = true;
+    this.group.add(disc);
+    this.spinners.push({ x, z, y, disc });
+  }
+
+  /** Plataforma giratoria bajo el punto (x, z), si lo hay. */
+  spinnerAt(x: number, z: number, y: number) {
+    for (const s of this.spinners) {
+      const dx = x - s.x, dz = z - s.z;
+      if (dx * dx + dz * dz < SPINNER_R * SPINNER_R && Math.abs(y - s.y) < 0.6) return s;
+    }
+    return null;
   }
 
   private addCoin(i: number, j: number, base: number, kind: string) {
@@ -790,20 +820,69 @@ export class World {
   }
 
   /** Corriente de cada ventilador: avanza por casillas (también sobre el vacío) hasta chocar con algo alto. */
+  /**
+    Puntos del recorrido de una vía (de la estación a hacia b): centros de casilla y, en los tramos con forma,
+    un bucle vertical (lift = altura extra) o una espiral de dos vueltas alrededor de la casilla.
+  */
+  private railPoints(cellsPath: number[]) {
+    const xs: number[] = [], zs: number[] = [], lift: number[] = [];
+    const center = (idx: number): [number, number] => [(idx % this.w) + 0.5, Math.floor(idx / this.w) + 0.5];
+    cellsPath.forEach((idx, k) => {
+      const [cx, cz] = center(idx);
+      const shape = this.cells[idx].shape;
+      if (!shape || k === 0 || k === cellsPath.length - 1) { xs.push(cx); zs.push(cz); lift.push(0); return; }
+      const [px, pz] = center(cellsPath[k - 1]);
+      const [nx, nz] = center(cellsPath[k + 1]);
+      if (shape === 'loop') {
+        // bucle vertical en la dirección de avance, algo desplazado a un lado para no pisarse
+        const dx = nx - px, dz = nz - pz, dl = Math.hypot(dx, dz) || 1;
+        const fx = dx / dl, fz = dz / dl, sx = -fz, sz = fx;
+        const LR = 0.85, N = 28;
+        for (let q = 0; q <= N; q++) {
+          const t = (q / N) * Math.PI * 2;
+          const side = (q / N - 0.5) * 0.35;
+          xs.push(cx + fx * LR * Math.sin(t) + sx * side);
+          zs.push(cz + fz * LR * Math.sin(t) + sz * side);
+          lift.push(LR * (1 - Math.cos(t)));
+        }
+      } else {
+        // espiral: entra por el lado de la casilla anterior y sale por el de la siguiente tras dos vueltas
+        const SR = 0.75, TURNS = 2, N = 44;
+        const a0 = Math.atan2(pz - cz, px - cx);
+        let a1 = Math.atan2(nz - cz, nx - cx);
+        while (a1 <= a0) a1 += Math.PI * 2;
+        const sweep = a1 - a0 + TURNS * Math.PI * 2;
+        for (let q = 0; q <= N; q++) {
+          const a = a0 + (q / N) * sweep;
+          xs.push(cx + Math.cos(a) * SR);
+          zs.push(cz + Math.sin(a) * SR);
+          lift.push(0);
+        }
+      }
+    });
+    return { xs, zs, lift };
+  }
+
   private buildRails() {
     const { paths } = traceRails(this.def);
+    const shapes = new Map<string, { xs: number[]; zs: number[]; lift: number[] }>();
     for (const [from, cellsPath] of paths) {
-      const n = cellsPath.length;
-      const xs = new Float32Array(n), zs = new Float32Array(n), ys = new Float32Array(n), dist = new Float32Array(n);
-      cellsPath.forEach((idx, k) => {
-        xs[k] = (idx % this.w) + 0.5;
-        zs[k] = Math.floor(idx / this.w) + 0.5;
-        if (k) dist[k] = dist[k - 1] + Math.hypot(xs[k] - xs[k - 1], zs[k] - zs[k - 1]);
-      });
-      const to = cellsPath[n - 1];
+      const to0 = cellsPath[cellsPath.length - 1];
+      // mismo recorrido en los dos sentidos: se calcula de la estación menor a la mayor y la otra lo usa al revés
+      const key = `${Math.min(from, to0)}-${Math.max(from, to0)}`;
+      let pts = shapes.get(key);
+      if (!pts) {
+        pts = this.railPoints(from < to0 ? cellsPath : [...cellsPath].reverse());
+        shapes.set(key, pts);
+      }
+      const order = from < to0 ? pts : { xs: [...pts.xs].reverse(), zs: [...pts.zs].reverse(), lift: [...pts.lift].reverse() };
+      const n = order.xs.length;
+      const xs = Float32Array.from(order.xs), zs = Float32Array.from(order.zs), ys = new Float32Array(n), dist = new Float32Array(n);
+      for (let k = 1; k < n; k++) dist[k] = dist[k - 1] + Math.hypot(xs[k] - xs[k - 1], zs[k] - zs[k - 1], order.lift[k] - order.lift[k - 1]);
+      const to = to0;
       const y0 = this.cells[from].base, y1 = this.cells[to].base;
       const total = dist[n - 1];
-      for (let k = 0; k < n; k++) ys[k] = y0 + (y1 - y0) * (dist[k] / total);
+      for (let k = 0; k < n; k++) ys[k] = y0 + (y1 - y0) * (dist[k] / total) + order.lift[k];
       const ex = xs[n - 1] - xs[n - 2], ez = zs[n - 1] - zs[n - 2];
       const el = Math.hypot(ex, ez) || 1;
       this.rails.set(from, { from, to, xs, zs, ys, dist, total, exitX: ex / el, exitZ: ez / el });
@@ -876,6 +955,7 @@ export class World {
   private updateEffects(dt: number) {
     for (const f of this.fans) f.blades.rotation.z += dt * 16;
     for (const s of this.saws) s.rotation.x -= dt * 14;
+    for (const s of this.spinners) s.disc.rotation.y += dt * SPINNER_W;
     if (this.windFx) {
       const pos = (this.windFx.geometry.getAttribute('position') as THREE.BufferAttribute).array as Float32Array;
       let w = 0;

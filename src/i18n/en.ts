@@ -294,6 +294,9 @@ export const en: Dict = {
       slabSE: 'Diagonal floor (front right)',
       hole: 'Hole (leads to a lower exit)',
       exit: 'Hole exit',
+      railLoop: 'Track with loop (makes dizzy)',
+      railSpiral: 'Spiral track (makes dizzy)',
+      spinner: 'Spinning platform (makes dizzy)',
     },
   },
   levels: {

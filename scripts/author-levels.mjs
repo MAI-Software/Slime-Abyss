@@ -1314,17 +1314,17 @@ function checkNoDeadEnds(def, tiles, heights) {
   const H = tiles.length, W = tiles[0].length;
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   const at = (i, j) => (j >= 0 && j < H && i >= 0 && i < W ? tiles[j][i] : '.');
-  const walk = (i, j) => at(i, j) !== '.' && at(i, j) !== '#' && at(i, j) !== '=';
+  const walk = (i, j) => at(i, j) !== '.' && at(i, j) !== '#' && !'=@%'.includes(at(i, j));
   // la rampa llega hasta un escalón más arriba
   const top = (i, j) => Number(heights[j][i]) + ('nueo'.includes(at(i, j)) ? 1 : 0);
   // estación → estación del otro extremo de su vía
   const partner = (i, j) => {
     let prev = [i, j];
-    let cur = DIRS.map(([di, dj]) => [i + di, j + dj]).find(([a, b]) => at(a, b) === '=');
+    let cur = DIRS.map(([di, dj]) => [i + di, j + dj]).find(([a, b]) => '=@%'.includes(at(a, b)));
     for (let guard = 0; cur && guard < W * H; guard++) {
       if (at(...cur) === 'R') return cur;
       const nxt = DIRS.map(([di, dj]) => [cur[0] + di, cur[1] + dj])
-        .find(([a, b]) => (a !== prev[0] || b !== prev[1]) && (at(a, b) === '=' || at(a, b) === 'R'));
+        .find(([a, b]) => (a !== prev[0] || b !== prev[1]) && ('=@%R'.includes(at(a, b))));
       prev = cur;
       cur = nxt;
     }
@@ -1374,7 +1374,7 @@ function checkNoStepsUp(def, tiles, heights) {
   if (def.h) return;
   // la vía no se pisa y las estaciones pueden estar a cualquier altura (la bola sube)
   // la vía no se pisa, las estaciones pueden estar a cualquier altura (la bola sube) y las rampas están para subir
-  const walk = (t) => t !== '.' && t !== '#' && t !== '=' && t !== 'R' && !'nueoH'.includes(t);
+  const walk = (t) => t !== '.' && t !== '#' && !'=@%R'.includes(t) && !'nueoH'.includes(t);
   for (let j = 0; j < tiles.length; j++) for (let i = 0; i < tiles[0].length; i++) {
     if (!walk(tiles[j][i])) continue;
     // hacia el tesoro se avanza a filas menores: la fila de arriba no puede ser más alta

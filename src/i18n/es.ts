@@ -293,6 +293,9 @@ export const es = {
       slabSE: 'Suelo diagonal (delante derecha)',
       hole: 'Agujero (lleva a una salida más abajo)',
       exit: 'Salida de agujero',
+      railLoop: 'Raíl con bucle (marea)',
+      railSpiral: 'Raíl en espiral (marea)',
+      spinner: 'Plataforma giratoria (marea)',
     },
   },
   levels: {
