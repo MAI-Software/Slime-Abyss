@@ -11,7 +11,7 @@ export interface Cell {
   base: number;
   top: number;
   channel?: Channel;
-  axis?: 'x' | 'z';
+  axis?: 'x' | 'z' | 'd1' | 'd2';
   dir?: 'n' | 's' | 'e' | 'w';
 }
 
@@ -45,15 +45,18 @@ export interface RailPath {
 }
 const WIND_LEN = 9;
 
-/** Obstáculo que no ocupa toda la casilla (cuchillas): caja para colisión y zona de corte. */
+/** Obstáculo que no ocupa toda la casilla (sierras): hoja fina con dirección, para colisión y zona de corte. */
 export interface Obstacle {
   kind: 'blade';
-  axis?: 'x' | 'z';
   cx: number;
   cz: number;
-  minX: number; maxX: number;
+  /** dirección de la hoja (unitaria) y normal (hacia el "lado 1") */
+  tx: number; tz: number;
+  nx: number; nz: number;
+  /** media longitud y medio grosor */
+  half: number;
+  thick: number;
   minY: number; maxY: number;
-  minZ: number; maxZ: number;
   /** identificador estable para las etiquetas de corte del limo */
   id: number;
 }
@@ -166,6 +169,7 @@ export class World {
   /** avisos para sonido y efectos (los consume main.ts) */
   readonly events: WorldEvent[] = [];
   private fans: { blades: THREE.Object3D; i: number; j: number; dir: 'n' | 's' | 'e' | 'w'; base: number }[] = [];
+  private saws: THREE.Object3D[] = [];
   private coldCells: number[] = [];
   /** corriente de aire por casilla: dirección × fuerza y altura del ventilador */
   readonly windX: Float32Array;
@@ -714,6 +718,7 @@ export class World {
 
   private updateEffects(dt: number) {
     for (const f of this.fans) f.blades.rotation.z += dt * 16;
+    for (const s of this.saws) s.rotation.x -= dt * 14;
     if (this.windFx) {
       const pos = (this.windFx.geometry.getAttribute('position') as THREE.BufferAttribute).array as Float32Array;
       let w = 0;
@@ -761,13 +766,23 @@ export class World {
 
   private addDivider(i: number, j: number, c: Cell) {
     const x = i + 0.5, z = j + 0.5;
-    const obj = this.add('blade', x, c.base, z);
-    // el modelo corre a lo largo de Z; la variante 'x' se gira
-    if (c.axis === 'x') obj.rotation.y = Math.PI / 2;
-    const half = 0.47, thick = 0.05;
-    const o: Obstacle = c.axis === 'x'
-      ? { kind: 'blade', axis: 'x', cx: x, cz: z, minX: x - half, maxX: x + half, minZ: z - thick, maxZ: z + thick, minY: c.base, maxY: c.base + 0.72, id: 0 }
-      : { kind: 'blade', axis: 'z', cx: x, cz: z, minX: x - thick, maxX: x + thick, minZ: z - half, maxZ: z + half, minY: c.base, maxY: c.base + 0.72, id: 0 };
+    const obj = this.add('saw', x, c.base, z);
+    // el modelo corta a lo largo de Z: 'x' gira 90°, las diagonales 45° (y su disco es más grande: cruza la casilla de esquina a esquina)
+    const angle = { z: 0, x: Math.PI / 2, d1: Math.PI / 4, d2: -Math.PI / 4 }[c.axis ?? 'z'];
+    obj.rotation.y = angle;
+    const diag = c.axis === 'd1' || c.axis === 'd2';
+    const disc = Assets.child<THREE.Object3D>(obj, 'saw_disc');
+    if (diag) {
+      // la ranura se alarga; el disco crece igual en su plano (si no, al girar se deformaría)
+      for (const part of ['saw_housing', 'saw_slot']) Assets.child<THREE.Object3D>(obj, part).scale.z = Math.SQRT2;
+      disc.scale.set(1, 1.3, 1.3);
+    }
+    this.saws.push(disc);
+    const tx = Math.sin(angle), tz = Math.cos(angle);
+    const o: Obstacle = {
+      kind: 'blade', cx: x, cz: z, tx, tz, nx: tz, nz: -tx,
+      half: diag ? 0.68 : 0.47, thick: 0.05, minY: c.base, maxY: c.base + (diag ? 0.72 : 0.64), id: 0,
+    };
     o.id = j * this.w + i;
     this.obstacleAt[o.id] = this.obstacles.length;
     this.obstacles.push(o);

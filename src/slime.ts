@@ -830,22 +830,27 @@ export class Slime {
         }
       }
     }
-    // cuchillas y pinchos: cajas finas dentro de la casilla
-    for (let cj = j0; cj <= j1; cj++) {
-      for (let ci = i0; ci <= i1; ci++) {
+    // sierras: hojas finas en cualquier dirección (recta o diagonal) dentro de la casilla
+    for (let cj = j0 - 1; cj <= j1 + 1; cj++) {
+      for (let ci = i0 - 1; ci <= i1 + 1; ci++) {
         const o = w.obstacle(ci, cj);
         if (!o || y - R >= o.maxY) continue;
-        const qx = Math.min(Math.max(x, o.minX), o.maxX);
+        const rx = x - o.cx, rz = z - o.cz;
+        const along = Math.max(-o.half, Math.min(o.half, rx * o.tx + rz * o.tz));
+        const across = rx * o.nx + rz * o.nz;
+        const acrossQ = Math.max(-o.thick, Math.min(o.thick, across));
+        const qx = o.cx + o.tx * along + o.nx * acrossQ;
+        const qz = o.cz + o.tz * along + o.nz * acrossQ;
         const qy = Math.min(Math.max(y, o.minY), o.maxY);
-        const qz = Math.min(Math.max(z, o.minZ), o.maxZ);
         const dx = x - qx, dy = y - qy, dz = z - qz;
         const d2 = dx * dx + dy * dy + dz * dz;
         if (d2 >= R * R) continue;
         let nx: number, ny: number, nz: number, pen: number;
         if (d2 < 1e-9) {
-          // dentro de la hoja: expulsar hacia el lado más cercano del eje de corte
-          if (o.axis === 'x') { nx = 0; ny = 0; nz = z < o.cz ? -1 : 1; pen = R + (o.maxZ - o.minZ) / 2 - Math.abs(z - o.cz); }
-          else { nx = x < o.cx ? -1 : 1; ny = 0; nz = 0; pen = R + (o.maxX - o.minX) / 2 - Math.abs(x - o.cx); }
+          // dentro de la hoja: expulsar hacia el lado más cercano
+          const sgn = across < 0 ? -1 : 1;
+          nx = o.nx * sgn; ny = 0; nz = o.nz * sgn;
+          pen = R + o.thick - Math.abs(across);
         } else {
           const d = Math.sqrt(d2);
           nx = dx / d; ny = dy / d; nz = dz / d;
@@ -877,9 +882,10 @@ export class Slime {
         if (!o || this.py[i] > o.maxY + 0.25) continue;
         let side: number;
         if (o.kind === 'blade') {
-          const across = o.axis === 'x' ? z - o.cz : x - o.cx;
-          const along = o.axis === 'x' ? x - o.cx : z - o.cz;
-          if (Math.abs(across) > 0.34 || Math.abs(along) > 0.6) continue;
+          const rx = x - o.cx, rz = z - o.cz;
+          const across = rx * o.nx + rz * o.nz;
+          const along = rx * o.tx + rz * o.tz;
+          if (Math.abs(across) > 0.34 || Math.abs(along) > o.half + 0.13) continue;
           side = across < 0 ? 0 : 1;
         } else {
           const rx = x - o.cx, rz = z - o.cz;

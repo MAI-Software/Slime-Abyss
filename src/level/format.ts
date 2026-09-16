@@ -33,8 +33,8 @@ export interface TileDef {
   color: string;
   /** Es peligrosa (útil para filtros del editor y niveles "sin trampas"). */
   hazard?: boolean;
-  /** Cuchillas: eje a lo largo del que corre la hoja ('z' divide izquierda/derecha, 'x' delante/detrás). */
-  axis?: 'x' | 'z';
+  /** Sierras: eje a lo largo del que corre el disco ('z' divide izquierda/derecha, 'x' delante/detrás; 'd1' diagonal \\, 'd2' diagonal /). */
+  axis?: 'x' | 'z' | 'd1' | 'd2';
   /** Divide el limo al atravesarlo (sin hacer daño). */
   divider?: boolean;
   /** Ventiladores: hacia dónde sopla (n = fila 0 / fondo, s = hacia la cámara, e = derecha, w = izquierda). */
@@ -59,8 +59,11 @@ export const TILES: readonly TileDef[] = [
   { char: 'D', kind: 'door', label: 'Puerta A', channel: 'A', raise: 1.5, color: '#b45309' },
   { char: 'd', kind: 'door', label: 'Puerta B', channel: 'B', raise: 1.5, color: '#15803d' },
   { char: 'C', kind: 'coin', label: 'Moneda', color: '#ffc53d' },
-  { char: 'K', kind: 'blade', label: 'Cuchilla (divide izquierda / derecha)', axis: 'z', divider: true, color: '#d7dfea' },
-  { char: 'k', kind: 'blade', label: 'Cuchilla (divide delante / detrás)', axis: 'x', divider: true, color: '#c3ccd8' },
+  // sierras circulares que giran: dividen al limo sin dañarlo; las diagonales sirven para esquinas y pasillos en diagonal
+  { char: 'K', kind: 'blade', label: 'Sierra (divide izquierda / derecha)', axis: 'z', divider: true, color: '#d7dfea' },
+  { char: 'k', kind: 'blade', label: 'Sierra (divide delante / detrás)', axis: 'x', divider: true, color: '#c3ccd8' },
+  { char: 'V', kind: 'blade', label: 'Sierra diagonal (\\)', axis: 'd1', divider: true, color: '#cfd6e2' },
+  { char: 'A', kind: 'blade', label: 'Sierra diagonal (/)', axis: 'd2', divider: true, color: '#cfd6e2' },
   // pinchan el limo que los pisa (el congelado no se pincha); dan un respingo como el fuego
   { char: 'Y', kind: 'spike', label: 'Casilla de pinchos', hazard: true, color: '#9aa4b4' },
   { char: 'G', kind: 'gem', label: 'Tesoro secreto (gema)', color: '#8b5cf6' },

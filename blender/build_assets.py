@@ -688,6 +688,41 @@ for v in bm.verts:  # filo: los vértices altos se juntan en el centro
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 mesh_object("blade_edge", bm, M["steel"], parent=blade)
 
+# Sierra circular: disco dentado que gira dentro de una ranura del suelo (divide al limo sin dañarlo).
+# El disco va en el plano YZ (corta a lo largo de Y, como la cuchilla); el juego lo hace girar sobre su eje X.
+saw = empty("saw")
+bm = bmesh.new()
+box(bm, (0.2, 0.98, 0.05), (0, 0, 0.025))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.015, segments=1, affect="EDGES")
+mesh_object("saw_housing", bm, M["steel_dark"], parent=saw)
+bm = bmesh.new()
+box(bm, (0.07, 0.9, 0.02), (0, 0, 0.051))
+mesh_object("saw_slot", bm, M["black"], parent=saw)
+M["saw"] = material("SawSteel", "e8edf5", 0.32, 0.55, emit="3a4252", strength=0.35)
+disc = empty("saw_disc", parent=saw, loc=(0, 0, 0.2))
+bm = bmesh.new()
+TEETH = 26
+outline = []
+for k in range(TEETH):
+    a0 = k * math.tau / TEETH
+    a1 = (k + 0.62) * math.tau / TEETH
+    outline.append((0.35 * math.cos(a0), 0.35 * math.sin(a0)))   # fondo del diente
+    outline.append((0.43 * math.cos(a1), 0.43 * math.sin(a1)))   # punta inclinada (sierra)
+verts = [bm.verts.new((-0.018, y, z)) for y, z in outline]
+face = bm.faces.new(verts)
+ext = bmesh.ops.extrude_face_region(bm, geom=[face], use_keep_orig=True)
+bmesh.ops.translate(bm, vec=(0.036, 0, 0), verts=[e for e in ext["geom"] if isinstance(e, bmesh.types.BMVert)])
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+mesh_object("saw_blade", bm, M["saw"], parent=disc)
+bm = bmesh.new()
+cylinder(bm, 0.11, 0.07, (0, 0, 0), 18, rot=Matrix.Rotation(math.radians(90), 4, "Y"))
+mesh_object("saw_hub", bm, M["steel_dark"], smooth=True, parent=disc)
+bm = bmesh.new()
+for k in range(4):
+    a = k * math.tau / 4 + 0.4
+    cylinder(bm, 0.035, 0.074, (0, 0.2 * math.cos(a), 0.2 * math.sin(a)), 10, rot=Matrix.Rotation(math.radians(90), 4, "Y"))
+mesh_object("saw_holes", bm, M["steel_dark"], parent=disc)
+
 # Casilla de pinchos: una losa metálica cubierta de púas (pincha el limo que la pisa).
 spike = empty("spike_bed")
 bm = bmesh.new()

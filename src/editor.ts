@@ -333,7 +333,12 @@ export function drawCell(g: CanvasRenderingContext2D, ch: string, height: number
     case 'blade':
       g.strokeStyle = '#e2e8f0'; g.lineWidth = Math.max(2, 4 * u);
       g.beginPath();
-      if (tile.axis === 'z') { g.moveTo(cx, y + 3 * u); g.lineTo(cx, y + s - 3 * u); } else { g.moveTo(x + 3 * u, cy); g.lineTo(x + s - 3 * u, cy); }
+      if (tile.axis === 'z') { g.moveTo(cx, y + 3 * u); g.lineTo(cx, y + s - 3 * u); }
+      else if (tile.axis === 'x') { g.moveTo(x + 3 * u, cy); g.lineTo(x + s - 3 * u, cy); }
+      else if (tile.axis === 'd1') { g.moveTo(x + 3 * u, y + 3 * u); g.lineTo(x + s - 3 * u, y + s - 3 * u); }
+      else { g.moveTo(x + s - 3 * u, y + 3 * u); g.lineTo(x + 3 * u, y + s - 3 * u); }
+      g.stroke();
+      g.beginPath(); g.arc(cx, cy, 6 * u, 0, Math.PI * 2); g.fillStyle = '#94a3b8'; g.fill();
       g.stroke();
       break;
     case 'spike':
