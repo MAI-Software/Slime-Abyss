@@ -160,8 +160,8 @@ export interface ChapterDef {
   id: string;
   name: string;
   subtitle: string;
-  /** Decorado del abismo (fondo, materiales): cambia cada 4 capítulos. */
-  biome: 'raices';
+  /** Tema del abismo (texturas, cielo, luces): piedra 1-3, arena 4-6, hielo 7-9, tecnológico 10-12. */
+  biome: import('../biomes').Biome;
   floors: LevelData[];
 }
 

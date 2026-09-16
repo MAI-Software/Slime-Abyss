@@ -36,7 +36,7 @@ export const it: Dict = {
     'cripta-azul': 'La Cripta Blu',
     'raices-colgantes': 'Le Radici Sospese',
     'grietas-heladas': 'Le Crepe Gelate',
-    'corazon-abismo': 'Il Cuore dell’Abisso',
+    'arenas-hundidas': 'Le Sabbie Sommerse',
   },
   options: {
     title: 'Opzioni',
@@ -421,45 +421,45 @@ export const it: Dict = {
       name: 'La grande crepa',
       tips: ['Ultima prova del capitolo: usa tutto ciò che hai imparato', 'In fiamme il ghiaccio cede: non fermarti', 'Aspetta che le fiamme si spengano prima della roccia crepata'],
     },
-    'c4-peso-fragil': {
-      name: 'Peso fragile',
-      tips: ['L’interruttore chiede peso: stringiti sopra', 'Dietro la porta la roccia non regge'],
+    'c4-dunas': {
+      name: 'Dune',
+      tips: ['Le rampe scendono e salgono: lo slime le percorre da solo', 'Sali fino al tesoro'],
     },
-    'c4-pinchos-y-grietas': {
-      name: 'Spuntoni e crepe',
-      tips: ['Evita gli spuntoni senza fermarti sulla roccia'],
+    'c4-sendero-diagonal': {
+      name: 'Sentiero diagonale',
+      tips: ['Il percorso va in diagonale: inclina in quella direzione', 'Niente muri: segui le monete'],
     },
-    'c4-resbalon': {
-      name: 'Scivolone',
-      tips: ['Ghiaccio e spuntoni: vai dritto al centro', 'Olio e fuoco per bruciare l’edera', 'Il ponte di ghiaccio si scioglie sotto le tue fiamme'],
+    'c4-sierras': {
+      name: 'Seghe',
+      tips: ['Le seghe girano e ti dividono, ma non ti fanno male', 'Stringi per riunirti'],
     },
-    'c4-estacion-fragil': {
-      name: 'Stazione fragile',
-      tips: ['Il binario ti lascia su roccia crepata', 'Attraversa la crepa senza fermarti e sali alla stazione successiva'],
+    'c4-el-pozo': {
+      name: 'Il pozzo',
+      tips: ['Entra nel buco: cadrai nella stanza di sotto'],
     },
-    'c4-hielo-duro': {
-      name: 'Duro come il ghiaccio',
-      tips: ['L’aria fredda ti congela', 'Congelato sei duro: gli spuntoni non ti fanno nulla'],
+    'c4-pozos-y-rampas': {
+      name: 'Pozzi e rampe',
+      tips: ['Scendi dal pozzo', 'Le rampe salgono fino al tesoro'],
     },
-    'c4-ola-de-fuego': {
-      name: 'Onda di fuoco',
-      tips: ['Le fiamme si spengono a onda: attraversa subito dietro'],
+    'c4-esquinas-afiladas': {
+      name: 'Angoli taglienti',
+      tips: ['Seghe negli angoli: passa dal centro', 'Stringi all’uscita'],
     },
-    'c4-mitades-fragiles': {
-      name: 'Metà fragili',
-      tips: ['Lascia una metà sull’interruttore mentre l’altra attraversa', 'La metà di destra non può fermarsi sulla roccia'],
+    'c4-arena-quebrada': {
+      name: 'Sabbia spezzata',
+      tips: ['Rampe e roccia rotta: scendi senza frenare'],
     },
-    'c4-aceite-helado': {
-      name: 'Olio gelato',
-      tips: ['Prendi fuoco per bruciare l’edera', 'L’aria fredda spegne le fiamme: così il ponte di ghiaccio regge'],
+    'c4-fuego-del-desierto': {
+      name: 'Fuoco del deserto',
+      tips: ['Olio, fuoco e corri: le fiamme non durano', 'La sega ti divide: stringi senza perdere tempo'],
     },
-    'c4-caida-controlada': {
-      name: 'Discesa controllata',
-      tips: ['Ogni gradino ha il bordo crepato', 'Evita gli spuntoni mentre scendi'],
+    'c4-railes-y-pozos': {
+      name: 'Binari e pozzi',
+      tips: ['Il binario sale in alto', 'E il pozzo ti porta giù fino al tesoro'],
     },
-    'c4-corazon-del-abismo': {
-      name: 'Il cuore dell’abisso',
-      tips: ['L’ultima prova dell’abisso', 'L’aria fredda spegne le fiamme e ti indurisce', 'Congelato, gli spuntoni non ti fanno nulla'],
+    'c4-corazon-de-arena': {
+      name: 'Il cuore di sabbia',
+      tips: ['L’ultima prova del deserto', 'Un sentiero in diagonale fino alla roccia rotta', 'Il pozzo ti lascia accanto al tesoro'],
     },
   },
 };

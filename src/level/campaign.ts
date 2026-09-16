@@ -31,16 +31,16 @@ import c3f7 from './campaign/chapter3/07-c3-saltos-fragiles.json';
 import c3f8 from './campaign/chapter3/08-c3-viento-y-grietas.json';
 import c3f9 from './campaign/chapter3/09-c3-plaza-rota.json';
 import c3f10 from './campaign/chapter3/10-c3-gran-grieta.json';
-import c4f1 from './campaign/chapter4/01-c4-peso-fragil.json';
-import c4f2 from './campaign/chapter4/02-c4-pinchos-y-grietas.json';
-import c4f3 from './campaign/chapter4/03-c4-resbalon.json';
-import c4f4 from './campaign/chapter4/04-c4-estacion-fragil.json';
-import c4f5 from './campaign/chapter4/05-c4-hielo-duro.json';
-import c4f6 from './campaign/chapter4/06-c4-ola-de-fuego.json';
-import c4f7 from './campaign/chapter4/07-c4-mitades-fragiles.json';
-import c4f8 from './campaign/chapter4/08-c4-aceite-helado.json';
-import c4f9 from './campaign/chapter4/09-c4-caida-controlada.json';
-import c4f10 from './campaign/chapter4/10-c4-corazon-del-abismo.json';
+import c4f1 from './campaign/chapter4/01-c4-dunas.json';
+import c4f2 from './campaign/chapter4/02-c4-sendero-diagonal.json';
+import c4f3 from './campaign/chapter4/03-c4-sierras.json';
+import c4f4 from './campaign/chapter4/04-c4-el-pozo.json';
+import c4f5 from './campaign/chapter4/05-c4-pozos-y-rampas.json';
+import c4f6 from './campaign/chapter4/06-c4-esquinas-afiladas.json';
+import c4f7 from './campaign/chapter4/07-c4-arena-quebrada.json';
+import c4f8 from './campaign/chapter4/08-c4-fuego-del-desierto.json';
+import c4f9 from './campaign/chapter4/09-c4-railes-y-pozos.json';
+import c4f10 from './campaign/chapter4/10-c4-corazon-de-arena.json';
 
 /** Modo historia: capítulos de 10 pisos. Sus coleccionables están en collectibles.ts. */
 export const CHAPTERS: ChapterDef[] = [
@@ -48,7 +48,7 @@ export const CHAPTERS: ChapterDef[] = [
     id: 'cripta-azul',
     name: 'Capítulo 1',
     subtitle: 'La Cripta Azul',
-    biome: 'raices',
+    biome: 'stone',
     floors: [c1f1, c1f2, c1f3, c1f4, c1f5, c1f6, c1f7, c1f8, c1f9, c1f10] as LevelData[],
   },
   {
@@ -56,7 +56,7 @@ export const CHAPTERS: ChapterDef[] = [
     id: 'raices-colgantes',
     name: 'Capítulo 2',
     subtitle: 'Las Raíces Colgantes',
-    biome: 'raices',
+    biome: 'stone',
     floors: [c2f1, c2f2, c2f3, c2f4, c2f5, c2f6, c2f7, c2f8, c2f9, c2f10] as LevelData[],
   },
   {
@@ -64,15 +64,15 @@ export const CHAPTERS: ChapterDef[] = [
     id: 'grietas-heladas',
     name: 'Capítulo 3',
     subtitle: 'Las Grietas Heladas',
-    biome: 'raices',
+    biome: 'stone',
     floors: [c3f1, c3f2, c3f3, c3f4, c3f5, c3f6, c3f7, c3f8, c3f9, c3f10] as LevelData[],
   },
   {
-    // sin mecánicas nuevas: combinaciones de todo; último capítulo con este decorado
-    id: 'corazon-abismo',
+    // arena: primer capítulo del desierto (4-6)
+    id: 'arenas-hundidas',
     name: 'Capítulo 4',
-    subtitle: 'El Corazón del Abismo',
-    biome: 'raices',
+    subtitle: 'Las Arenas Hundidas',
+    biome: 'desert',
     floors: [c4f1, c4f2, c4f3, c4f4, c4f5, c4f6, c4f7, c4f8, c4f9, c4f10] as LevelData[],
   },
 ];

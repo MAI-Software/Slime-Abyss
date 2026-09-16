@@ -36,7 +36,7 @@ export const fr: Dict = {
     'cripta-azul': 'La Crypte Bleue',
     'raices-colgantes': 'Les Racines Suspendues',
     'grietas-heladas': 'Les Failles Gelées',
-    'corazon-abismo': 'Le Cœur de l’Abîme',
+    'arenas-hundidas': 'Les Sables Engloutis',
   },
   options: {
     title: 'Options',
@@ -421,45 +421,45 @@ export const fr: Dict = {
       name: 'La grande faille',
       tips: ['Dernière épreuve du chapitre : utilise tout ce que tu as appris', 'En flammes, la glace cède : ne t’arrête pas', 'Attends que les flammes s’éteignent avant la roche fissurée'],
     },
-    'c4-peso-fragil': {
-      name: 'Poids fragile',
-      tips: ['L’interrupteur demande du poids : serre dessus', 'Derrière la porte, la roche ne tient pas'],
+    'c4-dunas': {
+      name: 'Dunes',
+      tips: ['Les rampes descendent et montent : le slime les suit tout seul', 'Monte jusqu’au trésor'],
     },
-    'c4-pinchos-y-grietas': {
-      name: 'Pointes et failles',
-      tips: ['Évite les pointes sans t’arrêter sur la roche'],
+    'c4-sendero-diagonal': {
+      name: 'Sentier diagonal',
+      tips: ['Le chemin est en diagonale : penche dans cette direction', 'Pas de murs : suis les pièces'],
     },
-    'c4-resbalon': {
-      name: 'Glissade',
-      tips: ['Glace et pointes : va tout droit au centre', 'Huile et feu pour brûler le lierre', 'Le pont de glace fond sous tes flammes'],
+    'c4-sierras': {
+      name: 'Scies',
+      tips: ['Les scies tournent et te coupent, sans te blesser', 'Serre pour te rassembler'],
     },
-    'c4-estacion-fragil': {
-      name: 'Gare fragile',
-      tips: ['La voie te dépose sur de la roche fissurée', 'Traverse la faille sans t’arrêter et monte à la gare suivante'],
+    'c4-el-pozo': {
+      name: 'Le puits',
+      tips: ['Entre dans le trou : tu tomberas dans la salle du dessous'],
     },
-    'c4-hielo-duro': {
-      name: 'Dur comme la glace',
-      tips: ['L’air froid te gèle', 'Gelé, tu es dur : les pointes ne te font rien'],
+    'c4-pozos-y-rampas': {
+      name: 'Puits et rampes',
+      tips: ['Descends par le puits', 'Les rampes montent jusqu’au trésor'],
     },
-    'c4-ola-de-fuego': {
-      name: 'Vague de feu',
-      tips: ['Les flammes s’éteignent en vague : traverse juste derrière elle'],
+    'c4-esquinas-afiladas': {
+      name: 'Coins tranchants',
+      tips: ['Des scies dans les coins : passe par le centre', 'Serre en sortant'],
     },
-    'c4-mitades-fragiles': {
-      name: 'Moitiés fragiles',
-      tips: ['Laisse une moitié sur l’interrupteur pendant que l’autre traverse', 'La moitié de droite ne peut pas s’arrêter sur la roche'],
+    'c4-arena-quebrada': {
+      name: 'Sable brisé',
+      tips: ['Rampes et roche brisée : descends sans freiner'],
     },
-    'c4-aceite-helado': {
-      name: 'Huile gelée',
-      tips: ['Enflamme-toi pour brûler le lierre', 'L’air froid éteint les flammes : ainsi le pont de glace tient'],
+    'c4-fuego-del-desierto': {
+      name: 'Feu du désert',
+      tips: ['Huile, feu et cours : les flammes ne durent pas', 'La scie te coupe : serre sans perdre de temps'],
     },
-    'c4-caida-controlada': {
-      name: 'Descente contrôlée',
-      tips: ['Chaque marche a un bord fissuré', 'Évite les pointes en descendant'],
+    'c4-railes-y-pozos': {
+      name: 'Voies et puits',
+      tips: ['La voie monte tout en haut', 'Et le puits te dépose au trésor'],
     },
-    'c4-corazon-del-abismo': {
-      name: 'Le cœur de l’abîme',
-      tips: ['L’ultime épreuve de l’abîme', 'L’air froid éteint les flammes et te durcit', 'Gelé, les pointes ne te font rien'],
+    'c4-corazon-de-arena': {
+      name: 'Le cœur de sable',
+      tips: ['L’ultime épreuve du désert', 'Un sentier en diagonale jusqu’à la roche brisée', 'Le puits te dépose près du trésor'],
     },
   },
 };

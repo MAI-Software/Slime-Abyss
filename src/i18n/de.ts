@@ -36,7 +36,7 @@ export const de: Dict = {
     'cripta-azul': 'Die Blaue Gruft',
     'raices-colgantes': 'Die hängenden Wurzeln',
     'grietas-heladas': 'Die gefrorenen Spalten',
-    'corazon-abismo': 'Das Herz des Abgrunds',
+    'arenas-hundidas': 'Der versunkene Sand',
   },
   options: {
     title: 'Optionen',
@@ -421,45 +421,45 @@ export const de: Dict = {
       name: 'Die große Spalte',
       tips: ['Letzte Prüfung des Kapitels: nutze alles, was du gelernt hast', 'Brennend gibt das Eis nach: bleib nicht stehen', 'Warte, bis die Flammen ausgehen, bevor du auf den rissigen Fels gehst'],
     },
-    'c4-peso-fragil': {
-      name: 'Brüchiges Gewicht',
-      tips: ['Der Schalter braucht Gewicht: drück dich darauf zusammen', 'Hinter der Tür hält der Fels nicht'],
+    'c4-dunas': {
+      name: 'Dünen',
+      tips: ['Rampen führen hinab und hinauf: der Schleim folgt ihnen von selbst', 'Steig hinauf zum Schatz'],
     },
-    'c4-pinchos-y-grietas': {
-      name: 'Stacheln und Risse',
-      tips: ['Weich den Stacheln aus, ohne auf dem Fels stehen zu bleiben'],
+    'c4-sendero-diagonal': {
+      name: 'Diagonaler Pfad',
+      tips: ['Der Weg verläuft diagonal: neige in diese Richtung', 'Keine Mauern: folge den Münzen'],
     },
-    'c4-resbalon': {
-      name: 'Ausrutscher',
-      tips: ['Eis und Stacheln: geh gerade durch die Mitte', 'Öl und Feuer, um den Efeu zu verbrennen', 'Die Eisbrücke schmilzt unter deinen Flammen'],
+    'c4-sierras': {
+      name: 'Sägen',
+      tips: ['Die Sägen drehen sich und teilen dich, tun dir aber nichts', 'Drück, um dich wieder zu sammeln'],
     },
-    'c4-estacion-fragil': {
-      name: 'Brüchiger Bahnhof',
-      tips: ['Die Schiene setzt dich auf rissigem Fels ab', 'Überquere den Riss ohne Halt und steig am nächsten Bahnhof ein'],
+    'c4-el-pozo': {
+      name: 'Der Brunnen',
+      tips: ['Geh ins Loch: du fällst in den Raum darunter'],
     },
-    'c4-hielo-duro': {
-      name: 'Hart wie Eis',
-      tips: ['Die kalte Luft friert dich ein', 'Gefroren bist du hart: Stacheln können dir nichts'],
+    'c4-pozos-y-rampas': {
+      name: 'Brunnen und Rampen',
+      tips: ['Geh durch den Brunnen hinab', 'Die Rampen führen hinauf zum Schatz'],
     },
-    'c4-ola-de-fuego': {
-      name: 'Feuerwelle',
-      tips: ['Die Flammen gehen wellenartig aus: lauf direkt hinter der Welle'],
+    'c4-esquinas-afiladas': {
+      name: 'Scharfe Ecken',
+      tips: ['Sägen in den Ecken: geh durch die Mitte', 'Drück beim Hinausgehen'],
     },
-    'c4-mitades-fragiles': {
-      name: 'Brüchige Hälften',
-      tips: ['Lass eine Hälfte auf dem Schalter, während die andere hinübergeht', 'Die rechte Hälfte darf auf dem Fels nicht stehen bleiben'],
+    'c4-arena-quebrada': {
+      name: 'Zerbrochener Sand',
+      tips: ['Rampen und brüchiger Fels: lauf ohne zu bremsen hinab'],
     },
-    'c4-aceite-helado': {
-      name: 'Gefrorenes Öl',
-      tips: ['Brenn, um den Efeu zu verbrennen', 'Kalte Luft löscht die Flammen: so hält die Eisbrücke'],
+    'c4-fuego-del-desierto': {
+      name: 'Wüstenfeuer',
+      tips: ['Öl, Feuer und los: die Flammen halten nicht lange', 'Die Säge teilt dich: drück, ohne Zeit zu verlieren'],
     },
-    'c4-caida-controlada': {
-      name: 'Kontrollierter Abstieg',
-      tips: ['Jede Stufe hat einen rissigen Rand', 'Weich beim Abstieg den Stacheln aus'],
+    'c4-railes-y-pozos': {
+      name: 'Schienen und Brunnen',
+      tips: ['Die Schiene führt nach oben', 'Und der Brunnen bringt dich hinab zum Schatz'],
     },
-    'c4-corazon-del-abismo': {
-      name: 'Das Herz des Abgrunds',
-      tips: ['Die letzte Prüfung des Abgrunds', 'Kalte Luft löscht die Flammen und härtet dich', 'Gefroren können dir Stacheln nichts anhaben'],
+    'c4-corazon-de-arena': {
+      name: 'Das Herz aus Sand',
+      tips: ['Die letzte Prüfung der Wüste', 'Ein diagonaler Pfad bis zum brüchigen Fels', 'Der Brunnen setzt dich neben dem Schatz ab'],
     },
   },
 };

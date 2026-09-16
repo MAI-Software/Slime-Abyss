@@ -35,7 +35,7 @@ export const es = {
     'cripta-azul': 'La Cripta Azul',
     'raices-colgantes': 'Las Raíces Colgantes',
     'grietas-heladas': 'Las Grietas Heladas',
-    'corazon-abismo': 'El Corazón del Abismo',
+    'arenas-hundidas': 'Las Arenas Hundidas',
   },
   options: {
     title: 'Opciones',
@@ -420,45 +420,45 @@ export const es = {
       name: 'La gran grieta',
       tips: ['Última prueba del capítulo: usa todo lo aprendido', 'En llamas, el hielo cede: no te pares', 'Espera a que se apaguen las llamas antes de la roca agrietada'],
     },
-    'c4-peso-fragil': {
-      name: 'Peso frágil',
-      tips: ['El interruptor pide peso: aprieta encima', 'Detrás de la puerta, la roca no aguanta'],
+    'c4-dunas': {
+      name: 'Dunas',
+      tips: ['Las rampas bajan y suben: el limo las recorre solo', 'Sube hasta el tesoro'],
     },
-    'c4-pinchos-y-grietas': {
-      name: 'Pinchos y grietas',
-      tips: ['Esquiva los pinchos sin pararte en la roca'],
+    'c4-sendero-diagonal': {
+      name: 'Sendero diagonal',
+      tips: ['El camino va en diagonal: inclina en esa dirección', 'Sin muros: sigue las monedas'],
     },
-    'c4-resbalon': {
-      name: 'Resbalón',
-      tips: ['Hielo y pinchos: ve recto por el centro', 'Aceite y fuego para quemar la hiedra', 'El puente de hielo se derrite bajo tus llamas'],
+    'c4-sierras': {
+      name: 'Sierras',
+      tips: ['Las sierras giran y te parten, pero no te hacen daño', 'Aprieta para volver a juntarte'],
     },
-    'c4-estacion-fragil': {
-      name: 'Estación frágil',
-      tips: ['La vía te deja sobre roca agrietada', 'Cruza la grieta sin pararte y sube a la siguiente estación'],
+    'c4-el-pozo': {
+      name: 'El pozo',
+      tips: ['Métete por el agujero: caerás a la sala de abajo'],
     },
-    'c4-hielo-duro': {
-      name: 'Duro como el hielo',
-      tips: ['El aire frío te congela', 'Congelado eres duro: los pinchos no te hacen nada'],
+    'c4-pozos-y-rampas': {
+      name: 'Pozos y rampas',
+      tips: ['Baja por el pozo', 'Las rampas suben hasta el tesoro'],
     },
-    'c4-ola-de-fuego': {
-      name: 'Ola de fuego',
-      tips: ['Las llamas se apagan en ola: cruza justo detrás de ella'],
+    'c4-esquinas-afiladas': {
+      name: 'Esquinas afiladas',
+      tips: ['Sierras en las esquinas: ve por el centro', 'Aprieta al salir'],
     },
-    'c4-mitades-fragiles': {
-      name: 'Mitades frágiles',
-      tips: ['Deja una mitad sobre el interruptor mientras la otra cruza', 'La mitad de la derecha no puede pararse en la roca'],
+    'c4-arena-quebrada': {
+      name: 'Arena quebrada',
+      tips: ['Rampas y roca rota: baja sin frenar'],
     },
-    'c4-aceite-helado': {
-      name: 'Aceite helado',
-      tips: ['Arde para quemar la hiedra', 'El aire frío apaga las llamas: así el puente de hielo aguanta'],
+    'c4-fuego-del-desierto': {
+      name: 'Fuego del desierto',
+      tips: ['Aceite, fuego y a correr: las llamas no duran', 'La sierra te parte: aprieta sin perder tiempo'],
     },
-    'c4-caida-controlada': {
-      name: 'Caída controlada',
-      tips: ['Cada escalón tiene el borde agrietado', 'Esquiva los pinchos al bajar'],
+    'c4-railes-y-pozos': {
+      name: 'Raíles y pozos',
+      tips: ['La vía sube a lo alto', 'Y el pozo te baja hasta el tesoro'],
     },
-    'c4-corazon-del-abismo': {
-      name: 'El corazón del abismo',
-      tips: ['Última prueba del abismo', 'El aire frío apaga las llamas y te endurece', 'Congelado, los pinchos no te hacen nada'],
+    'c4-corazon-de-arena': {
+      name: 'El corazón de arena',
+      tips: ['Última prueba del desierto', 'Sendero en diagonal hasta la roca rota', 'El pozo te deja junto al tesoro'],
     },
   } as Record<string, { name: string; tips: string[] }>,
 };

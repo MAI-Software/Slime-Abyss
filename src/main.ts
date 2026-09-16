@@ -18,6 +18,7 @@ import { Input, fullscreenActive, fullscreenSupported, installedApp, type Contro
 import { Fx } from './fx';
 import { LiquidGauge } from './hud-liquid';
 import { AbyssAmbience } from './abyss';
+import { BIOMES, type Biome } from './biomes';
 import { Trail } from './trail';
 import { LightPool, flicker } from './lights';
 import { decorateLogo, drawLogo } from './logo';
@@ -90,15 +91,15 @@ function abyssEnvironment(): THREE.Scene {
 }
 
 /** Fondo: degradado morado, pintado una vez en un canvas. */
-function skyTexture(): THREE.CanvasTexture {
+function skyTexture(stops: [string, string, string] = BIOMES.stone.sky): THREE.CanvasTexture {
   const c = document.createElement('canvas');
   c.width = 32;
   c.height = 256;
   const g = c.getContext('2d')!;
   const grad = g.createLinearGradient(0, 0, 0, 256);
-  grad.addColorStop(0, '#3a2b78');
-  grad.addColorStop(0.45, '#241a52');
-  grad.addColorStop(1, '#0e0a22');
+  grad.addColorStop(0, stops[0]);
+  grad.addColorStop(0.45, stops[1]);
+  grad.addColorStop(1, stops[2]);
   g.fillStyle = grad;
   g.fillRect(0, 0, 32, 256);
   const tex = new THREE.CanvasTexture(c);
@@ -1025,9 +1026,26 @@ function clearLevel() {
   trail.reset();
 }
 
-function loadLevel(def: LevelData) {
+/** Tema aplicado ahora mismo a cielo, niebla, luces y abismo. */
+let currentBiome: Biome = 'stone';
+function applyBiome(biome: Biome) {
+  if (biome === currentBiome) return;
+  currentBiome = biome;
+  const look = BIOMES[biome];
+  (scene.background as THREE.Texture | null)?.dispose();
+  scene.background = skyTexture(look.sky);
+  (scene.fog as THREE.Fog).color.setHex(look.fog);
+  hemi.color.setHex(look.hemiSky);
+  hemi.groundColor.setHex(look.hemiGround);
+  sun.color.setHex(look.sun);
+  rim.color.setHex(look.rim);
+  abyss.setLook(look);
+}
+
+function loadLevel(def: LevelData, biome: Biome = 'stone') {
   clearLevel();
-  world = new World(def, assets!);
+  applyBiome(biome);
+  world = new World(def, assets!, biome);
   slime = new Slime(world, def.count, lowQuality, assets!, save.look);
   content.add(world.group, slime.group);
   camTarget.copy(world.start);
@@ -1041,9 +1059,16 @@ function startFloor(ch: ChapterDef, k: number) {
 }
 
 function startLevel(def: LevelData, ch: ChapterDef | null, k: number) {
+  const biome = ch?.biome ?? 'stone';
+  if (!assets) return;
+  // las texturas del tema se cargan la primera vez que se entra en uno de sus pisos
+  void assets.loadBiome(biome).then(() => startLevelNow(def, ch, k, biome));
+}
+
+function startLevelNow(def: LevelData, ch: ChapterDef | null, k: number, biome: Biome) {
   chapter = ch;
   floorIndex = k;
-  loadLevel(def);
+  loadLevel(def, biome);
   elapsed = 0;
   tipIndex = 0;
   winT = 0;

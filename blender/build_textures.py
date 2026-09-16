@@ -196,6 +196,48 @@ def ice(seed):
     return color, height
 
 
+def panels(seed, cols_n, rows_n, palette, seam_col, accent_col=None, tread=0.35):
+    """Placas metálicas: juntas hundidas, remaches en las esquinas, chapa estriada en algunas y franjas de luz."""
+    rng = np.random.default_rng(seed)
+    bw, bh = SIZE / cols_n, SIZE / rows_n
+    col = np.floor(XX / bw).astype(np.int32)
+    row = np.floor(YY / bh).astype(np.int32)
+    fx, fy = XX % bw, YY % bh
+    dist = np.minimum.reduce([fx, bw - fx, fy, bh - fy])
+    seam = smoothstep(2.0, 6.0, dist)
+    bevel = smoothstep(0.0, 20.0, dist)
+    grain = fbm(48, 4, rng)
+    fine = fbm(128, 2, rng)
+    rx, ry = np.minimum(fx, bw - fx), np.minimum(fy, bh - fy)
+    rivet = 1 - smoothstep(3.0, 7.5, np.hypot(rx - 18, ry - 18))
+    n = rows_n * cols_n
+    ids = row * cols_n + col
+    cols = palette_pick(palette, n, rng, 0.03)[ids]
+    tread_on = (rng.random(n) < tread)[ids].astype(np.float32)
+    stripes = ((XX + YY) % 24 < 6).astype(np.float32) * tread_on * smoothstep(8.0, 14.0, dist)
+    height = 0.35 + 0.5 * seam * (0.6 + 0.4 * bevel) + rivet * 0.3 + stripes * 0.12 + grain * 0.03
+    tone = (0.84 + 0.1 * grain + 0.08 * fine)[..., None]
+    color = cols * tone * (0.9 + 0.1 * bevel[..., None]) + (rivet * 0.18)[..., None] - (stripes * 0.06)[..., None]
+    color = color * seam[..., None] + np.array(seam_col, np.float32) * (1 - seam[..., None])
+    if accent_col is not None:
+        # franja luminosa a media altura de algunas filas de placas
+        lit = (rng.random(rows_n) < 0.5)[row].astype(np.float32)
+        strip = (1 - smoothstep(1.5, 4.5, np.abs(fy - bh / 2))) * lit * smoothstep(10.0, 24.0, np.minimum(fx, bw - fx))
+        color = color * (1 - strip[..., None]) + np.array(accent_col, np.float32) * strip[..., None]
+        height = height - strip * 0.1
+    return np.clip(color, 0, 1), height
+
+
+def sand_overlay(color, height, seed, amount):
+    """Arena acumulada en las juntas y en manchas suaves."""
+    rng = np.random.default_rng(seed)
+    drift = smoothstep(0.45, 0.8, fbm(6, 4, rng)) * amount
+    low = blur(1 - height, 3)
+    m = np.clip(drift + smoothstep(0.35, 0.6, low) * amount * 0.8, 0, 1)
+    sand = np.array((0.9, 0.74, 0.5), np.float32) * (0.9 + 0.2 * fbm(64, 3, rng)[..., None])
+    return color * (1 - m[..., None]) + sand * m[..., None], height * (1 - m * 0.3) + m * 0.35
+
+
 # ------------------------------------------------------------------ generar
 
 save_pair("floor", *flagstones(7, 5, [(0.93, 0.82, 0.62), (0.87, 0.76, 0.58), (0.95, 0.86, 0.68), (0.84, 0.75, 0.61)],
@@ -207,3 +249,21 @@ save_pair("brick", *masonry(3, 4, 8, [(0.61, 0.57, 0.73), (0.56, 0.52, 0.68), (0
 save_pair("stone_side", *masonry(11, 2, 4, [(0.7, 0.62, 0.52), (0.65, 0.58, 0.49), (0.74, 0.66, 0.56)],
                                   (0.42, 0.36, 0.3), 5, 0.3), strength=5.0)
 save_pair("ice", *ice(5), strength=2.5)
+
+# ------------------------------------------------------------------ temas por capítulo (se cargan al jugar ese capítulo)
+# Arena (capítulos 4 a 6): arenisca cálida con arena en las juntas
+c, h = flagstones(31, 4, [(0.93, 0.74, 0.5), (0.88, 0.68, 0.45), (0.96, 0.8, 0.56), (0.85, 0.66, 0.46)], (0.62, 0.45, 0.3), 0.35)
+save_pair("desert_floor", *sand_overlay(c, h, 32, 0.35), strength=3.5)
+save_pair("desert_wall_top", *flagstones(33, 5, [(0.86, 0.62, 0.4), (0.8, 0.57, 0.37), (0.9, 0.67, 0.44)], (0.55, 0.38, 0.25), 0.25), strength=3.5)
+save_pair("desert_brick", *masonry(34, 3, 6, [(0.85, 0.6, 0.38), (0.8, 0.55, 0.34), (0.9, 0.66, 0.42), (0.76, 0.52, 0.33)], (0.6, 0.43, 0.28), 4, 0.0), strength=4.5)
+save_pair("desert_side", *masonry(35, 2, 4, [(0.78, 0.56, 0.36), (0.72, 0.51, 0.33), (0.82, 0.6, 0.39)], (0.52, 0.37, 0.24), 5, 0.0), strength=4.5)
+# Hielo (capítulos 7 a 9): nieve prensada y ladrillos de hielo
+save_pair("frost_floor", *flagstones(41, 5, [(0.9, 0.95, 1.0), (0.84, 0.91, 0.98), (0.94, 0.97, 1.0), (0.8, 0.88, 0.96)], (0.6, 0.74, 0.88), 0.25), strength=3.0)
+save_pair("frost_wall_top", *flagstones(42, 6, [(0.72, 0.84, 0.96), (0.66, 0.8, 0.94), (0.78, 0.88, 0.98)], (0.45, 0.6, 0.78), 0.3), strength=3.0)
+save_pair("frost_brick", *masonry(43, 4, 8, [(0.66, 0.82, 0.96), (0.6, 0.78, 0.94), (0.72, 0.86, 0.98), (0.56, 0.74, 0.92)], (0.86, 0.93, 1.0), 4, 0.0), strength=4.0)
+save_pair("frost_side", *masonry(44, 2, 4, [(0.58, 0.74, 0.9), (0.52, 0.7, 0.88), (0.64, 0.8, 0.94)], (0.82, 0.9, 0.98), 5, 0.0), strength=4.0)
+# Tecnológico (capítulos 10 a 12): placas de metal con remaches y franjas de luz
+save_pair("tech_floor", *panels(51, 2, 2, [(0.62, 0.66, 0.72), (0.56, 0.6, 0.67), (0.66, 0.7, 0.76)], (0.16, 0.18, 0.22), None, 0.4), strength=3.5)
+save_pair("tech_wall_top", *panels(52, 4, 4, [(0.36, 0.4, 0.48), (0.32, 0.36, 0.44), (0.4, 0.44, 0.52)], (0.1, 0.12, 0.16), None, 0.2), strength=3.5)
+save_pair("tech_brick", *panels(53, 2, 4, [(0.4, 0.44, 0.52), (0.36, 0.4, 0.48), (0.44, 0.48, 0.56)], (0.08, 0.1, 0.14), (0.35, 0.95, 1.0), 0.0), strength=4.0)
+save_pair("tech_side", *panels(54, 2, 4, [(0.46, 0.5, 0.58), (0.42, 0.46, 0.54)], (0.12, 0.14, 0.18), (0.95, 0.4, 0.85), 0.0), strength=4.0)

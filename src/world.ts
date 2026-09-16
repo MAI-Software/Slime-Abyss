@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Assets } from './assets';
+import type { Biome } from './biomes';
 import { FireFx, type FireCell, type FireState } from './fire';
 import { AO_E, AO_N, AO_NE, AO_NW, AO_S, AO_SE, AO_SW, AO_W, createBlockMaterial, createGlowMaterial } from './materials';
 import { HEIGHT_STEP, RAMP_RISE, TILE_BY_CHAR, TILES, traceRails, type CellKind, type Channel, type LevelData } from './level/format';
@@ -202,7 +203,7 @@ export class World {
   private time = 0;
   opening = 0; // animación de cofre abierto (0..1)
 
-  constructor(readonly def: LevelData, private assets: Assets) {
+  constructor(readonly def: LevelData, private assets: Assets, readonly biome: Biome = 'stone') {
     this.d = def.tiles.length;
     this.w = def.tiles[0].length;
     this.cells = [];
@@ -615,10 +616,13 @@ export class World {
   */
   private buildBlocks(solids: Solid[]) {
     const a = this.assets;
-    const floorTop = createBlockMaterial({ top: a.surface('floor'), side: a.surface('stone_side'), ao: true, shininess: 28, specular: 0x6a5c4c });
-    const floorCol = createBlockMaterial({ top: a.surface('floor'), side: a.surface('stone_side'), shininess: 18, specular: 0x3a3028 });
+    const b = this.biome;
+    // el metal brilla más; la arena y la nieve, menos
+    const shine = b === 'tech' ? 2.2 : b === 'desert' ? 0.7 : 1;
+    const floorTop = createBlockMaterial({ top: a.surface('floor', b), side: a.surface('stone_side', b), ao: true, shininess: 28 * shine, specular: 0x6a5c4c });
+    const floorCol = createBlockMaterial({ top: a.surface('floor', b), side: a.surface('stone_side', b), shininess: 18 * shine, specular: 0x3a3028 });
     const iceTop = createBlockMaterial({ top: a.surface('ice'), side: a.surface('ice'), ao: true, shininess: 110, specular: 0xd8f0ff, bump: 0.6 });
-    const wallMat = createBlockMaterial({ top: a.surface('wall_top'), side: a.surface('brick'), shininess: 22, specular: 0x4a4658, bump: 1.2 });
+    const wallMat = createBlockMaterial({ top: a.surface('wall_top', b), side: a.surface('brick', b), shininess: 22 * shine, specular: 0x4a4658, bump: 1.2 });
     this.ownedMaterials.push(floorTop, floorCol, iceTop, wallMat);
     const raised = solids.some((s) => s.set !== 'wall' && s.top > 0);
 

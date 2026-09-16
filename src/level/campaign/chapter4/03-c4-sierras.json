@@ -1,33 +1,31 @@
 {
   "format": 1,
-  "id": "c4-pinchos-y-grietas",
-  "name": "Pinchos y grietas",
+  "id": "c4-sierras",
+  "name": "Sierras",
   "count": 80,
-  "keepPct": 0.55,
+  "keepPct": 0.8,
   "tips": [
     {
-      "z": 9.5,
-      "text": "Esquiva los pinchos sin pararte en la roca"
+      "z": 6.5,
+      "text": "Las sierras giran y te parten, pero no te hacen daño"
+    },
+    {
+      "z": 3.5,
+      "text": "Aprieta para volver a juntarte"
     }
   ],
   "tiles": [
     "###########",
     "#00C0T0C00#",
     "#000000000#",
-    "##BBBBBBB##",
-    "..BYBBBYB..",
-    "..BBBBBBB..",
-    "..BBBYBBB..",
-    "..BBBBBBB..",
-    "##BYBBBYB##",
+    "#000V0A000#",
     "#000000000#",
-    "#00C0P0C00#",
+    "#0C00K00C0#",
+    "#000000000#",
+    "#0000P0000#",
     "###########"
   ],
   "heights": [
-    "00000000000",
-    "00000000000",
-    "00000000000",
     "00000000000",
     "00000000000",
     "00000000000",

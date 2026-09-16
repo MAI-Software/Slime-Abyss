@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { BiomeLook } from './biomes';
 
 /**
   Ambiente del abismo durante el juego: motas de luz que suben desde lo hondo y un resplandor
@@ -43,6 +44,17 @@ export class AbyssAmbience {
     this.glow.renderOrder = -1;
     this.textures.push(dot, glowTex);
     this.group.add(this.glow, this.points);
+  }
+
+  /** Colores de las motas y del resplandor del tema. */
+  setLook(look: BiomeLook) {
+    (this.points.material as THREE.PointsMaterial).color.setHex(look.dots);
+    const mat = this.glow.material as THREE.MeshBasicMaterial;
+    const old = mat.map;
+    mat.map = radialTexture([[0, look.glow[0]], [0.45, look.glow[1]], [1, look.glow[2]]]);
+    this.textures.splice(this.textures.indexOf(old!), 1, mat.map);
+    old?.dispose();
+    mat.needsUpdate = true;
   }
 
   update(dt: number, center: THREE.Vector3) {

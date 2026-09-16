@@ -36,7 +36,7 @@ export const en: Dict = {
     'cripta-azul': 'The Blue Crypt',
     'raices-colgantes': 'The Hanging Roots',
     'grietas-heladas': 'The Frozen Rifts',
-    'corazon-abismo': 'The Heart of the Abyss',
+    'arenas-hundidas': 'The Sunken Sands',
   },
   options: {
     title: 'Options',
@@ -421,45 +421,45 @@ export const en: Dict = {
       name: 'The Great Rift',
       tips: ['Final trial of the chapter: use everything you have learned', 'Burning, the ice gives way: don’t stop', 'Wait for the flames to go out before the cracked rock'],
     },
-    'c4-peso-fragil': {
-      name: 'Fragile Weight',
-      tips: ['The switch needs weight: squeeze on top of it', 'Behind the door, the rock won’t hold'],
+    'c4-dunas': {
+      name: 'Dunes',
+      tips: ['Ramps go down and up: the slime rolls along them', 'Climb up to the treasure'],
     },
-    'c4-pinchos-y-grietas': {
-      name: 'Spikes and Cracks',
-      tips: ['Dodge the spikes without stopping on the rock'],
+    'c4-sendero-diagonal': {
+      name: 'Diagonal Trail',
+      tips: ['The path runs diagonally: tilt that way', 'No walls: follow the coins'],
     },
-    'c4-resbalon': {
-      name: 'Slip-Up',
-      tips: ['Ice and spikes: go straight down the middle', 'Oil and fire to burn the ivy', 'The ice bridge melts under your flames'],
+    'c4-sierras': {
+      name: 'Saws',
+      tips: ['Saws spin and split you, but they don’t hurt', 'Squeeze to come back together'],
     },
-    'c4-estacion-fragil': {
-      name: 'Fragile Station',
-      tips: ['The track drops you on cracked rock', 'Cross the crack without stopping and board the next station'],
+    'c4-el-pozo': {
+      name: 'The Well',
+      tips: ['Go down the hole: you’ll drop into the room below'],
     },
-    'c4-hielo-duro': {
-      name: 'Hard as Ice',
-      tips: ['The cold air freezes you', 'Frozen, you’re tough: spikes can’t hurt you'],
+    'c4-pozos-y-rampas': {
+      name: 'Wells and Ramps',
+      tips: ['Go down the well', 'The ramps lead up to the treasure'],
     },
-    'c4-ola-de-fuego': {
-      name: 'Wave of Fire',
-      tips: ['The flames go out in a wave: cross right behind it'],
+    'c4-esquinas-afiladas': {
+      name: 'Sharp Corners',
+      tips: ['Saws in the corners: go through the middle', 'Squeeze on the way out'],
     },
-    'c4-mitades-fragiles': {
-      name: 'Fragile Halves',
-      tips: ['Leave one half on the switch while the other crosses', 'The right half can’t stop on the rock'],
+    'c4-arena-quebrada': {
+      name: 'Broken Sand',
+      tips: ['Ramps and broken rock: go down without braking'],
     },
-    'c4-aceite-helado': {
-      name: 'Frozen Oil',
-      tips: ['Catch fire to burn the ivy', 'Cold air puts out the flames: that way the ice bridge holds'],
+    'c4-fuego-del-desierto': {
+      name: 'Desert Fire',
+      tips: ['Oil, fire and run: the flames don’t last', 'The saw splits you: squeeze without wasting time'],
     },
-    'c4-caida-controlada': {
-      name: 'Controlled Descent',
-      tips: ['Every step has a cracked edge', 'Dodge the spikes on the way down'],
+    'c4-railes-y-pozos': {
+      name: 'Tracks and Wells',
+      tips: ['The track climbs up high', 'And the well drops you to the treasure'],
     },
-    'c4-corazon-del-abismo': {
-      name: 'The Heart of the Abyss',
-      tips: ['The final trial of the abyss', 'Cold air puts out the flames and hardens you', 'Frozen, spikes can’t hurt you'],
+    'c4-corazon-de-arena': {
+      name: 'The Heart of Sand',
+      tips: ['The final trial of the desert', 'A diagonal trail to the broken rock', 'The well drops you next to the treasure'],
     },
   },
 };

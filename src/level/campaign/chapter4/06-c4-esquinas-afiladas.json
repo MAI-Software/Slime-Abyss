@@ -1,13 +1,17 @@
 {
   "format": 1,
-  "id": "c4-ola-de-fuego",
-  "name": "Ola de fuego",
+  "id": "c4-esquinas-afiladas",
+  "name": "Esquinas afiladas",
   "count": 80,
-  "keepPct": 0.5,
+  "keepPct": 0.7,
   "tips": [
     {
-      "z": 10,
-      "text": "Las llamas se apagan en ola: cruza justo detrás de ella"
+      "z": 8,
+      "text": "Sierras en las esquinas: ve por el centro"
+    },
+    {
+      "z": 3.5,
+      "text": "Aprieta al salir"
     }
   ],
   "tiles": [
@@ -15,21 +19,15 @@
     "#00C0T0C00#",
     "#000000000#",
     "###00000###",
-    "...#BBB#...",
-    "...#XXX#...",
-    "...#BBB#...",
-    "...#XXX#...",
-    "...#BBB#...",
-    "...#000#...",
-    "..##0C0##..",
+    "..#V000A#..",
+    "..#00K00#..",
+    "..#A000V#..",
     "..#00000#..",
+    "..#0C0C0#..",
     "..#00P00#..",
     "..#######.."
   ],
   "heights": [
-    "00000000000",
-    "00000000000",
-    "00000000000",
     "00000000000",
     "00000000000",
     "00000000000",

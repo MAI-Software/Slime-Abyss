@@ -5,30 +5,62 @@ import assetsUrl from './models/assets.glb?url';
 // texturas de blender/build_textures.py: color + normales
 const textureFiles = import.meta.glob('./textures/*.jpg', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
+import { TEXTURE_PREFIX, type Biome } from './biomes';
+
 export type TextureName = 'floor' | 'wall_top' | 'brick' | 'stone_side' | 'ice';
 export type TextureKey = TextureName | `${TextureName}_n`;
+/** Superficies que cambian con el tema (el hielo del suelo es igual en todos). */
+const THEMED: Partial<Record<TextureName, string>> = { floor: 'floor', wall_top: 'wall_top', brick: 'brick', stone_side: 'side' };
 
 /** Modelos hechos en Blender (blender/build_assets.py → src/models/assets.glb). */
 export class Assets {
   private nodes = new Map<string, THREE.Object3D>();
   readonly textures = {} as Record<TextureKey, THREE.Texture>;
+  /** texturas de los temas cargados: '<prefijo><nombre>' → textura */
+  private themed = new Map<string, THREE.Texture>();
+  private loadedBiome: Biome = 'stone';
+  private anisotropy = 1;
 
   static async load(anisotropy: number, onProgress?: (p: number) => void): Promise<Assets> {
     const a = new Assets();
     const texLoader = new THREE.TextureLoader();
     const [gltf] = await Promise.all([
       new GLTFLoader().loadAsync(assetsUrl, (e) => { if (e.total) onProgress?.(e.loaded / e.total); }),
-      ...Object.entries(textureFiles).map(async ([path, url]) => {
+      // de salida solo la piedra y el hielo: los demás temas se cargan al jugar sus pisos
+      ...Object.entries(textureFiles).filter(([path]) => !/\/(desert|frost|tech)_/.test(path)).map(async ([path, url]) => {
         const key = path.replace('./textures/', '').replace('.jpg', '') as TextureKey;
-        const t = await texLoader.loadAsync(url);
-        t.colorSpace = key.endsWith('_n') ? THREE.NoColorSpace : THREE.SRGBColorSpace;
-        t.wrapS = t.wrapT = THREE.RepeatWrapping;
-        t.anisotropy = anisotropy;
-        a.textures[key] = t;
+        a.textures[key] = await a.loadTexture(texLoader, url, key.endsWith('_n'));
       }),
     ]);
     gltf.scene.traverse((o) => a.nodes.set(o.name, o));
+    a.anisotropy = anisotropy;
     return a;
+  }
+
+  private async loadTexture(loader: THREE.TextureLoader, url: string, normal: boolean) {
+    const t = await loader.loadAsync(url);
+    t.colorSpace = normal ? THREE.NoColorSpace : THREE.SRGBColorSpace;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = this.anisotropy;
+    return t;
+  }
+
+  /**
+    Deja listas las texturas de un tema. Solo se guarda un tema además de la piedra: al cambiar,
+    se liberan las del anterior (en el móvil cada tema ocupa bastante memoria de vídeo).
+  */
+  async loadBiome(biome: Biome) {
+    if (biome === 'stone' || biome === this.loadedBiome) return;
+    const prefix = TEXTURE_PREFIX[biome];
+    const loader = new THREE.TextureLoader();
+    const next = new Map<string, THREE.Texture>();
+    await Promise.all(Object.entries(textureFiles).filter(([path]) => path.includes(`/${prefix}`)).map(async ([path, url]) => {
+      const key = path.replace('./textures/', '').replace('.jpg', '');
+      next.set(key, await this.loadTexture(loader, url, key.endsWith('_n')));
+    }));
+    for (const t of this.themed.values()) t.dispose();
+    this.themed = next;
+    this.loadedBiome = biome;
   }
 
   /** ¿Existe este objeto en assets.glb? */
@@ -49,7 +81,14 @@ export class Assets {
     return n.geometry;
   }
 
-  surface(name: TextureName) {
+  /** Color y relieve de una superficie en un tema (si el tema no está cargado, la de piedra). */
+  surface(name: TextureName, biome: Biome = 'stone') {
+    const themed = THEMED[name];
+    if (biome !== 'stone' && themed && biome === this.loadedBiome) {
+      const color = this.themed.get(`${TEXTURE_PREFIX[biome]}${themed}`);
+      const normal = this.themed.get(`${TEXTURE_PREFIX[biome]}${themed}_n`);
+      if (color && normal) return { color, normal };
+    }
     return { color: this.textures[name], normal: this.textures[`${name}_n`] };
   }
 
