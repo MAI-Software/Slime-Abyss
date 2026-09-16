@@ -158,9 +158,10 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
 }
 .main-brand { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; }
 .main-brand .logo { text-align: left; }
-.main-actions { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 14px; }
-/* Modo Historia igual de ancho que la rejilla de botones (y que Opciones) */
+/* columna de ancho fijo: Modo Historia mide lo mismo que la rejilla (y que Opciones) en cualquier pantalla */
+.main-actions { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 14px; width: min(360px, max(280px, 36vw), 100%); flex: none; }
 .main-actions > #btn-story { min-width: 0; width: 100%; }
+.main-actions .menu-grid { width: 100%; }
 .hint:empty { display: none; }
 .logo {
   margin: 0;
@@ -179,7 +180,7 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
   30% { transform: scale(1.06, 0.94); }
   60% { transform: scale(0.96, 1.05); }
 }
-@media (orientation: portrait) { .screen-main { flex-direction: column; } }
+@media (orientation: portrait) { .screen-main { flex-direction: column; } .screen-main .main-actions { align-self: center; } }
 
 /* ---------- tarjetas de capítulo y piso ---------- */
 .card-row { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; width: min(900px, 100%); }
