@@ -77,7 +77,19 @@ interface Coin {
   t: number;
 }
 
-type BlockSet = 'floor' | 'ice' | 'wall';
+type BlockSet = 'floor' | 'ice' | 'wall' | 'crack';
+
+/** Bloques de un tipo dibujados con dos InstancedMesh (losa y columna); índice de casilla → instancia. */
+interface BlockBatch { tops: THREE.InstancedMesh; cols: THREE.InstancedMesh; index: Map<number, number>; list: Solid[] }
+
+/**
+  Suelo que se hunde: la roca agrietada al pisarla y el hielo al pisarlo el limo en llamas.
+  Tiembla COLLAPSE_DELAY segundos (tiempo para salir) y después cae al vacío.
+*/
+export const COLLAPSE_DELAY = 1.3;
+const FALL_TIME = 1.0;
+interface Collapse { set: BlockSet; k: number; t: number; fallen: boolean; done: boolean; overlay: THREE.Object3D | null }
+export type WorldEvent = { type: 'crack' | 'melt' | 'collapse'; x: number; y: number; z: number; melt: boolean };
 interface Solid { i: number; j: number; top: number; color: THREE.Color; set: BlockSet }
 
 const DOOR_H = TILE_BY_CHAR.get('D')!.raise!;
@@ -148,6 +160,11 @@ export class World {
   get coinsTotal() { return this.coins.filter((c) => c.type === 'coin').length; }
   get gemsTotal() { return this.coins.filter((c) => c.type === 'gem').length; }
   private breakables = new Map<number, Breakable>();
+  private batches = new Map<BlockSet, BlockBatch>();
+  private collapses = new Map<number, Collapse>();
+  private crackOverlays = new Map<number, THREE.Object3D>();
+  /** avisos para sonido y efectos (los consume main.ts) */
+  readonly events: WorldEvent[] = [];
   private fans: { blades: THREE.Object3D; i: number; j: number; dir: 'n' | 's' | 'e' | 'w'; base: number }[] = [];
   private coldCells: number[] = [];
   /** corriente de aire por casilla: dirección × fuerza y altura del ventilador */
@@ -280,6 +297,90 @@ export class World {
     return b.kind;
   }
 
+  /** El limo pisa roca agrietada: empieza a romperse. */
+  crumble(i: number, j: number) {
+    const c = this.cell(i, j);
+    if (c?.kind === 'crack') this.startCollapse(i, j, 'crack');
+  }
+
+  /** El limo en llamas pisa hielo: empieza a derretirse. */
+  melt(i: number, j: number) {
+    const c = this.cell(i, j);
+    if (c?.kind === 'ice') this.startCollapse(i, j, 'ice');
+  }
+
+  private startCollapse(i: number, j: number, set: BlockSet) {
+    const idx = j * this.w + i;
+    if (this.collapses.has(idx)) return;
+    const k = this.batches.get(set)?.index.get(idx);
+    if (k === undefined) return;
+    this.collapses.set(idx, { set, k, t: 0, fallen: false, done: false, overlay: this.crackOverlays.get(idx) ?? null });
+    this.events.push({ type: set === 'ice' ? 'melt' : 'crack', x: i + 0.5, y: this.cells[idx].base, z: j + 0.5, melt: set === 'ice' });
+  }
+
+  /** Tiembla, cae y desaparece; al caer la casilla pasa a ser vacío. */
+  private updateCollapses(dt: number) {
+    if (!this.collapses.size) return;
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const e = new THREE.Euler();
+    const pos = new THREE.Vector3();
+    const scl = new THREE.Vector3();
+    const touched = new Set<BlockBatch>();
+    for (const [idx, c] of this.collapses) {
+      if (c.done) continue;
+      c.t += dt;
+      const batch = this.batches.get(c.set)!;
+      const s = batch.list[c.k];
+      const cell = this.cells[idx];
+      let dx = 0, dy = 0, dz = 0, tilt = 0, shrink = 1;
+      if (c.t < COLLAPSE_DELAY) {
+        // temblor que va a más (el hielo además se hunde un poco al derretirse)
+        const a = c.t / COLLAPSE_DELAY;
+        dx = Math.sin(c.t * 55 + idx) * 0.025 * a;
+        dz = Math.cos(c.t * 47 + idx * 1.7) * 0.025 * a;
+        if (c.set === 'ice') { dy = -0.12 * a; shrink = 1 - 0.25 * a; }
+      } else {
+        if (!c.fallen) {
+          c.fallen = true;
+          cell.kind = 'void';
+          cell.top = -Infinity;
+          this.events.push({ type: 'collapse', x: s.i + 0.5, y: s.top, z: s.j + 0.5, melt: c.set === 'ice' });
+        }
+        const f = c.t - COLLAPSE_DELAY;
+        dy = -9 * f * f - (c.set === 'ice' ? 0.12 : 0);
+        tilt = f * (idx % 2 ? 1.4 : -1.2);
+        shrink = c.set === 'ice' ? Math.max(0, 0.75 - f) : 1;
+        if (f > FALL_TIME) {
+          c.done = true;
+          shrink = 0;
+        }
+      }
+      const hide = shrink <= 0.001;
+      e.set(tilt * 0.5, 0, tilt);
+      q.setFromEuler(e);
+      pos.set(s.i + 0.5 + dx, s.top + dy, s.j + 0.5 + dz);
+      scl.set(hide ? 0 : shrink, hide ? 0 : 1, hide ? 0 : shrink);
+      m.compose(pos, q, scl);
+      batch.tops.setMatrixAt(c.k, m);
+      const h = Math.max(0.01, s.top - SLAB_H - BOTTOM);
+      pos.set(s.i + 0.5 + dx, s.top - SLAB_H + dy, s.j + 0.5 + dz);
+      scl.set(hide ? 0 : shrink, hide ? 0 : h, hide ? 0 : shrink);
+      m.compose(pos, q, scl);
+      batch.cols.setMatrixAt(c.k, m);
+      touched.add(batch);
+      if (c.overlay) {
+        c.overlay.position.set(s.i + 0.5 + dx, s.top + dy, s.j + 0.5 + dz);
+        c.overlay.rotation.set(tilt * 0.5, c.overlay.rotation.y, tilt);
+        c.overlay.visible = !hide;
+      }
+    }
+    for (const b of touched) {
+      b.tops.instanceMatrix.needsUpdate = true;
+      b.cols.instanceMatrix.needsUpdate = true;
+    }
+  }
+
   isCold(i: number, j: number): boolean {
     return i >= 0 && j >= 0 && i < this.w && j < this.d && this.coldCells.includes(j * this.w + i);
   }
@@ -320,6 +421,8 @@ export class World {
     const cIce = new THREE.Color(0xffffff);
     const cJump = new THREE.Color(0xf2e9f4);
     const cSwitch = new THREE.Color(0xc4bed6);
+    const cCrackA = new THREE.Color(0xb9ada0);
+    const cCrackB = new THREE.Color(0xaa9e92);
     const fireCells: FireCell[] = [];
 
     for (let j = 0; j < this.d; j++) {
@@ -338,6 +441,14 @@ export class World {
             this.add('fire_grate', x, c.base, z);
             break;
           case 'ice': solids.push({ i, j, top: c.base, color: cIce, set: 'ice' }); break;
+          case 'crack': {
+            // losa de roca más gris con grietas oscuras encima
+            solids.push({ i, j, top: c.base, color: (i + j) % 2 === 0 ? cCrackA : cCrackB, set: 'crack' });
+            const lines = this.add('crack_lines', x, c.base, z);
+            lines.rotation.y = ((i * 3 + j * 5) % 4) * (Math.PI / 2);
+            this.crackOverlays.set(j * this.w + i, lines);
+            break;
+          }
           case 'jump': {
             // suelo normal debajo; la tapa queda elevada sobre el muelle (la física usa c.top)
             solids.push({ i, j, top: c.base, color: cJump, set: 'floor' });
@@ -479,14 +590,20 @@ export class World {
       });
       topGeo.setAttribute('aAO', new THREE.InstancedBufferAttribute(ao, 1));
       this.ownedGeometries.push(topGeo);
+      const index = new Map<number, number>();
+      list.forEach((s, k) => index.set(s.j * this.w + s.i, k));
+      this.batches.set(set, { tops, cols, index, list });
       for (const im of [tops, cols]) {
         im.receiveShadow = true;
         im.castShadow = set === 'wall' || raised;
+        // las losas que caen salen de la caja calculada al construir
+        if (set === 'ice' || set === 'crack') im.frustumCulled = false;
         this.group.add(im);
       }
     };
     make('floor', floorTop, floorCol);
     make('ice', iceTop, floorCol);
+    make('crack', floorTop, floorCol);
     make('wall', wallMat, wallMat);
   }
 
@@ -804,6 +921,7 @@ export class World {
 
     this.fire?.update(this.time, this.fireState);
     this.updateEffects(dt);
+    this.updateCollapses(dt);
 
     if (this.chest && this.chestLid && this.sparkles) {
       const idle = 1 - this.opening;

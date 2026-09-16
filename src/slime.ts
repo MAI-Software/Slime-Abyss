@@ -960,6 +960,11 @@ export class Slime {
       const under = w.cell(ci, cj);
       const idx = under ? cj * w.w + ci : -1;
       const inWind = idx >= 0 && (w.windX[idx] !== 0 || w.windZ[idx] !== 0) && y < w.windBase[idx] + 2.2;
+      // suelo que se hunde: la roca agrietada al pisarla, el hielo si el limo va en llamas
+      if (under && this.air[i] < 0.1 && y < under.top + 0.5) {
+        if (under.kind === 'crack') w.crumble(ci, cj);
+        else if (under.kind === 'ice' && this.state === 'burning') w.melt(ci, cj);
+      }
       if (this.state === 'frozen') this.grip[i] = 1;
       else if (inWind) this.grip[i] = WIND_GRIP;
       else this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : this.loose[i] > 0 ? CORNER_GRIP : 1;

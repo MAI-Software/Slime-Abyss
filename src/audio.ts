@@ -198,6 +198,18 @@ export const sfx = {
     wash({ dur: 0.12, vol: 0.14, type: 'bandpass', f0: 5000, f1: 2500, q: 3, delay: Math.random() * 0.08, reverb: 0.3 });
     bubbles(6, 0.3, 900, 2600, 0.07);
   },
+  /** roca que se agrieta: crujido seco y arenilla */
+  crack: () => {
+    if (!throttle('crack', 0.25)) return;
+    wash({ dur: 0.09, vol: 0.26, type: 'bandpass', f0: 2400, f1: 900, q: 2.5, reverb: 0.35 });
+    wash({ dur: 0.35, vol: 0.1, type: 'highpass', f0: 3500, f1: 2000, q: 0.6, delay: 0.05, reverb: 0.3 });
+  },
+  /** el suelo cae al vacío: golpe grave que se aleja */
+  crumble: () => {
+    if (!throttle('crumble', 0.2)) return;
+    wash({ dur: 0.7, vol: 0.3, type: 'lowpass', f0: 900, f1: 90, q: 0.9, reverb: 0.8 });
+    wash({ dur: 0.25, vol: 0.14, type: 'bandpass', f0: 1800, f1: 500, q: 1.4, delay: 0.03, reverb: 0.5 });
+  },
   /** pinchos: pinchazo seco y la gota que revienta */
   pop: () => {
     if (!throttle('pop', 0.07)) return;

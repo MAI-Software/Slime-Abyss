@@ -17,7 +17,7 @@ export type CellKind =
   | 'void' | 'floor' | 'wall' | 'fire' | 'firet' | 'ice' | 'jump' | 'switch' | 'door' | 'start' | 'treasure'
   | 'coin' | 'blade' | 'spike' | 'gem'
   | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet'
-  | 'station' | 'rail';
+  | 'station' | 'rail' | 'crack';
 
 export interface TileDef {
   char: string;
@@ -51,7 +51,8 @@ export const TILES: readonly TileDef[] = [
   { char: 'T', kind: 'treasure', label: 'Tesoro', unique: true, color: '#f5b301' },
   { char: 'F', kind: 'fire', label: 'Fuego', color: '#ff5a1f', hazard: true },
   { char: 'X', kind: 'firet', label: 'Fuego intermitente', color: '#ff9a3c', hazard: true },
-  { char: 'I', kind: 'ice', label: 'Hielo', friction: 0.25, color: '#bfeaff' },
+  // resbala; si lo pisa el limo en llamas se derrite y cae al vacío (ver COLLAPSE_DELAY en world.ts)
+  { char: 'I', kind: 'ice', label: 'Hielo (el limo en llamas lo derrite)', friction: 0.25, color: '#bfeaff' },
   { char: 'J', kind: 'jump', label: 'Plataforma de salto', raise: 0.38, color: '#ec4899' },
   { char: 'S', kind: 'switch', label: 'Interruptor A', channel: 'A', color: '#f59e0b' },
   { char: 's', kind: 'switch', label: 'Interruptor B', channel: 'B', color: '#22c55e' },
@@ -75,6 +76,8 @@ export const TILES: readonly TileDef[] = [
   // La vía (casillas '=' seguidas, puede girar y subir) no se pisa: hace de valla para el limo a pie.
   { char: 'R', kind: 'station', label: 'Estación de raíl', color: '#7dd3fc' },
   { char: '=', kind: 'rail', label: 'Raíl', raise: 1.2, color: '#9aa3b5' },
+  // se agrieta al pisarla y cae al vacío poco después (mismo tiempo que el hielo derretido): solo se cruza una vez
+  { char: 'B', kind: 'crack', label: 'Roca agrietada (se rompe al pasar)', color: '#a08c74' },
 ];
 
 export const TILE_BY_CHAR: ReadonlyMap<string, TileDef> = new Map(TILES.map((t) => [t.char, t]));

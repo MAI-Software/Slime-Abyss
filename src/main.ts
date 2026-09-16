@@ -1352,6 +1352,12 @@ function tick(dt: number) {
   moveZ = -input.tiltX * sn + input.tiltZ * cs;
   slime.step(dt, moveX, moveZ, input.squeeze);
   world.update(dt, slime.switchCounts);
+  for (const e of world.events) {
+    if (e.type === 'collapse') { sfx.crumble(); buzz(30); fx.splat(e.x, e.y, e.z); }
+    else if (e.melt) { sfx.sizzle(); fx.steam(e.x, e.y + 0.3, e.z); }
+    else { sfx.crack(); buzz(12); }
+  }
+  world.events.length = 0;
   elapsed += dt;
 
   for (const e of slime.events) {
@@ -1629,6 +1635,7 @@ if (import.meta.env.DEV) {
       advance(seconds: number) { for (let s = 0; s < seconds; s += FIXED) frame(FIXED); },
       start: (c: number, k: number) => startFloor(CHAPTERS[c], k),
       practice: () => startLevel(PRACTICE, null, 0),
+      play: (level: LevelData) => startLevel(level, null, 0),
       finish: (win: boolean) => finish(win),
       breakdown: () => showBreakdown(CHAPTERS[0]),
       zoom: (k: number) => { camZoom = k; camPos.set(0, 0, 0); },

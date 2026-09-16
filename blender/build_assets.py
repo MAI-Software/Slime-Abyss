@@ -768,25 +768,142 @@ bm = bmesh.new()
 cylinder(bm, 0.058, 0.07, (0, 0, 0.43), 14)
 mesh_object("oil_bottle_cork", bm, M["cork"], smooth=True, parent=bottle)
 
-# Plantas: matorral espeso con espinas (bloquea el paso hasta que arde). De z=0 a ~1.1.
+# Plantas: pared de hiedra entrelazada (bloquea el paso hasta que arde). Ocupa la casilla, de z=0 a ~1.1.
+# Un núcleo oscuro, tallos leñosos que se cruzan en diagonal por las cuatro caras y por arriba, y hojas
+# de hiedra (forma de corazón con puntas) cubriéndolo casi todo. Pocos polígonos: tallos con bisel bajo
+# y hojas planas de pocos vértices.
+import random
+rnd = random.Random(7)
+M["ivy_stem"] = material("IvyStem", "5b4a2e", 0.85)
+M["ivy_core"] = material("IvyCore", "1f4d24", 0.9)
+M["leaf_light"] = material("LeafLight", "5cb84a", 0.65)
+HALF, TOP = 0.47, 1.1
 plant = empty("plant_block")
+
 bm = bmesh.new()
-for (x, y, z, r) in ((0, 0, 0.35, 0.42), (-0.22, 0.18, 0.62, 0.3), (0.24, -0.15, 0.7, 0.32), (0.05, 0.1, 0.92, 0.26),
-                     (0.25, 0.25, 0.35, 0.28), (-0.25, -0.25, 0.4, 0.3)):
-    ellipsoid(bm, (r, r, r * 0.95), (x, y, z), 12, 8)
-mesh_object("plant_bush", bm, M["leaf"], smooth=True, parent=plant)
-bm = bmesh.new()
-for (x, y, z, r) in ((0.3, 0.05, 0.55, 0.22), (-0.3, 0.02, 0.75, 0.2), (0.0, -0.32, 0.5, 0.22), (0.02, 0.33, 0.65, 0.2)):
-    ellipsoid(bm, (r, r, r), (x, y, z), 10, 6)
-mesh_object("plant_bush_dark", bm, M["leaf_dark"], smooth=True, parent=plant)
-bm = bmesh.new()
-for k in range(14):
-    ang = k * 2.4
-    h = 0.25 + (k % 5) * 0.16
-    x, y = 0.42 * math.cos(ang), 0.42 * math.sin(ang)
-    m = Matrix.Translation((x, y, h)) @ Matrix.Rotation(ang, 4, "Z") @ Matrix.Rotation(math.radians(90), 4, "Y")
-    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=5, radius1=0.035, radius2=0.0, depth=0.16, matrix=m)
-mesh_object("plant_thorns", bm, M["thorn"], parent=plant)
+box(bm, (0.84, 0.84, TOP - 0.08), (0, 0, (TOP - 0.08) / 2))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.06, segments=1, affect="EDGES")
+mesh_object("plant_core", bm, M["ivy_core"], parent=plant)
+
+
+def vine_curve(name, pts, radius, parent):
+    """Tallo: curva suave con bisel de 2 segmentos (ligera)."""
+    cu = bpy.data.curves.new(name + "_curve", "CURVE")
+    cu.dimensions = "3D"
+    cu.bevel_depth = radius
+    cu.bevel_resolution = 1
+    cu.use_fill_caps = False
+    sp = cu.splines.new("NURBS")
+    sp.points.add(len(pts) - 1)
+    for q, co in zip(sp.points, pts):
+        q.co = (*co, 1.0)
+    sp.use_endpoint_u = True
+    sp.order_u = 3
+    sp.resolution_u = 4
+    tmp = bpy.data.objects.new(name + "_tmp", cu)
+    SCENE.objects.link(tmp)
+    dg = bpy.context.evaluated_depsgraph_get()
+    dg.update()
+    me = bpy.data.meshes.new_from_object(tmp.evaluated_get(dg))
+    bpy.data.objects.remove(tmp, do_unlink=True)
+    bpy.data.curves.remove(cu)
+    return me
+
+
+def face_point(face, u, h, out=0.0):
+    """Punto sobre una cara lateral: u en [-1, 1] a lo ancho, h altura; out lo separa de la cara."""
+    r = HALF + out
+    return {0: (u * HALF, -r, h), 1: (r, u * HALF, h), 2: (-u * HALF, r, h), 3: (-r, -u * HALF, h)}[face]
+
+
+stems = bmesh.new()
+leaf_spots = []
+for face in range(4):
+    # dos familias de diagonales que se cruzan: parecen trenzadas porque alternan delante y detrás
+    for fam in (1, -1):
+        for k in range(3):
+            u0 = -1.3 + k * 0.9 + rnd.uniform(-0.25, 0.25)
+            slope = rnd.uniform(0.3, 0.5)
+            pts = []
+            for t in range(6):
+                h = 0.02 + t * (TOP - 0.06) / 5 + rnd.uniform(-0.04, 0.04)
+                u = max(-1.0, min(1.0, fam * (u0 + t * slope) + rnd.uniform(-0.08, 0.08)))
+                weave = 0.0 + 0.03 * (0.5 + 0.5 * math.sin(t * 2.2 + k + (0 if fam > 0 else math.pi)))
+                pts.append(face_point(face, u, h, weave))
+                leaf_spots.append((face, u, h))
+            me = vine_curve(f"ivy_stem_{face}_{fam}_{k}", pts, 0.017, plant)
+            stems.from_mesh(me)
+            bpy.data.meshes.remove(me)
+# por arriba: tallos que cruzan la tapa
+for k in range(4):
+    a = k * math.pi / 4
+    ca, sa = math.cos(a), math.sin(a)
+    pts = [(ca * -0.46 + sa * 0.1, sa * -0.46 - ca * 0.1, TOP - 0.02), (0.0, 0.0, TOP + 0.03), (ca * 0.46 - sa * 0.1, sa * 0.46 + ca * 0.1, TOP - 0.02)]
+    me = vine_curve(f"ivy_stem_top_{k}", pts, 0.02, plant)
+    stems.from_mesh(me)
+    bpy.data.meshes.remove(me)
+mesh_object("plant_stems", stems, M["ivy_stem"], smooth=True, parent=plant)
+
+
+def ivy_leaf(bm, center, normal, size, spin):
+    """Hoja de hiedra plana: 5 puntas (corazón lobulado), 11 vértices en abanico."""
+    n = Vector(normal).normalized()
+    up = Vector((0, 0, 1)) if abs(n.z) < 0.9 else Vector((0, 1, 0))
+    tx = n.cross(up).normalized()
+    ty = tx.cross(n).normalized()
+    c, sn = math.cos(spin), math.sin(spin)
+    ax, ay = tx * c + ty * sn, -tx * sn + ty * c
+    outline = [(0.0, -0.55), (0.35, -0.2), (0.55, 0.15), (0.3, 0.2), (0.35, 0.55), (0.0, 0.35),
+               (-0.35, 0.55), (-0.3, 0.2), (-0.55, 0.15), (-0.35, -0.2)]
+    base = Vector(center)
+    verts = [bm.verts.new(base + n * 0.01)]
+    for (x, y) in outline:
+        verts.append(bm.verts.new(base + (ax * x + ay * y) * size + n * (0.012 * (1 - abs(y)))))
+    m = len(outline)
+    for q in range(m):
+        bm.faces.new((verts[0], verts[1 + q], verts[1 + (q + 1) % m]))
+
+
+leaves = {"leaf": bmesh.new(), "leaf_dark": bmesh.new(), "leaf_light": bmesh.new()}
+normals = {0: (0, -1, 0), 1: (1, 0, 0), 2: (0, 1, 0), 3: (-1, 0, 0)}
+for face in range(4):
+    for row in range(7):
+        for col in range(6):
+            # filas al tresbolillo: sin huecos regulares
+            u = -1.05 + col * 0.42 + (0.21 if row % 2 else 0) + rnd.uniform(-0.1, 0.1)
+            h = 0.02 + row * 0.165 + rnd.uniform(-0.05, 0.05)
+            if h > TOP or abs(u) > 1.12:
+                continue
+            nx, ny, nz = normals[face]
+            # hojas algo caídas y giradas; en las esquinas asoman y rompen la silueta cúbica
+            tilt = Vector((nx, ny, nz)) + Vector((rnd.uniform(-0.45, 0.45), rnd.uniform(-0.45, 0.45), rnd.uniform(-0.2, 0.6)))
+            key = rnd.choice(("leaf", "leaf", "leaf_dark", "leaf_light"))
+            ivy_leaf(leaves[key], face_point(face, u, h, 0.035 + rnd.uniform(0, 0.05)), tilt, rnd.uniform(0.14, 0.2), rnd.uniform(-0.7, 0.7))
+for k in range(22):
+    x, y = rnd.uniform(-0.46, 0.46), rnd.uniform(-0.46, 0.46)
+    key = rnd.choice(("leaf", "leaf_dark", "leaf_light"))
+    ivy_leaf(leaves[key], (x, y, TOP - 0.04 + rnd.uniform(0, 0.08)), (rnd.uniform(-0.5, 0.5), rnd.uniform(-0.5, 0.5), 1), rnd.uniform(0.14, 0.2), rnd.uniform(0, 6.28))
+for key, lbm in leaves.items():
+    mesh_object(f"plant_{key}", lbm, M[key], parent=plant)
+
+# Roca agrietada: grietas oscuras sobre la losa (el juego la coloca sobre un bloque de suelo más gris).
+M["crack"] = material("CrackDark", "2b2420", 0.95)
+crack = empty("crack_lines")
+cracks = bmesh.new()
+paths = [
+    [(-0.44, -0.1), (-0.25, -0.05), (-0.12, 0.08), (0.05, 0.02), (0.2, 0.15), (0.44, 0.12)],
+    [(-0.12, 0.08), (-0.18, 0.28), (-0.1, 0.44)],
+    [(0.05, 0.02), (0.1, -0.2), (0.02, -0.34), (0.12, -0.44)],
+    [(0.2, 0.15), (0.3, 0.3), (0.28, 0.44)],
+    [(-0.25, -0.05), (-0.32, -0.25), (-0.44, -0.3)],
+]
+for n_, path in enumerate(paths):
+    ob = tube(f"crack_path_{n_}", path, 0.018 if n_ == 0 else 0.013, M["crack"], plane="XY", poly=True)
+    ob.data.transform(Matrix.Scale(0.35, 4, (0, 0, 1)))
+    cracks.from_mesh(ob.data)
+    bpy.data.objects.remove(ob, do_unlink=True)
+bmesh.ops.translate(cracks, verts=cracks.verts, vec=(0, 0, 0.004))
+mesh_object("crack_lines_mesh", cracks, M["crack"], parent=crack)
 
 # Bloque de hielo: cubo biselado translúcido-claro (se derrite con el limo en llamas).
 bm = bmesh.new()
