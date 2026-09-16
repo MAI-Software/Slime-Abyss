@@ -149,7 +149,8 @@ const QUALITY = [
   simulaban) hasta 4 veces más que un móvil, y los monitores 2K/4K pintaban millones de píxeles de más.
   Por eso: como mucho 60 imágenes por segundo, un tope de píxeles y la simulación siempre a paso fijo.
 */
-const PIXEL_BUDGET = 2560 * 1440;
+// ~2K: en una tele o monitor 4K el 3D se dibuja a esta resolución y se escala (la interfaz sigue nítida)
+const PIXEL_BUDGET = 2048 * 1152;
 // Chrome sin aceleración por hardware dibuja con el procesador (SwiftShader): todo al mínimo y se avisa
 const gpuName = (() => {
   const gl = renderer.getContext();

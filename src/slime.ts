@@ -51,7 +51,11 @@ const PAD_REACH = 1.3;
 const DIE_TIME = 0.35;
 // Quemarse duele pero enseña: el trozo que toca el fuego da un respingo hacia atrás y el mando deja de
 // empujar un instante, así solo se evapora la parte delantera en vez de meterse entero en las llamas.
-const FIRE_RECOIL = 5;
+const FIRE_RECOIL = 4;
+// El fuego se propaga por el líquido: cada limito que se evapora arrastra a sus vecinos más cercanos.
+const FIRE_SPREAD = 2;        // vecinos que se evaporan con cada uno que toca las llamas
+const FIRE_SPREAD_R = 0.5;    // distancia máxima a la que prende el vecino
+const FIRE_SPREAD_MAX = 10;   // tope de vecinos por paso (un roce no se come el limo entero)
 const FIRE_RECOIL_REACH = 2.4;
 const FIRE_STUN = 0.4;
 /** altura de las púas de la casilla de pinchos */
@@ -159,6 +163,7 @@ export class Slime {
   /** tiempo sin empuje del mando tras quemarse */
   private stunT = 0;
   private fireHits: number[] = [];
+  private fireKills: number[] = [];
   /** limitos que han tocado suelo tras ir por el aire (para el sonido de aterrizaje) */
   private landHits = 0;
   /** trozos de al menos 3 limitos en el último agrupado (si bajan, se han unido) */
@@ -982,6 +987,7 @@ export class Slime {
           if (w.fireLethal(ci, cj)) {
             this.dying[i] = 1e-4;
             this.hurts.push({ x, z });
+            if (this.fireKills.length < 3 * FIRE_SPREAD_MAX) this.fireKills.push(x, y, z);
             continue;
           }
         }
@@ -1028,6 +1034,7 @@ export class Slime {
       this.events.push({ type: 'land', x: g.cx, y: g.cy, z: g.cz });
     }
     this.landHits = 0;
+    if (this.fireKills.length) this.spreadFire();
     if (this.fireHits.length) this.recoilFromFire();
     this.updateStations(dt);
     if (!anyPad) return;
@@ -1043,6 +1050,29 @@ export class Slime {
         this.air[i] = 1;
       }
     }
+  }
+
+  /** El fuego prende a los vecinos de cada limito evaporado (los más cercanos primero). */
+  private spreadFire() {
+    const kills = this.fireKills;
+    const r2 = FIRE_SPREAD_R * FIRE_SPREAD_R;
+    let spread = 0;
+    for (let k = 0; k < kills.length && spread < FIRE_SPREAD_MAX; k += 3) {
+      const kx = kills[k], ky = kills[k + 1], kz = kills[k + 2];
+      for (let s = 0; s < FIRE_SPREAD && spread < FIRE_SPREAD_MAX; s++) {
+        let best = -1, bestD2 = r2;
+        for (let i = 0; i < this.n; i++) {
+          if (!this.alive[i] || this.dying[i] > 0 || this.riding[i]) continue;
+          const dx = this.px[i] - kx, dy = this.py[i] - ky, dz = this.pz[i] - kz;
+          const d2 = dx * dx + dy * dy + dz * dz;
+          if (d2 < bestD2) { bestD2 = d2; best = i; }
+        }
+        if (best < 0) break;
+        this.dying[best] = 1e-4;
+        spread++;
+      }
+    }
+    kills.length = 0;
   }
 
   /** Respingo: los limitos cerca del fuego o los pinchos que han hecho daño salen despedidos hacia atrás. */
