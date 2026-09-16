@@ -1436,7 +1436,8 @@ class Face {
     for (const b of this.blush) {
       b.visible = expr !== 'air';
       const s = expr === 'happy' || expr === 'pain' || expr === 'squeeze' ? 1.25 : 1;
-      b.scale.set(s, s, s);
+      // conserva el reflejo del moflete derecho (los bigotes se abren hacia fuera en los dos lados)
+      b.scale.set(Math.sign(b.scale.x) * s, s, s);
     }
 
     // lágrimas que caen y se reinician durante el dolor
