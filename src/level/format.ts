@@ -17,7 +17,8 @@ export type CellKind =
   | 'void' | 'floor' | 'wall' | 'fire' | 'firet' | 'ice' | 'jump' | 'switch' | 'door' | 'start' | 'treasure'
   | 'coin' | 'blade' | 'spike' | 'gem'
   | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet'
-  | 'station' | 'rail' | 'crack';
+  | 'station' | 'rail' | 'crack'
+  | 'ramp' | 'slab' | 'hole' | 'exit';
 
 export interface TileDef {
   char: string;
@@ -41,6 +42,10 @@ export interface TileDef {
   dir?: 'n' | 's' | 'e' | 'w';
   /** Obstáculo que desaparece al tocarlo el limo en llamas. */
   burnable?: boolean;
+  /** Rampas: hacia dónde sube (la altura de la casilla es la del lado bajo; el alto está RAMP_RISE más arriba). */
+  rise?: 'n' | 's' | 'e' | 'w';
+  /** Suelos en diagonal: la esquina que conserva suelo (la otra media casilla es vacío). */
+  corner?: 'nw' | 'ne' | 'sw' | 'se';
 }
 
 export const TILES: readonly TileDef[] = [
@@ -81,10 +86,25 @@ export const TILES: readonly TileDef[] = [
   { char: '=', kind: 'rail', label: 'Raíl', raise: 1.2, color: '#9aa3b5' },
   // se agrieta al pisarla y cae al vacío poco después (mismo tiempo que el hielo derretido): solo se cruza una vez
   { char: 'B', kind: 'crack', label: 'Roca agrietada (se rompe al pasar)', color: '#a08c74' },
+  // rampas: suben media altura en una casilla, hacia arriba o hacia abajo según se recorran
+  { char: 'n', kind: 'ramp', label: 'Rampa (sube hacia el fondo)', rise: 'n', color: '#d8c49a' },
+  { char: 'u', kind: 'ramp', label: 'Rampa (sube hacia la cámara)', rise: 's', color: '#d8c49a' },
+  { char: 'e', kind: 'ramp', label: 'Rampa (sube a la derecha)', rise: 'e', color: '#d8c49a' },
+  { char: 'o', kind: 'ramp', label: 'Rampa (sube a la izquierda)', rise: 'w', color: '#d8c49a' },
+  // media casilla en diagonal: con ellas los caminos giran en diagonal sin escalones
+  { char: 'q', kind: 'slab', label: 'Suelo diagonal (esquina del fondo izquierda)', corner: 'nw', color: '#e9d7ad' },
+  { char: 'p', kind: 'slab', label: 'Suelo diagonal (esquina del fondo derecha)', corner: 'ne', color: '#e9d7ad' },
+  { char: 'z', kind: 'slab', label: 'Suelo diagonal (esquina delantera izquierda)', corner: 'sw', color: '#e9d7ad' },
+  { char: 'm', kind: 'slab', label: 'Suelo diagonal (esquina delantera derecha)', corner: 'se', color: '#e9d7ad' },
+  // agujero redondo: el limo que cae por él aparece sobre la salida de agujero más cercana (mejor si está más abajo)
+  { char: 'H', kind: 'hole', label: 'Agujero (lleva a una salida más abajo)', color: '#1f1a33' },
+  { char: 'U', kind: 'exit', label: 'Salida de agujero', color: '#5b4b8a' },
 ];
 
 export const TILE_BY_CHAR: ReadonlyMap<string, TileDef> = new Map(TILES.map((t) => [t.char, t]));
 export const HEIGHT_STEP = 0.5;
+/** Lo que sube una rampa en su casilla. */
+export const RAMP_RISE = HEIGHT_STEP;
 export const MAX_HEIGHT = 9;
 
 export interface Tip { z: number; text: string }

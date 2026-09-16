@@ -15,12 +15,13 @@ export const TILE_IDS: Record<string, string> = {
   '.': 'void', '0': 'floor', '#': 'wall', P: 'start', T: 'treasure', F: 'fire', X: 'firet', I: 'ice', J: 'jump',
   S: 'switchA', s: 'switchB', D: 'doorA', d: 'doorB', C: 'coin', K: 'bladeZ', k: 'bladeX', Y: 'spike', G: 'gem',
   O: 'oil', W: 'plant', Z: 'iceblock', '^': 'fanN', v: 'fanS', '>': 'fanE', '<': 'fanW', Q: 'coldjet',
-  R: 'station', '=': 'rail', B: 'crack',
+  R: 'station', '=': 'rail', B: 'crack', V: 'sawD1', A: 'sawD2',
+  n: 'rampN', u: 'rampS', e: 'rampE', o: 'rampW', q: 'slabNW', p: 'slabNE', z: 'slabSW', m: 'slabSE', H: 'hole', U: 'exit',
 };
 
 /** Orden de la paleta: lo básico primero. */
-export const PALETTE: string[] = ['0', '.', '#', 'P', 'T', 'C', 'G', 'B', 'I', 'Z', 'W', 'O', 'F', 'X', 'Y', 'K', 'k', 'J',
-  'S', 'D', 's', 'd', 'R', '=', '^', 'v', '<', '>', 'Q'];
+export const PALETTE: string[] = ['0', '.', '#', 'P', 'T', 'C', 'G', 'n', 'u', 'e', 'o', 'q', 'p', 'z', 'm', 'H', 'U',
+  'B', 'I', 'Z', 'W', 'O', 'F', 'X', 'Y', 'K', 'k', 'V', 'A', 'J', 'S', 'D', 's', 'd', 'R', '=', '^', 'v', '<', '>', 'Q'];
 
 const UNDO_MAX = 60;
 
@@ -261,7 +262,7 @@ export function drawCell(g: CanvasRenderingContext2D, ch: string, height: number
   const tile: TileDef = TILE_BY_CHAR.get(ch) ?? TILES[0];
   const cx = x + s / 2, cy = y + s / 2;
   const u = s / 32;
-  if (tile.kind === 'void' || tile.kind === 'rail') {
+  if (tile.kind === 'void' || tile.kind === 'rail' || tile.kind === 'slab') {
     g.fillStyle = '#140f2b';
     g.fillRect(x, y, s, s);
     g.fillStyle = 'rgba(255,255,255,0.12)';
@@ -371,6 +372,37 @@ export function drawCell(g: CanvasRenderingContext2D, ch: string, height: number
       }
       break;
     case 'station': disc(10 * u, '#7dd3fc'); disc(4 * u, '#0f172a', '#0f172a'); break;
+    case 'ramp': {
+      // más claro en el lado alto y flechas hacia arriba de la rampa
+      const d = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[tile.rise ?? 'n'];
+      const grad = g.createLinearGradient(cx - d[0] * s / 2, cy - d[1] * s / 2, cx + d[0] * s / 2, cy + d[1] * s / 2);
+      grad.addColorStop(0, 'rgba(0,0,0,0.18)');
+      grad.addColorStop(1, 'rgba(255,255,255,0.35)');
+      g.fillStyle = grad;
+      g.fillRect(x, y, s, s);
+      g.strokeStyle = '#7c5e2a'; g.lineWidth = Math.max(1.5, 2.5 * u);
+      for (const k of [-5, 4]) {
+        g.save(); g.translate(cx + d[0] * k * u, cy + d[1] * k * u); g.rotate(Math.atan2(d[1], d[0]));
+        g.beginPath(); g.moveTo(-4 * u, -7 * u); g.lineTo(3 * u, 0); g.lineTo(-4 * u, 7 * u); g.stroke(); g.restore();
+      }
+      break;
+    }
+    case 'slab': {
+      const l = 70 + Math.min(9, height) * 2.4;
+      g.fillStyle = `hsl(40 38% ${l}%)`;
+      g.beginPath();
+      const pts = { nw: [[x, y], [x + s, y], [x, y + s]], ne: [[x, y], [x + s, y], [x + s, y + s]], sw: [[x, y], [x + s, y + s], [x, y + s]], se: [[x + s, y], [x + s, y + s], [x, y + s]] }[tile.corner ?? 'nw'];
+      g.moveTo(pts[0][0], pts[0][1]); g.lineTo(pts[1][0], pts[1][1]); g.lineTo(pts[2][0], pts[2][1]); g.closePath(); g.fill();
+      break;
+    }
+    case 'hole':
+      disc(11.5 * u, '#07050f', '#3b3552');
+      break;
+    case 'exit':
+      g.beginPath(); g.arc(cx, cy, 11 * u, 0, Math.PI * 2);
+      g.lineWidth = Math.max(2, 3.5 * u); g.strokeStyle = '#5b4b8a'; g.setLineDash([4 * u, 3 * u]); g.stroke(); g.setLineDash([]);
+      g.beginPath(); g.moveTo(cx, cy - 6 * u); g.lineTo(cx, cy + 5 * u); g.moveTo(cx - 4 * u, cy + 1 * u); g.lineTo(cx, cy + 5 * u); g.lineTo(cx + 4 * u, cy + 1 * u); g.stroke();
+      break;
     case 'rail': {
       g.strokeStyle = '#9aa3b5'; g.lineWidth = Math.max(2, 3 * u);
       g.beginPath();

@@ -1274,7 +1274,11 @@ function build(def) {
           if (n && isDigit(n)) votes[n] = (votes[n] ?? 0) + 1;
         }
       }
-      const best = Object.entries(votes).sort((a, b) => b[1] - a[1] || Number(b[0]) - Number(a[0]))[0];
+      // rampas: su altura es la del lado bajo (la menor de alrededor)
+      const ramp = 'nueo'.includes(ch);
+      const best = ramp
+        ? Object.entries(votes).sort((a, b) => Number(a[0]) - Number(b[0]))[0]
+        : Object.entries(votes).sort((a, b) => b[1] - a[1] || Number(b[0]) - Number(a[0]))[0];
       h += best ? best[0] : '0';
     }
     tiles.push(t); heights.push(h);
@@ -1307,7 +1311,8 @@ function checkNoDeadEnds(def, tiles, heights) {
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   const at = (i, j) => (j >= 0 && j < H && i >= 0 && i < W ? tiles[j][i] : '.');
   const walk = (i, j) => at(i, j) !== '.' && at(i, j) !== '#' && at(i, j) !== '=';
-  const top = (i, j) => Number(heights[j][i]);
+  // la rampa llega hasta un escalón más arriba
+  const top = (i, j) => Number(heights[j][i]) + ('nueo'.includes(at(i, j)) ? 1 : 0);
   // estación → estación del otro extremo de su vía
   const partner = (i, j) => {
     let prev = [i, j];
@@ -1325,6 +1330,16 @@ function checkNoDeadEnds(def, tiles, heights) {
   const next = (i, j) => {
     const out = [];
     if (at(i, j) === 'R') { const other = partner(i, j); if (other) out.push(other); }
+    // agujero: se cae a la salida más cercana (preferida más abajo) y no se puede seguir andando por encima
+    if (at(i, j) === 'H') {
+      let best = null, score = Infinity;
+      for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) {
+        if (at(a, b) !== 'U') continue;
+        const sc = Math.hypot(a - i, b - j) + (Number(heights[b][a]) < Number(heights[j][i]) ? 0 : 1000);
+        if (sc < score) { score = sc; best = [a, b]; }
+      }
+      return best ? [best] : [];
+    }
     const reach = at(i, j) === 'J' ? 6 : WIND[at(i, j)] || at(i, j) === 'Q' ? 10 : 1;
     const dirs = WIND[at(i, j)] ? [WIND[at(i, j)]] : DIRS;
     for (const [di, dj] of reach > 1 ? [...dirs, ...(dirs === DIRS ? [] : DIRS)] : DIRS) {
@@ -1354,7 +1369,8 @@ function checkNoDeadEnds(def, tiles, heights) {
 function checkNoStepsUp(def, tiles, heights) {
   if (def.h) return;
   // la vía no se pisa y las estaciones pueden estar a cualquier altura (la bola sube)
-  const walk = (t) => t !== '.' && t !== '#' && t !== '=' && t !== 'R';
+  // la vía no se pisa, las estaciones pueden estar a cualquier altura (la bola sube) y las rampas están para subir
+  const walk = (t) => t !== '.' && t !== '#' && t !== '=' && t !== 'R' && !'nueoH'.includes(t);
   for (let j = 0; j < tiles.length; j++) for (let i = 0; i < tiles[0].length; i++) {
     if (!walk(tiles[j][i])) continue;
     // hacia el tesoro se avanza a filas menores: la fila de arriba no puede ser más alta

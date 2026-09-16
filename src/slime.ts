@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BlobMesh } from './blob-mesh';
-import { World, type RailPath } from './world';
+import { HOLE_DROP, HOLE_R, World, type RailPath } from './world';
 import type { Channel } from './level/format';
 import { Assets } from './assets';
 import { createContactShadowTexture } from './materials';
@@ -111,7 +111,10 @@ const WIND_ACC = 24;
 const WIND_SCATTER = 6;
 const WIND_GRIP = 0.6;
 const WIND_SINK = 20;
-const WIND_FROZEN_ACC = 9;    // congelado: la corriente lo transporta entero
+const WIND_FROZEN_ACC = 9;
+// Agujero: tira hacia abajo y hacia el centro de lo que está encima.
+const HOLE_PULL = 30;
+const HOLE_FUNNEL = 12;    // congelado: la corriente lo transporta entero
 const HOVER_HEIGHT = 0.8;
 
 const STATE_LOOK: Record<SlimeState, { color: number; emissive: number; rim: [number, number, number]; wobble: number }> = {
@@ -156,6 +159,8 @@ export class Slime {
   private lastCutEvent = -1;
   /** limitos que van en una bola por la vía (no siguen la física) */
   private riding: Uint8Array;
+  /** agujero por el que está cayendo cada limito (-1 ninguno) */
+  private holeIn: Int32Array;
   private rides: { path: RailPath; s: number; speed: number; angle: number; radius: number; ids: number[]; off: Float32Array }[] = [];
   /** estaciones de llegada bloqueadas hasta que el limo se aparta (tiempo despejadas) */
   private stationLock = new Map<number, number>();
@@ -211,6 +216,7 @@ export class Slime {
     this.dying = f(); this.air = f(); this.noAttr = f();
     this.alive = new Uint8Array(n).fill(1);
     this.riding = new Uint8Array(n);
+    this.holeIn = new Int32Array(n).fill(-1);
     this.groundCell = new Int32Array(n).fill(-1);
     this.tag = new Uint32Array(n);
     this.parent = new Int32Array(n);
@@ -511,6 +517,15 @@ export class Slime {
       const ci = Math.floor(px[i]), cj = Math.floor(pz[i]);
       if (ci < 0 || cj < 0 || ci >= w.w || cj >= w.d) continue;
       const idx = cj * w.w + ci;
+      // agujero: succiona como un desagüe (lo de encima se escurre hacia dentro, aunque el limo sea más ancho)
+      if (w.cells[idx].kind === 'hole' && py[i] < w.cells[idx].base + 0.9) {
+        const hx = px[i] - ci - 0.5, hz = pz[i] - cj - 0.5;
+        const d = Math.hypot(hx, hz);
+        if (d < HOLE_R + 0.22) {
+          ay[i] -= HOLE_PULL;
+          if (d > 0.05) { ax[i] -= (hx / d) * HOLE_FUNNEL; az[i] -= (hz / d) * HOLE_FUNNEL; }
+        }
+      }
       const wx = w.windX[idx], wz = w.windZ[idx];
       if (wx === 0 && wz === 0 || py[i] > w.windBase[idx] + 2.2) continue;
       const pow = Math.hypot(wx, wz);
@@ -771,11 +786,22 @@ export class Slime {
     const j0 = Math.floor(z - R), j1 = Math.floor(z + R);
     for (let cj = j0; cj <= j1; cj++) {
       for (let ci = i0; ci <= i1; ci++) {
-        const top = w.top(ci, cj);
-        if (top === -Infinity || y - R >= top) continue;
-        const qx = Math.min(Math.max(x, ci), ci + 1);
+        const cell = w.cell(ci, cj);
+        if (!cell || cell.top === -Infinity || y - R >= cell.top) continue;
+        let qx = Math.min(Math.max(x, ci), ci + 1);
+        let qz = Math.min(Math.max(z, cj), cj + 1);
+        if (cell.kind === 'hole') {
+          // por el agujero no hay suelo: se cae
+          const hx = x - ci - 0.5, hz = z - cj - 0.5;
+          if (hx * hx + hz * hz < HOLE_R * HOLE_R) continue;
+        } else if (cell.kind === 'slab') {
+          const [fx, fz] = World.slabClamp(cell.corner, qx - ci, qz - cj);
+          qx = ci + fx;
+          qz = cj + fz;
+        }
+        const top = w.topAt(cell, ci, cj, qx, qz);
+        if (y - R >= top) continue;
         const qy = Math.min(y, top);
-        const qz = Math.min(Math.max(z, cj), cj + 1);
         const dx = x - qx, dy = y - qy, dz = z - qz;
         const d2 = dx * dx + dy * dy + dz * dz;
         if (d2 >= R * R) continue;
@@ -909,6 +935,15 @@ export class Slime {
     ¿Asoma este limito por un borde? Su centro está sobre vacío y a la altura del suelo
     de al lado (no vale si va volando por encima, p. ej. tras una plataforma de salto).
   */
+  /** Sobre la boca de un agujero (se suelta del resto para escurrirse). */
+  private overHole(x: number, y: number, z: number): boolean {
+    const ci = Math.floor(x), cj = Math.floor(z);
+    const c = this.world.cell(ci, cj);
+    if (c?.kind !== 'hole' || y > c.base + 0.9) return false;
+    const hx = x - ci - 0.5, hz = z - cj - 0.5;
+    return hx * hx + hz * hz < (HOLE_R + 0.08) * (HOLE_R + 0.08);
+  }
+
   private overhanging(x: number, y: number, z: number): boolean {
     const w = this.world;
     const ci = Math.floor(x), cj = Math.floor(z);
@@ -955,6 +990,33 @@ export class Slime {
         continue;
       }
 
+      // por un agujero: se recuerda por cuál entró (dentro del tubo puede desviarse) y sale por su salida, cayendo desde el aro
+      {
+        const cci = Math.floor(x), ccj = Math.floor(z);
+        const here = w.cell(cci, ccj);
+        if (here?.kind === 'hole' && y < here.base) {
+          const hx = x - cci - 0.5, hz = z - ccj - 0.5;
+          if (hx * hx + hz * hz < HOLE_R * HOLE_R) this.holeIn[i] = ccj * w.w + cci;
+        } else if (this.air[i] < 0.05) this.holeIn[i] = -1;
+        const hIdx = this.holeIn[i];
+        const hc = hIdx >= 0 ? w.cells[hIdx] : null;
+        if (hc && y < hc.base - HOLE_DROP) {
+          const exit = w.holeExit(hIdx);
+          this.holeIn[i] = -1;
+          if (exit) {
+            const hcx = (hIdx % w.w) + 0.5, hcz = Math.floor(hIdx / w.w) + 0.5;
+            const nx = exit.x + Math.max(-0.3, Math.min(0.3, x - hcx)), nz = exit.z + Math.max(-0.3, Math.min(0.3, z - hcz)), ny = exit.y + 2.5;
+            this.px[i] = this.ox[i] = nx;
+            this.py[i] = this.oy[i] = ny;
+            this.pz[i] = this.oz[i] = nz;
+            this.vx[i] *= 0.2; this.vz[i] *= 0.2;
+            this.vy[i] = Math.min(this.vy[i], -1.5);
+            this.air[i] = 1;
+            continue;
+          }
+        }
+      }
+
       if (y < -6) {
         this.alive[i] = 0;
         this.events.push({ type: 'fall', x, y, z });
@@ -976,6 +1038,7 @@ export class Slime {
       }
       if (this.state === 'frozen') this.grip[i] = 1;
       else if (inWind) this.grip[i] = WIND_GRIP;
+      else if (this.overHole(x, y, z)) this.grip[i] = OVERHANG_GRIP;
       else this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : this.loose[i] > 0 ? CORNER_GRIP : 1;
 
       const chunk = this.gid[i] >= 0 ? this.groups[this.gid[i]].ids.length : 0;

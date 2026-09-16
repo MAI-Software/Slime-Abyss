@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Assets } from './assets';
 import { FireFx, type FireCell, type FireState } from './fire';
 import { AO_E, AO_N, AO_NE, AO_NW, AO_S, AO_SE, AO_SW, AO_W, createBlockMaterial, createGlowMaterial } from './materials';
-import { HEIGHT_STEP, TILE_BY_CHAR, TILES, traceRails, type CellKind, type Channel, type LevelData } from './level/format';
+import { HEIGHT_STEP, RAMP_RISE, TILE_BY_CHAR, TILES, traceRails, type CellKind, type Channel, type LevelData } from './level/format';
 
 export type { CellKind };
 
@@ -13,7 +13,14 @@ export interface Cell {
   channel?: Channel;
   axis?: 'x' | 'z' | 'd1' | 'd2';
   dir?: 'n' | 's' | 'e' | 'w';
+  rise?: 'n' | 's' | 'e' | 'w';
+  corner?: 'nw' | 'ne' | 'sw' | 'se';
 }
+
+/** radio del agujero redondo (la casilla mide 1) */
+export const HOLE_R = 0.36;
+/** por debajo de esto, lo que cae por un agujero sale por su salida */
+export const HOLE_DROP = 0.9;
 
 export type PickupType = 'coin' | 'gem' | 'oil';
 
@@ -170,6 +177,9 @@ export class World {
   readonly events: WorldEvent[] = [];
   private fans: { blades: THREE.Object3D; i: number; j: number; dir: 'n' | 's' | 'e' | 'w'; base: number }[] = [];
   private saws: THREE.Object3D[] = [];
+  private shapes: { i: number; j: number; c: Cell }[] = [];
+  private holeExits = new Map<number, THREE.Vector3>();
+  private floorTopMat: THREE.Material | null = null;
   private coldCells: number[] = [];
   /** corriente de aire por casilla: dirección × fuerza y altura del ventilador */
   readonly windX: Float32Array;
@@ -210,12 +220,42 @@ export class World {
     const tile = TILE_BY_CHAR.get(this.def.tiles[j][i]) ?? TILE_BY_CHAR.get('.')!;
     if (tile.kind === 'void') return { kind: 'void', base: 0, top: -Infinity };
     const base = Number(this.def.heights[j][i]) * HEIGHT_STEP;
-    return { kind: tile.kind, base, top: base + (tile.raise ?? 0), channel: tile.channel, axis: tile.axis, dir: tile.dir };
+    const top = base + (tile.kind === 'ramp' ? RAMP_RISE : tile.raise ?? 0);
+    return { kind: tile.kind, base, top, channel: tile.channel, axis: tile.axis, dir: tile.dir, rise: tile.rise, corner: tile.corner };
   }
 
   cell(i: number, j: number): Cell | null {
     if (i < 0 || j < 0 || i >= this.w || j >= this.d) return null;
     return this.cells[j * this.w + i];
+  }
+
+  /**
+    Altura del suelo de una casilla en un punto (x, z) de dentro de ella: igual que top() salvo en las rampas,
+    que suben de base a base + RAMP_RISE.
+  */
+  topAt(c: Cell, ci: number, cj: number, x: number, z: number): number {
+    if (c.kind !== 'ramp') return c.top;
+    const fx = Math.min(1, Math.max(0, x - ci)), fz = Math.min(1, Math.max(0, z - cj));
+    const f = c.rise === 'n' ? 1 - fz : c.rise === 's' ? fz : c.rise === 'e' ? fx : 1 - fx;
+    return c.base + RAMP_RISE * f;
+  }
+
+  /** Punto de la media casilla diagonal más cercano a (x, z) (fx, fz relativos a la casilla, ya dentro de ella). */
+  static slabClamp(corner: Cell['corner'], fx: number, fz: number): [number, number] {
+    // la media casilla es la caja recortada por la diagonal que no pasa por su esquina
+    const nw = corner === 'nw', se = corner === 'se', ne = corner === 'ne';
+    let s: number, inside: boolean;
+    if (nw || se) { s = fx + fz; inside = nw ? s <= 1 : s >= 1; }
+    else { s = fx - fz; inside = ne ? s >= 0 : s <= 0; }
+    if (inside) return [fx, fz];
+    if (nw || se) { const k = (fx + fz - 1) / 2; return [Math.min(1, Math.max(0, fx - k)), Math.min(1, Math.max(0, fz - k))]; }
+    const k = (fx - fz) / 2;
+    return [Math.min(1, Math.max(0, fx - k)), Math.min(1, Math.max(0, fz + k))];
+  }
+
+  /** Salida del agujero de esta casilla (centro del suelo), si la hay. */
+  holeExit(idx: number): THREE.Vector3 | null {
+    return this.holeExits.get(idx) ?? null;
   }
 
   /** Altura superior de la columna o -Infinity si es vacío. */
@@ -445,6 +485,14 @@ export class World {
             this.add('fire_grate', x, c.base, z);
             break;
           case 'ice': solids.push({ i, j, top: c.base, color: cIce, set: 'ice' }); break;
+          case 'ramp': case 'slab': case 'hole':
+            // geometría propia (rampa, media casilla, losa con agujero): ver buildShapes
+            this.shapes.push({ i, j, c });
+            break;
+          case 'exit':
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            this.addHoleExit(x, c.base, z);
+            break;
           case 'crack': {
             // losa de roca más gris con grietas oscuras encima
             solids.push({ i, j, top: c.base, color: (i + j) % 2 === 0 ? cCrackA : cCrackB, set: 'crack' });
@@ -527,6 +575,8 @@ export class World {
     }
 
     this.buildBlocks(solids);
+    this.buildShapes();
+    this.linkHoles();
     this.buildRails();
     this.buildWind();
     this.buildMist();
@@ -605,10 +655,113 @@ export class World {
         this.group.add(im);
       }
     };
+    this.floorTopMat = floorTop;
     make('floor', floorTop, floorCol);
     make('ice', iceTop, floorCol);
     make('crack', floorTop, floorCol);
     make('wall', wallMat, wallMat);
+  }
+
+  /**
+    Rampas, medias casillas diagonales y losas con agujero: una sola malla con posiciones del mundo y el mismo
+    material que el suelo (texturas por posición: la cara de arriba usa la del suelo y los lados la de piedra).
+  */
+  private buildShapes() {
+    if (!this.shapes.length || !this.floorTopMat) return;
+    const pos: number[] = [];
+    const nor: number[] = [];
+    const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3(), e = new THREE.Vector3();
+    type P = [number, number, number];
+    const tri = (p0: P, p1: P, p2: P, hint: P) => {
+      a.set(...p0); b.set(...p1); c.set(...p2);
+      n.copy(b).sub(a).cross(e.copy(c).sub(a)).normalize();
+      if (n.x * hint[0] + n.y * hint[1] + n.z * hint[2] < 0) { const t = b.clone(); b.copy(c); c.copy(t); n.negate(); }
+      for (const v of [a, b, c]) { pos.push(v.x, v.y, v.z); nor.push(n.x, n.y, n.z); }
+    };
+    const quad = (p0: P, p1: P, p2: P, p3: P, hint: P) => { tri(p0, p1, p2, hint); tri(p0, p2, p3, hint); };
+    const wall = (x0: number, z0: number, y0: number, x1: number, z1: number, y1: number, hint: P) =>
+      quad([x0, y0, z0], [x1, y1, z1], [x1, BOTTOM, z1], [x0, BOTTOM, z0], hint);
+
+    for (const { i, j, c: cell } of this.shapes) {
+      const x0 = i, x1 = i + 1, z0 = j, z1 = j + 1;
+      if (cell.kind === 'ramp') {
+        const h = (x: number, z: number) => this.topAt(cell, i, j, x, z);
+        const A: P = [x0, h(x0, z0), z0], B: P = [x1, h(x1, z0), z0], C: P = [x1, h(x1, z1), z1], D: P = [x0, h(x0, z1), z1];
+        quad(A, B, C, D, [0, 1, 0]);
+        wall(x0, z0, A[1], x1, z0, B[1], [0, 0, -1]);
+        wall(x1, z1, C[1], x0, z1, D[1], [0, 0, 1]);
+        wall(x0, z1, D[1], x0, z0, A[1], [-1, 0, 0]);
+        wall(x1, z0, B[1], x1, z1, C[1], [1, 0, 0]);
+      } else if (cell.kind === 'slab') {
+        const y = cell.base;
+        const A: P = [x0, y, z0], B: P = [x1, y, z0], C: P = [x1, y, z1], D: P = [x0, y, z1];
+        const corner = cell.corner;
+        if (corner === 'nw') { tri(A, B, D, [0, 1, 0]); wall(x0, z0, y, x1, z0, y, [0, 0, -1]); wall(x0, z1, y, x0, z0, y, [-1, 0, 0]); wall(x1, z0, y, x0, z1, y, [1, 0, 1]); }
+        if (corner === 'ne') { tri(A, B, C, [0, 1, 0]); wall(x0, z0, y, x1, z0, y, [0, 0, -1]); wall(x1, z0, y, x1, z1, y, [1, 0, 0]); wall(x0, z0, y, x1, z1, y, [-1, 0, 1]); }
+        if (corner === 'sw') { tri(A, C, D, [0, 1, 0]); wall(x0, z1, y, x0, z0, y, [-1, 0, 0]); wall(x1, z1, y, x0, z1, y, [0, 0, 1]); wall(x0, z0, y, x1, z1, y, [1, 0, -1]); }
+        if (corner === 'se') { tri(B, C, D, [0, 1, 0]); wall(x1, z0, y, x1, z1, y, [1, 0, 0]); wall(x1, z1, y, x0, z1, y, [0, 0, 1]); wall(x1, z0, y, x0, z1, y, [-1, 0, -1]); }
+      } else {
+        // losa con agujero redondo: anillo de arriba, cuatro lados y el tubo interior hacia abajo
+        const y = cell.base, cx = i + 0.5, cz = j + 0.5, N = 24;
+        for (let k = 0; k < N; k++) {
+          const t0 = (k / N) * Math.PI * 2, t1 = ((k + 1) / N) * Math.PI * 2;
+          const r0 = 0.5 / Math.max(Math.abs(Math.cos(t0)), Math.abs(Math.sin(t0)));
+          const r1 = 0.5 / Math.max(Math.abs(Math.cos(t1)), Math.abs(Math.sin(t1)));
+          const p0: P = [cx + Math.cos(t0) * HOLE_R, y, cz + Math.sin(t0) * HOLE_R];
+          const p1: P = [cx + Math.cos(t1) * HOLE_R, y, cz + Math.sin(t1) * HOLE_R];
+          quad(p0, p1, [cx + Math.cos(t1) * r1, y, cz + Math.sin(t1) * r1], [cx + Math.cos(t0) * r0, y, cz + Math.sin(t0) * r0], [0, 1, 0]);
+          quad(p0, p1, [p1[0], BOTTOM, p1[2]], [p0[0], BOTTOM, p0[2]], [cx - (p0[0] + p1[0]) / 2, 0, cz - (p0[2] + p1[2]) / 2]);
+        }
+        wall(x0, z0, y, x1, z0, y, [0, 0, -1]);
+        wall(x1, z1, y, x0, z1, y, [0, 0, 1]);
+        wall(x0, z1, y, x0, z0, y, [-1, 0, 0]);
+        wall(x1, z0, y, x1, z1, y, [1, 0, 0]);
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    geo.setAttribute('aAO', new THREE.Float32BufferAttribute(new Float32Array(pos.length / 3), 1));
+    this.ownedGeometries.push(geo);
+    const mesh = new THREE.Mesh(geo, this.floorTopMat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    this.group.add(mesh);
+  }
+
+  /** Cada agujero lleva a la salida más cercana, prefiriendo las que están más abajo. */
+  private linkHoles() {
+    const holes: number[] = [], exits: number[] = [];
+    this.cells.forEach((c, idx) => { if (c.kind === 'hole') holes.push(idx); else if (c.kind === 'exit') exits.push(idx); });
+    if (!holes.length || !exits.length) return;
+    for (const h of holes) {
+      const hx = h % this.w, hz = Math.floor(h / this.w), hb = this.cells[h].base;
+      let best = -1, bestScore = Infinity;
+      for (const x of exits) {
+        const d = Math.hypot((x % this.w) - hx, Math.floor(x / this.w) - hz);
+        const score = d + (this.cells[x].base < hb ? 0 : 1000);
+        if (score < bestScore) { bestScore = score; best = x; }
+      }
+      this.holeExits.set(h, new THREE.Vector3((best % this.w) + 0.5, this.cells[best].base, Math.floor(best / this.w) + 0.5));
+    }
+  }
+
+  /** Salida de agujero: un aro oscuro en el aire del que cae el limo. */
+  private addHoleExit(x: number, y: number, z: number) {
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0x3b3552, roughness: 0.7, metalness: 0.2 });
+    const holeMat = new THREE.MeshBasicMaterial({ color: 0x07050f, side: THREE.DoubleSide });
+    const ringGeo = new THREE.TorusGeometry(HOLE_R + 0.05, 0.07, 10, 28);
+    const holeGeo = new THREE.CircleGeometry(HOLE_R + 0.02, 28);
+    this.ownedMaterials.push(ringMat, holeMat);
+    this.ownedGeometries.push(ringGeo, holeGeo);
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(x, y + 2.7, z);
+    ring.castShadow = true;
+    const hole = new THREE.Mesh(holeGeo, holeMat);
+    hole.rotation.x = Math.PI / 2;
+    hole.position.set(x, y + 2.68, z);
+    this.group.add(ring, hole);
   }
 
   private addCoin(i: number, j: number, base: number, kind: string) {
