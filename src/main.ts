@@ -38,7 +38,7 @@ function buzz(pattern: number | number[]) {
   navigator.vibrate?.(pattern);
 }
 
-setLang(save.lang ?? detectLang());
+setLang(save.lang && LANGS.includes(save.lang) ? save.lang : detectLang());
 
 // ------------------------------------------------------------------ render base
 
@@ -144,7 +144,20 @@ const QUALITY = [
   { ratio: 1.5, shadow: 1024 },
   { ratio: 2.0, shadow: 2048 },
 ] as const;
-let quality = lowQuality ? 2 : 3;
+/*
+  En ordenador el coste no venía de la potencia sino de la pantalla: monitores de 120-240 Hz dibujaban (y en el menú
+  simulaban) hasta 4 veces más que un móvil, y los monitores 2K/4K pintaban millones de píxeles de más.
+  Por eso: como mucho 60 imágenes por segundo, un tope de píxeles y la simulación siempre a paso fijo.
+*/
+const PIXEL_BUDGET = 2560 * 1440;
+// Chrome sin aceleración por hardware dibuja con el procesador (SwiftShader): todo al mínimo y se avisa
+const gpuName = (() => {
+  const gl = renderer.getContext();
+  const info = gl.getExtension('WEBGL_debug_renderer_info');
+  return info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : '';
+})();
+const softwareGpu = /swiftshader|llvmpipe|software|basic render/i.test(gpuName);
+let quality = softwareGpu ? 0 : lowQuality ? 2 : 3;
 let frameAvg = 1 / 60;
 let qualityTimer = 0;
 let fastTime = 0;
@@ -152,7 +165,6 @@ let fastTime = 0;
 function applyQuality(level: number) {
   quality = level;
   const q = QUALITY[level];
-  renderer.setPixelRatio(Math.min(devicePixelRatio, q.ratio));
   resize();
   const shadows = q.shadow > 0;
   if (sun.castShadow !== shadows) sun.castShadow = shadows;
@@ -256,6 +268,9 @@ content.add(trail.group);
 let trailT = 0;
 
 function resize() {
+  // resolución de la calidad actual, sin pasar del tope de píxeles (pantallas 2K/4K)
+  const budget = Math.sqrt(PIXEL_BUDGET / Math.max(1, innerWidth * innerHeight));
+  renderer.setPixelRatio(Math.max(0.75, Math.min(devicePixelRatio, QUALITY[quality].ratio, budget)));
   renderer.setSize(innerWidth, innerHeight, false);
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
@@ -940,6 +955,7 @@ function renderOptions() {
 
 $<HTMLSelectElement>('lang-select').addEventListener('change', (e) => {
   const lang = (e.target as HTMLSelectElement).value as Lang;
+  if (!LANGS.includes(lang)) return;
   save.lang = lang;
   store();
   setLang(lang);
@@ -1523,6 +1539,19 @@ function updateCamera(dt: number) {
 const clock = new THREE.Clock();
 const FIXED = 1 / 60;
 
+/** Limo sin mando (menú, victoria): también a paso fijo, antes daba un paso por imagen dibujada. */
+function stepIdle(dt: number) {
+  acc += dt;
+  let steps = 0;
+  while (acc >= FIXED && steps < 3) {
+    slime!.step(FIXED, 0, 0);
+    acc -= FIXED;
+    steps++;
+  }
+  if (steps === 3) acc = 0;
+  slime!.events.length = 0;
+}
+
 function frame(dt: number) {
   if (mode === 'play') {
     acc += dt;
@@ -1538,18 +1567,16 @@ function frame(dt: number) {
     winT += dt;
     world.opening = Math.min(1, winT / 0.6);
     world.update(dt, slime.switchCounts);
-    slime.step(FIXED, 0, 0);
-    slime.events.length = 0;
+    stepIdle(dt);
     if (winT > 1.5) finish(true);
   } else if (mode === 'menu' && world && slime) {
     for (const item of showcase) item.rotation.y = menuT * 0.7 + item.userData.phase;
     world.update(dt, slime.switchCounts);
-    slime.step(FIXED, 0, 0);
-    slime.events.length = 0;
+    stepIdle(dt);
   } else if (world) {
     world.update(dt * 0.3, slime?.switchCounts ?? { A: 0, B: 0 });
   }
-  const alpha = mode === 'play' ? Math.min(acc / FIXED, 1) : 1;
+  const alpha = mode === 'play' || mode === 'menu' || mode === 'winning' ? Math.min(acc / FIXED, 1) : 1;
   fx.update(dt);
   trail.update(mode === 'play' || mode === 'winning' ? dt : dt * 0.3);
   updateCamera(dt);
@@ -1564,7 +1591,12 @@ function frame(dt: number) {
   renderer.render(scene, camera);
 }
 
-renderer.setAnimationLoop(() => {
+const FRAME_MS = 1000 / 60;
+let lastFrame = -Infinity;
+renderer.setAnimationLoop((now: number) => {
+  // como mucho ~60 imágenes por segundo (el paso de física ya es de 1/60): 120/240 Hz → 60, 144 Hz → 48
+  if (now - lastFrame < FRAME_MS * 0.9) return;
+  lastFrame = now;
   const dt = Math.min(clock.getDelta(), 0.1);
   frame(dt);
   if (mode === 'play') watchQuality(dt);
@@ -1581,7 +1613,7 @@ if (import.meta.env.DEV) {
       breakdown: () => showBreakdown(CHAPTERS[0]),
       zoom: (k: number) => { camZoom = k; camPos.set(0, 0, 0); },
       hurt: () => { const g = slime?.groups[0]; if (g) slime!.hurts.push({ x: g.cx, z: g.cz }); },
-      quality: () => ({ quality, fps: Math.round(1 / frameAvg) }),
+      quality: () => ({ quality, fps: Math.round(1 / frameAvg), gpu: gpuName, software: softwareGpu, ratio: renderer.getPixelRatio() }),
       slime: () => slime,
       world: () => world,
       save: () => save,
@@ -1632,6 +1664,7 @@ grantCollectibles(); // progreso anterior a los coleccionables
 grantAchievements();
 applyLook();
 show('main');
+if (softwareGpu) toast(t('toast.noGpu'), 9000);
 $('load-hint').textContent = t('common.loading', { pct: 0 });
 Assets.load(Math.min(4, renderer.capabilities.getMaxAnisotropy()), (p) => { $('load-hint').textContent = t('common.loading', { pct: Math.round(p * 100) }); })
   .then((a) => {

@@ -67,6 +67,7 @@ export const de: Dict = {
     frozen: 'Gefroren {s}',
   },
   toast: {
+    noGpu: 'Chrome nutzt die Grafikkarte nicht: Aktiviere „Grafikbeschleunigung verwenden, falls verfügbar“ unter Einstellungen → System und starte Chrome neu',
     secret: 'Geheimer Schatz gefunden!',
     oil: 'Öl! Jetzt setzt dich Feuer in Brand',
     ignite: 'In Flammen! Verbrenne Pflanzen und Eis',

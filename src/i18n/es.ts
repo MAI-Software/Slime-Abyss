@@ -66,6 +66,7 @@ export const es = {
     frozen: 'Congelado {s}',
   },
   toast: {
+    noGpu: 'Chrome no está usando la tarjeta gráfica: activa «Usar aceleración gráfica cuando esté disponible» en Configuración → Sistema y reinicia Chrome',
     secret: '¡Tesoro secreto encontrado!',
     oil: '¡Aceite! Ahora el fuego te hará arder',
     ignite: '¡En llamas! Quema plantas y hielo',

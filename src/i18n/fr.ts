@@ -67,6 +67,7 @@ export const fr: Dict = {
     frozen: 'Gelé {s}',
   },
   toast: {
+    noGpu: 'Chrome n’utilise pas la carte graphique : active « Utiliser l’accélération graphique si disponible » dans Paramètres → Système et redémarre Chrome',
     secret: 'Trésor secret trouvé !',
     oil: "De l'huile ! Le feu va maintenant t'enflammer",
     ignite: 'En feu ! Brûle les plantes et la glace',
