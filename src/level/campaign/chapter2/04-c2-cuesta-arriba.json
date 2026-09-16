@@ -10,6 +10,10 @@
       "text": "Las vías también suben: son el único camino a lo alto"
     },
     {
+      "z": 11.5,
+      "text": "Tantas vueltas marean: espera a que se te pase antes de moverte"
+    },
+    {
       "z": 9.5,
       "text": "Desde lo alto solo se baja: busca la siguiente estación"
     }
@@ -29,7 +33,7 @@
     "...#0C000#...",
     "...###R###...",
     "......=......",
-    "......=......",
+    "......%......",
     "...###R###...",
     "...#00000#...",
     "...#0C0P0#...",

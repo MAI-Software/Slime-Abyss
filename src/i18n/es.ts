@@ -305,10 +305,10 @@ export const es = {
     },
     'c1-primeros-pasos': {
       name: 'Primeros pasos',
-      tips: ['Desliza al limo con el joystick hacia el tesoro', 'Bajar un desnivel no hace daño', 'Tramo sin muros: lo que asoma por el borde, se cae', 'Rodea los agujeros', 'Recoge todas las monedas para ganar una estrella'],
+      tips: ['Desliza al limo con el joystick hacia el tesoro', 'Bajar un desnivel no hace daño', 'Tramo sin muros: lo que asoma por el borde, se cae', 'Rodea los agujeros', 'Las rampas bajan suave', 'Recoge todas las monedas para ganar una estrella'],
     },
     'c1-filo-de-cuchilla': {
-      name: 'Filo de cuchilla',
+      name: 'Filo de sierra',
       tips: ['Las cuchillas parten al limo en dos', 'Las dos mitades se mueven a la vez', 'Al tocarse, los trozos vuelven a unirse; también puedes mantener el botón de apretar'],
     },
     'c1-pasillo-de-fuego': {
@@ -353,11 +353,11 @@ export const es = {
     },
     'c2-curvas': {
       name: 'Curvas',
-      tips: ['Las vías pueden girar: la bola las sigue sola', 'Recoge las monedas y busca la siguiente estación'],
+      tips: ['Las vías pueden girar: la bola las sigue sola', 'Recoge las monedas y busca la siguiente estación', '¡Un bucle! La bola da la vuelta sola'],
     },
     'c2-cuesta-arriba': {
       name: 'Cuesta arriba',
-      tips: ['Las vías también suben: son el único camino a lo alto', 'Desde lo alto solo se baja: busca la siguiente estación'],
+      tips: ['Las vías también suben: son el único camino a lo alto', 'Tantas vueltas marean: espera a que se te pase antes de moverte', 'Desde lo alto solo se baja: busca la siguiente estación'],
     },
     'c2-todos-a-bordo': {
       name: 'Todos a bordo',
@@ -443,9 +443,9 @@ export const es = {
       name: 'Pozos y rampas',
       tips: ['Baja por el pozo', 'Las rampas suben hasta el tesoro'],
     },
-    'c4-esquinas-afiladas': {
-      name: 'Esquinas afiladas',
-      tips: ['Sierras en las esquinas: ve por el centro', 'Aprieta al salir'],
+    'c4-remolino': {
+      name: 'Remolino',
+      tips: ['El remolino de arena te hace dar vueltas', 'Mareado cuesta moverse: espera a que se te pase'],
     },
     'c4-arena-quebrada': {
       name: 'Arena quebrada',
@@ -457,11 +457,11 @@ export const es = {
     },
     'c4-railes-y-pozos': {
       name: 'Raíles y pozos',
-      tips: ['La vía sube a lo alto', 'Y el pozo te baja hasta el tesoro'],
+      tips: ['La vía sube a lo alto dando vueltas', 'Y el pozo te baja hasta el tesoro'],
     },
     'c4-corazon-de-arena': {
       name: 'El corazón de arena',
-      tips: ['Última prueba del desierto', 'Sendero en diagonal hasta la roca rota', 'El pozo te deja junto al tesoro'],
+      tips: ['Última prueba del desierto', 'Espera a que se te pase el mareo antes del sendero', 'Sendero en diagonal hasta la roca rota', 'El pozo te deja junto al tesoro'],
     },
   } as Record<string, { name: string; tips: string[] }>,
 };

@@ -306,10 +306,10 @@ export const en: Dict = {
     },
     'c1-primeros-pasos': {
       name: 'First Steps',
-      tips: ['Slide your slime towards the treasure with the joystick', 'Dropping down a ledge does no harm', 'No walls here: whatever sticks out over the edge falls', 'Go around the holes', 'Collect every coin to earn a star'],
+      tips: ['Slide your slime towards the treasure with the joystick', 'Dropping down a ledge does no harm', 'No walls here: whatever sticks out over the edge falls', 'Go around the holes', 'Ramps take you down gently', 'Collect every coin to earn a star'],
     },
     'c1-filo-de-cuchilla': {
-      name: 'Blade Edge',
+      name: 'Saw’s Edge',
       tips: ['Blades split your slime in two', 'Both halves move at the same time', 'Pieces rejoin when they touch; you can also hold the squeeze button'],
     },
     'c1-pasillo-de-fuego': {
@@ -354,11 +354,11 @@ export const en: Dict = {
     },
     'c2-curvas': {
       name: 'Bends',
-      tips: ['Tracks can turn: the ball follows them on its own', 'Grab the coins and find the next station'],
+      tips: ['Tracks can turn: the ball follows them on its own', 'Grab the coins and find the next station', 'A loop! The ball goes round by itself'],
     },
     'c2-cuesta-arriba': {
       name: 'Uphill',
-      tips: ['Tracks can go up too: they are the only way to the top', 'From up high you can only go down: find the next station'],
+      tips: ['Tracks can go up too: they are the only way to the top', 'So many turns make you dizzy: wait until it passes before moving', 'From up high you can only go down: find the next station'],
     },
     'c2-todos-a-bordo': {
       name: 'All Aboard',
@@ -444,9 +444,9 @@ export const en: Dict = {
       name: 'Wells and Ramps',
       tips: ['Go down the well', 'The ramps lead up to the treasure'],
     },
-    'c4-esquinas-afiladas': {
-      name: 'Sharp Corners',
-      tips: ['Saws in the corners: go through the middle', 'Squeeze on the way out'],
+    'c4-remolino': {
+      name: 'Whirlpool',
+      tips: ['The sand whirlpool spins you around', 'Dizzy, it’s hard to move: wait until it passes'],
     },
     'c4-arena-quebrada': {
       name: 'Broken Sand',
@@ -458,11 +458,11 @@ export const en: Dict = {
     },
     'c4-railes-y-pozos': {
       name: 'Tracks and Wells',
-      tips: ['The track climbs up high', 'And the well drops you to the treasure'],
+      tips: ['The track spirals up high', 'And the well drops you to the treasure'],
     },
     'c4-corazon-de-arena': {
       name: 'The Heart of Sand',
-      tips: ['The final trial of the desert', 'A diagonal trail to the broken rock', 'The well drops you next to the treasure'],
+      tips: ['The final trial of the desert', 'Wait for the dizziness to pass before the trail', 'A diagonal trail to the broken rock', 'The well drops you next to the treasure'],
     },
   },
 };

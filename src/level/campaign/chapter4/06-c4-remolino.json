@@ -1,17 +1,17 @@
 {
   "format": 1,
-  "id": "c4-esquinas-afiladas",
-  "name": "Esquinas afiladas",
+  "id": "c4-remolino",
+  "name": "Remolino",
   "count": 80,
-  "keepPct": 0.7,
+  "keepPct": 0.8,
   "tips": [
     {
-      "z": 8,
-      "text": "Sierras en las esquinas: ve por el centro"
+      "z": 9,
+      "text": "El remolino de arena te hace dar vueltas"
     },
     {
-      "z": 3.5,
-      "text": "Aprieta al salir"
+      "z": 4.5,
+      "text": "Mareado cuesta moverse: espera a que se te pase"
     }
   ],
   "tiles": [
@@ -19,15 +19,17 @@
     "#00C0T0C00#",
     "#000000000#",
     "###00000###",
-    "..#V000A#..",
-    "..#00K00#..",
-    "..#A000V#..",
     "..#00000#..",
-    "..#0C0C0#..",
+    "..#00000#..",
+    "..#00E00#..",
+    "..#00C00#..",
+    "..#00000#..",
+    "..#C000C#..",
     "..#00P00#..",
     "..#######.."
   ],
   "heights": [
+    "00000000000",
     "00000000000",
     "00000000000",
     "00000000000",

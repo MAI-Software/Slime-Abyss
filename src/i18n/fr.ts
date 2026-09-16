@@ -306,10 +306,10 @@ export const fr: Dict = {
     },
     'c1-primeros-pasos': {
       name: 'Premiers pas',
-      tips: ['Fais glisser ton slime vers le trésor avec le joystick', 'Descendre une marche ne fait pas mal', 'Passage sans murs : ce qui dépasse du bord tombe', 'Contourne les trous', 'Ramasse toutes les pièces pour gagner une étoile'],
+      tips: ['Fais glisser ton slime vers le trésor avec le joystick', 'Descendre une marche ne fait pas mal', 'Passage sans murs : ce qui dépasse du bord tombe', 'Contourne les trous', 'Les rampes descendent en douceur', 'Ramasse toutes les pièces pour gagner une étoile'],
     },
     'c1-filo-de-cuchilla': {
-      name: 'Fil de la lame',
+      name: 'Fil de la scie',
       tips: ['Les lames coupent ton slime en deux', 'Les deux moitiés bougent en même temps', 'Les morceaux se rejoignent en se touchant ; tu peux aussi maintenir le bouton serrer'],
     },
     'c1-pasillo-de-fuego': {
@@ -354,11 +354,11 @@ export const fr: Dict = {
     },
     'c2-curvas': {
       name: 'Virages',
-      tips: ['Les voies peuvent tourner : la boule les suit toute seule', 'Ramasse les pièces et trouve la gare suivante'],
+      tips: ['Les voies peuvent tourner : la boule les suit toute seule', 'Ramasse les pièces et trouve la gare suivante', 'Une boucle ! La boule fait le tour toute seule'],
     },
     'c2-cuesta-arriba': {
       name: 'La montée',
-      tips: ['Les voies montent aussi : c’est le seul chemin vers le haut', 'D’en haut, on ne peut que descendre : trouve la gare suivante'],
+      tips: ['Les voies montent aussi : c’est le seul chemin vers le haut', 'Tant de tours donnent le tournis : attends que ça passe avant de bouger', 'D’en haut, on ne peut que descendre : trouve la gare suivante'],
     },
     'c2-todos-a-bordo': {
       name: 'Tous à bord',
@@ -444,9 +444,9 @@ export const fr: Dict = {
       name: 'Puits et rampes',
       tips: ['Descends par le puits', 'Les rampes montent jusqu’au trésor'],
     },
-    'c4-esquinas-afiladas': {
-      name: 'Coins tranchants',
-      tips: ['Des scies dans les coins : passe par le centre', 'Serre en sortant'],
+    'c4-remolino': {
+      name: 'Tourbillon',
+      tips: ['Le tourbillon de sable te fait tourner', 'Avec le tournis, c’est dur de bouger : attends que ça passe'],
     },
     'c4-arena-quebrada': {
       name: 'Sable brisé',
@@ -458,11 +458,11 @@ export const fr: Dict = {
     },
     'c4-railes-y-pozos': {
       name: 'Voies et puits',
-      tips: ['La voie monte tout en haut', 'Et le puits te dépose au trésor'],
+      tips: ['La voie monte tout en haut en tournant', 'Et le puits te dépose au trésor'],
     },
     'c4-corazon-de-arena': {
       name: 'Le cœur de sable',
-      tips: ['L’ultime épreuve du désert', 'Un sentier en diagonale jusqu’à la roche brisée', 'Le puits te dépose près du trésor'],
+      tips: ['L’ultime épreuve du désert', 'Attends que le tournis passe avant le sentier', 'Un sentier en diagonale jusqu’à la roche brisée', 'Le puits te dépose près du trésor'],
     },
   },
 };

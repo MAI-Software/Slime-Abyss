@@ -306,10 +306,10 @@ export const it: Dict = {
     },
     'c1-primeros-pasos': {
       name: 'Primi passi',
-      tips: ['Fai scivolare lo slime verso il tesoro con il joystick', 'Scendere un gradino non fa male', 'Tratto senza muri: ciò che sporge dal bordo cade', 'Aggira i buchi', 'Raccogli tutte le monete per guadagnare una stella'],
+      tips: ['Fai scivolare lo slime verso il tesoro con il joystick', 'Scendere un gradino non fa male', 'Tratto senza muri: ciò che sporge dal bordo cade', 'Aggira i buchi', 'Le rampe scendono dolcemente', 'Raccogli tutte le monete per guadagnare una stella'],
     },
     'c1-filo-de-cuchilla': {
-      name: 'Filo della lama',
+      name: 'Filo della sega',
       tips: ['Le lame dividono lo slime in due', 'Le due metà si muovono insieme', 'I pezzi si riuniscono toccandosi; puoi anche tenere premuto il pulsante stringere'],
     },
     'c1-pasillo-de-fuego': {
@@ -354,11 +354,11 @@ export const it: Dict = {
     },
     'c2-curvas': {
       name: 'Curve',
-      tips: ['I binari possono curvare: la palla li segue da sola', 'Raccogli le monete e cerca la stazione successiva'],
+      tips: ['I binari possono curvare: la palla li segue da sola', 'Raccogli le monete e cerca la stazione successiva', 'Un giro della morte! La palla gira da sola'],
     },
     'c2-cuesta-arriba': {
       name: 'In salita',
-      tips: ['I binari salgono anche: sono l’unica via verso l’alto', 'Dall’alto si può solo scendere: cerca la stazione successiva'],
+      tips: ['I binari salgono anche: sono l’unica via verso l’alto', 'Tanti giri fanno girare la testa: aspetta che passi prima di muoverti', 'Dall’alto si può solo scendere: cerca la stazione successiva'],
     },
     'c2-todos-a-bordo': {
       name: 'Tutti a bordo',
@@ -444,9 +444,9 @@ export const it: Dict = {
       name: 'Pozzi e rampe',
       tips: ['Scendi dal pozzo', 'Le rampe salgono fino al tesoro'],
     },
-    'c4-esquinas-afiladas': {
-      name: 'Angoli taglienti',
-      tips: ['Seghe negli angoli: passa dal centro', 'Stringi all’uscita'],
+    'c4-remolino': {
+      name: 'Vortice',
+      tips: ['Il vortice di sabbia ti fa girare', 'Con il capogiro è difficile muoversi: aspetta che passi'],
     },
     'c4-arena-quebrada': {
       name: 'Sabbia spezzata',
@@ -458,11 +458,11 @@ export const it: Dict = {
     },
     'c4-railes-y-pozos': {
       name: 'Binari e pozzi',
-      tips: ['Il binario sale in alto', 'E il pozzo ti porta giù fino al tesoro'],
+      tips: ['Il binario sale in alto girando', 'E il pozzo ti porta giù fino al tesoro'],
     },
     'c4-corazon-de-arena': {
       name: 'Il cuore di sabbia',
-      tips: ['L’ultima prova del deserto', 'Un sentiero in diagonale fino alla roccia rotta', 'Il pozzo ti lascia accanto al tesoro'],
+      tips: ['L’ultima prova del deserto', 'Aspetta che passi il capogiro prima del sentiero', 'Un sentiero in diagonale fino alla roccia rotta', 'Il pozzo ti lascia accanto al tesoro'],
     },
   },
 };

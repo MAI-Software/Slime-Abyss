@@ -306,10 +306,10 @@ export const de: Dict = {
     },
     'c1-primeros-pasos': {
       name: 'Erste Schritte',
-      tips: ['Lenk deinen Schleim mit dem Joystick zum Schatz', 'Eine Stufe hinunterzufallen schadet nicht', 'Ohne Wände: Was über den Rand ragt, fällt hinunter', 'Umgeh die Löcher', 'Sammle alle Münzen für einen Stern'],
+      tips: ['Lenk deinen Schleim mit dem Joystick zum Schatz', 'Eine Stufe hinunterzufallen schadet nicht', 'Ohne Wände: Was über den Rand ragt, fällt hinunter', 'Umgeh die Löcher', 'Rampen führen sanft hinab', 'Sammle alle Münzen für einen Stern'],
     },
     'c1-filo-de-cuchilla': {
-      name: 'Klingenkante',
+      name: 'Sägeschneide',
       tips: ['Klingen teilen deinen Schleim in zwei Hälften', 'Beide Hälften bewegen sich gleichzeitig', 'Stücke verbinden sich bei Berührung; du kannst auch die Zusammenziehen-Taste halten'],
     },
     'c1-pasillo-de-fuego': {
@@ -354,11 +354,11 @@ export const de: Dict = {
     },
     'c2-curvas': {
       name: 'Kurven',
-      tips: ['Schienen können abbiegen: Die Kugel folgt ihnen von allein', 'Sammle die Münzen und finde die nächste Station'],
+      tips: ['Schienen können abbiegen: Die Kugel folgt ihnen von allein', 'Sammle die Münzen und finde die nächste Station', 'Ein Looping! Die Kugel dreht sich von selbst'],
     },
     'c2-cuesta-arriba': {
       name: 'Bergauf',
-      tips: ['Schienen führen auch nach oben: Sie sind der einzige Weg hinauf', 'Von oben geht es nur nach unten: Finde die nächste Station'],
+      tips: ['Schienen führen auch nach oben: Sie sind der einzige Weg hinauf', 'So viele Drehungen machen schwindlig: warte, bis es vorbei ist', 'Von oben geht es nur nach unten: Finde die nächste Station'],
     },
     'c2-todos-a-bordo': {
       name: 'Alle einsteigen',
@@ -444,9 +444,9 @@ export const de: Dict = {
       name: 'Brunnen und Rampen',
       tips: ['Geh durch den Brunnen hinab', 'Die Rampen führen hinauf zum Schatz'],
     },
-    'c4-esquinas-afiladas': {
-      name: 'Scharfe Ecken',
-      tips: ['Sägen in den Ecken: geh durch die Mitte', 'Drück beim Hinausgehen'],
+    'c4-remolino': {
+      name: 'Strudel',
+      tips: ['Der Sandstrudel dreht dich im Kreis', 'Schwindlig kommt man schwer voran: warte, bis es vorbei ist'],
     },
     'c4-arena-quebrada': {
       name: 'Zerbrochener Sand',
@@ -458,11 +458,11 @@ export const de: Dict = {
     },
     'c4-railes-y-pozos': {
       name: 'Schienen und Brunnen',
-      tips: ['Die Schiene führt nach oben', 'Und der Brunnen bringt dich hinab zum Schatz'],
+      tips: ['Die Schiene windet sich nach oben', 'Und der Brunnen bringt dich hinab zum Schatz'],
     },
     'c4-corazon-de-arena': {
       name: 'Das Herz aus Sand',
-      tips: ['Die letzte Prüfung der Wüste', 'Ein diagonaler Pfad bis zum brüchigen Fels', 'Der Brunnen setzt dich neben dem Schatz ab'],
+      tips: ['Die letzte Prüfung der Wüste', 'Warte, bis der Schwindel vorbei ist, bevor du auf den Pfad gehst', 'Ein diagonaler Pfad bis zum brüchigen Fels', 'Der Brunnen setzt dich neben dem Schatz ab'],
     },
   },
 };
