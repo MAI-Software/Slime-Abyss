@@ -163,12 +163,14 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
 .main-actions > #btn-story { min-width: 0; width: 100%; }
 .main-actions .menu-grid { width: 100%; }
 .hint:empty { display: none; }
+/* el logo tiembla de vez en cuando (clase .wobble desde main.ts): una animación CSS infinita obligaba a Chrome
+   a recomponer la pantalla entera, canvas incluido, a la frecuencia del monitor (144-240 Hz) */
 .logo {
   margin: 0;
   line-height: 0;
-  animation: wobble 2.4s ease-in-out infinite;
   transform-origin: 30% 60%;
 }
+.logo.wobble { animation: wobble 2.4s ease-in-out 1; }
 /* título en SVG: relieve de tinta, degradado de limo, brillo y goterones (src/logo.ts) */
 .logo-art { display: block; width: clamp(220px, 52vmin, 430px); height: auto; overflow: visible; }
 .logo-art text { font-family: 'Fredoka', 'Nunito', sans-serif; font-weight: 700; }

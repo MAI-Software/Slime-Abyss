@@ -1498,6 +1498,8 @@ function updateCamera(dt: number) {
   }
   if (camPos.lengthSq() === 0) camPos.copy(camWant);
   else camPos.lerp(camWant, 1 - Math.exp(-dt * (mode === 'menu' ? 2 : 5)));
+  // la cámara del menú aún viaja (a los logros, a Mi limo...): movimiento fluido
+  if (camPos.distanceToSquared(camWant) > 4e-4) markBusy(250);
   camera.position.copy(camPos);
   const lead = mode === 'menu' ? 0 : 0.3;
   camera.lookAt(camTarget.x - Math.sin(camYaw) * lead, camTarget.y, camTarget.z - Math.cos(camYaw) * lead);
@@ -1591,11 +1593,24 @@ function frame(dt: number) {
   renderer.render(scene, camera);
 }
 
-const FRAME_MS = 1000 / 60;
+/*
+  Imágenes por segundo según lo que pasa (la gráfica descansa cuando no hace falta más):
+    jugando o ganando → 60 · menús quietos, pausa y resultados → 30 (15 con la ventana sin foco).
+  Interactuar o mover la cámara del menú vuelve a 60 un momento. Nunca más de ~60 (monitores de 120-240 Hz).
+*/
 let lastFrame = -Infinity;
+let busyUntil = 0;
+const markBusy = (ms = 1500) => { busyUntil = Math.max(busyUntil, performance.now() + ms); };
+for (const ev of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'] as const) {
+  addEventListener(ev, () => markBusy(), { passive: true, capture: true });
+}
+function targetFps(now: number) {
+  // jugando nunca se baja (en algunos navegadores hasFocus falla dentro de apps o marcos)
+  if (mode === 'play' || mode === 'winning' || now < busyUntil) return 60;
+  return document.hasFocus() ? 30 : 15;
+}
 renderer.setAnimationLoop((now: number) => {
-  // como mucho ~60 imágenes por segundo (el paso de física ya es de 1/60): 120/240 Hz → 60, 144 Hz → 48
-  if (now - lastFrame < FRAME_MS * 0.9) return;
+  if (now - lastFrame < (1000 / targetFps(now)) * 0.9) return;
   lastFrame = now;
   const dt = Math.min(clock.getDelta(), 0.1);
   frame(dt);
@@ -1614,6 +1629,7 @@ if (import.meta.env.DEV) {
       zoom: (k: number) => { camZoom = k; camPos.set(0, 0, 0); },
       hurt: () => { const g = slime?.groups[0]; if (g) slime!.hurts.push({ x: g.cx, z: g.cz }); },
       quality: () => ({ quality, fps: Math.round(1 / frameAvg), gpu: gpuName, software: softwareGpu, ratio: renderer.getPixelRatio() }),
+      three: () => ({ renderer, scene, camera, sun, content, slime, applyQuality }),
       slime: () => slime,
       world: () => world,
       save: () => save,
@@ -1664,6 +1680,20 @@ grantCollectibles(); // progreso anterior a los coleccionables
 grantAchievements();
 applyLook();
 show('main');
+// temblor del logo de vez en cuando, no continuo
+{
+  const logo = document.querySelector<HTMLElement>('.logo')!;
+  const wobble = () => {
+    if (!$('screen-main').hidden && document.hasFocus()) {
+      logo.classList.remove('wobble');
+      void logo.offsetWidth;
+      logo.classList.add('wobble');
+    }
+  };
+  logo.addEventListener('animationend', () => logo.classList.remove('wobble'));
+  wobble();
+  setInterval(wobble, 9000);
+}
 if (softwareGpu) toast(t('toast.noGpu'), 9000);
 $('load-hint').textContent = t('common.loading', { pct: 0 });
 Assets.load(Math.min(4, renderer.capabilities.getMaxAnisotropy()), (p) => { $('load-hint').textContent = t('common.loading', { pct: Math.round(p * 100) }); })
