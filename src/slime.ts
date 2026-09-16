@@ -106,10 +106,11 @@ export type SlimeEvent =
 export type SlimeState = 'normal' | 'oiled' | 'burning' | 'frozen';
 export const BURN_TIME = 12;
 export const FREEZE_TIME = 30;
-const WIND_ACC = 42;          // empuje del ventilador sobre el limo normal (lo deshace)
-const WIND_SCATTER = 38;
-const WIND_GRIP = 0.04;
-const WIND_SINK = 30;
+// Ventiladores: frenan y desvían al limo, pero ya no lo deshacen (la cohesión aguanta casi entera en la corriente).
+const WIND_ACC = 24;
+const WIND_SCATTER = 6;
+const WIND_GRIP = 0.6;
+const WIND_SINK = 20;
 const WIND_FROZEN_ACC = 9;    // congelado: la corriente lo transporta entero
 const HOVER_HEIGHT = 0.8;
 
