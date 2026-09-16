@@ -133,9 +133,13 @@
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span data-i18n="menu.profile"></span>
         </button>
-        <button class="small-btn with-icon wide" data-go="options">
+        <button class="small-btn with-icon" data-go="options">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
           <span data-i18n="menu.options"></span>
+        </button>
+        <button class="small-btn with-icon" data-go="creator">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9"/><path d="m18 15 4-4"/><path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/></svg>
+          <span data-i18n="menu.creator"></span>
         </button>
       </div>
       <p id="load-hint" class="hint"></p>
@@ -282,6 +286,50 @@
         <span data-i18n="options.practice"></span>
         <button id="btn-practice" class="small-btn" data-i18n="options.play"></button>
       </div>
+    </div>
+  </div>
+
+  <!-- ====================================================== CREADOR -->
+  <div id="screen-creator" class="screen" hidden>
+    <header class="screen-head">
+      <button class="icon-btn" data-back="main" data-i18n-aria="common.back"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+      <h2 data-i18n="creator.title"></h2>
+      <span id="creator-count" class="count-chip"></span>
+    </header>
+    <p class="panel-note creator-note" data-i18n="creator.hint"></p>
+    <div id="creator-slots" class="creator-slots"></div>
+  </div>
+
+  <div id="screen-editor" class="screen editor-screen" hidden>
+    <div class="editor-top">
+      <button id="btn-editor-back" class="icon-btn" data-i18n-aria="creator.saveExit"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+      <input id="editor-name" class="editor-name" maxlength="24" data-i18n-aria="creator.name" autocomplete="off" spellcheck="false" />
+      <button id="btn-editor-undo" class="icon-btn" data-i18n-aria="creator.undo"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg></button>
+      <button id="btn-editor-fit" class="icon-btn" data-i18n-aria="creator.fit"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+      <button id="btn-editor-test" class="small-btn with-icon editor-test"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg><span data-i18n="creator.test"></span></button>
+    </div>
+    <div class="editor-body">
+      <canvas id="editor-canvas" class="editor-canvas"></canvas>
+      <aside class="editor-side">
+        <div class="editor-tools" role="group" data-i18n-aria="creator.tools">
+          <button class="tool-btn" data-tool="paint" data-i18n-aria="creator.paint"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/></svg></button>
+          <button class="tool-btn" data-tool="raise" data-i18n-aria="creator.raise"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+          <button class="tool-btn" data-tool="lower" data-i18n-aria="creator.lower"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+          <button class="tool-btn" data-tool="pan" data-i18n-aria="creator.pan"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></button>
+        </div>
+        <p id="editor-brush" class="editor-brush"></p>
+        <div id="editor-palette" class="editor-palette" role="group" data-i18n-aria="creator.blocks"></div>
+        <div class="editor-size">
+          <span data-i18n="creator.width"></span>
+          <button class="tool-btn" data-size="w-" data-i18n-aria="creator.smaller"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+          <b id="editor-w"></b>
+          <button class="tool-btn" data-size="w+" data-i18n-aria="creator.bigger"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+          <span data-i18n="creator.depth"></span>
+          <button class="tool-btn" data-size="d-" data-i18n-aria="creator.smaller"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+          <b id="editor-d"></b>
+          <button class="tool-btn" data-size="d+" data-i18n-aria="creator.bigger"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+        </div>
+      </aside>
     </div>
   </div>
 

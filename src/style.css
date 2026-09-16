@@ -895,3 +895,40 @@ body[data-control="gyro"] .squeeze-btn { bottom: calc(26px + var(--safe-b)); rig
   .stat-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .stat { padding: 5px 8px; }
 }
+
+/* ---------- creador de niveles ---------- */
+.creator-note { margin: 0; width: min(900px, 100%); text-align: left; }
+.creator-slots { width: min(900px, 100%); display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.creator-slot { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--paper); color: var(--ink); border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); text-align: left; }
+.creator-slot .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.creator-slot .title { font-family: 'Fredoka', sans-serif; font-size: 18px; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.creator-slot .meta { font-size: 14px; font-weight: 700; color: var(--muted); }
+.creator-slot .slot-actions { display: flex; gap: 8px; margin-top: auto; }
+.creator-slot .slot-actions .small-btn { min-width: 0; flex: 1; padding: 6px 8px; font-size: 15px; min-height: 44px; }
+/* borrar arriba a la derecha: Jugar y Editar ocupan todo el ancho de abajo */
+.creator-slot .slot-actions .icon-btn { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border: 3px solid var(--ink); }
+.creator-slot .title { padding-right: 44px; }
+.creator-slot.empty { align-items: stretch; justify-content: center; background: rgba(253, 242, 248, 0.14); color: #fff; border-style: dashed; box-shadow: none; }
+.creator-slot.empty .small-btn { min-width: 0; }
+.creator-slot .danger-armed { background: #fecaca; }
+
+.editor-screen { padding: calc(8px + var(--safe-t)) calc(10px + var(--safe-r)) calc(8px + var(--safe-b)) calc(10px + var(--safe-l)); gap: 8px; justify-content: stretch; align-items: stretch; background: #140f2b; }
+.editor-top { display: flex; align-items: center; gap: 8px; }
+.editor-top .icon-btn { flex: none; width: 44px; height: 44px; }
+.editor-name { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border: 3px solid var(--ink); border-radius: 14px; background: var(--paper); color: var(--ink); font: 700 17px/1 'Fredoka', 'Nunito', sans-serif; }
+.editor-test { min-width: 0; min-height: 44px; padding: 6px 14px; background: var(--primary); color: #fff; }
+.editor-body { flex: 1; min-height: 0; display: flex; gap: 10px; }
+.editor-canvas { flex: 1; min-width: 0; min-height: 0; border-radius: 14px; touch-action: none; cursor: crosshair; background: #0c0920; }
+.editor-side { width: 250px; flex: none; display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; padding-right: 2px; }
+.editor-tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.tool-btn { width: 100%; min-width: 44px; height: 44px; display: grid; place-items: center; color: var(--ink); background: var(--paper); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); }
+.tool-btn[aria-pressed="true"] { background: var(--slime); color: #fff; }
+.tool-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.editor-brush { margin: 0; min-height: 20px; color: #fff; font-size: 14px; font-weight: 800; }
+.editor-palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 8px; }
+.palette-btn { width: 100%; aspect-ratio: 1; max-width: 100%; padding: 0; border: 3px solid var(--ink); border-radius: 10px; overflow: hidden; background: #140f2b; }
+.palette-btn canvas { display: block; width: 100%; height: 100%; }
+.palette-btn[aria-pressed="true"] { outline: 3px solid #fff; outline-offset: 2px; }
+.editor-size { display: grid; grid-template-columns: auto 44px 1fr 44px; align-items: center; gap: 6px 8px; color: #fff; font-weight: 800; font-size: 14px; }
+.editor-size b { text-align: center; font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) { .editor-side { width: 200px; } }

@@ -7,7 +7,8 @@ import '@fontsource/nunito/800.css';
 import './style.css';
 import { Assets } from './assets';
 import { CHAPTERS, MENU_STAGE, PRACTICE, UPCOMING } from './level/campaign';
-import { DEFAULT_KEEP_PCT, starsOf, type ChapterDef, type FloorResult, type LevelData } from './level/format';
+import { DEFAULT_KEEP_PCT, createEmptyLevel, starsOf, traceRails, type ChapterDef, type FloorResult, type LevelData } from './level/format';
+import { EDITOR_LIMITS, LevelEditor, PALETTE, TILE_IDS, drawCell, type EditorTool } from './editor';
 import { World } from './world';
 import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
 import { BODY_COLORS, CHEEKS, EYES, IRIS_COLORS, IRIS_EYES, LOOK_PRICES, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
@@ -22,7 +23,7 @@ import { LightPool, flicker } from './lights';
 import { decorateLogo, drawLogo } from './logo';
 import { setMuted, sfx, unlockAudio } from './audio';
 import { LANGS, applyDom, detectLang, getLang, levelName, levelTip, setLang, t, type Lang } from './i18n';
-import { loadSave, writeSave } from './save';
+import { CREATOR_SLOTS, loadSave, writeSave } from './save';
 import { COLLECTIBLES, type Collectible } from './collectibles';
 import { firebaseConfigured, signInWithGoogle, signOutPlayer, watchPlayer, type Player } from './firebase';
 
@@ -376,7 +377,7 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', 
 
 // ------------------------------------------------------------------ pantallas
 
-const SCREENS = ['main', 'story', 'chapter', 'collection', 'achievements', 'myslime', 'profile', 'options', 'pause', 'result', 'breakdown', 'reward'] as const;
+const SCREENS = ['main', 'story', 'chapter', 'collection', 'achievements', 'myslime', 'profile', 'options', 'pause', 'result', 'breakdown', 'reward', 'creator', 'editor'] as const;
 type ScreenId = (typeof SCREENS)[number];
 let currentScreen: ScreenId | null = 'main';
 
@@ -404,6 +405,7 @@ function openScreen(id: ScreenId) {
   if (id === 'achievements') renderAchievements();
   if (id === 'profile') renderProfile();
   if (id === 'options') renderOptions();
+  if (id === 'creator') renderCreator();
   show(id);
 }
 
@@ -1034,6 +1036,7 @@ function loadLevel(def: LevelData) {
 }
 
 function startFloor(ch: ChapterDef, k: number) {
+  testingCreation = null;
   startLevel(ch.floors[k], ch, k);
 }
 
@@ -1076,8 +1079,175 @@ function restart() {
 function leaveLevel() {
   const ch = chapter;
   toMenuScene();
-  if (ch) openChapter(ch);
+  if (testingCreation !== null) openEditor(testingCreation, false);
+  else if (ch) openChapter(ch);
   else openScreen('options');
+}
+
+// ------------------------------------------------------------------ creador de niveles
+
+/** Hueco del nivel que se está probando desde el editor (al salir se vuelve a él). */
+let testingCreation: number | null = null;
+let editingSlot = 0;
+let editor: LevelEditor | null = null;
+/** borrar pide una segunda pulsación */
+let deleteArmed: { slot: number; until: number } | null = null;
+
+const creationName = (l: LevelData, k: number) => l.name.trim() || t('creator.defaultName', { n: k + 1 });
+
+/** Lo que impide jugar un nivel del creador (vacío si se puede). */
+function creationProblems(level: LevelData): string[] {
+  const all = level.tiles.join('');
+  const count = (ch: string) => all.split(ch).length - 1;
+  const out: string[] = [];
+  if (count('P') !== 1) out.push(t('creator.needStart'));
+  if (count('T') !== 1) out.push(t('creator.needTreasure'));
+  if ((count('D') && !count('S')) || (count('d') && !count('s'))) out.push(t('creator.doorNoSwitch'));
+  if (traceRails(level).errors.length) out.push(t('creator.badRails'));
+  return out;
+}
+
+function renderCreator() {
+  const list = $('creator-slots');
+  list.innerHTML = '';
+  $('creator-count').textContent = `${save.creations.filter(Boolean).length}/${CREATOR_SLOTS}`;
+  save.creations.forEach((level, k) => {
+    const card = document.createElement('div');
+    card.className = `creator-slot${level ? '' : ' empty'}`;
+    if (!level) {
+      card.innerHTML = `<span class="eyebrow">${t('creator.slot', { n: k + 1 })}</span>`;
+      const b = document.createElement('button');
+      b.className = 'small-btn';
+      b.textContent = t('creator.new');
+      b.addEventListener('click', () => {
+        sfx.click();
+        const fresh = createEmptyLevel(11, 15, '');
+        fresh.id = `custom-${Date.now().toString(36)}-${k}`;
+        save.creations[k] = fresh;
+        store();
+        openEditor(k, true);
+      });
+      card.appendChild(b);
+      list.appendChild(card);
+      return;
+    }
+    const w = level.tiles[0].length, d = level.tiles.length;
+    card.innerHTML = `<span class="eyebrow">${t('creator.slot', { n: k + 1 })}</span><span class="title">${escapeHtml(creationName(level, k))}</span><span class="meta">${t('creator.size', { w, d })}</span>`;
+    const actions = document.createElement('div');
+    actions.className = 'slot-actions';
+    const play = document.createElement('button');
+    play.className = 'small-btn';
+    play.textContent = t('creator.play');
+    play.addEventListener('click', () => { sfx.click(); playCreation(k); });
+    const editBtn = document.createElement('button');
+    editBtn.className = 'small-btn';
+    editBtn.textContent = t('creator.edit');
+    editBtn.addEventListener('click', () => { sfx.click(); openEditor(k, true); });
+    const del = document.createElement('button');
+    del.className = `icon-btn${deleteArmed?.slot === k && performance.now() < deleteArmed.until ? ' danger-armed' : ''}`;
+    del.setAttribute('aria-label', t('creator.delete'));
+    del.innerHTML = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+    del.addEventListener('click', () => {
+      sfx.click();
+      if (!deleteArmed || deleteArmed.slot !== k || performance.now() > deleteArmed.until) {
+        deleteArmed = { slot: k, until: performance.now() + 4000 };
+        toast(t('creator.deleteConfirm', { name: creationName(level, k) }), 3800);
+        renderCreator();
+        return;
+      }
+      deleteArmed = null;
+      save.creations[k] = null;
+      store();
+      toast(t('creator.deleted'), 2000);
+      renderCreator();
+    });
+    actions.append(play, editBtn, del);
+    card.appendChild(actions);
+    list.appendChild(card);
+  });
+}
+
+function playCreation(k: number) {
+  const level = save.creations[k];
+  if (!level) return;
+  const problems = creationProblems(level);
+  if (problems.length) { toast(problems[0], 3200); return; }
+  testingCreation = k;
+  // copia: jugar no puede tocar lo guardado; sin capítulo, no cuenta para monedas, estrellas ni logros de piso
+  startLevel({ ...structuredClone(level), name: creationName(level, k) }, null, 0);
+}
+
+function openEditor(k: number, reload: boolean) {
+  const level = save.creations[k];
+  if (!level) { openScreen('creator'); return; }
+  editingSlot = k;
+  testingCreation = null;
+  show('editor');
+  if (!editor) setupEditor();
+  if (reload || editor!.level?.id !== level.id) editor!.load(level);
+  else editor!.fit();
+  ($('editor-name') as HTMLInputElement).value = level.name;
+  ($('editor-name') as HTMLInputElement).placeholder = t('creator.defaultName', { n: k + 1 });
+  syncEditorUi();
+}
+
+function saveEditor() {
+  if (!editor) return;
+  const name = ($('editor-name') as HTMLInputElement).value.slice(0, 24);
+  save.creations[editingSlot] = { ...structuredClone(editor.level), name };
+  store();
+}
+
+function syncEditorUi() {
+  if (!editor) return;
+  document.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === editor!.tool)));
+  document.querySelectorAll<HTMLButtonElement>('.palette-btn').forEach((b) => b.setAttribute('aria-pressed', String(editor!.tool === 'paint' && b.dataset.tile === editor!.brush)));
+  const toolText = editor.tool === 'paint' ? t(`creator.tiles.${TILE_IDS[editor.brush]}`) : t(`creator.${editor.tool}`);
+  $('editor-brush').textContent = toolText;
+  $('editor-w').textContent = String(editor.width);
+  $('editor-d').textContent = String(editor.depth);
+  ($('btn-editor-undo') as HTMLButtonElement).disabled = !editor.canUndo;
+}
+
+function setupEditor() {
+  editor = new LevelEditor($('editor-canvas') as HTMLCanvasElement);
+  editor.onChange = () => { saveEditor(); syncEditorUi(); };
+  const palette = $('editor-palette');
+  for (const ch of PALETTE) {
+    const b = document.createElement('button');
+    b.className = 'palette-btn';
+    b.dataset.tile = ch;
+    const label = t(`creator.tiles.${TILE_IDS[ch]}`);
+    b.setAttribute('aria-label', label);
+    b.title = label;
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d')!;
+    drawCell(g, ch, 0, 0, 0, 64, ch === '=' ? 8 | 2 : 0);
+    b.appendChild(c);
+    b.addEventListener('click', () => { sfx.click(); editor!.brush = ch; editor!.tool = 'paint'; syncEditorUi(); });
+    palette.appendChild(b);
+  }
+  document.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((b) => b.addEventListener('click', () => {
+    sfx.click();
+    editor!.tool = b.dataset.tool as EditorTool;
+    syncEditorUi();
+  }));
+  document.querySelectorAll<HTMLButtonElement>('[data-size]').forEach((b) => b.addEventListener('click', () => {
+    sfx.click();
+    const [axis, sign] = [b.dataset.size![0], b.dataset.size![1] === '+' ? 1 : -1];
+    editor!.resize(axis === 'w' ? sign : 0, axis === 'd' ? sign : 0);
+  }));
+  $('btn-editor-undo').addEventListener('click', () => { sfx.click(); editor!.undo(); syncEditorUi(); });
+  $('btn-editor-fit').addEventListener('click', () => { sfx.click(); editor!.fit(); });
+  $('editor-name').addEventListener('input', () => saveEditor());
+  $('btn-editor-back').addEventListener('click', () => { sfx.click(); saveEditor(); openScreen('creator'); });
+  $('btn-editor-test').addEventListener('click', () => { sfx.click(); saveEditor(); playCreation(editingSlot); });
+  addEventListener('keydown', (e) => {
+    if (currentScreen !== 'editor' || document.activeElement === $('editor-name')) return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); editor!.undo(); syncEditorUi(); }
+  });
+  void EDITOR_LIMITS;
 }
 
 /** Fondo del menú: el limo en su habitación, rodeado de sus coleccionables. */
@@ -1210,7 +1380,7 @@ function finish(win: boolean) {
   const next = $<HTMLButtonElement>('btn-next');
   next.hidden = !win || !chapter;
   next.textContent = last ? t('result.toBreakdown') : t('result.next');
-  $('btn-result-back').textContent = chapter ? t('result.chapter') : t('result.exit');
+  $('btn-result-back').textContent = testingCreation !== null ? t('creator.backToEditor') : chapter ? t('result.chapter') : t('result.exit');
   if (!win) { sfx.lose(); buzz(200); }
   show('result');
 }
@@ -1616,7 +1786,10 @@ for (const ev of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'
 }
 function targetFps(now: number) {
   // jugando nunca se baja (en algunos navegadores hasFocus falla dentro de apps o marcos)
-  if (mode === 'play' || mode === 'winning' || now < busyUntil) return softwareGpu ? 30 : 60;
+  if (mode === 'play' || mode === 'winning') return softwareGpu ? 30 : 60;
+  // el editor tapa el 3D entero: basta con muy pocas imágenes
+  if (currentScreen === 'editor') return 5;
+  if (now < busyUntil) return softwareGpu ? 30 : 60;
   if (softwareGpu) return document.hasFocus() ? 20 : 10;
   return document.hasFocus() ? 30 : 15;
 }

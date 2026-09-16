@@ -1,6 +1,7 @@
 import type { ControlMode } from './input';
 import type { Lang } from './i18n';
 import { DEFAULT_LOOK, sanitizeLook, type SlimeLook } from './look';
+import type { LevelData } from './level/format';
 import { EMPTY_STATS, type PlayStats } from './achievements';
 
 /** Mejor resultado de un piso. */
@@ -37,6 +38,19 @@ export interface Save {
   coinsSpent: number;
   /** opciones de Mi limo compradas ("apartado:opción") */
   bought: string[];
+  /** niveles del creador: 10 huecos (null = libre) */
+  creations: (LevelData | null)[];
+}
+
+export const CREATOR_SLOTS = 10;
+
+/** Nivel guardado con la forma mínima correcta (el resto lo comprueba el creador antes de jugar). */
+function sanitizeCreation(raw: unknown): LevelData | null {
+  const l = raw as Partial<LevelData> | null;
+  if (!l || !Array.isArray(l.tiles) || !Array.isArray(l.heights) || !l.tiles.length || l.tiles.length !== l.heights.length) return null;
+  const w = String(l.tiles[0]).length;
+  if (!w || l.tiles.some((r, j) => typeof r !== 'string' || r.length !== w || String(l.heights![j]).length !== w)) return null;
+  return { format: 1, id: String(l.id ?? `custom-${Date.now().toString(36)}`), name: String(l.name ?? '').slice(0, 24), count: 80, tiles: l.tiles, heights: l.heights };
 }
 
 const KEY = 'slime-abyss-save';
@@ -44,7 +58,7 @@ const KEY = 'slime-abyss-save';
 const OLD_KEY = 'blub-save';
 
 export function loadSave(): Save {
-  const fresh: Save = { v: 3, control: 'joystick', sound: true, vibration: true, lang: null, floors: {}, collectibles: [], look: { ...DEFAULT_LOOK }, achievements: [], stats: { ...EMPTY_STATS }, joyFixed: false, cameraHint: false, coinsSpent: 0, bought: [] };
+  const fresh: Save = { v: 3, control: 'joystick', sound: true, vibration: true, lang: null, floors: {}, collectibles: [], look: { ...DEFAULT_LOOK }, achievements: [], stats: { ...EMPTY_STATS }, joyFixed: false, cameraHint: false, coinsSpent: 0, bought: [], creations: Array(CREATOR_SLOTS).fill(null) };
   try {
     const s = JSON.parse(localStorage.getItem(KEY) ?? localStorage.getItem(OLD_KEY) ?? '');
     if (s?.v === 3) {
@@ -53,7 +67,8 @@ export function loadSave(): Save {
       const achievements = Array.isArray(rest.achievements) ? rest.achievements : [];
       const bought = Array.isArray(rest.bought) ? rest.bought : [];
       const coinsSpent = Number.isFinite(rest.coinsSpent) ? rest.coinsSpent : 0;
-      return { ...fresh, ...rest, achievements, bought, coinsSpent, stats: { ...EMPTY_STATS, ...rest.stats }, look: sanitizeLook(rest.look, achievements, bought) };
+      const creations = Array.from({ length: CREATOR_SLOTS }, (_, k) => sanitizeCreation(Array.isArray(rest.creations) ? rest.creations[k] : null));
+      return { ...fresh, ...rest, achievements, bought, coinsSpent, creations, stats: { ...EMPTY_STATS, ...rest.stats }, look: sanitizeLook(rest.look, achievements, bought) };
     }
     // migración desde v2: se conserva el progreso
     if (s?.v === 2) return { ...fresh, control: s.control ?? 'joystick', sound: s.sound ?? true, floors: s.floors ?? {} };
