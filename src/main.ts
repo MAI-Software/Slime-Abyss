@@ -157,7 +157,8 @@ const gpuName = (() => {
   const info = gl.getExtension('WEBGL_debug_renderer_info');
   return info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : '';
 })();
-const softwareGpu = /swiftshader|llvmpipe|software|basic render/i.test(gpuName);
+// WARP (Microsoft Basic Render Driver) es lo que usa Chrome en Windows con la aceleración desactivada
+const softwareGpu = /swiftshader|llvmpipe|software|basic render|warp/i.test(gpuName);
 let quality = softwareGpu ? 0 : lowQuality ? 2 : 3;
 let frameAvg = 1 / 60;
 let qualityTimer = 0;
@@ -270,8 +271,10 @@ let trailT = 0;
 
 function resize() {
   // resolución de la calidad actual, sin pasar del tope de píxeles (pantallas 2K/4K)
-  const budget = Math.sqrt(PIXEL_BUDGET / Math.max(1, innerWidth * innerHeight));
-  renderer.setPixelRatio(Math.max(0.75, Math.min(devicePixelRatio, QUALITY[quality].ratio, budget)));
+  // sin tarjeta gráfica el procesador pinta cada píxel: resolución muy baja para que siga siendo jugable
+  const pixels = softwareGpu ? 960 * 540 : PIXEL_BUDGET;
+  const budget = Math.sqrt(pixels / Math.max(1, innerWidth * innerHeight));
+  renderer.setPixelRatio(Math.max(softwareGpu ? 0.3 : 0.75, Math.min(devicePixelRatio, QUALITY[quality].ratio, budget)));
   renderer.setSize(innerWidth, innerHeight, false);
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
@@ -1607,7 +1610,8 @@ for (const ev of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'
 }
 function targetFps(now: number) {
   // jugando nunca se baja (en algunos navegadores hasFocus falla dentro de apps o marcos)
-  if (mode === 'play' || mode === 'winning' || now < busyUntil) return 60;
+  if (mode === 'play' || mode === 'winning' || now < busyUntil) return softwareGpu ? 30 : 60;
+  if (softwareGpu) return document.hasFocus() ? 20 : 10;
   return document.hasFocus() ? 30 : 15;
 }
 renderer.setAnimationLoop((now: number) => {
@@ -1695,7 +1699,9 @@ show('main');
   wobble();
   setInterval(wobble, 9000);
 }
-if (softwareGpu) toast(t('toast.noGpu'), 9000);
+// aviso fijo en el menú (un aviso de unos segundos pasaba desapercibido)
+$('gpu-warning').hidden = !softwareGpu;
+$('btn-gpu-warning').addEventListener('click', () => { sfx.click(); $('gpu-warning').hidden = true; });
 $('load-hint').textContent = t('common.loading', { pct: 0 });
 Assets.load(Math.min(4, renderer.capabilities.getMaxAnisotropy()), (p) => { $('load-hint').textContent = t('common.loading', { pct: Math.round(p * 100) }); })
   .then((a) => {

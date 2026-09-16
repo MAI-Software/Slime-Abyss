@@ -9,6 +9,7 @@ export const fr: Dict = {
     loadError: 'Impossible de charger le jeu. Relance-le.',
     comingSoon: 'Bientôt',
     rotate: 'Tourne ton téléphone pour jouer en paysage',
+    close: 'Fermer',
     fullscreen: 'Plein écran',
     iosFullscreen: 'Sur iPhone : touche Partager puis « Sur l’écran d’accueil » pour jouer en plein écran',
     stars: '{n} étoiles sur 3',
