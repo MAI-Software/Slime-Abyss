@@ -11,14 +11,14 @@ import { DEFAULT_KEEP_PCT, createEmptyLevel, starsOf, traceRails, type ChapterDe
 import { EDITOR_LIMITS, LevelEditor, PALETTE, TILE_IDS, drawCell, type EditorTool } from './editor';
 import { World } from './world';
 import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
-import { BODY_COLORS, CHEEKS, EYES, IRIS_COLORS, IRIS_EYES, LOOK_PRICES, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
+import { BODY_COLORS, CHEEKS, EYES, GEMS_PER_KIND, IRIS_COLORS, IRIS_EYES, LOOK_GEM_PRICES, LOOK_PRICES, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
 import { ACHIEVEMENTS, drawPatchIcon, type Achievement, type AchievementContext } from './achievements';
 import { Thumbs } from './thumbs';
 import { Input, fullscreenActive, fullscreenSupported, installedApp, type ControlMode } from './input';
 import { Fx } from './fx';
 import { LiquidGauge } from './hud-liquid';
 import { AbyssAmbience } from './abyss';
-import { BIOMES, type Biome } from './biomes';
+import { BIOMES, GEM_KINDS, GEM_OF_BIOME, type Biome, type GemKind } from './biomes';
 import { Trail } from './trail';
 import { LightPool, flicker } from './lights';
 import { decorateLogo, drawLogo } from './logo';
@@ -364,7 +364,22 @@ const STAR_PATH = 'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0
 const starSvg = (on: boolean) => `<svg class="star${on ? ' on' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR_PATH}"/></svg>`;
 const starsHtml = (n: number) => `<span class="star-row" role="img" aria-label="${t('common.stars', { n })}">${[0, 1, 2].map((k) => starSvg(k < n)).join('')}</span>`;
 const coinSvg = '<svg class="ico coin-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/></svg>';
-const gemSvg = '<svg class="gem-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20"/></svg>';
+/** Icono de gema del color de su tipo (rubí, zafiro, esmeralda o diamante). */
+const gemIco = (kind: GemKind) => `<svg class="gem-ico gem-${kind}" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20"/></svg>`;
+const gemOfChapter = (ch: ChapterDef) => GEM_OF_BIOME[ch.biome ?? 'stone'];
+/** Gemas secretas encontradas de un tipo y cuántas hay: cada tres capítulos esconden las suyas. */
+function gemsOf(kind: GemKind) {
+  let n = 0, total = 0;
+  for (const ch of CHAPTERS) {
+    if (gemOfChapter(ch) !== kind) continue;
+    for (const f of ch.floors) {
+      if (gemsTotalOf(f) === 0) continue;
+      total++;
+      if (floorSave(f.id)?.secret) n++;
+    }
+  }
+  return { n, total };
+}
 const lockSvg = '<svg class="ico lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
 const checkSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 const crossSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
@@ -488,7 +503,7 @@ function openChapter(ch: ChapterDef) {
     const b = document.createElement('button');
     b.className = `card floor-card${unlocked ? '' : ' locked'}`;
     b.disabled = !unlocked;
-    const gem = gemsTotalOf(f) > 0 && s?.secret ? ` ${gemSvg}` : '';
+    const gem = gemsTotalOf(f) > 0 && s?.secret ? ` ${gemIco(gemOfChapter(ch))}` : '';
     b.innerHTML = `${unlocked ? '' : lockSvg}<span class="num">${t('story.floor', { n: k + 1 })}</span><span class="name">${unlocked ? levelName(f) : t('common.locked')}</span>
       ${unlocked ? `<span class="meta">${starsHtml(floorStars(f.id))}<span class="m">${coinSvg} ${s?.bestCoins ?? 0}/${coinsTotalOf(f)}${gem}</span></span>` : ''}`;
     b.addEventListener('click', () => { sfx.click(); startFloor(ch, k); });
@@ -803,8 +818,10 @@ let buyArmed: { id: string; until: number } | null = null;
 function renderMySlime() {
   const root = $('myslime-options');
   root.innerHTML = '';
-  $('myslime-wallet').innerHTML = `${coinSvg}<span>${coinWallet()}</span>`;
-  $('myslime-wallet').setAttribute('aria-label', t('myslime.wallet', { n: coinWallet() }));
+  const gemCounts = GEM_KINDS.map((kind) => ({ kind, ...gemsOf(kind) })).filter((g) => g.total > 0);
+  $('myslime-wallet').innerHTML = `${coinSvg}<span>${coinWallet()}</span>${gemCounts.map((g) => `${gemIco(g.kind)}<span>${g.n}</span>`).join('')}`;
+  $('myslime-wallet').setAttribute('aria-label', [t('myslime.wallet', { n: coinWallet() }),
+    ...gemCounts.map((g) => t('myslime.gemWallet', { gem: t(`myslime.gems.${g.kind}`), n: g.n, total: g.total }))].join(' · '));
   for (const { key, options } of LOOK_OPTIONS) {
     if (key === 'iris' && !IRIS_EYES.has(save.look.eyes)) continue;
     const label = document.createElement('p');
@@ -821,14 +838,19 @@ function renderMySlime() {
       const open = lookOptionUnlocked(key, opt, save.achievements, save.bought);
       const needed = ACHIEVEMENTS.find((a) => a.id === LOOK_UNLOCKS[id]);
       const price = LOOK_PRICES[id];
+      const gemPrice = LOOK_GEM_PRICES[id];
+      const gemName = gemPrice ? t(`myslime.gems.${gemPrice}`) : '';
       b.setAttribute('aria-pressed', String(save.look[key] === opt));
       if (key === 'color' || key === 'iris') {
         const body = key === 'color' ? BODY_COLORS[opt as keyof typeof BODY_COLORS] : { color: IRIS_COLORS[opt as keyof typeof IRIS_COLORS] };
-        b.className = `swatch${'metalness' in body ? ' metallic' : ''}${'opacity' in body ? ' water' : ''}${open ? '' : ' locked'}${price && !open ? ' priced' : ''}`;
+        b.className = `swatch${'metalness' in body ? ' metallic' : ''}${'opacity' in body ? ' water' : ''}${'sparkle' in body ? ' gem-swatch' : ''}${open ? '' : ' locked'}${(price || gemPrice) && !open ? ' priced' : ''}`;
         b.style.setProperty('--swatch', hexCss(body.color));
-        b.setAttribute('aria-label', open ? name : price ? `${name} · ${price}` : `${name} · ${t('achievements.locked')}`);
+        b.setAttribute('aria-label', open ? name : price ? `${name} · ${price}` : gemPrice ? `${name} · ${GEMS_PER_KIND} ${gemName}` : `${name} · ${t('achievements.locked')}`);
         b.title = name;
-        if (!open) b.innerHTML = price ? `${lockSvg}<span class="price-tag">${coinSvg}${price}</span>` : lockSvg;
+        if (!open) {
+          b.innerHTML = price ? `${lockSvg}<span class="price-tag">${coinSvg}${price}</span>`
+            : gemPrice ? `${lockSvg}<span class="price-tag">${gemIco(gemPrice)}${GEMS_PER_KIND}</span>` : lockSvg;
+        }
       } else {
         // se elige viendo el rasgo, no leyendo su nombre ('none': solo el círculo del color)
         b.className = `chip thumb-chip${open ? '' : ' locked'}`;
@@ -838,6 +860,26 @@ function renderMySlime() {
         b.innerHTML = `${src ? `<img src="${src}" alt="" draggable="false">` : escapeHtml(name)}${open ? '' : lockSvg}`;
       }
       b.addEventListener('click', () => {
+        if (!open && gemPrice) {
+          // se consigue con todas las gemas secretas de su tipo (no se gastan)
+          sfx.click();
+          const have = gemsOf(gemPrice).n;
+          if (have < GEMS_PER_KIND) { toast(t('myslime.needGems', { name, price: GEMS_PER_KIND, gem: gemName, n: GEMS_PER_KIND - have }), 3000); return; }
+          if (!buyArmed || buyArmed.id !== id || performance.now() > buyArmed.until) {
+            buyArmed = { id, until: performance.now() + 4000 };
+            toast(t('myslime.buyGemsConfirm', { name, price: GEMS_PER_KIND, gem: gemName }), 3800);
+            return;
+          }
+          buyArmed = null;
+          save.bought.push(id);
+          (save.look as unknown as Record<string, string>)[key] = opt;
+          store();
+          applyLook();
+          sfx.gem();
+          pendingRewards.push({ kind: 'look', id });
+          afterReward(() => show('myslime'));
+          return;
+        }
         if (!open && price) {
           sfx.click();
           const wallet = coinWallet();
@@ -1495,7 +1537,7 @@ function showBreakdown(ch: ChapterDef) {
     time += s?.bestTime ?? 0;
     const hasGem = gemsTotalOf(f) > 0;
     if (hasGem) { secretsTotal++; if (s?.secret) secrets++; }
-    const secretCell = hasGem ? (s?.secret ? gemSvg : '—') : '';
+    const secretCell = hasGem ? (s?.secret ? gemIco(gemOfChapter(ch)) : '—') : '';
     return `<tr style="animation-delay:${120 + k * 70}ms"><th>${k + 1}. ${levelName(f)}</th><td>${starsHtml(st)}</td>
       <td>${s?.bestCoins ?? 0}/${total}</td><td>${secretCell}</td><td>${s ? Math.round(s.bestPct * 100) + '%' : '—'}</td><td>${s ? fmtTime(s.bestTime) : '—'}</td></tr>`;
   }).join('');
@@ -1563,6 +1605,8 @@ function tick(dt: number) {
       case 'pad': sfx.pad(); fx.splat(e.x, e.y, e.z); save.stats.jumps++; break;
       case 'board': sfx.board(); fx.splat(e.x, e.y, e.z); buzz(20); save.stats.rides++; break;
       case 'unboard': sfx.unboard(); fx.splat(e.x, e.y, e.z); buzz(15); break;
+      case 'load': sfx.board(); fx.splat(e.x, e.y, e.z); buzz(20); break;
+      case 'shoot': sfx.cannon(); fx.splat(e.x, e.y, e.z); buzz(45); break;
       case 'land': sfx.land(); buzz(10); break;
       case 'merge': sfx.merge(); if (input.squeeze) save.stats.squeezes++; break;
       case 'dizzy': sfx.dizzy(); buzz([20, 40, 20]); break;

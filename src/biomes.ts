@@ -42,6 +42,17 @@ export const BIOMES: Record<Biome, BiomeLook> = {
   },
 };
 
+/** Gema secreta de cada tema: una por piso secreto, 9 por cada tres capítulos. */
+export type GemKind = 'ruby' | 'sapphire' | 'emerald' | 'diamond';
+export const GEM_KINDS: readonly GemKind[] = ['ruby', 'sapphire', 'emerald', 'diamond'];
+export const GEM_OF_BIOME: Record<Biome, GemKind> = { stone: 'ruby', desert: 'sapphire', frost: 'emerald', tech: 'diamond' };
+export const GEM_LOOK: Record<GemKind, { color: number; emissive: number; glow: number }> = {
+  ruby: { color: 0xe3113f, emissive: 0x6a0018, glow: 0xff2d5f },
+  sapphire: { color: 0x1d5cff, emissive: 0x08206e, glow: 0x3d8bff },
+  emerald: { color: 0x0fc476, emissive: 0x03482b, glow: 0x2fe59c },
+  diamond: { color: 0xf1f8ff, emissive: 0x4c6d90, glow: 0xd6f2ff },
+};
+
 /** Tema de un capítulo por su posición (0 = capítulo 1). */
 export function biomeOfChapter(index: number): Biome {
   return index < 3 ? 'stone' : index < 6 ? 'desert' : index < 9 ? 'frost' : 'tech';

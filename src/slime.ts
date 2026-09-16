@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BlobMesh } from './blob-mesh';
-import { HOLE_DROP, HOLE_R, SPINNER_W, World, type RailPath } from './world';
+import { HOLE_DROP, HOLE_R, SPINNER_W, World, type Cannon, type RailPath } from './world';
 import type { Channel } from './level/format';
 import { Assets } from './assets';
 import { createContactShadowTexture } from './materials';
@@ -91,7 +91,7 @@ const XRAY_LIFT = 0.2;
 export type SlimeEvent =
   | { type: 'fall' | 'evaporate' | 'pad' | 'pop'; x: number; y: number; z: number }
   | { type: 'coin' | 'gem' | 'oil'; x: number; y: number; z: number }
-  | { type: 'board' | 'unboard' | 'land' | 'merge' | 'dizzy'; x: number; y: number; z: number }
+  | { type: 'board' | 'unboard' | 'land' | 'merge' | 'dizzy' | 'load' | 'shoot'; x: number; y: number; z: number }
   | { type: 'cut'; x: number; z: number }
   | { type: 'burn'; x: number; z: number; what: 'plant' | 'iceblock' }
   | { type: 'state'; from: SlimeState; to: SlimeState };
@@ -122,6 +122,16 @@ const SPINNER_GRIP = 7;       // lo que arrastra el disco al limo que lo pisa
 const HOLE_PULL = 30;
 const HOLE_FUNNEL = 12;    // congelado: la corriente lo transporta entero
 const HOVER_HEIGHT = 0.8;
+// Cañón: el trozo que se mete dentro espera un momento y sale en parábola hacia la diana; al tocar suelo frena en seco.
+// Congelado vuela de una pieza y cae justo en la diana; líquido vuela suelto y se esparce (más cuanto más lejos)
+const CANNON_LOAD = 0.9;
+const CANNON_SPREAD = 0.018;    // dispersión del disparo líquido (m/s por metro² de distancia)
+const CANNON_LAND_DAMP = 0.15;
+const CANNON_REARM = 0.6;
+const CANNON_TAG_BASE = 3_000_000_000;
+// Plataforma de salto: el trozo lanzado se estira en la dirección en que va (solo el dibujo, la física no cambia)
+const PAD_STRETCH = 0.035;
+const PAD_STRETCH_MAX = 0.5;
 
 const STATE_LOOK: Record<SlimeState, { color: number; emissive: number; rim: [number, number, number]; wobble: number }> = {
   normal: { color: 0x2f8cff, emissive: 0x0b3a8c, rim: [0.45, 0.8, 1.0], wobble: 1 },
@@ -168,6 +178,19 @@ export class Slime {
   /** agujero por el que está cayendo cada limito (-1 ninguno) */
   private holeIn: Int32Array;
   private rides: { path: RailPath; s: number; speed: number; angle: number; radius: number; ids: number[]; off: Float32Array; seg: number; dirX: number; dirZ: number }[] = [];
+  /** trozos cargados en un cañón (van con riding = 1 hasta el disparo) */
+  private shots: { cannon: Cannon; t: number; ids: number[]; off: Float32Array }[] = [];
+  /** cañones recién disparados: no vuelven a cargar hasta que se aparta lo que salía */
+  private cannonLock = new Map<number, number>();
+  /** limitos en vuelo tras un cañonazo (balística pura hasta tocar suelo) */
+  private flying: Uint8Array;
+  /** limitos lanzados por una plataforma de salto y cuánto se les nota el estirón (0..1) */
+  private padFly: Uint8Array;
+  private padS: Float32Array;
+  // centro y velocidad de cada trozo para el estirón (se rellenan al dibujar)
+  private sgx: Float32Array; private sgy: Float32Array; private sgz: Float32Array; private sgc: Float32Array;
+  private svx: Float32Array; private svy: Float32Array; private svz: Float32Array;
+  private tmpMuzzle = new THREE.Vector3();
   /** vueltas acumuladas y tiempo de mareo restante */
   private turns = 0;
   dizzyT = 0;
@@ -184,7 +207,7 @@ export class Slime {
   /** trozos de al menos 3 limitos en el último agrupado (si bajan, se han unido) */
   private bigGroups = 1;
   private time = 0;
-  private readonly uniforms = { uTime: { value: 0 }, uWobble: { value: 1 }, uRim: { value: new THREE.Vector3(0.45, 0.8, 1.0) }, uOpacity: { value: 1 } };
+  private readonly uniforms = { uTime: { value: 0 }, uWobble: { value: 1 }, uRim: { value: new THREE.Vector3(0.45, 0.8, 1.0) }, uOpacity: { value: 1 }, uSparkle: { value: 0 }, uRainbow: { value: 0 } };
   state: SlimeState = 'normal';
   stateT = 0;
   private material!: THREE.MeshStandardMaterial;
@@ -225,6 +248,11 @@ export class Slime {
     this.dying = f(); this.air = f(); this.noAttr = f();
     this.alive = new Uint8Array(n).fill(1);
     this.riding = new Uint8Array(n);
+    this.flying = new Uint8Array(n);
+    this.padFly = new Uint8Array(n);
+    this.padS = f();
+    this.sgx = f(); this.sgy = f(); this.sgz = f(); this.sgc = f();
+    this.svx = f(); this.svy = f(); this.svz = f();
     this.holeIn = new Int32Array(n).fill(-1);
     this.groundCell = new Int32Array(n).fill(-1);
     this.tag = new Uint32Array(n);
@@ -272,6 +300,8 @@ export class Slime {
       shader.uniforms.uWobble = this.uniforms.uWobble;
       shader.uniforms.uRim = this.uniforms.uRim;
       shader.uniforms.uOpacity = this.uniforms.uOpacity;
+      shader.uniforms.uSparkle = this.uniforms.uSparkle;
+      shader.uniforms.uRainbow = this.uniforms.uRainbow;
       // superficie viva: ondula suavemente y brilla en el borde como una gelatina
       shader.vertexShader = `uniform float uTime;\nuniform float uWobble;\nvarying vec3 vSlimePos;\n${shader.vertexShader}`.replace(
         '#include <begin_vertex>',
@@ -281,7 +311,7 @@ export class Slime {
         transformed += objectNormal * wob * 0.022 * uWobble;
         vSlimePos = wp;`,
       );
-      shader.fragmentShader = `uniform float uTime;\nuniform vec3 uRim;\nuniform float uOpacity;\nvarying vec3 vSlimePos;
+      shader.fragmentShader = `uniform float uTime;\nuniform vec3 uRim;\nuniform float uOpacity;\nuniform float uSparkle;\nuniform float uRainbow;\nvarying vec3 vSlimePos;
         float slimeHash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
         float slimeNoise(vec3 p) {
           vec3 i = floor(p), f = fract(p);
@@ -299,6 +329,13 @@ export class Slime {
         vec3 slimeH = normalize(normalize(vec3(-0.45, 0.75, 0.5)) + normalize(vViewPosition));
         float slimeSpec = max(dot(normalize(normal), slimeH), 0.0);
         outgoingLight += vec3(1.0) * (pow(slimeSpec, 90.0) * 0.75 + pow(slimeSpec, 10.0) * 0.07);
+        // colores de gema: destellos diminutos que titilan al moverse (el diamante, con reflejos de colores)
+        if (uSparkle > 0.001) {
+          float glint = pow(slimeNoise(vSlimePos * 26.0 + vec3(uTime * 1.7, uTime * 0.9, -uTime * 1.3)), 14.0);
+          vec3 glintCol = mix(vec3(1.0), 0.6 + 0.4 * cos(6.2831 * (vSlimePos.x * 1.7 + vSlimePos.z * 1.3 + uTime * 0.3 + vec3(0.0, 0.33, 0.67))), uRainbow);
+          outgoingLight += glintCol * glint * 8.0 * uSparkle;
+          outgoingLight += diffuseColor.rgb * pow(slimeSpec, 24.0) * 0.5 * uSparkle;
+        }
         // agua: se ve a través del centro; el borde (fresnel) y los brillos quedan casi opacos
         diffuseColor.a = mix(uOpacity, max(uOpacity, 0.8), pow(slimeRim, 2.0)) + pow(slimeSpec, 90.0) * 0.6;
         #include <opaque_fragment>`,
@@ -631,11 +668,16 @@ export class Slime {
 
     for (let i = 0; i < n; i++) {
       if (!alive[i] || this.riding[i]) continue;
+      // disparado por un cañón: balística pura (sin rozamiento, tope de velocidad ni mando) hasta tocar suelo;
+      // el tope de aceleración solo recorta las fuerzas entre limitos, nunca la gravedad
+      const fly = this.flying[i] === 1;
+      if (fly) ay[i] += GRAVITY;
       const a2 = ax[i] * ax[i] + ay[i] * ay[i] + az[i] * az[i];
       if (a2 > MAX_A * MAX_A) {
         const k = MAX_A / Math.sqrt(a2);
         ax[i] *= k; ay[i] *= k; az[i] *= k;
       }
+      if (fly) ay[i] -= GRAVITY;
       const onGround = this.air[i] < 0.08;
       if (onGround) { ax[i] += slopeX; az[i] += slopeZ; }
       if (frozen) {
@@ -646,11 +688,12 @@ export class Slime {
           vz[i] += (gvz[g] - vz[i]) * 0.3;
         }
       }
-      vx[i] = (vx[i] + ax[i] * h) * dragK;
-      vy[i] = (vy[i] + ay[i] * h) * dragK;
-      vz[i] = (vz[i] + az[i] * h) * dragK;
+      const drag = fly ? 1 : dragK;
+      vx[i] = (vx[i] + ax[i] * h) * drag;
+      vy[i] = (vy[i] + ay[i] * h) * drag;
+      vz[i] = (vz[i] + az[i] * h) * drag;
       const sp2 = vx[i] * vx[i] + vy[i] * vy[i] + vz[i] * vz[i];
-      if (sp2 > MAX_V * MAX_V) {
+      if (!fly && sp2 > MAX_V * MAX_V) {
         const k = MAX_V / Math.sqrt(sp2);
         vx[i] *= k; vy[i] *= k; vz[i] *= k;
       }
@@ -663,7 +706,9 @@ export class Slime {
       const g = gid[i];
       const avx = g >= 0 && gcnt[g] > 0 ? gvx[g] : vx[i];
       const avz = g >= 0 && gcnt[g] > 0 ? gvz[g] : vz[i];
-      if (this.air[i] > 0.08) {
+      if (fly) {
+        // la parábola la marca el cañón
+      } else if (this.air[i] > 0.08) {
         vx[i] += (tvx - vx[i]) * kAir;
         vz[i] += (tvz - vz[i]) * kAir;
       } else if (cell >= 0 && cells[cell].kind === 'ice') {
@@ -687,6 +732,116 @@ export class Slime {
       }
     }
     if (this.rides.length) this.updateRides(h);
+    if (this.shots.length) this.updateShots(h);
+  }
+
+  // ---------------------------------------------------------------- cañones
+
+  /** Bola compacta con los limitos del trozo: los de dentro en el centro y los de fuera en la superficie. */
+  private packBall(g: Group) {
+    const ids = g.ids
+      .filter((i) => this.dying[i] === 0)
+      .map((i) => [i, (this.px[i] - g.cx) ** 2 + (this.py[i] - g.cy) ** 2 + (this.pz[i] - g.cz) ** 2] as const)
+      .sort((a, b) => a[1] - b[1])
+      .map(([i]) => i);
+    const m = ids.length;
+    const radius = Math.max(0.2, 0.62 * REST * Math.cbrt(Math.max(1, m)));
+    const off = new Float32Array(m * 3);
+    // dirección (espiral de Fibonacci) y radio (otra secuencia) independientes: esfera llena y redonda
+    for (let k = 0; k < m; k++) {
+      const r = radius * Math.cbrt((k * 0.7548776662 + 0.5) % 1) * 0.92 + radius * 0.08;
+      const y = 1 - (2 * (k + 0.5)) / m;
+      const ring = Math.sqrt(Math.max(0, 1 - y * y));
+      const phi = k * 2.39996;
+      off[k * 3] = Math.cos(phi) * ring * r;
+      off[k * 3 + 1] = y * r;
+      off[k * 3 + 2] = Math.sin(phi) * ring * r;
+    }
+    return { ids, off, radius };
+  }
+
+  /** El trozo parado dentro de un cañón se carga en él. */
+  private updateCannons(dt: number) {
+    const w = this.world;
+    if (!w.cannons.length) return;
+    for (const [idx, t] of this.cannonLock) {
+      if (t + dt > CANNON_REARM) this.cannonLock.delete(idx);
+      else this.cannonLock.set(idx, t + dt);
+    }
+    for (const g of this.groups) {
+      const c = w.cannonAt(Math.floor(g.cx), Math.floor(g.cz));
+      if (!c || !Number.isFinite(c.tx) || c.loaded || this.cannonLock.has(c.idx)) continue;
+      if (Math.hypot(g.cx - c.x, g.cz - c.z) > 0.42) continue;
+      let grounded = 0, busy = false;
+      for (const i of g.ids) {
+        if (this.riding[i] || this.flying[i]) busy = true;
+        if (this.air[i] < 0.1) grounded++;
+      }
+      if (busy || grounded < Math.min(3, g.ids.length)) continue;
+      const { ids, off } = this.packBall(g);
+      if (!ids.length) continue;
+      for (const i of ids) {
+        this.riding[i] = 1;
+        this.padFly[i] = 0;
+        this.groundCell[i] = -1;
+      }
+      c.loaded = true;
+      this.shots.push({ cannon: c, t: 0, ids, off });
+      this.events.push({ type: 'load', x: c.x, y: c.top, z: c.z });
+    }
+  }
+
+  /** Limo cargado: asoma apretado por la boca y, pasado un momento, sale disparado hacia la diana. */
+  private updateShots(h: number) {
+    const w = this.world;
+    for (let s = this.shots.length - 1; s >= 0; s--) {
+      const shot = this.shots[s];
+      const c = shot.cannon;
+      shot.t += h;
+      const m = w.cannonMuzzle(c, this.tmpMuzzle);
+      shot.ids.forEach((i, k) => {
+        this.px[i] = m.x + shot.off[k * 3] * 0.75;
+        this.py[i] = m.y + shot.off[k * 3 + 1] * 0.75;
+        this.pz[i] = m.z + shot.off[k * 3 + 2] * 0.75;
+        this.vx[i] = 0; this.vy[i] = 0; this.vz[i] = 0;
+        this.air[i] = 0;
+      });
+      if (shot.t < CANNON_LOAD) continue;
+      // parábola exacta del centro de la boca al de la diana (la bola cae con la base a ras de suelo)
+      let lowest = 0;
+      for (let k = 0; k < shot.ids.length; k++) lowest = Math.min(lowest, shot.off[k * 3 + 1]);
+      const dx = c.tx - m.x, dz = c.tz - m.z, dy = c.ty + R - lowest - m.y;
+      const dist = Math.hypot(dx, dz);
+      const T = Math.min(1.6, Math.max(0.7, 0.55 + dist * 0.1));
+      const vx0 = dx / T, vz0 = dz / T, vy0 = (dy + 0.5 * GRAVITY * T * T) / T;
+      const spread = this.state === 'frozen' ? 0 : CANNON_SPREAD * dist * dist;
+      shot.ids.forEach((i, k) => {
+        // sale a su separación normal: apretado, la repulsión lo haría estallar en el aire
+        this.px[i] = m.x + shot.off[k * 3];
+        this.py[i] = m.y + shot.off[k * 3 + 1];
+        this.pz[i] = m.z + shot.off[k * 3 + 2];
+        this.riding[i] = 0;
+        this.flying[i] = 1;
+        this.air[i] = 1;
+        let sx = 0, sy = 0, sz = 0;
+        if (spread > 0) {
+          // cada gota por su lado: sin cohesión durante el vuelo
+          sx = (Math.random() + Math.random() - 1) * spread;
+          sy = (Math.random() + Math.random() - 1) * spread * 0.4;
+          sz = (Math.random() + Math.random() - 1) * spread;
+          this.tag[i] = CANNON_TAG_BASE + i;
+          this.noAttr[i] = this.time + T * 0.85;
+        }
+        this.vx[i] = vx0 + sx;
+        this.vy[i] = vy0 + sy;
+        this.vz[i] = vz0 + sz;
+      });
+      c.loaded = false;
+      c.kick = 1;
+      this.cannonLock.set(c.idx, 0);
+      this.shots.splice(s, 1);
+      this.events.push({ type: 'shoot', x: m.x, y: m.y, z: m.z });
+    }
   }
 
   // ---------------------------------------------------------------- raíles
@@ -722,26 +877,8 @@ export class Slime {
   }
 
   private board(g: Group, path: RailPath) {
-    // los de dentro del trozo ocupan el centro de la bola y los de fuera la superficie
-    const ids = g.ids
-      .filter((i) => this.dying[i] === 0)
-      .map((i) => [i, (this.px[i] - g.cx) ** 2 + (this.py[i] - g.cy) ** 2 + (this.pz[i] - g.cz) ** 2] as const)
-      .sort((a, b) => a[1] - b[1])
-      .map(([i]) => i);
-    const m = ids.length;
-    if (!m) return;
-    const radius = Math.max(0.2, 0.62 * REST * Math.cbrt(m));
-    const off = new Float32Array(m * 3);
-    // dirección (espiral de Fibonacci) y radio (otra secuencia) independientes: esfera llena y redonda
-    for (let k = 0; k < m; k++) {
-      const r = radius * Math.cbrt((k * 0.7548776662 + 0.5) % 1) * 0.92 + radius * 0.08;
-      const y = 1 - (2 * (k + 0.5)) / m;
-      const ring = Math.sqrt(Math.max(0, 1 - y * y));
-      const phi = k * 2.39996;
-      off[k * 3] = Math.cos(phi) * ring * r;
-      off[k * 3 + 1] = y * r;
-      off[k * 3 + 2] = Math.sin(phi) * ring * r;
-    }
+    const { ids, off, radius } = this.packBall(g);
+    if (!ids.length) return;
     for (const i of ids) {
       this.riding[i] = 1;
       this.tag[i] = 0;
@@ -888,6 +1025,15 @@ export class Slime {
           }
         }
         if (ny > 0.5) {
+          if (this.vy[i] <= 0.5) {
+            if (this.flying[i]) {
+              // aterriza del cañonazo: frena en seco donde cae
+              this.flying[i] = 0;
+              this.vx[i] *= CANNON_LAND_DAMP;
+              this.vz[i] *= CANNON_LAND_DAMP;
+            }
+            this.padFly[i] = 0;
+          }
           if (this.air[i] > 0.35) this.landHits++;
           this.air[i] = 0;
           this.groundCell[i] = cj * w.w + ci;
@@ -1037,7 +1183,8 @@ export class Slime {
     pad.fill(0);
     let anyPad = false;
     for (let i = 0; i < this.n; i++) {
-      if (!this.alive[i] || this.riding[i]) continue;
+      if (!this.alive[i]) { this.flying[i] = 0; this.padFly[i] = 0; continue; }
+      if (this.riding[i]) continue;
       const x = this.px[i], y = this.py[i], z = this.pz[i];
 
       if (this.dying[i] > 0) {
@@ -1174,6 +1321,7 @@ export class Slime {
     if (this.fireKills.length) this.spreadFire();
     if (this.fireHits.length) this.recoilFromFire();
     this.updateStations(dt);
+    this.updateCannons(dt);
     if (!anyPad) return;
     // sale lanzado todo el trozo que está sobre la plataforma o pegado a ella;
     // solo las gotas que van lejos (cola larga, restos sueltos) se quedan
@@ -1185,6 +1333,7 @@ export class Slime {
         if (dx * dx + dz * dz > reach2 || this.py[i] > this.padTop[k] + 1.6 || this.vy[i] >= PAD_V * 0.5) continue;
         this.vy[i] = PAD_V;
         this.air[i] = 1;
+        this.padFly[i] = 1;
       }
     }
   }
@@ -1295,6 +1444,34 @@ export class Slime {
 
   // ---------------------------------------------------------------- render
 
+  /** Centro dibujado y velocidad media de los trozos con estirón de salto. Devuelve si hay alguno. */
+  private stretchCenters(dt: number, alpha: number): boolean {
+    const { n, alive, padFly, padS, gid, sgx, sgy, sgz, sgc, svx, svy, svz } = this;
+    const k = 1 - Math.exp(-dt * 10);
+    let any = false;
+    for (let i = 0; i < n; i++) {
+      padS[i] += ((alive[i] && padFly[i] ? 1 : 0) - padS[i]) * k;
+      if (padS[i] > 0.01) any = true;
+    }
+    if (!any) return false;
+    const G = this.groups.length;
+    for (const a of [sgx, sgy, sgz, sgc, svx, svy, svz]) a.fill(0, 0, G);
+    for (let i = 0; i < n; i++) {
+      const g = gid[i];
+      if (!alive[i] || g < 0) continue;
+      sgx[g] += this.ox[i] + (this.px[i] - this.ox[i]) * alpha;
+      sgy[g] += this.oy[i] + (this.py[i] - this.oy[i]) * alpha;
+      sgz[g] += this.oz[i] + (this.pz[i] - this.oz[i]) * alpha;
+      svx[g] += this.vx[i]; svy[g] += this.vy[i]; svz[g] += this.vz[i];
+      sgc[g]++;
+    }
+    for (let g = 0; g < G; g++) {
+      const c = sgc[g] || 1;
+      sgx[g] /= c; sgy[g] /= c; sgz[g] /= c; svx[g] /= c; svy[g] /= c; svz[g] /= c;
+    }
+    return true;
+  }
+
   /** alpha: fracción entre el paso de física anterior y el actual (0..1). */
   render(dt: number, alpha: number, lookX: number, lookZ: number) {
     this.uniforms.uTime.value += dt;
@@ -1312,6 +1489,9 @@ export class Slime {
     this.uniforms.uRim.value.lerp(this.tmpRim.set(...look.rim), k);
     const opacity = this.state === 'normal' ? this.body.opacity ?? 1 : 1;
     this.uniforms.uOpacity.value += (opacity - this.uniforms.uOpacity.value) * k;
+    const sparkle = this.state === 'normal' ? this.body.sparkle ?? 0 : 0;
+    this.uniforms.uSparkle.value += (sparkle - this.uniforms.uSparkle.value) * k;
+    this.uniforms.uRainbow.value = this.body.rainbow ? 1 : 0;
     this.xrayColor.value.setRGB(...look.rim);
     for (const f of this.faces) f.frozen = this.state === 'frozen';
     const { n, px, py, pz, ox, oy, oz, alive, dying } = this;
@@ -1321,11 +1501,28 @@ export class Slime {
     if (lead) {
       this.blob.begin(lead.cx, lead.cy, lead.cz);
       const spheres = this.spheres;
+      const stretch = this.stretchCenters(dt, alpha);
+      const { padS, gid, sgx, sgy, sgz, svx, svy, svz } = this;
       for (let i = 0; i < n; i++) {
         if (!alive[i]) continue;
-        const x = ox[i] + (px[i] - ox[i]) * alpha;
-        const y = oy[i] + (py[i] - oy[i]) * alpha;
-        const z = oz[i] + (pz[i] - oz[i]) * alpha;
+        let x = ox[i] + (px[i] - ox[i]) * alpha;
+        let y = oy[i] + (py[i] - oy[i]) * alpha;
+        let z = oz[i] + (pz[i] - oz[i]) * alpha;
+        const g = gid[i];
+        if (stretch && padS[i] > 0.01 && g >= 0) {
+          // estirón por la velocidad: más largo en la dirección de avance y más fino de través (mismo volumen)
+          const sp = Math.hypot(svx[g], svy[g], svz[g]);
+          if (sp > 0.5) {
+            const a = Math.min(PAD_STRETCH_MAX, sp * PAD_STRETCH) * padS[i];
+            const ux = svx[g] / sp, uy = svy[g] / sp, uz = svz[g] / sp;
+            const dx = x - sgx[g], dy = y - sgy[g], dz = z - sgz[g];
+            const along = dx * ux + dy * uy + dz * uz;
+            const side = 1 / Math.sqrt(1 + a);
+            x = sgx[g] + (dx - ux * along) * side + ux * along * (1 + a);
+            y = sgy[g] + (dy - uy * along) * side + uy * along * (1 + a);
+            z = sgz[g] + (dz - uz * along) * side + uz * along * (1 + a);
+          }
+        }
         const life = dying[i] > 0 ? Math.max(1 - dying[i] / DIE_TIME, 0.05) : 1;
         if (this.blob.addBall(x, y, z, life)) continue;
         // fuera de la rejilla (muy lejos o cayendo): esfera simple

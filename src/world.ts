@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { Assets } from './assets';
-import type { Biome } from './biomes';
+import { GEM_LOOK, GEM_OF_BIOME, type Biome } from './biomes';
 import { FireFx, type FireCell, type FireState } from './fire';
 import { AO_E, AO_N, AO_NE, AO_NW, AO_S, AO_SE, AO_SW, AO_W, createBlockMaterial, createGlowMaterial } from './materials';
-import { HEIGHT_STEP, RAMP_RISE, TILE_BY_CHAR, TILES, traceRails, type CellKind, type Channel, type LevelData } from './level/format';
+import { cannonTargets, HEIGHT_STEP, RAMP_RISE, TILE_BY_CHAR, TILES, traceRails, type CellKind, type Channel, type LevelData } from './level/format';
 
 export type { CellKind };
 
@@ -29,6 +29,48 @@ export const HOLE_R = 0.36;
 export const HOLE_DROP = 0.9;
 
 export type PickupType = 'coin' | 'gem' | 'oil';
+
+/** Cañón: su casilla, la diana a la que apunta (NaN si no tiene) y el tubo dibujado. */
+export interface Cannon {
+  idx: number;
+  x: number; z: number; top: number;
+  tx: number; ty: number; tz: number;
+  pivot: THREE.Object3D;
+  barrel: THREE.Object3D;
+  /** retroceso tras disparar (1 → 0) */
+  kick: number;
+  /** con limo dentro: tiembla hasta disparar */
+  loaded: boolean;
+}
+/** inclinación del tubo del cañón hacia su diana */
+const CANNON_TILT = 0.55;
+const CANNON_LEN = 0.62;
+
+/** Talla brillante: mesa octogonal, corona, cintura y pabellón en punta; las caras planas destellan al girar. */
+function gemGeometry(): THREE.BufferGeometry {
+  const N = 8, R = 0.3, TABLE = 0.17, CROWN = 0.13, PAVILION = 0.34;
+  const p: number[] = [];
+  const at = (r: number, y: number, a: number) => [Math.cos((a / N) * Math.PI * 2) * r, y, Math.sin((a / N) * Math.PI * 2) * r];
+  const tri = (a: number[], b: number[], c: number[]) => {
+    // hacia fuera: la figura es convexa y contiene el origen
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const out = nx * (a[0] + b[0] + c[0]) + ny * (a[1] + b[1] + c[1]) + nz * (a[2] + b[2] + c[2]) >= 0;
+    p.push(...a, ...(out ? b : c), ...(out ? c : b));
+  };
+  const top = [0, CROWN, 0], tip = [0, -PAVILION, 0];
+  for (let k = 0; k < N; k++) {
+    const g0 = at(R, 0, k), g1 = at(R, 0, k + 1), t0 = at(TABLE, CROWN, k + 0.5), t1 = at(TABLE, CROWN, k + 1.5);
+    tri(top, t0, t1);
+    tri(g0, g1, t0);
+    tri(t0, g1, t1);
+    tri(g0, g1, tip);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+  geo.computeVertexNormals();
+  return geo;
+}
 
 /** Plantas o bloque de hielo que el limo en llamas elimina. */
 interface Breakable {
@@ -185,6 +227,9 @@ export class World {
   private saws: THREE.Object3D[] = [];
   private shapes: { i: number; j: number; c: Cell }[] = [];
   private holeExits = new Map<number, THREE.Vector3>();
+  readonly cannons: Cannon[] = [];
+  private cannonByIdx = new Map<number, Cannon>();
+  private gemMesh: { geo: THREE.BufferGeometry; mat: THREE.MeshStandardMaterial } | null = null;
   private floorTopMat: THREE.Material | null = null;
   /** plataformas giratorias: centro, altura y disco dibujado */
   readonly spinners: { x: number; z: number; y: number; disc: THREE.Object3D }[] = [];
@@ -505,6 +550,14 @@ export class World {
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.addSpinner(x, c.base, z);
             break;
+          case 'cannon':
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            this.addCannon(i, j, c);
+            break;
+          case 'target':
+            // como las salidas de agujero, no se marca: se ve adónde apunta el cañón
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            break;
           case 'crack': {
             // losa de roca más gris con grietas oscuras encima
             solids.push({ i, j, top: c.base, color: (i + j) % 2 === 0 ? cCrackA : cCrackB, set: 'crack' });
@@ -590,6 +643,7 @@ export class World {
     this.buildShapes();
     this.linkHoles();
     this.buildRails();
+    this.linkCannons();
     this.buildWind();
     this.buildMist();
 
@@ -762,6 +816,78 @@ export class World {
   }
 
   /** Plataforma giratoria: disco con gajos de colores y borde, un poco por encima del suelo. */
+  private addCannon(i: number, j: number, c: Cell) {
+    const iron = new THREE.MeshStandardMaterial({ color: 0x323a4a, metalness: 0.55, roughness: 0.42, side: THREE.DoubleSide });
+    const bronze = new THREE.MeshStandardMaterial({ color: 0xc28b2c, metalness: 0.7, roughness: 0.3 });
+    const base = new THREE.CylinderGeometry(0.44, 0.5, 0.3, 24).translate(0, 0.15, 0);
+    const tube = new THREE.CylinderGeometry(0.3, 0.37, CANNON_LEN, 24, 1, true).translate(0, CANNON_LEN / 2, 0);
+    const ring = new THREE.TorusGeometry(0.31, 0.055, 8, 24).rotateX(Math.PI / 2).translate(0, CANNON_LEN, 0);
+    const band = new THREE.TorusGeometry(0.46, 0.04, 8, 24).rotateX(Math.PI / 2).translate(0, 0.3, 0);
+    this.ownedMaterials.push(iron, bronze);
+    this.ownedGeometries.push(base, tube, ring, band);
+    const x = i + 0.5, z = j + 0.5;
+    const root = new THREE.Group();
+    root.position.set(x, c.base, z);
+    root.add(new THREE.Mesh(base, iron), new THREE.Mesh(band, bronze));
+    const pivot = new THREE.Group();
+    pivot.position.y = 0.3;
+    const tilt = new THREE.Group();
+    tilt.rotation.x = CANNON_TILT;
+    const barrel = new THREE.Group();
+    barrel.add(new THREE.Mesh(tube, iron), new THREE.Mesh(ring, bronze));
+    tilt.add(barrel);
+    pivot.add(tilt);
+    root.add(pivot);
+    root.traverse((o) => { o.castShadow = true; o.receiveShadow = true; });
+    this.group.add(root);
+    const cannon: Cannon = { idx: j * this.w + i, x, z, top: c.top, tx: NaN, ty: NaN, tz: NaN, pivot, barrel, kick: 0, loaded: false };
+    this.cannons.push(cannon);
+    this.cannonByIdx.set(cannon.idx, cannon);
+  }
+
+  private linkCannons() {
+    if (!this.cannons.length) return;
+    const targets = cannonTargets(this.def);
+    for (const c of this.cannons) {
+      const t = targets.get(c.idx) ?? -1;
+      if (t < 0) continue;
+      c.tx = (t % this.w) + 0.5;
+      c.tz = Math.floor(t / this.w) + 0.5;
+      c.ty = this.cells[t].top;
+      c.pivot.rotation.y = Math.atan2(c.tx - c.x, c.tz - c.z);
+    }
+  }
+
+  /** Cañón de la casilla, si lo hay. */
+  cannonAt(i: number, j: number): Cannon | null {
+    if (i < 0 || j < 0 || i >= this.w || j >= this.d) return null;
+    return this.cannonByIdx.get(j * this.w + i) ?? null;
+  }
+
+  /** Boca del tubo: donde asoma el limo cargado y desde donde sale disparado. */
+  cannonMuzzle(c: Cannon, out: THREE.Vector3): THREE.Vector3 {
+    const yaw = c.pivot.rotation.y;
+    const reach = Math.sin(CANNON_TILT) * CANNON_LEN;
+    return out.set(c.x + Math.sin(yaw) * reach, c.top + Math.cos(CANNON_TILT) * CANNON_LEN, c.z + Math.cos(yaw) * reach);
+  }
+
+  private addGem(x: number, y: number, z: number): THREE.Object3D {
+    if (!this.gemMesh) {
+      const look = GEM_LOOK[GEM_OF_BIOME[this.biome]];
+      const geo = gemGeometry();
+      const mat = new THREE.MeshStandardMaterial({ color: look.color, emissive: look.emissive, emissiveIntensity: 0.8, metalness: 0.25, roughness: 0.06, flatShading: true });
+      mat.envMapIntensity = 2.2;
+      this.ownedGeometries.push(geo);
+      this.ownedMaterials.push(mat);
+      this.gemMesh = { geo, mat };
+    }
+    const m = new THREE.Mesh(this.gemMesh.geo, this.gemMesh.mat);
+    m.castShadow = true;
+    m.position.set(x, y, z);
+    this.group.add(m);
+    return m;
+  }
+
   private addSpinner(x: number, y: number, z: number) {
     const c = document.createElement('canvas');
     c.width = c.height = 256;
@@ -801,15 +927,15 @@ export class World {
   private addCoin(i: number, j: number, base: number, kind: string) {
     const type: PickupType = kind === 'gem' ? 'gem' : kind === 'oil' ? 'oil' : 'coin';
     const gem = type === 'gem';
-    const y = base + (type === 'coin' ? 0.55 : type === 'oil' ? 0.12 : 0.35);
-    const obj = this.add(type === 'coin' ? 'coin' : type === 'gem' ? 'gem' : 'oil_bottle', i + 0.5, y, j + 0.5);
+    const y = base + (type === 'coin' ? 0.55 : type === 'oil' ? 0.12 : 0.62);
+    const obj = gem ? this.addGem(i + 0.5, y, j + 0.5) : this.add(type === 'coin' ? 'coin' : 'oil_bottle', i + 0.5, y, j + 0.5);
     if (gem || type === 'oil') {
-      // halo violeta bajo la gema para que se vea desde lejos
-      const glowMat = createGlowMaterial(gem ? 0xa855f7 : 0xf5a524, this.timeUniform, 0.8);
+      // halo del color de la gema bajo ella para que se vea desde lejos
+      const glowMat = createGlowMaterial(gem ? GEM_LOOK[GEM_OF_BIOME[this.biome]].glow : 0xf5a524, this.timeUniform, gem ? 1 : 0.8);
       this.ownedMaterials.push(glowMat);
       const glow = new THREE.Mesh(this.assets.geometry('fire_glow'), glowMat);
       glow.position.set(i + 0.5, base + 0.02, j + 0.5);
-      glow.scale.set(1.8, 1, 1.8);
+      glow.scale.set(gem ? 2.4 : 1.8, 1, gem ? 2.4 : 1.8);
       glow.renderOrder = 2;
       this.group.add(glow);
       obj.userData.glow = glow;
@@ -1144,7 +1270,15 @@ export class World {
 
     for (const c of this.coins) {
       if (!c.obj.visible) continue;
-      if (!c.collected) {
+      if (!c.collected && c.type === 'gem') {
+        // gira sobre sí misma, se balancea y destella de vez en cuando
+        c.obj.rotation.y = this.time * 2.2 + c.i * 0.7;
+        // inclinada hacia la cámara para que se vean las facetas y no solo la mesa
+        c.obj.rotation.x = 0.55;
+        c.obj.rotation.z = Math.sin(this.time * 1.6 + c.j) * 0.22;
+        c.obj.position.y = c.baseY + Math.sin(this.time * 2.4 + c.j) * 0.1;
+        if (this.gemMesh) this.gemMesh.mat.emissiveIntensity = 0.7 + Math.pow(Math.max(0, Math.sin(this.time * 2.7)), 8) * 1.4;
+      } else if (!c.collected) {
         c.obj.rotation.y = this.time * (c.type === 'coin' ? 2.6 : 1.4) + c.i * 0.7;
         c.obj.position.y = c.baseY + Math.sin(this.time * 3 + c.j) * (c.type === 'coin' ? 0.06 : 0.08);
       } else {
@@ -1169,6 +1303,13 @@ export class World {
       const y = p.offset + Math.sin(this.time * 5) * 0.006;
       p.plate.position.y = y;
       p.spring.scale.y = Math.max(0.3, 1 + y / 0.32);
+    }
+
+    for (const c of this.cannons) {
+      // retrocede al disparar y tiembla con el limo dentro
+      c.kick = Math.max(0, c.kick - dt * 2.5);
+      c.barrel.position.y = -c.kick * c.kick * 0.18;
+      c.pivot.rotation.z = c.loaded ? Math.sin(this.time * 45) * 0.035 : 0;
     }
 
     this.fire?.update(this.time, this.fireState);

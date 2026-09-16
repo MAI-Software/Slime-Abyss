@@ -188,7 +188,7 @@ export const fr: Dict = {
     eyes: 'Yeux',
     mouth: 'Bouche',
     cheeks: 'Joues',
-    colorOpt: { blue: 'Bleu', green: 'Vert', pink: 'Rose', purple: 'Violet', black: 'Noir', metal: 'Métallique', gold: 'Or', rosegold: 'Or rose', emerald: 'Émeraude', midnight: 'Minuit', water: 'Eau' },
+    colorOpt: { blue: 'Bleu', green: 'Vert', pink: 'Rose', purple: 'Violet', black: 'Noir', metal: 'Métallique', gold: 'Or', rosegold: 'Or rose', jade: 'Jade', midnight: 'Minuit', water: 'Eau', ruby: 'Rubis', sapphire: 'Saphir', emerald: 'Émeraude', diamond: 'Diamant' },
     eyesOpt: { none: 'Sans yeux', round: 'Ronds', dot: 'Petits points', sparkle: 'Brillants', cat: 'De chat', star: 'Étoilés', heart: 'Amoureux', sleepy: 'Endormis', wink: 'Clin d’œil', glasses: 'Lunettes', tomoe: 'Tomoe', ripple: 'Ondes' },
     mouthOpt: { none: 'Sans bouche', cat: 'Chaton', smile: 'Sourire', fang: 'Canine', tongue: 'Langue', grin: 'Grand sourire', pout: 'Bisou', smirk: 'Malicieuse', vampire: 'Vampire', wobbly: 'Ondulée' },
     cheeksOpt: { none: 'Sans joues', lines: 'Traits', spots: 'Rougeurs', hearts: 'Cœurs', stars: 'Étoiles', freckles: 'Taches de rousseur', swirls: 'Spirales', bandage: 'Pansement', sparkles: 'Éclats', whiskers: 'Moustaches' },
@@ -197,6 +197,10 @@ export const fr: Dict = {
     wallet: 'Pièces : {n}',
     buyConfirm: '« {name} » coûte {price} pièces. Touche encore pour l’acheter',
     needCoins: '« {name} » coûte {price} pièces. Il t’en manque {n}',
+    needGems: '« {name} » demande {price} {gem}. Il t’en manque {n}',
+    buyGemsConfirm: 'Tu as {price} {gem}. Touche encore pour obtenir « {name} »',
+    gems: { ruby: 'rubis', sapphire: 'saphirs', emerald: 'émeraudes', diamond: 'diamants' },
+    gemWallet: '{gem} : {n} sur {total}',
     bought: 'Acheté !',
     boughtNote: 'Tu peux le choisir dans Mon slime',
   },
@@ -297,6 +301,8 @@ export const fr: Dict = {
       railLoop: 'Voie avec boucle (donne le tournis)',
       railSpiral: 'Voie en spirale (donne le tournis)',
       spinner: 'Plateforme tournante (donne le tournis)',
+      cannon: 'Canon (tire vers sa cible)',
+      target: 'Cible du canon',
     },
   },
   levels: {
@@ -448,9 +454,9 @@ export const fr: Dict = {
       name: 'Tourbillon',
       tips: ['Le tourbillon de sable te fait tourner', 'Avec le tournis, c’est dur de bouger : attends que ça passe'],
     },
-    'c4-arena-quebrada': {
-      name: 'Sable brisé',
-      tips: ['Rampes et roche brisée : descends sans freiner'],
+    'c4-canonazo': {
+      name: 'Coup de canon',
+      tips: ['Entre dans le canon : il te lance au-dessus du vide', 'Plus il tire loin, plus tu t’éparpilles dans les airs', 'Gelé, tu voles d’un seul bloc et tu tombes pile au bon endroit'],
     },
     'c4-fuego-del-desierto': {
       name: 'Feu du désert',

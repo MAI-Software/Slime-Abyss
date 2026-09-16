@@ -16,12 +16,12 @@ export const TILE_IDS: Record<string, string> = {
   S: 'switchA', s: 'switchB', D: 'doorA', d: 'doorB', C: 'coin', K: 'bladeZ', k: 'bladeX', Y: 'spike', G: 'gem',
   O: 'oil', W: 'plant', Z: 'iceblock', '^': 'fanN', v: 'fanS', '>': 'fanE', '<': 'fanW', Q: 'coldjet',
   R: 'station', '=': 'rail', B: 'crack', V: 'sawD1', A: 'sawD2',
-  n: 'rampN', u: 'rampS', e: 'rampE', o: 'rampW', q: 'slabNW', p: 'slabNE', z: 'slabSW', m: 'slabSE', H: 'hole', U: 'exit', '@': 'railLoop', '%': 'railSpiral', E: 'spinner',
+  n: 'rampN', u: 'rampS', e: 'rampE', o: 'rampW', q: 'slabNW', p: 'slabNE', z: 'slabSW', m: 'slabSE', H: 'hole', U: 'exit', '@': 'railLoop', '%': 'railSpiral', E: 'spinner', N: 'cannon', x: 'target',
 };
 
 /** Orden de la paleta: lo básico primero. */
 export const PALETTE: string[] = ['0', '.', '#', 'P', 'T', 'C', 'G', 'n', 'u', 'e', 'o', 'q', 'p', 'z', 'm', 'H', 'U',
-  'B', 'I', 'Z', 'W', 'O', 'F', 'X', 'Y', 'K', 'k', 'V', 'A', 'J', 'S', 'D', 's', 'd', 'R', '=', '@', '%', 'E', '^', 'v', '<', '>', 'Q'];
+  'B', 'I', 'Z', 'W', 'O', 'F', 'X', 'Y', 'K', 'k', 'V', 'A', 'J', 'S', 'D', 's', 'd', 'R', '=', '@', '%', 'E', 'N', 'x', '^', 'v', '<', '>', 'Q'];
 
 const UNDO_MAX = 60;
 
@@ -401,6 +401,15 @@ export function drawCell(g: CanvasRenderingContext2D, ch: string, height: number
     case 'spinner':
       for (let k = 0; k < 8; k++) { g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, 13 * u, (k / 8) * Math.PI * 2, ((k + 1) / 8) * Math.PI * 2); g.fillStyle = k % 2 ? '#f5d0fe' : '#c026d3'; g.fill(); }
       disc(3.5 * u, '#fdf4ff', '#701a75');
+      break;
+    case 'cannon':
+      disc(12 * u, '#323a4a', '#c28b2c');
+      disc(6.5 * u, '#07060c', '#c28b2c');
+      break;
+    case 'target':
+      disc(11 * u, '#e2e8f0', '#b91c1c');
+      disc(6.5 * u, '#b91c1c', '#e2e8f0');
+      disc(2.5 * u, '#e2e8f0', '#e2e8f0');
       break;
     case 'exit':
       g.beginPath(); g.arc(cx, cy, 11 * u, 0, Math.PI * 2);

@@ -2,10 +2,10 @@
   Solo en desarrollo: rutas del piloto automático para cada piso de la historia.
   Cada ruta recoge todas las monedas y llega al tesoro; la prueba (__auto.all) exige más del 90 % del limo.
   Coordenadas en casillas del mundo: x = columna + 0.5, z = fila + 0.5.
-  Pasos: to (ir), dir (empujar), wait (esperar), fire (esperar a que se apague esa llama), squeeze (apretar sí/no).
+  Pasos: to (ir), dir (empujar), wait (esperar), fire (esperar a que se apague esa llama), squeeze (apretar sí/no), cannon (entrar en el cañón y esperar a aterrizar).
 */
 
-export type Step = { to?: [number, number]; radius?: number; t?: number; dir?: [number, number]; wait?: number; fire?: [number, number]; squeeze?: boolean };
+export type Step = { to?: [number, number]; radius?: number; t?: number; dir?: [number, number]; wait?: number; fire?: [number, number]; squeeze?: boolean; cannon?: [number, number] };
 
 export const ROUTES: Record<string, Step[]> = {
   // ------------------------------------------------------------------ capítulo 1
@@ -75,7 +75,8 @@ export const ROUTES: Record<string, Step[]> = {
     { squeeze: true, to: [6.5, 4.5], radius: 0.4, t: 8 }, { wait: 1.5 }, { squeeze: false, to: [6.5, 1.5], t: 8 },
   ],
   'c2-sobre-railes': [
-    { to: [5.5, 10.5], radius: 0.4 }, { to: [7.5, 10.5], radius: 0.4 }, { to: [6.5, 8.5], radius: 0.2 }, { wait: 4 }, { to: [7.5, 1.5], t: 6 },
+    { to: [5.5, 10.5], radius: 0.4 }, { to: [7.5, 10.5], radius: 0.4 }, { to: [9.5, 10.5], radius: 0.2 }, { wait: 6 }, { to: [13.5, 4.5], radius: 0.4 },
+    { to: [13.5, 6.5], radius: 0.2 }, { wait: 6 }, { to: [6.5, 8.5], radius: 0.2 }, { wait: 4 }, { to: [7.5, 1.5], t: 6 },
   ],
   'c2-curvas': [
     { to: [10.5, 17.5], radius: 0.2 }, { wait: 4 }, { to: [8.5, 12.5], radius: 0.4 }, { to: [8.5, 10.5], radius: 0.4 },
@@ -95,7 +96,9 @@ export const ROUTES: Record<string, Step[]> = {
     { to: [6.5, 7.5], radius: 0.2 }, { wait: 5 }, { to: [7.5, 1.5], t: 6 },
   ],
   'c2-salto-a-la-estacion': [
-    { dir: [0, -1], t: 1.6 }, { to: [5.5, 9.5], radius: 0.4 }, { to: [7.5, 9.5], radius: 0.4 },
+    { to: [9.5, 14.5], radius: 0.4 }, { to: [11, 14.6], radius: 0.2 }, { dir: [0, -1], t: 1.6 }, { to: [12.2, 8.6], radius: 0.4 },
+    { squeeze: true, wait: 1 }, { squeeze: false },
+    { to: [7.5, 9.5], radius: 0.4 }, { to: [5.5, 9.5], radius: 0.4 },
     { to: [6.5, 7.5], radius: 0.2 }, { wait: 5 }, { to: [7.5, 1.5], t: 6 },
   ],
   'c2-puente-de-viento': [
@@ -115,7 +118,8 @@ export const ROUTES: Record<string, Step[]> = {
   ],
   // ------------------------------------------------------------------ capítulo 3
   'c3-suelo-fragil': [
-    { to: [6.5, 9.5], radius: 0.4 }, { to: [5.5, 6.5], radius: 0.4 }, { to: [7.5, 6.5], radius: 0.4 }, { to: [3.5, 3.5], radius: 0.5 },
+    { to: [10.5, 9.5], radius: 0.4 }, { to: [11.5, 9.3], radius: 0.3 }, { to: [11.5, 6.5], radius: 0.4 }, { to: [9.5, 6.5], radius: 0.4 },
+    { to: [7.5, 6.5], radius: 0.4 }, { to: [5.5, 6.5], radius: 0.4 }, { to: [3.5, 3.5], radius: 0.5 },
     { to: [2.5, 1.5], radius: 0.4 }, { to: [3.5, 3.5], radius: 0.5 }, { to: [9.5, 3.5], radius: 0.5 }, { to: [10.5, 1.5], radius: 0.4 },
     { to: [6.5, 1.5], t: 6 },
   ],
@@ -128,7 +132,8 @@ export const ROUTES: Record<string, Step[]> = {
     { to: [6.5, 5.5], radius: 0.4 }, { to: [6.5, 2.4], radius: 0.5 }, { to: [10.5, 1.5], radius: 0.4 }, { to: [1.5, 1.5], t: 8 },
   ],
   'c3-pista-ardiente': [
-    { to: [5.5, 14.5], radius: 0.4 }, { to: [5.5, 12.3], radius: 0.4 }, { to: [5.5, 10.3], radius: 0.3, t: 4 },
+    { to: [5.5, 14.5], radius: 0.4 }, { to: [5.5, 12.3], radius: 0.4 }, { to: [9.3, 12.5], radius: 0.3 }, { to: [11.5, 12.5], radius: 0.4 },
+    { to: [11.5, 11.5], radius: 0.4 }, { to: [8.5, 12.5], radius: 0.5 }, { to: [5.5, 10.3], radius: 0.3, t: 4 },
     { to: [5.5, 9.5], radius: 0.4 }, { to: [5.5, 2.5], radius: 0.5, t: 6 }, { to: [5.5, 1.5], t: 4 },
   ],
   'c3-grietas-entre-llamas': [
@@ -155,9 +160,11 @@ export const ROUTES: Record<string, Step[]> = {
   ],
   // ------------------------------------------------------------------ capítulo 4
   'c4-dunas': [
-    { to: [4.5, 11.5], radius: 0.4 }, { to: [5.5, 8.5], radius: 0.5 }, { to: [4.5, 5.5], radius: 0.4 }, { to: [6.5, 5.5], radius: 0.4 }, { to: [5.5, 1.5], t: 8 },
+    { to: [4.5, 11.5], radius: 0.4 }, { to: [5.5, 8.5], radius: 0.5 }, { to: [7.5, 8.5], radius: 0.4 }, { to: [9.5, 8.5], radius: 0.4 },
+    { to: [6.5, 8.5], radius: 0.5 }, { to: [4.5, 5.5], radius: 0.4 }, { to: [6.5, 5.5], radius: 0.4 }, { to: [5.5, 1.5], t: 8 },
   ],
   'c4-sendero-diagonal': [
+    { to: [6.5, 11.5], radius: 0.4 }, { to: [8.5, 11.5], radius: 0.4 }, { to: [3.5, 10.5], radius: 0.5 },
     { to: [3.5, 9.5], radius: 0.5 }, { to: [5.5, 7.5], radius: 0.4 }, { to: [7.5, 5.5], radius: 0.4 }, { to: [9.5, 3.5], radius: 0.5 },
     { to: [10.5, 1.5], radius: 0.4 }, { to: [6.5, 1.5], radius: 0.4 }, { to: [2.5, 1.5], t: 6 },
   ],
@@ -174,11 +181,15 @@ export const ROUTES: Record<string, Step[]> = {
     { to: [5.5, 7.5], radius: 0.5 }, { to: [5.5, 1.5], t: 10 },
   ],
   'c4-remolino': [
-    { to: [3.5, 9.5], radius: 0.4 }, { to: [7.5, 9.5], radius: 0.4 }, { to: [5.5, 7.5], radius: 0.4 }, { to: [3.5, 4.4], radius: 0.4 },
+    { to: [3.5, 9.5], radius: 0.4 }, { to: [7.5, 9.5], radius: 0.4 }, { to: [7.6, 8.5], radius: 0.4 }, { to: [7.7, 5.5], radius: 0.4 },
+    { to: [9.5, 5.5], radius: 0.4 }, { to: [7.6, 5.5], radius: 0.4 }, { to: [5.5, 7.5], radius: 0.4 }, { to: [3.5, 4.4], radius: 0.4 },
     { wait: 4 }, { to: [5.5, 1.5], t: 10 },
   ],
-  'c4-arena-quebrada': [
-    { to: [3.5, 10.5], radius: 0.4 }, { to: [7.5, 10.5], radius: 0.4 }, { to: [5.5, 9.3], radius: 0.4 }, { to: [5.5, 1.5], t: 8 },
+  'c4-canonazo': [
+    { to: [3.5, 20.5], radius: 0.4 }, { to: [9.5, 20.5], radius: 0.4 }, { cannon: [6.5, 19.5] }, { squeeze: true, wait: 2 },
+    { squeeze: false, to: [4.5, 14.5], radius: 0.4 }, { to: [8.5, 14.5], radius: 0.4 }, { squeeze: true, wait: 1.5 },
+    { squeeze: false, to: [2.5, 12.5], radius: 0.3 }, { wait: 0.5 }, { cannon: [10.5, 13.5] },
+    { to: [2.5, 3.5], radius: 0.4 }, { to: [10.5, 3.5], radius: 0.4 }, { to: [6.5, 1.5], t: 6 },
   ],
   'c4-fuego-del-desierto': [
     { to: [2.5, 13.5], radius: 0.4 }, { to: [8.5, 13.5], radius: 0.4 }, { to: [5.5, 12.5], radius: 0.4 }, { to: [5.5, 11.3], radius: 0.4 },

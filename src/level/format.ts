@@ -18,7 +18,7 @@ export type CellKind =
   | 'coin' | 'blade' | 'spike' | 'gem'
   | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet'
   | 'station' | 'rail' | 'crack'
-  | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner';
+  | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner' | 'cannon' | 'target';
 
 export interface TileDef {
   char: string;
@@ -106,6 +106,10 @@ export const TILES: readonly TileDef[] = [
   { char: 'U', kind: 'exit', label: 'Salida de agujero', color: '#5b4b8a' },
   // plataforma giratoria (centro de un disco que ocupa 3x3 casillas): hace girar al limo y lo marea
   { char: 'E', kind: 'spinner', label: 'Plataforma giratoria (marea)', color: '#f0abfc' },
+  // cañón: el trozo que se mete dentro sale disparado hacia su diana (la más cercana a la que no se llega andando).
+  // Congelado vuela de una pieza y cae justo en la diana; líquido se esparce por el aire, más cuanto más lejos
+  { char: 'N', kind: 'cannon', label: 'Cañón (lanza a la diana)', raise: 0.3, color: '#475569' },
+  { char: 'x', kind: 'target', label: 'Diana del cañón', color: '#94a3b8' },
 ];
 
 export const TILE_BY_CHAR: ReadonlyMap<string, TileDef> = new Map(TILES.map((t) => [t.char, t]));
@@ -202,6 +206,41 @@ export function traceRails(level: LevelData): { paths: Map<number, number[]>; er
   return { paths, errors };
 }
 
+/**
+  Diana de cada cañón (índices de casilla; -1 si no tiene): la más cercana de las que no se alcanzan andando
+  desde el cañón. Así un cañón nunca apunta a la sala en la que ya está.
+*/
+export function cannonTargets(level: LevelData): Map<number, number> {
+  const { w, d } = levelSize(level);
+  const at = (i: number, j: number) => (i >= 0 && j >= 0 && i < w && j < d ? level.tiles[j][i] : '.');
+  const out = new Map<number, number>();
+  const targets: number[] = [];
+  for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) if (at(i, j) === 'x') targets.push(j * w + i);
+  for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) {
+    if (at(i, j) !== 'N') continue;
+    const seen = new Set([j * w + i]);
+    const queue = [j * w + i];
+    while (queue.length) {
+      const k = queue.shift()!;
+      const ci = k % w, cj = Math.floor(k / w);
+      for (const [a, b] of [[ci + 1, cj], [ci - 1, cj], [ci, cj + 1], [ci, cj - 1]]) {
+        const kind = TILE_BY_CHAR.get(at(a, b))?.kind;
+        if (!kind || kind === 'void' || kind === 'wall' || kind === 'rail' || seen.has(b * w + a)) continue;
+        seen.add(b * w + a);
+        queue.push(b * w + a);
+      }
+    }
+    let best = -1, bestD = Infinity;
+    for (const t of targets) {
+      if (seen.has(t)) continue;
+      const dd = Math.hypot((t % w) - i, Math.floor(t / w) - j);
+      if (dd < bestD) { bestD = dd; best = t; }
+    }
+    out.set(j * w + i, best);
+  }
+  return out;
+}
+
 export const LIMITS = { minSize: 3, maxSize: 96, minCount: 10, maxCount: 120 } as const;
 
 export function levelSize(level: LevelData) {
@@ -241,6 +280,10 @@ export function validateLevel(level: LevelData): string[] {
     if (sw && need !== undefined && (need < 1 || need > level.count)) errors.push(`El interruptor ${ch} pide un peso imposible (${need}).`);
   }
   errors.push(...traceRails(level).errors);
+  const targets = cannonTargets(level);
+  for (const [from, to] of targets) {
+    if (to < 0) errors.push(`El cañón de (${from % w}, ${Math.floor(from / w)}) no tiene ninguna diana a la que no se llegue andando.`);
+  }
   if (level.count < LIMITS.minCount || level.count > LIMITS.maxCount) {
     errors.push(`El limo debe tener entre ${LIMITS.minCount} y ${LIMITS.maxCount} limitos.`);
   }

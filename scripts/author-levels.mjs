@@ -441,19 +441,19 @@ const CHAPTER2 = [
     id: 'c2-sobre-railes', name: 'Sobre raíles', count: 80, keepPct: 0.8,
     // Raíles: una vía recta y corta entre dos estaciones; no hay forma de caerse.
     map: [
-      '...#######...',
-      '...#000T0#...',
-      '...#00000#...',
-      '...###R###...',
-      '......=......',
-      '......=......',
-      '......=......',
-      '......=......',
-      '...###R###...',
-      '...#00000#...',
-      '...#0C0C0#...',
-      '...#00P00#...',
-      '...#######...',
+      '...#######.......',
+      '...#000T0#.......',
+      '...#00000#.......',
+      '...###R###.#####.',
+      '......=....#8G8#.',
+      '......=....#888#.',
+      '......=....##R##.',
+      '......=......=...',
+      '...###R###...=...',
+      '...#00000#...=...',
+      '...#0C0C0R====...',
+      '...#00P00#.......',
+      '...#######.......',
     ],
     tips: [
       { z: 10.5, text: 'Entra en la estación: el limo se hace bola y rueda por la vía' },
@@ -581,22 +581,22 @@ const CHAPTER2 = [
     id: 'c2-salto-a-la-estacion', name: 'Salto a la estación', count: 80, keepPct: 0.5,
     // Plataformas de salto hasta una isla con estación que sube.
     map: [
-      '...#######...',
-      '...#888T8#...',
-      '...#88888#...',
-      '...###R###...',
-      '......=......',
-      '......=......',
-      '......=......',
-      '...###R###...',
-      '...#22222#...',
-      '...#2C2C2#...',
-      '.............',
-      '.............',
-      '...#JJJJJ#...',
-      '...#22222#...',
-      '...#22P22#...',
-      '...#######...',
+      '...#######....',
+      '...#888T8#....',
+      '...#88888#....',
+      '...###R###....',
+      '......=.......',
+      '......=.......',
+      '......=.......',
+      '...###R#######',
+      '...#22222#22G#',
+      '...#2C2C22222#',
+      '..............',
+      '..............',
+      '...#JJJJJ#JJJ#',
+      '...#222222222#',
+      '...#22P222222#',
+      '...###########',
     ],
     tips: [
       { z: 14, text: 'Las plataformas te lanzan hasta la isla de la estación' },
@@ -706,12 +706,12 @@ const CHAPTER3 = [
       '#00000000000#',
       '###0000000###',
       '..#BBBBBBB#..',
-      '..#0000000#..',
-      '..#00C0C00#..',
-      '..#0000000#..',
-      '..#BBBBBBB#..',
-      '..#0000000#..',
-      '..#000P000#..',
+      '..#0000000###',
+      '..#00C0C000G#',
+      '..#0000000#B#',
+      '..#BBBBBBB#B#',
+      '..#000000000#',
+      '..#000P000###',
       '..#########..',
     ],
     tips: [
@@ -776,24 +776,24 @@ const CHAPTER3 = [
     id: 'c3-pista-ardiente', name: 'Pista ardiente', count: 80, keepPct: 0.7,
     // Puente de hielo sobre el vacío que se funde bajo el limo en llamas: resbala, así que se cruza de un tirón.
     map: [
-      '###########',
-      '#0000T0000#',
-      '#000000000#',
-      '###00000###',
-      '....III....',
-      '....III....',
-      '....III....',
-      '....III....',
-      '...#000#...',
-      '...#0C0#...',
-      '####WWW####',
-      '#000000000#',
-      '#0000F0000#',
-      '#000000000#',
-      '###00O00###',
-      '..#00000#..',
-      '..#00P00#..',
-      '..#######..',
+      '###########..',
+      '#0000T0000#..',
+      '#000000000#..',
+      '###00000###..',
+      '....III......',
+      '....III......',
+      '....III......',
+      '....III......',
+      '...#000#.....',
+      '...#0C0#.....',
+      '####WWW######',
+      '#000000000#G#',
+      '#0000F0000W0#',
+      '#000000000###',
+      '###00O00###..',
+      '..#00000#....',
+      '..#00P00#....',
+      '..#######....',
     ],
     tips: [
       { z: 14, text: 'Aceite y fuego para quemar la hiedra' },
@@ -991,9 +991,9 @@ const CHAPTER4 = [
       '..#33333#..',
       '..#3C3C3#..',
       '..#33333#..',
-      '..#nnnnn#..',
-      '..#22222#..',
-      '..#uuuuu#..',
+      '..#nnnnn##.',
+      '..#22222eG#',
+      '..#uuuuu##.',
       '..#33333#..',
       '..#3C3P3#..',
       '..#######..',
@@ -1019,8 +1019,8 @@ const CHAPTER4 = [
       '..m000q......',
       '.m000q.......',
       '#00000#######',
-      '#00P00#......',
-      '#######......',
+      '#00P0000G#...',
+      '##########...',
     ],
     tips: [
       { z: 10, text: 'El camino va en diagonal: inclina en esa dirección' },
@@ -1120,9 +1120,9 @@ const CHAPTER4 = [
       '#0000T0000#',
       '#000000000#',
       '###00000###',
-      '..#00000#..',
-      '..#00000#..',
-      '..#00E00#..',
+      '..#00000###',
+      '..#000000G#',
+      '..#00E00###',
       '..#00C00#..',
       '..#00000#..',
       '..#C000C#..',
@@ -1135,39 +1135,39 @@ const CHAPTER4 = [
     ],
   },
   {
-    file: 'chapter4/07-c4-arena-quebrada.json',
-    id: 'c4-arena-quebrada', name: 'Arena quebrada', count: 80, keepPct: 0.6,
-    // Bajada sobre el vacío: rampas y roca agrietada alternas.
+    file: 'chapter4/07-c4-canonazo.json',
+    id: 'c4-canonazo', name: 'Cañonazo', count: 80, keepPct: 0.75,
+    // Presenta el cañón: primero un disparo corto a una sala cerrada (líquido, se esparce poco) y después
+    // uno largo sobre el vacío que solo sale bien congelado (el aire frío está al lado del cañón).
     map: [
-      '###########',
-      '#0000T0000#',
-      '#000000000#',
-      '###BBBBB###',
-      '...uuuuu...',
-      '...BBBBB...',
-      '...uuuuu...',
-      '...BBBBB...',
-      '...uuuuu...',
-      '#000000000#',
-      '#00C0P0C00#',
-      '###########',
-    ],
-    h: [
-      '33333333333',
-      '33333333333',
-      '33333333333',
-      '33333333333',
-      '33333333333',
-      '44444444444',
-      '44444444444',
-      '55555555555',
-      '55555555555',
-      '66666666666',
-      '66666666666',
-      '66666666666',
+      '#############',
+      '#44444T44444#',
+      '#44444444444#',
+      '#4C4444444C4#',
+      '#44444x44444#',
+      '#44444444444#',
+      '.............',
+      '.............',
+      '.............',
+      '.............',
+      '#############',
+      '#22222222222#',
+      '#2Q222222222#',
+      '#22222x222N2#',
+      '#222C222C222#',
+      '#############',
+      '.............',
+      '#############',
+      '#00000000000#',
+      '#00000N00000#',
+      '#00C00000C00#',
+      '#00000P00000#',
+      '#############',
     ],
     tips: [
-      { z: 9, text: 'Rampas y roca rota: baja sin frenar' },
+      { z: 20, text: 'Métete en el cañón: te lanza por encima del vacío' },
+      { z: 13.5, text: 'Cuanto más lejos dispara, más te esparces en el aire' },
+      { z: 12, text: 'Congelado vuelas de una pieza y caes justo en su sitio' },
     ],
   },
   {
@@ -1349,6 +1349,27 @@ function checkNoDeadEnds(def, tiles, heights) {
       for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) {
         if (at(a, b) !== 'U') continue;
         const sc = Math.hypot(a - i, b - j) + (Number(heights[b][a]) < Number(heights[j][i]) ? 0 : 1000);
+        if (sc < score) { score = sc; best = [a, b]; }
+      }
+      return best ? [best] : [];
+    }
+    // cañón: lanza a su diana (la más cercana a la que no se llega andando desde él)
+    if (at(i, j) === 'N') {
+      const foot = new Set([String([i, j])]);
+      const q = [[i, j]];
+      while (q.length) {
+        const [a, b] = q.shift();
+        for (const [di, dj] of DIRS) {
+          const k = String([a + di, b + dj]);
+          if (!walk(a + di, b + dj) || foot.has(k)) continue;
+          foot.add(k);
+          q.push([a + di, b + dj]);
+        }
+      }
+      let best = null, score = Infinity;
+      for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) {
+        if (at(a, b) !== 'x' || foot.has(String([a, b]))) continue;
+        const sc = Math.hypot(a - i, b - j);
         if (sc < score) { score = sc; best = [a, b]; }
       }
       return best ? [best] : [];

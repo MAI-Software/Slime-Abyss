@@ -187,7 +187,7 @@ export const es = {
     eyes: 'Ojos',
     mouth: 'Boca',
     cheeks: 'Mofletes',
-    colorOpt: { blue: 'Azul', green: 'Verde', pink: 'Rosa', purple: 'Morado', black: 'Negro', metal: 'Metálico', gold: 'Oro', rosegold: 'Oro rosa', emerald: 'Esmeralda', midnight: 'Medianoche', water: 'Agua' },
+    colorOpt: { blue: 'Azul', green: 'Verde', pink: 'Rosa', purple: 'Morado', black: 'Negro', metal: 'Metálico', gold: 'Oro', rosegold: 'Oro rosa', jade: 'Jade', midnight: 'Medianoche', water: 'Agua', ruby: 'Rubí', sapphire: 'Zafiro', emerald: 'Esmeralda', diamond: 'Diamante' },
     eyesOpt: { none: 'Sin ojos', round: 'Redondos', dot: 'Puntitos', sparkle: 'Brillantes', cat: 'Gatunos', star: 'Estrellados', heart: 'Enamorados', sleepy: 'Dormilones', wink: 'Guiño', glasses: 'Gafas', tomoe: 'Tomoe', ripple: 'Ondas' },
     mouthOpt: { none: 'Sin boca', cat: 'Gatito', smile: 'Sonrisa', fang: 'Colmillo', tongue: 'Lengua', grin: 'Sonrisota', pout: 'Morritos', smirk: 'Pícara', vampire: 'Vampiro', wobbly: 'Ondulada' },
     cheeksOpt: { none: 'Sin mofletes', lines: 'Rayitas', spots: 'Coloretes', hearts: 'Corazones', stars: 'Estrellitas', freckles: 'Pecas', swirls: 'Espirales', bandage: 'Tirita', sparkles: 'Destellos', whiskers: 'Bigotes' },
@@ -196,6 +196,10 @@ export const es = {
     wallet: 'Monedas: {n}',
     buyConfirm: '«{name}» cuesta {price} monedas. Toca otra vez para comprarlo',
     needCoins: '«{name}» cuesta {price} monedas. Te faltan {n}',
+    needGems: '«{name}» pide {price} {gem}. Te faltan {n}',
+    buyGemsConfirm: 'Tienes {price} {gem}. Toca otra vez para conseguir «{name}»',
+    gems: { ruby: 'rubíes', sapphire: 'zafiros', emerald: 'esmeraldas', diamond: 'diamantes' },
+    gemWallet: '{gem}: {n} de {total}',
     bought: '¡Comprado!',
     boughtNote: 'Ya puedes elegirlo en Mi limo',
   },
@@ -296,6 +300,8 @@ export const es = {
       railLoop: 'Raíl con bucle (marea)',
       railSpiral: 'Raíl en espiral (marea)',
       spinner: 'Plataforma giratoria (marea)',
+      cannon: 'Cañón (lanza a la diana)',
+      target: 'Diana del cañón',
     },
   },
   levels: {
@@ -447,9 +453,9 @@ export const es = {
       name: 'Remolino',
       tips: ['El remolino de arena te hace dar vueltas', 'Mareado cuesta moverse: espera a que se te pase'],
     },
-    'c4-arena-quebrada': {
-      name: 'Arena quebrada',
-      tips: ['Rampas y roca rota: baja sin frenar'],
+    'c4-canonazo': {
+      name: 'Cañonazo',
+      tips: ['Métete en el cañón: te lanza por encima del vacío', 'Cuanto más lejos dispara, más te esparces en el aire', 'Congelado vuelas de una pieza y caes justo en su sitio'],
     },
     'c4-fuego-del-desierto': {
       name: 'Fuego del desierto',

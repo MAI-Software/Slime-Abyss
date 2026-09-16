@@ -10,6 +10,8 @@ import { ROUTES, type Step } from './dev-routes';
 
 interface DevSlime {
   groups: { cx: number; cz: number }[];
+  riding: Uint8Array;
+  flying: Uint8Array;
   aliveCount: number;
   n: number;
 }
@@ -29,7 +31,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const key = (type: string, code: string) => window.dispatchEvent(new KeyboardEvent(type, { code, key: ' ', bubbles: true }));
 const playing = () => api().state().mode === 'play';
 
-function goTo(tx: number, tz: number, radius = 0.45, t = 8) {
+function goTo(tx: number, tz: number, radius = 0.45, t = 8, until?: () => boolean) {
   const S = api();
   S.drive(() => {
     const g = S.slime()?.groups[0];
@@ -44,7 +46,18 @@ function goTo(tx: number, tz: number, radius = 0.45, t = 8) {
     S.run(0.05);
     const g = S.slime()?.groups[0];
     if (g && Math.hypot(tx - g.cx, tz - g.cz) < radius) return;
+    if (until?.()) return;
   }
+}
+
+/** Entra en el cañón, suelta el mando y espera a que el disparo aterrice. */
+function shoot(tx: number, tz: number) {
+  const S = api();
+  const sl = S.slime()!;
+  goTo(tx, tz, 0.05, 6, () => sl.riding.some((v) => v === 1));
+  S.drive(() => [0, 0]);
+  for (let s = 0; s < 6 && playing() && (sl.riding.some((v) => v === 1) || sl.flying.some((v) => v === 1)); s += 0.05) S.run(0.05);
+  S.run(0.8);
 }
 
 function waitFireOff(i: number, j: number, t = 8) {
@@ -72,6 +85,7 @@ async function run(c: number, k: number, steps: Step[], trace?: string[]): Promi
     if (!playing()) break;
     if (st.squeeze !== undefined) key(st.squeeze ? 'keydown' : 'keyup', 'Space');
     if (st.to) goTo(st.to[0], st.to[1], st.radius, st.t);
+    if (st.cannon) shoot(st.cannon[0], st.cannon[1]);
     if (st.dir) { const d = st.dir; S.drive(() => d); S.run(st.t ?? 1); }
     if (st.wait) { S.drive(() => [0, 0]); S.run(st.wait); }
     if (st.fire) waitFireOff(st.fire[0], st.fire[1]);

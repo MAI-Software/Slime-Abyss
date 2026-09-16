@@ -4,6 +4,7 @@
     ojos face_eye_<id> (con hijo face_eye_<id>_look), bocas face_mouth_<id>, mofletes face_blush_<id>.
   Algunas opciones son raras y se desbloquean con logros (LOOK_UNLOCKS).
 */
+import type { GemKind } from './biomes';
 
 export interface BodyColor {
   /** color del cuerpo */
@@ -17,11 +18,17 @@ export interface BodyColor {
   roughness?: number;
   /** colores translúcidos (agua): opacidad del centro; los bordes quedan casi opacos */
   opacity?: number;
+  /** colores de gema: destellos diminutos que titilan (0..1) */
+  sparkle?: number;
+  /** destellos de colores (diamante) */
+  rainbow?: boolean;
 }
 
 /**
   Colores elegibles: ninguno puede confundirse con un estado del juego
   (aceite marrón apagado, llamas naranjas, congelado celeste). El oro es metálico y brillante.
+  Los de gema se compran con las gemas secretas: facetados y con destellos (el rubí es rojo intenso, no naranja,
+  y el diamante blanco y con reflejos de colores, no celeste).
 */
 export const BODY_COLORS = {
   blue: { color: 0x2f8cff, emissive: 0x0b3a8c, rim: [0.45, 0.8, 1.0] },
@@ -32,10 +39,14 @@ export const BODY_COLORS = {
   metal: { color: 0xe8edf5, emissive: 0x39424f, rim: [0.95, 0.98, 1.0], metalness: 0.6, roughness: 0.18 },
   gold: { color: 0xffd24a, emissive: 0x8a5a00, rim: [1.0, 0.93, 0.6], metalness: 0.55, roughness: 0.22 },
   rosegold: { color: 0xf3b3a0, emissive: 0x6b3428, rim: [1.0, 0.86, 0.82], metalness: 0.55, roughness: 0.2 },
-  emerald: { color: 0x14b87a, emissive: 0x05402a, rim: [0.6, 1.0, 0.85], metalness: 0.35, roughness: 0.08 },
+  jade: { color: 0x3aa887, emissive: 0x0d4636, rim: [0.72, 1.0, 0.9], roughness: 0.32 },
   midnight: { color: 0x243a8f, emissive: 0x0a1238, rim: [0.6, 0.78, 1.0], roughness: 0.08 },
   // agua: casi incolora y translúcida (el congelado es celeste opaco y no tiembla)
   water: { color: 0xa6e3f2, emissive: 0x0f5266, rim: [0.8, 0.96, 1.0], roughness: 0.03, opacity: 0.22 },
+  ruby: { color: 0xd4103c, emissive: 0x5e0016, rim: [1.0, 0.6, 0.72], metalness: 0.3, roughness: 0.03, sparkle: 1 },
+  sapphire: { color: 0x1b4fe6, emissive: 0x071b6b, rim: [0.62, 0.8, 1.0], metalness: 0.3, roughness: 0.03, sparkle: 1 },
+  emerald: { color: 0x0fbf73, emissive: 0x04452a, rim: [0.6, 1.0, 0.82], metalness: 0.3, roughness: 0.03, sparkle: 1 },
+  diamond: { color: 0xeef6ff, emissive: 0x2d4a6a, rim: [1.0, 1.0, 1.0], metalness: 0.4, roughness: 0.02, sparkle: 1, rainbow: true },
 } satisfies Record<string, BodyColor>;
 
 export type BodyColorId = keyof typeof BODY_COLORS;
@@ -93,7 +104,7 @@ export const LOOK_UNLOCKS: Record<string, string> = {
   'cheeks:sparkles': 'secret-roots',
   'eyes:glasses': 'rider-50',
   'cheeks:swirls': 'squeeze-30',
-  'color:emerald': 'full-slime-5',
+  'color:jade': 'full-slime-5',
 };
 
 /** Opciones que se compran con monedas: "apartado:opción" → precio. Las monedas no se pueden farmear (mejor marca de cada piso). */
@@ -101,10 +112,20 @@ export const LOOK_PRICES: Record<string, number> = {
   'color:gold': 999,
 };
 
+/** Gemas secretas de cada tipo que hay en el juego (una por piso secreto de sus tres capítulos). */
+export const GEMS_PER_KIND = 9;
+/** Colores de gema: se consiguen con todas las gemas secretas de su tipo. */
+export const LOOK_GEM_PRICES: Record<string, GemKind> = {
+  'color:ruby': 'ruby',
+  'color:sapphire': 'sapphire',
+  'color:emerald': 'emerald',
+  'color:diamond': 'diamond',
+};
+
 /** bought: opciones compradas ("apartado:opción"). */
 export function lookOptionUnlocked(key: keyof SlimeLook, opt: string, achievements: readonly string[], bought: readonly string[] = []) {
   const id = `${key}:${opt}`;
-  if (LOOK_PRICES[id]) return bought.includes(id);
+  if (LOOK_PRICES[id] || LOOK_GEM_PRICES[id]) return bought.includes(id);
   const needed = LOOK_UNLOCKS[id];
   return !needed || achievements.includes(needed);
 }

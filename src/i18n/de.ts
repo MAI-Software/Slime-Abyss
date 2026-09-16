@@ -188,7 +188,7 @@ export const de: Dict = {
     eyes: 'Augen',
     mouth: 'Mund',
     cheeks: 'Wangen',
-    colorOpt: { blue: 'Blau', green: 'Grün', pink: 'Rosa', purple: 'Lila', black: 'Schwarz', metal: 'Metallisch', gold: 'Gold', rosegold: 'Roségold', emerald: 'Smaragd', midnight: 'Mitternacht', water: 'Wasser' },
+    colorOpt: { blue: 'Blau', green: 'Grün', pink: 'Rosa', purple: 'Lila', black: 'Schwarz', metal: 'Metallisch', gold: 'Gold', rosegold: 'Roségold', jade: 'Jade', midnight: 'Mitternacht', water: 'Wasser', ruby: 'Rubin', sapphire: 'Saphir', emerald: 'Smaragd', diamond: 'Diamant' },
     eyesOpt: { none: 'Keine Augen', round: 'Rund', dot: 'Pünktchen', sparkle: 'Glitzernd', cat: 'Katze', star: 'Sternaugen', heart: 'Verliebt', sleepy: 'Verschlafen', wink: 'Zwinkern', glasses: 'Brille', tomoe: 'Tomoe', ripple: 'Wellen' },
     mouthOpt: { none: 'Kein Mund', cat: 'Kätzchen', smile: 'Lächeln', fang: 'Eckzahn', tongue: 'Zunge', grin: 'Breites Grinsen', pout: 'Kussmund', smirk: 'Verschmitzt', vampire: 'Vampir', wobbly: 'Wellig' },
     cheeksOpt: { none: 'Keine Wangen', lines: 'Striche', spots: 'Rouge', hearts: 'Herzen', stars: 'Sternchen', freckles: 'Sommersprossen', swirls: 'Spiralen', bandage: 'Pflaster', sparkles: 'Funkeln', whiskers: 'Schnurrhaare' },
@@ -197,6 +197,10 @@ export const de: Dict = {
     wallet: 'Münzen: {n}',
     buyConfirm: '„{name}“ kostet {price} Münzen. Tippe nochmal zum Kaufen',
     needCoins: '„{name}“ kostet {price} Münzen. Dir fehlen {n}',
+    needGems: '„{name}“ braucht {price} {gem}. Dir fehlen {n}',
+    buyGemsConfirm: 'Du hast {price} {gem}. Tippe nochmal, um „{name}“ zu bekommen',
+    gems: { ruby: 'Rubine', sapphire: 'Saphire', emerald: 'Smaragde', diamond: 'Diamanten' },
+    gemWallet: '{gem}: {n} von {total}',
     bought: 'Gekauft!',
     boughtNote: 'Du kannst es jetzt in Mein Schleim wählen',
   },
@@ -297,6 +301,8 @@ export const de: Dict = {
       railLoop: 'Schiene mit Looping (macht schwindlig)',
       railSpiral: 'Spiralschiene (macht schwindlig)',
       spinner: 'Drehscheibe (macht schwindlig)',
+      cannon: 'Kanone (schießt zum Ziel)',
+      target: 'Kanonenziel',
     },
   },
   levels: {
@@ -448,9 +454,9 @@ export const de: Dict = {
       name: 'Strudel',
       tips: ['Der Sandstrudel dreht dich im Kreis', 'Schwindlig kommt man schwer voran: warte, bis es vorbei ist'],
     },
-    'c4-arena-quebrada': {
-      name: 'Zerbrochener Sand',
-      tips: ['Rampen und brüchiger Fels: lauf ohne zu bremsen hinab'],
+    'c4-canonazo': {
+      name: 'Kanonenschuss',
+      tips: ['Kriech in die Kanone: Sie schießt dich über den Abgrund', 'Je weiter sie schießt, desto mehr verteilst du dich in der Luft', 'Gefroren fliegst du in einem Stück und landest genau an der Stelle'],
     },
     'c4-fuego-del-desierto': {
       name: 'Wüstenfeuer',

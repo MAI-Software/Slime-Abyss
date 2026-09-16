@@ -318,6 +318,12 @@ body[data-joy="fixed"] #joy-base, body[data-joy="fixed"] #cam-base { opacity: 0.
 .goals li.secret.ok .goal-mark { background: var(--secondary); }
 .goals li.secret.ok .val { color: var(--secondary); }
 .gem-ico { width: 18px; height: 18px; fill: #a78bfa; stroke: #4c1d95; stroke-width: 1.6; stroke-linejoin: round; }
+.gem-ico.gem-ruby { fill: #ff3d6e; stroke: #7a0a26; }
+.gem-ico.gem-sapphire { fill: #4f8dff; stroke: #0b2a7a; }
+.gem-ico.gem-emerald { fill: #34d399; stroke: #065f46; }
+.gem-ico.gem-diamond { fill: #e0f2fe; stroke: #475569; }
+.wallet-chip .gem-ico { width: 15px; height: 15px; margin-left: 6px; }
+.swatch .price-tag .gem-ico { width: 12px; height: 12px; }
 .goal-mark {
   width: 26px; height: 26px; flex: none;
   display: grid; place-items: center;
@@ -740,6 +746,8 @@ body[data-control="gyro"] .squeeze-btn { bottom: calc(26px + var(--safe-b)); rig
 
 /* opciones raras de Mi limo */
 .swatch.metallic { background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0 14%, transparent 15%), linear-gradient(135deg, #fff 0%, var(--swatch) 35%, #5b6475 60%, var(--swatch) 80%, #fff 100%); }
+/* gema: facetas claras y oscuras alrededor del brillo */
+.swatch.gem-swatch { background: radial-gradient(circle at 35% 30%, #fff 0 10%, transparent 11%), conic-gradient(from 20deg, var(--swatch), #fff 10%, var(--swatch) 24%, #0008 38%, var(--swatch) 50%, #fffc 62%, var(--swatch) 75%, #0007 88%, var(--swatch)); }
 .swatch.locked, .chip.locked { opacity: 0.55; filter: grayscale(0.6); }
 .swatch.locked { display: grid; place-items: center; }
 .swatch .lock-ico, .chip .lock-ico { position: static; width: 16px; height: 16px; }

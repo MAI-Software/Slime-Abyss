@@ -188,7 +188,7 @@ export const it: Dict = {
     eyes: 'Occhi',
     mouth: 'Bocca',
     cheeks: 'Guance',
-    colorOpt: { blue: 'Blu', green: 'Verde', pink: 'Rosa', purple: 'Viola', black: 'Nero', metal: 'Metallico', gold: 'Oro', rosegold: 'Oro rosa', emerald: 'Smeraldo', midnight: 'Mezzanotte', water: 'Acqua' },
+    colorOpt: { blue: 'Blu', green: 'Verde', pink: 'Rosa', purple: 'Viola', black: 'Nero', metal: 'Metallico', gold: 'Oro', rosegold: 'Oro rosa', jade: 'Giada', midnight: 'Mezzanotte', water: 'Acqua', ruby: 'Rubino', sapphire: 'Zaffiro', emerald: 'Smeraldo', diamond: 'Diamante' },
     eyesOpt: { none: 'Senza occhi', round: 'Tondi', dot: 'Puntini', sparkle: 'Brillanti', cat: 'Da gatto', star: 'Stellati', heart: 'Innamorati', sleepy: 'Assonnati', wink: 'Occhiolino', glasses: 'Occhiali', tomoe: 'Tomoe', ripple: 'Onde' },
     mouthOpt: { none: 'Senza bocca', cat: 'Gattino', smile: 'Sorriso', fang: 'Canino', tongue: 'Lingua', grin: 'Sorrisone', pout: 'Bacino', smirk: 'Furbetta', vampire: 'Vampiro', wobbly: 'Ondulata' },
     cheeksOpt: { none: 'Senza guance', lines: 'Linee', spots: 'Rossore', hearts: 'Cuori', stars: 'Stelline', freckles: 'Lentiggini', swirls: 'Spirali', bandage: 'Cerotto', sparkles: 'Scintille', whiskers: 'Baffi' },
@@ -197,6 +197,10 @@ export const it: Dict = {
     wallet: 'Monete: {n}',
     buyConfirm: '«{name}» costa {price} monete. Tocca di nuovo per comprarlo',
     needCoins: '«{name}» costa {price} monete. Te ne mancano {n}',
+    needGems: '«{name}» richiede {price} {gem}. Te ne mancano {n}',
+    buyGemsConfirm: 'Hai {price} {gem}. Tocca di nuovo per ottenere «{name}»',
+    gems: { ruby: 'rubini', sapphire: 'zaffiri', emerald: 'smeraldi', diamond: 'diamanti' },
+    gemWallet: '{gem}: {n} su {total}',
     bought: 'Comprato!',
     boughtNote: 'Ora puoi sceglierlo in Il mio slime',
   },
@@ -297,6 +301,8 @@ export const it: Dict = {
       railLoop: 'Binario con giro della morte (fa girare la testa)',
       railSpiral: 'Binario a spirale (fa girare la testa)',
       spinner: 'Piattaforma girevole (fa girare la testa)',
+      cannon: 'Cannone (spara verso il bersaglio)',
+      target: 'Bersaglio del cannone',
     },
   },
   levels: {
@@ -448,9 +454,9 @@ export const it: Dict = {
       name: 'Vortice',
       tips: ['Il vortice di sabbia ti fa girare', 'Con il capogiro è difficile muoversi: aspetta che passi'],
     },
-    'c4-arena-quebrada': {
-      name: 'Sabbia spezzata',
-      tips: ['Rampe e roccia rotta: scendi senza frenare'],
+    'c4-canonazo': {
+      name: 'Cannonata',
+      tips: ['Entra nel cannone: ti lancia sopra il vuoto', 'Più lontano spara, più ti sparpagli in aria', 'Congelato voli tutto intero e atterri proprio nel punto giusto'],
     },
     'c4-fuego-del-desierto': {
       name: 'Fuoco del deserto',

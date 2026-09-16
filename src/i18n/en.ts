@@ -188,7 +188,7 @@ export const en: Dict = {
     eyes: 'Eyes',
     mouth: 'Mouth',
     cheeks: 'Cheeks',
-    colorOpt: { blue: 'Blue', green: 'Green', pink: 'Pink', purple: 'Purple', black: 'Black', metal: 'Metallic', gold: 'Gold', rosegold: 'Rose gold', emerald: 'Emerald', midnight: 'Midnight', water: 'Water' },
+    colorOpt: { blue: 'Blue', green: 'Green', pink: 'Pink', purple: 'Purple', black: 'Black', metal: 'Metallic', gold: 'Gold', rosegold: 'Rose gold', jade: 'Jade', midnight: 'Midnight', water: 'Water', ruby: 'Ruby', sapphire: 'Sapphire', emerald: 'Emerald', diamond: 'Diamond' },
     eyesOpt: { none: 'No eyes', round: 'Round', dot: 'Dots', sparkle: 'Sparkly', cat: 'Cat', star: 'Starry', heart: 'Lovestruck', sleepy: 'Sleepy', wink: 'Wink', glasses: 'Glasses', tomoe: 'Tomoe', ripple: 'Ripples' },
     mouthOpt: { none: 'No mouth', cat: 'Kitty', smile: 'Smile', fang: 'Fang', tongue: 'Tongue', grin: 'Big grin', pout: 'Pout', smirk: 'Smirk', vampire: 'Vampire', wobbly: 'Wavy' },
     cheeksOpt: { none: 'No cheeks', lines: 'Lines', spots: 'Blush', hearts: 'Hearts', stars: 'Little stars', freckles: 'Freckles', swirls: 'Swirls', bandage: 'Bandage', sparkles: 'Sparkles', whiskers: 'Whiskers' },
@@ -197,6 +197,10 @@ export const en: Dict = {
     wallet: 'Coins: {n}',
     buyConfirm: '“{name}” costs {price} coins. Tap again to buy it',
     needCoins: '“{name}” costs {price} coins. You need {n} more',
+    needGems: '“{name}” needs {price} {gem}. You need {n} more',
+    buyGemsConfirm: 'You have {price} {gem}. Tap again to get “{name}”',
+    gems: { ruby: 'rubies', sapphire: 'sapphires', emerald: 'emeralds', diamond: 'diamonds' },
+    gemWallet: '{gem}: {n} of {total}',
     bought: 'Bought!',
     boughtNote: 'You can pick it in My slime now',
   },
@@ -297,6 +301,8 @@ export const en: Dict = {
       railLoop: 'Track with loop (makes dizzy)',
       railSpiral: 'Spiral track (makes dizzy)',
       spinner: 'Spinning platform (makes dizzy)',
+      cannon: 'Cannon (shoots to its target)',
+      target: 'Cannon target',
     },
   },
   levels: {
@@ -448,9 +454,9 @@ export const en: Dict = {
       name: 'Whirlpool',
       tips: ['The sand whirlpool spins you around', 'Dizzy, it’s hard to move: wait until it passes'],
     },
-    'c4-arena-quebrada': {
-      name: 'Broken Sand',
-      tips: ['Ramps and broken rock: go down without braking'],
+    'c4-canonazo': {
+      name: 'Cannon Shot',
+      tips: ['Get into the cannon: it launches you over the abyss', 'The farther it shoots, the more you scatter in the air', 'Frozen, you fly in one piece and land right on the spot'],
     },
     'c4-fuego-del-desierto': {
       name: 'Desert Fire',

@@ -179,6 +179,13 @@ export const sfx = {
     blup(260, 0.16, 0.14, 0.05, 2.6);
     wash({ dur: 0.18, vol: 0.12, type: 'lowpass', f0: 1400, f1: 300, q: 0.7 });
   },
+  /** cañonazo: estampido grave con eco de cueva y el limo que sale silbando */
+  cannon: () => {
+    if (!throttle('cannon', 0.3)) return;
+    tone('sine', 120, 38, 0.45, 0.34, 0, 1);
+    wash({ dur: 0.5, vol: 0.36, type: 'lowpass', f0: 900, f1: 120, q: 0.8, attack: 0.003 });
+    wash({ dur: 0.35, vol: 0.12, type: 'bandpass', f0: 900, f1: 2600, q: 1.5, delay: 0.05, reverb: 0.4 });
+  },
   /** vuelve a ser limo: plaf */
   unboard: () => {
     if (!throttle('unboard', 0.2)) return;

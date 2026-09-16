@@ -37,7 +37,7 @@ import c4f3 from './campaign/chapter4/03-c4-sierras.json';
 import c4f4 from './campaign/chapter4/04-c4-el-pozo.json';
 import c4f5 from './campaign/chapter4/05-c4-pozos-y-rampas.json';
 import c4f6 from './campaign/chapter4/06-c4-remolino.json';
-import c4f7 from './campaign/chapter4/07-c4-arena-quebrada.json';
+import c4f7 from './campaign/chapter4/07-c4-canonazo.json';
 import c4f8 from './campaign/chapter4/08-c4-fuego-del-desierto.json';
 import c4f9 from './campaign/chapter4/09-c4-railes-y-pozos.json';
 import c4f10 from './campaign/chapter4/10-c4-corazon-de-arena.json';

@@ -20,6 +20,16 @@ export interface Collectible {
   unlock: Unlock;
 }
 
+/**
+  Mundo alternativo (por diseñar): se abrirá al completar todos los pisos del juego con todas sus gemas secretas.
+*/
+export function altWorldUnlocked(chapters: { floors: { id: string; tiles: string[] }[] }[], floors: Record<string, { done: boolean; secret?: boolean } | undefined>) {
+  return chapters.every((ch) => ch.floors.every((f) => {
+    const s = floors[f.id];
+    return !!s?.done && (!f.tiles.some((r) => r.includes('G')) || !!s.secret);
+  }));
+}
+
 export const COLLECTIBLES: Collectible[] = [
   { id: 'col_crystal_skull', chapter: 'cripta-azul', unlock: { kind: 'secret', floor: 'c1-filo-de-cuchilla' } },
   { id: 'col_ancient_vase', chapter: 'cripta-azul', unlock: { kind: 'secret', floor: 'c1-salto-al-abismo' } },
