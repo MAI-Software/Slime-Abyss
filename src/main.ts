@@ -1836,6 +1836,7 @@ if (import.meta.env.DEV) {
       start: (c: number, k: number) => startFloor(CHAPTERS[c], k),
       practice: () => startLevel(PRACTICE, null, 0),
       play: (level: LevelData) => startLevel(level, null, 0),
+      chapters: () => CHAPTERS,
       finish: (win: boolean) => finish(win),
       breakdown: () => showBreakdown(CHAPTERS[0]),
       zoom: (k: number) => { camZoom = k; camPos.set(0, 0, 0); },

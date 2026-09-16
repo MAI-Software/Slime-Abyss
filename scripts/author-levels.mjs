@@ -129,9 +129,9 @@ const CHAPTER1 = [
       '....#22222#....',
       '....#22#22#....',
       '....#2C#22#....',
-      '....#22#2.#....',
       '....#22#22#....',
-      '....#.2#C2#....',
+      '....#22#22#....',
+      '....#22#C2#....',
       '....#22#22#....',
       '....#22#22#....',
       '....#22K22#....',
@@ -156,12 +156,12 @@ const CHAPTER1 = [
     // 2) pasillo con dos filas de llamas intermitentes y tres filas seguras entre ellas
     map: [
       '....#######....',
-      '....#C0T0C#....',
+      '....#00T00#....',
       '....#00000#....',
       '....##000##....',
       '.....#XXX#.....',
       '.....#000#.....',
-      '.....#000#.....',
+      '.....#0C0#.....',
       '.....#000#.....',
       '.....#XXX#.....',
       '.....#000#.....',
@@ -192,7 +192,7 @@ const CHAPTER1 = [
     map: [
       '###########',
       '#T0000000s#',
-      '#0C00000C0#',
+      '#000C000C0#',
       '###dd#DD###',
       '###SS#00###',
       '###00#00###',
@@ -217,12 +217,12 @@ const CHAPTER1 = [
     need: { B: 12 }, latch: { A: true, B: true },
     map: [
       '..#########.....',
-      '..#0C0T000#.....',
+      '..#000T000#.....',
       '..#0000000#.....',
       '..####D####.....',
-      '..#C00000C#####.',
-      '..#XX000XXd00G#.',
       '..#0000000#####.',
+      '..#XX000XXd00G#.',
+      '..#00C0C00#####.',
       '..#s00S000#.....',
       '..#0000000#.....',
       '................',
@@ -244,7 +244,7 @@ const CHAPTER1 = [
     id: 'c1-aceite-y-chispas', name: 'Aceite y chispas', count: 80, keepPct: 0.75,
     map: [
       '#############',
-      '#0C000T000C0#',
+      '#00000T00000#',
       '#00000000000#',
       '#####WWW#####',
       '....#000#....',
@@ -253,7 +253,7 @@ const CHAPTER1 = [
       '..###000###..',
       '..#0000000#..',
       '..#00F0F00#..',
-      '..#0000000#..',
+      '..#0C000C0#..',
       '..###000###..',
       '....#000#....',
       '....#0O0#....',
@@ -274,14 +274,14 @@ const CHAPTER1 = [
     // (ya vistos en el piso 6) con una sola idea nueva: ardiendo se derriten los bloques de hielo.
     map: [
       '###########',
-      '#000T0000C#',
-      '#000000000#',
+      '#000T00000#',
+      '#000000C00#',
       '####ZZZ####',
       '...#000#...',
       '...#0C0#...',
       '...#000#...',
       '####ZZZ####',
-      '#C00000000#',
+      '#0C0000000#',
       '#0F00000F0#',
       '#000000000#',
       '####000####',
@@ -312,7 +312,7 @@ const CHAPTER1 = [
     map: [
       '#############',
       '#00000T00000#',
-      '#00C00000C00#',
+      '#00000000000#',
       '#####000#####',
       '....#000#....',
       '....#0C0#....',
@@ -346,7 +346,7 @@ const CHAPTER1 = [
     map: [
       '..#######..',
       '..#00T00#..',
-      '..#C0000#..',
+      '..#00000#..',
       '..#00000#..',
       '...........',
       '...........',
@@ -371,7 +371,7 @@ const CHAPTER1 = [
     map: [
       '###############',
       '#0T0000000#00G#',
-      '#00C000000Z000#',
+      '#00000C000Z000#',
       '######WWW######',
       '.....#000#.....',
       '.....#0F0#.....',
@@ -385,13 +385,13 @@ const CHAPTER1 = [
       '...............',
       '...............',
       '...............',
-      '....#C0000#....',
+      '....#0C000#....',
       '....#00000#....',
       '....#0^^^0#....',
       '....#00000#....',
       '....#0Q0C0#....',
-      '....#00000#....',
-      '....#C0P00#....',
+      '....#000C0#....',
+      '....#00P00#....',
       '....#######....',
     ],
     tips: [
@@ -413,14 +413,14 @@ const CHAPTER2 = [
     map: [
       '#############',
       '#00000T00000#',
-      '#00C00000C00#',
+      '#00000000000#',
       '#####000#####',
       '....#0C0#....',
       '..###000###..',
       '..#0k000k0#..',
       '..#000k000#..',
       '..#0k000k0#..',
-      '..#C00000C#..',
+      '..#0C000C0#..',
       '..###000###..',
       '....#000#....',
       '....#0K0#....',
@@ -442,7 +442,7 @@ const CHAPTER2 = [
     // Raíles: una vía recta y corta entre dos estaciones; no hay forma de caerse.
     map: [
       '...#######...',
-      '...#0C0T0#...',
+      '...#000T0#...',
       '...#00000#...',
       '...###R###...',
       '......=......',
@@ -466,7 +466,7 @@ const CHAPTER2 = [
     // Vías con curvas y dos trayectos seguidos con una isla en medio.
     map: [
       '#######........',
-      '#0T0C0#........',
+      '#0T000#........',
       '#00000#........',
       '###R###........',
       '...=...........',
@@ -499,7 +499,7 @@ const CHAPTER2 = [
     // Las vías suben: a pie solo se baja, en bola se sube.
     map: [
       '...#######...',
-      '...#8C8T8#...',
+      '...#888T8#...',
       '...#88888#...',
       '...###R###...',
       '......=......',
@@ -530,7 +530,7 @@ const CHAPTER2 = [
     // Apretar + raíles: solo sube el trozo que pisa la estación; los que se quedan pueden subir después.
     map: [
       '...#######...',
-      '...#0C0T0#...',
+      '...#000T0#...',
       '...#00000#...',
       '...###R###...',
       '......=......',
@@ -556,7 +556,7 @@ const CHAPTER2 = [
     // Aceite y fuego (capítulo 1) para despejar la entrada de una estación.
     map: [
       '...#######...',
-      '...#0C0T0#...',
+      '...#000T0#...',
       '...#00000#...',
       '...###R###...',
       '......=......',
@@ -582,7 +582,7 @@ const CHAPTER2 = [
     // Plataformas de salto hasta una isla con estación que sube.
     map: [
       '...#######...',
-      '...#8C8T8#...',
+      '...#888T8#...',
       '...#88888#...',
       '...###R###...',
       '......=......',
@@ -610,7 +610,7 @@ const CHAPTER2 = [
     map: [
       '#############',
       '#00000T00000#',
-      '#0C0000000C0#',
+      '#0C000000000#',
       '###R#####0###',
       '...=.....0<..',
       '...=....>0...',
@@ -657,7 +657,7 @@ const CHAPTER2 = [
     // Final: apretar tras la cuchilla, aceite, saltar, prenderse lejos del borde, quemar plantas y vía hacia lo alto.
     map: [
       '...#######.....',
-      '...#8C8T8#.....',
+      '...#888T8#.....',
       '...#88888#.....',
       '...###R###.....',
       '......=........',
@@ -667,8 +667,8 @@ const CHAPTER2 = [
       '...###W###.....',
       '...#F222F#.....',
       '...#22222#.....',
-      '...#22222#.....',
       '...#2C2C2#.....',
+      '...#22222#.....',
       '...............',
       '...............',
       '...#JJJJJ#.....',
@@ -676,7 +676,7 @@ const CHAPTER2 = [
       '...#22222#.....',
       '...#2C2C2#.....',
       '...#22222#.....',
-      '...#2Y2Y2#.....',
+      '...#Y222Y#.....',
       '...#22K22#.....',
       '...#C222C#.....',
       '...#22P22#.....',
@@ -751,7 +751,7 @@ const CHAPTER3 = [
     // Presenta el hielo que se derrite: ardiendo, la franja de hielo cae tras pasar.
     map: [
       '#############',
-      '#00C00T00C00#',
+      '#T00000000C0#',
       '#00000000000#',
       '####IIIII####',
       '...#00000#...',
@@ -777,7 +777,7 @@ const CHAPTER3 = [
     // Puente de hielo sobre el vacío que se funde bajo el limo en llamas: resbala, así que se cruza de un tirón.
     map: [
       '###########',
-      '#00C0T0C00#',
+      '#0000T0000#',
       '#000000000#',
       '###00000###',
       '....III....',
@@ -806,7 +806,7 @@ const CHAPTER3 = [
     // Llamas intermitentes y, justo detrás de las segundas, roca agrietada: se espera en suelo firme.
     map: [
       '###########',
-      '#00C0T0C00#',
+      '#0000T0000#',
       '#000000000#',
       '###00000###',
       '....BBB....',
@@ -834,7 +834,7 @@ const CHAPTER3 = [
     // La cuchilla parte al limo y cada mitad cruza su puente agrietado; se reúnen arriba.
     map: [
       '#############',
-      '#00C00T00C00#',
+      '#00000T00000#',
       '#00000000000#',
       '###BBB#BBB###',
       '...BBB.BBB...',
@@ -859,7 +859,7 @@ const CHAPTER3 = [
     // Plataformas de salto que aterrizan sobre roca agrietada; la siguiente plataforma está justo después.
     map: [
       '###########',
-      '#00C0T0C00#',
+      '#0000T0000#',
       '#000000000#',
       '###00000###',
       '..#BBBBB#..',
@@ -888,7 +888,7 @@ const CHAPTER3 = [
     // Los ventiladores empujan contra el muro mientras la roca se rompe: el muro impide caer, la prisa evita hundirse.
     map: [
       '###########',
-      '#00C0T0C00#',
+      '#0000T0000#',
       '#000000000#',
       '###00000###',
       '..>BBB#....',
@@ -913,7 +913,7 @@ const CHAPTER3 = [
     // La cuchilla parte al limo justo antes de una plaza agrietada: hay que apretar mientras se avanza.
     map: [
       '###########',
-      '#00C0T0C00#',
+      '#0000T0000#',
       '#000000000#',
       '####000####',
       '...#BBB#...',
@@ -938,7 +938,7 @@ const CHAPTER3 = [
     // Final: aceite y fuego, hiedra, puente de hielo que se funde, gema tras la hiedra, llamas, roca agrietada y vía.
     map: [
       '..#######....',
-      '..#0C0T0#....',
+      '..#000T0#....',
       '..#00000#....',
       '..###R###....',
       '.....=.......',
@@ -985,7 +985,7 @@ const CHAPTER4 = [
     // Rampas: bajar y volver a subir, con muros a los lados.
     map: [
       '###########',
-      '#44C4T4C44#',
+      '#4444T4444#',
       '#444444444#',
       '###nnnnn###',
       '..#33333#..',
@@ -1009,7 +1009,7 @@ const CHAPTER4 = [
     // Un camino en diagonal sin muros: las medias casillas lo dejan liso.
     map: [
       '#############',
-      '#000C0T0C000#',
+      '#0T000C000C0#',
       '#00000000000#',
       '.......m000q.',
       '......m000q..',
@@ -1033,7 +1033,7 @@ const CHAPTER4 = [
     // Sierras rectas y diagonales en una sala cerrada: parten sin dañar.
     map: [
       '###########',
-      '#00C0T0C00#',
+      '#0000T0000#',
       '#000000000#',
       '#000V0A000#',
       '#000000000#',
@@ -1053,7 +1053,7 @@ const CHAPTER4 = [
     // Presenta los agujeros: desde la sala alta se cae a la sala del tesoro, mucho más abajo.
     map: [
       '###########',
-      '#00C0T0C00#',
+      '#0000T0000#',
       '#000000000#',
       '#000U00000#',
       '#000000000#',
@@ -1074,7 +1074,7 @@ const CHAPTER4 = [
     // Se baja por el pozo y se vuelve a subir por rampas hasta lo alto.
     map: [
       '###########',
-      '#00C0T0C00#',
+      '#0000T0000#',
       '#000000000#',
       '###nnnnn###',
       '..#nnnnn#..',
@@ -1117,7 +1117,7 @@ const CHAPTER4 = [
     // Presenta la plataforma giratoria: un remolino de arena en una sala cerrada. Marea, pero aquí no hay peligro.
     map: [
       '###########',
-      '#00C0T0C00#',
+      '#0000T0000#',
       '#000000000#',
       '###00000###',
       '..#00000#..',
@@ -1140,7 +1140,7 @@ const CHAPTER4 = [
     // Bajada sobre el vacío: rampas y roca agrietada alternas.
     map: [
       '###########',
-      '#00C0T0C00#',
+      '#0000T0000#',
       '#000000000#',
       '###BBBBB###',
       '...uuuuu...',
@@ -1176,7 +1176,7 @@ const CHAPTER4 = [
     // Aceite y fuego, rampas arriba, una sierra y la hiedra que hay que quemar antes de que se apaguen las llamas.
     map: [
       '###########',
-      '#44C4T4C44#',
+      '#4444T4444#',
       '#444444444#',
       '####WWW####',
       '...#444#...',
@@ -1202,12 +1202,12 @@ const CHAPTER4 = [
     // La vía sube a una sala alta y el pozo baja a la del tesoro.
     map: [
       '###########',
-      '#00C0T0C00#',
-      '#000U00000#',
-      '#000000000#',
+      '#T00000000#',
+      '#000000U00#',
+      '#000C00000#',
       '###########',
       '#888888888#',
-      '#88C8H8C88#',
+      '#8888H8888#',
       '#888888888#',
       '####8R8####',
       '.....=.....',
@@ -1230,12 +1230,12 @@ const CHAPTER4 = [
     map: [
       '#############',
       '#00C00T00C00#',
+      '#00000000U00#',
       '#00000000000#',
-      '#00000U00000#',
       '#############',
       '#######33333#',
-      '#######3H3C3#',
-      '#######BBBBB#',
+      '#######3H333#',
+      '#######33333#',
       '.......BBBBB.',
       '.....m333q...',
       '....m333q....',
@@ -1309,6 +1309,7 @@ function build(def) {
   }
   checkNoStepsUp(def, tiles, heights);
   checkNoDeadEnds(def, tiles, heights);
+  checkCoins(def, tiles);
   const { map, h, file, ...meta } = def;
   return { format: 1, ...meta, tiles, heights };
 }
@@ -1375,6 +1376,23 @@ function checkNoDeadEnds(def, tiles, heights) {
   if (!fromStart.has(String(T))) console.warn(`  aviso ${def.id}: el tesoro no se alcanza desde la salida`);
   const stuck = [...fromStart].filter((k) => !reachable(k.split(',').map(Number)).has(String(T)));
   if (stuck.length) console.warn(`  aviso ${def.id}: zona sin vuelta en ${stuck.map((k) => `(${k})`).join(' ')}`);
+}
+
+/**
+  Monedas que se pueden recoger: lejos del tesoro (si no, al ir a por ellas se toca el cofre y acaba el piso)
+  y no encajadas en una esquina o un hueco de una casilla (el limo no llega a meterse lo bastante).
+*/
+function checkCoins(def, tiles) {
+  const H = tiles.length, W = tiles[0].length;
+  const at = (i, j) => (j >= 0 && j < H && i >= 0 && i < W ? tiles[j][i] : '.');
+  let T;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (at(i, j) === 'T') T = [i, j];
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    if (at(i, j) !== 'C' && at(i, j) !== 'G') continue;
+    if (T && Math.max(Math.abs(i - T[0]), Math.abs(j - T[1])) < 3) console.warn(`  aviso ${def.id}: moneda en (${i}, ${j}) demasiado cerca del tesoro`);
+    const blocked = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([di, dj]) => '#.'.includes(at(i + di, j + dj)) || '=@%R'.includes(at(i + di, j + dj))).length;
+    if (blocked >= 2 && at(i, j) === 'C') console.warn(`  aviso ${def.id}: moneda en (${i}, ${j}) encajada (${blocked} lados cerrados)`);
+  }
 }
 
 /** Avisa si hay suelo contiguo que sube (el diseño pide solo bajadas). */
