@@ -12,7 +12,7 @@
 export type ControlMode = 'joystick' | 'gyro';
 
 const RANGE_DEG = 22;
-const GYRO_DEAD = 0.03;
+const GYRO_DEAD = 0.06;
 const JOY_DEAD = 0.1;
 const JOY_RADIUS = 64; // px de recorrido del mando
 const JOY_CURVE = 1.35; // >1: más precisión con desplazamientos pequeños
