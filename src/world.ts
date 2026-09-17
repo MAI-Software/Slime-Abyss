@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Assets } from './assets';
 import { GEM_LOOK, GEM_OF_BIOME, type Biome } from './biomes';
+import { COLLECTIBLES } from './collectibles';
 import { FireFx, type FireCell, type FireState } from './fire';
 import { AO_E, AO_N, AO_NE, AO_NW, AO_S, AO_SE, AO_SW, AO_W, createBlockMaterial, createGlowMaterial } from './materials';
 import { cannonTargets, HEIGHT_STEP, RAMP_RISE, STORY_H, storyGrids, TILE_BY_CHAR, TILES, traceRails, type CellKind, type Channel, type LevelData, type StoryGrid } from './level/format';
@@ -31,7 +32,7 @@ export const HOLE_R = 0.36;
 /** por debajo de esto, lo que cae por un agujero sale por su salida */
 export const HOLE_DROP = 0.9;
 
-export type PickupType = 'coin' | 'gem' | 'oil';
+export type PickupType = 'coin' | 'gem' | 'oil' | 'relic';
 
 /** Cañón: su casilla, la diana a la que apunta (NaN si no tiene) y el tubo dibujado. */
 export interface Cannon {
@@ -233,6 +234,8 @@ export class World {
   gemsCollected = 0;
   get coinsTotal() { return this.coins.filter((c) => c.type === 'coin').length; }
   get gemsTotal() { return this.coins.filter((c) => c.type === 'gem').length; }
+  relicsCollected = 0;
+  get relicsTotal() { return this.coins.filter((c) => c.type === 'relic').length; }
   private breakables = new Map<number, Breakable>();
   private batches = new Map<string, BlockBatch>();
   private collapses = new Map<number, Collapse>();
@@ -435,6 +438,7 @@ export class World {
     c.collected = true;
     c.t = 0;
     if (c.type === 'gem') this.gemsCollected++;
+    else if (c.type === 'relic') this.relicsCollected++;
     else if (c.type === 'coin') this.coinsCollected++;
     return c.type;
   }
@@ -667,7 +671,7 @@ export class World {
             this.treasure.set(x, c.base, z);
             this.addChest(x, c.base, z);
             break;
-          case 'coin': case 'gem': case 'oil':
+          case 'coin': case 'gem': case 'oil': case 'relic':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.addCoin(idx, i, j, c.base, c.kind);
             break;
@@ -1040,17 +1044,21 @@ export class World {
   }
 
   private addCoin(idx: number, i: number, j: number, base: number, kind: string) {
-    const type: PickupType = kind === 'gem' ? 'gem' : kind === 'oil' ? 'oil' : 'coin';
+    const type: PickupType = kind === 'gem' ? 'gem' : kind === 'oil' ? 'oil' : kind === 'relic' ? 'relic' : 'coin';
     const gem = type === 'gem';
-    const y = base + (type === 'coin' ? 0.55 : type === 'oil' ? 0.12 : 0.62);
-    const obj = gem ? this.addGem(i + 0.5, y, j + 0.5) : this.add(type === 'coin' ? 'coin' : 'oil_bottle', i + 0.5, y, j + 0.5);
-    if (gem || type === 'oil') {
-      // halo del color de la gema bajo ella para que se vea desde lejos
-      const glowMat = createGlowMaterial(gem ? GEM_LOOK[GEM_OF_BIOME[this.biome]].glow : 0xf5a524, this.timeUniform, gem ? 1 : 0.8);
+    const relic = type === 'relic';
+    const y = base + (type === 'coin' ? 0.55 : type === 'oil' ? 0.12 : relic ? 0.3 : 0.62);
+    const obj = gem ? this.addGem(i + 0.5, y, j + 0.5) : relic ? this.addRelic(i + 0.5, y, j + 0.5)
+      : this.add(type === 'coin' ? 'coin' : 'oil_bottle', i + 0.5, y, j + 0.5);
+    if (gem || relic || type === 'oil') {
+      // halo del color de la gema (rosa el coleccionable) bajo ella para que se vea desde lejos
+      const color = gem ? GEM_LOOK[GEM_OF_BIOME[this.biome]].glow : relic ? 0xf472b6 : 0xf5a524;
+      const glowMat = createGlowMaterial(color, this.timeUniform, gem || relic ? 1 : 0.8);
       this.ownedMaterials.push(glowMat);
       const glow = new THREE.Mesh(this.assets.geometry('fire_glow'), glowMat);
       glow.position.set(i + 0.5, base + 0.02, j + 0.5);
-      glow.scale.set(gem ? 2.4 : 1.8, 1, gem ? 2.4 : 1.8);
+      const size = gem ? 2.4 : relic ? 2.6 : 1.8;
+      glow.scale.set(size, 1, size);
       glow.renderOrder = 2;
       this.storyGroups[this.buildStory].add(glow);
       obj.userData.glow = glow;
@@ -1058,6 +1066,23 @@ export class World {
     const coin: Coin = { type, i, j, obj, baseY: y, collected: false, t: 0 };
     this.coins.push(coin);
     this.coinAt.set(idx, coin);
+  }
+
+  /** El coleccionable de este piso (su modelo del salón, encogido para caber en la casilla); sin dueño, un orbe. */
+  private addRelic(x: number, y: number, z: number): THREE.Object3D {
+    const found = COLLECTIBLES.find((c) => c.unlock.kind === 'found' && c.unlock.floor === this.def.id);
+    const model = this.assets.clone(found && this.assets.has(found.id) ? found.id : 'col_blue_orb');
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const mid = box.getCenter(new THREE.Vector3());
+    const scale = 0.62 / Math.max(size.x, size.y, size.z, 1e-3);
+    model.scale.setScalar(scale);
+    model.position.set(-mid.x * scale, -box.min.y * scale, -mid.z * scale);
+    const holder = new THREE.Group();
+    holder.add(model);
+    holder.position.set(x, y, z);
+    this.storyGroups[this.buildStory].add(holder);
+    return holder;
   }
 
   /** Corriente de cada ventilador: avanza por casillas (también sobre el vacío) hasta chocar con algo alto. */
@@ -1437,8 +1462,8 @@ export class World {
         c.obj.position.y = c.baseY + Math.sin(this.time * 2.4 + c.j) * 0.1;
         if (this.gemMesh) this.gemMesh.mat.emissiveIntensity = 0.7 + Math.pow(Math.max(0, Math.sin(this.time * 2.7)), 8) * 1.4;
       } else if (!c.collected) {
-        c.obj.rotation.y = this.time * (c.type === 'coin' ? 2.6 : 1.4) + c.i * 0.7;
-        c.obj.position.y = c.baseY + Math.sin(this.time * 3 + c.j) * (c.type === 'coin' ? 0.06 : 0.08);
+        c.obj.rotation.y = this.time * (c.type === 'coin' ? 2.6 : c.type === 'relic' ? 1 : 1.4) + c.i * 0.7;
+        c.obj.position.y = c.baseY + Math.sin(this.time * (c.type === 'relic' ? 2 : 3) + c.j) * (c.type === 'coin' ? 0.06 : 0.08);
       } else {
         // recogida: salta, gira rápido, crece y se desvanece
         c.t += dt;

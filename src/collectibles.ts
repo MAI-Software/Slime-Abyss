@@ -13,6 +13,8 @@ export type Unlock =
   | { kind: 'allCoins' }
   /** todas las estrellas del capítulo */
   | { kind: 'allStars' }
+  /** coleccionable escondido (casilla L) en un camino oculto o bloqueado de un piso sin gema */
+  | { kind: 'found'; floor: string }
   /** un logro concreto */
   | { kind: 'achievement'; id: string }
   /** el tesoro más valioso: todos los pisos con todas sus gemas secretas */
@@ -46,18 +48,18 @@ const C1 = 'cripta-azul', C2 = 'raices-colgantes', C3 = 'grietas-heladas', C4 = 
 
 export const COLLECTIBLES: Collectible[] = [
   // capítulo 1
-  { id: 'col_crystal_skull', chapter: C1, place: 'vitrina', unlock: { kind: 'secret', floor: 'c1-filo-de-cuchilla' } },
-  { id: 'col_ancient_vase', chapter: C1, place: 'vitrina', unlock: { kind: 'secret', floor: 'c1-salto-al-abismo' } },
-  { id: 'col_blue_orb', chapter: C1, place: 'shelf', unlock: { kind: 'secret', floor: 'c1-gran-cripta' } },
-  { id: 'col_crypt_key', chapter: C1, place: 'shelf', unlock: { kind: 'chapterDone' } },
-  { id: 'col_coin_chest', chapter: C1, place: 'shelf', unlock: { kind: 'allCoins' } },
+  { id: 'col_crystal_skull', chapter: C1, place: 'vitrina', unlock: { kind: 'found', floor: 'c1-hielo-que-arde' } },
+  { id: 'col_ancient_vase', chapter: C1, place: 'vitrina', unlock: { kind: 'found', floor: 'c1-aceite-y-chispas' } },
+  { id: 'col_blue_orb', chapter: C1, place: 'shelf', unlock: { kind: 'found', floor: 'c1-ventiladores' } },
+  { id: 'col_crypt_key', chapter: C1, place: 'shelf', unlock: { kind: 'found', floor: 'c1-pasillo-de-fuego' } },
+  { id: 'col_coin_chest', chapter: C1, place: 'shelf', unlock: { kind: 'found', floor: 'c1-corriente-helada' } },
   { id: 'col_trophy', chapter: C1, place: 'vitrina', unlock: { kind: 'allStars' } },
   // capítulo 2
-  { id: 'col_root_lantern', chapter: C2, place: 'shelf', unlock: { kind: 'secret', floor: 'c2-bifurcacion' } },
-  { id: 'col_mini_train', chapter: C2, place: 'shelf', unlock: { kind: 'secret', floor: 'c2-sobre-railes' } },
-  { id: 'col_spring_toy', chapter: C2, place: 'shelf', unlock: { kind: 'secret', floor: 'c2-salto-a-la-estacion' } },
-  { id: 'col_mine_cart', chapter: C2, place: 'vitrina', unlock: { kind: 'chapterDone' } },
-  { id: 'col_acorn_jar', chapter: C2, place: 'shelf', unlock: { kind: 'allCoins' } },
+  { id: 'col_root_lantern', chapter: C2, place: 'shelf', unlock: { kind: 'found', floor: 'c2-gran-raiz' } },
+  { id: 'col_mini_train', chapter: C2, place: 'shelf', unlock: { kind: 'found', floor: 'c2-curvas' } },
+  { id: 'col_spring_toy', chapter: C2, place: 'shelf', unlock: { kind: 'found', floor: 'c2-cuesta-arriba' } },
+  { id: 'col_mine_cart', chapter: C2, place: 'vitrina', unlock: { kind: 'found', floor: 'c2-todos-a-bordo' } },
+  { id: 'col_acorn_jar', chapter: C2, place: 'shelf', unlock: { kind: 'found', floor: 'c2-plantas-en-la-via' } },
   { id: 'col_leaf_frame', chapter: C2, place: 'vitrina', flat: true, unlock: { kind: 'allStars' } },
   // capítulo 3
   { id: 'col_ice_crystal', chapter: C3, place: 'shelf', unlock: { kind: 'secret', floor: 'c3-gran-grieta' } },

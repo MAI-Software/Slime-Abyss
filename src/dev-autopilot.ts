@@ -21,7 +21,7 @@ interface DevApi {
   drive(fn: (() => [number, number]) | null): void;
   state(): { mode: string; groups?: number[]; coins?: string };
   slime(): DevSlime | null;
-  world(): { def: { id: string }; fireActive(i: number, j: number): boolean; coinsCollected: number; coinsTotal: number; gemsCollected: number; gemsTotal: number };
+  world(): { def: { id: string }; fireActive(i: number, j: number): boolean; coinsCollected: number; coinsTotal: number; gemsCollected: number; gemsTotal: number; relicsCollected: number; relicsTotal: number };
   save(): { floors: Record<string, { done: boolean } | undefined> };
   chapters(): { floors: { id: string }[] }[];
 }
@@ -93,6 +93,10 @@ export interface LevelReport { id: string; ok: boolean; line: string }
 async function run(c: number, k: number, steps: Step[], trace?: string[]): Promise<LevelReport> {
   const S = api();
   S.drive(null);
+  // lo ya ganado en la partida (o con el código de pruebas) no cuenta: se aparta y se devuelve al terminar
+  const floorId = S.chapters()[c].floors[k].id;
+  const saved = S.save().floors[floorId];
+  delete S.save().floors[floorId];
   S.start(c, k);
   await sleep(1200);
   apart = { n: 0, x: 0, z: 0 };
@@ -119,10 +123,11 @@ async function run(c: number, k: number, steps: Step[], trace?: string[]): Promi
   const w = S.world();
   const sl = S.slime();
   const done = st.mode === 'winning' || !!S.save().floors[w.def.id]?.done;
+  if (saved) S.save().floors[floorId] = saved;
   const pct = sl ? sl.aliveCount / sl.n : 0;
   const coins = w.coinsCollected === w.coinsTotal;
   const ok = done && coins && pct > 0.9;
-  const line = `${ok ? 'OK ' : 'MAL'} c${c + 1}f${k + 1} ${w.def.id}: ${done ? 'tesoro' : 'SIN TESORO'} · limo ${Math.round(pct * 100)}% · monedas ${w.coinsCollected}/${w.coinsTotal}${w.gemsTotal ? ` · gema ${w.gemsCollected}/${w.gemsTotal}` : ''} · separado máx ${apart.n} en (${apart.x.toFixed(1)}, ${apart.z.toFixed(1)})`;
+  const line = `${ok ? 'OK ' : 'MAL'} c${c + 1}f${k + 1} ${w.def.id}: ${done ? 'tesoro' : 'SIN TESORO'} · limo ${Math.round(pct * 100)}% · monedas ${w.coinsCollected}/${w.coinsTotal}${w.gemsTotal ? ` · gema ${w.gemsCollected}/${w.gemsTotal}` : ''}${w.relicsTotal ? ` · coleccionable ${w.relicsCollected}/${w.relicsTotal}` : ''} · separado máx ${apart.n} en (${apart.x.toFixed(1)}, ${apart.z.toFixed(1)})`;
   return { id: w.def.id, ok, line };
 }
 

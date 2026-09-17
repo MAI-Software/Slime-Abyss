@@ -80,6 +80,7 @@ export const fr: Dict = {
   toast: {
     noGpu: 'Chrome n’utilise pas la carte graphique : active « Utiliser l’accélération graphique si disponible » dans Paramètres → Système et redémarre Chrome',
     secret: 'Trésor secret trouvé !',
+    relic: 'Objet de collection trouvé !',
     oil: "De l'huile ! Le feu va maintenant t'enflammer",
     ignite: 'En feu ! Brûle les plantes et la glace',
     freeze: "Gelé ! Les courants d'air te portent sans te briser",
@@ -95,6 +96,7 @@ export const fr: Dict = {
     goalCoins: 'Toutes les pièces',
     goalKeep: 'Garder {pct} % du slime',
     goalSecret: 'Trésor secret',
+    goalRelic: 'Objet de collection caché',
     found: 'Trouvé !',
     next: 'Étage suivant',
     toBreakdown: 'Voir le bilan du chapitre',
@@ -304,6 +306,7 @@ export const fr: Dict = {
     place: 'Il est exposé dans ta chambre',
     ok: 'Super !',
     howSecret: 'Trouve le trésor secret de l’étage {n} de {chapter}',
+    howFound: 'Trouve le chemin caché de l’étage {n} de {chapter}',
     howDone: 'Termine le {chapter}',
     howCoins: 'Toutes les pièces du {chapter}',
     howPerfect: 'Termine le {chapter} à 100 %',
@@ -515,11 +518,11 @@ export const fr: Dict = {
     },
     'c2-todos-a-bordo': {
       name: 'Tous à bord',
-      tips: ['Seul le morceau posé sur la gare monte dans la boule', 'Serre pour rassembler le slime avant de monter'],
+      tips: ['Seul le morceau sur la station voyage', 'Serre pour rassembler le slime avant de descendre'],
     },
     'c2-plantas-en-la-via': {
       name: 'Plantes sur la voie',
-      tips: ['Prends l’huile et enflamme-toi sur un brasero', 'En feu, tu brûles les plantes qui bloquent la gare'],
+      tips: ['Prends l’huile et enflamme-toi sur un brasero', 'En flammes, tu brûles les plantes qui bouchent le trou'],
     },
     'c2-salto-a-la-estacion': {
       name: 'Saut vers la gare',

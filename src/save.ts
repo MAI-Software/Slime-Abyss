@@ -14,6 +14,8 @@ export interface FloorSave {
   bestPct: number;
   bestTime: number;
   secret?: boolean;
+  /** coleccionable del camino oculto encontrado */
+  relic?: boolean;
 }
 
 export interface Save {

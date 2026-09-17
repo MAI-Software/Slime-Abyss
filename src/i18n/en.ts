@@ -80,6 +80,7 @@ export const en: Dict = {
   toast: {
     noGpu: 'Chrome is not using your graphics card: turn on “Use graphics acceleration when available” in Settings → System and restart Chrome',
     secret: 'Secret treasure found!',
+    relic: 'Collectible found!',
     oil: 'Oil! Fire will now set you ablaze',
     ignite: 'On fire! Burn through plants and ice',
     freeze: 'Frozen! Air currents carry you in one piece',
@@ -95,6 +96,7 @@ export const en: Dict = {
     goalCoins: 'All the coins',
     goalKeep: 'Keep {pct}% of your slime',
     goalSecret: 'Secret treasure',
+    goalRelic: 'Hidden collectible',
     found: 'Found!',
     next: 'Next floor',
     toBreakdown: 'See chapter summary',
@@ -304,6 +306,7 @@ export const en: Dict = {
     place: 'Now on display in your room',
     ok: 'Great!',
     howSecret: 'Find the secret treasure on floor {n} of {chapter}',
+    howFound: 'Find the hidden path on floor {n} of {chapter}',
     howDone: 'Complete {chapter}',
     howCoins: 'All coins in {chapter}',
     howPerfect: 'Complete {chapter} at 100%',
@@ -515,11 +518,11 @@ export const en: Dict = {
     },
     'c2-todos-a-bordo': {
       name: 'All Aboard',
-      tips: ['Only the piece standing on the station gets on the ball', 'Squeeze to gather your slime before boarding'],
+      tips: ['Only the piece on the station rides', 'Squeeze to gather the slime before going down'],
     },
     'c2-plantas-en-la-via': {
       name: 'Plants on the Track',
-      tips: ['Grab the oil and catch fire at a brazier', 'While burning, you burn the plants blocking the station'],
+      tips: ['Grab the oil and catch fire at a brazier', 'While burning, you burn the plants covering the hole'],
     },
     'c2-salto-a-la-estacion': {
       name: 'Leap to the Station',

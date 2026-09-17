@@ -585,6 +585,7 @@ const chapterAllStars = (ch: ChapterDef) => ch.floors.every((f) => floorStars(f.
 function isUnlocked(c: Collectible): boolean {
   if (c.unlock.kind === 'achievement') return save.achievements.includes(c.unlock.id);
   if (c.unlock.kind === 'legend') return altWorldUnlocked(CHAPTERS, save.floors);
+  if (c.unlock.kind === 'found') return !!floorSave(c.unlock.floor)?.relic;
   if (c.unlock.kind === 'secret') return !!floorSave(c.unlock.floor)?.secret;
   const ch = CHAPTERS.find((x) => x.id === c.chapter);
   if (!ch) return false;
@@ -850,6 +851,10 @@ function howToGet(c: Collectible): string {
       const floor = c.unlock.floor;
       return t('collection.howSecret', { n: ch.floors.findIndex((f) => f.id === floor) + 1, chapter: title });
     }
+    case 'found': {
+      const floor = c.unlock.floor;
+      return t('collection.howFound', { n: ch.floors.findIndex((f) => f.id === floor) + 1, chapter: title });
+    }
     case 'chapterDone': return t('collection.howDone', { chapter: title });
     case 'allCoins': return t('collection.howCoins', { chapter: title });
     case 'allStars': return t('collection.howStars', { chapter: title });
@@ -1049,22 +1054,18 @@ function refreshRoom() {
     const box = meshBounds(item);
     const size = box.getSize(new THREE.Vector3());
     const mid = box.getCenter(new THREE.Vector3());
-    // en estanterías y vitrinas giran despacio (salvo lo plano); lo colgado en la pared y lo del suelo se queda quieto
-    const spin = (def.place === 'shelf' || def.place === 'vitrina') && !def.flat;
+    // son objetos expuestos: quietos, mirando hacia donde se los ve
     let scale = slot.scale.x;
     const fit = FIT[def.place === 'vitrina' && slot.position.y > 1.2 ? 'vitrinaTop' : def.place];
     if (fit) {
-      // cada pieza llena su hueco igual que las demás, centrada sobre él (girando no toca los lados)
-      const across = spin ? Math.hypot(size.x, size.z) : size.x;
-      scale = Math.min(fit.h / size.y, fit.w / Math.max(across, 1e-3));
+      // cada pieza llena su hueco igual que las demás, centrada sobre él
+      scale = Math.min(fit.h / size.y, fit.w / Math.max(size.x, 1e-3));
       item.position.set(-mid.x * scale, -box.min.y * scale, -mid.z * scale);
+      holder.rotation.y = Math.atan2(slotView(slot.position, viewDir).x, viewDir.z);
     }
     item.scale.setScalar(scale);
-    if (def.flat && fit) holder.rotation.y = Math.atan2(slotView(slot.position, viewDir).x, viewDir.z);
     holder.add(item);
-    holder.userData.phase = showcase.length * 1.3;
     holder.userData.colId = id;
-    holder.userData.spin = spin;
     // para la cámara de la colección: centro y tamaño de lo que se ve
     holder.userData.center = fit ? slot.position.clone().setY(slot.position.y + (size.y * scale) / 2) : mid.multiplyScalar(scale).add(slot.position);
     holder.userData.radius = (size.length() * scale) / 2;
@@ -1349,6 +1350,7 @@ function unlockEverything() {
       done: true, allCoins: true, kept: true,
       bestCoins: coinsTotalOf(f), bestPct: Math.max(prev?.bestPct ?? 0, 1), bestTime: prev?.bestTime ?? 0,
       secret: gemsTotalOf(f) > 0 || !!prev?.secret,
+      relic: tilesOfAll(f).includes('L') || !!prev?.relic,
     };
   }
   save.achievements = ACHIEVEMENTS.map((a) => a.id);
@@ -2112,6 +2114,8 @@ function finish(win: boolean) {
   const earned = starsOf(r);
   const gemsTotal = world.gemsTotal;
   const gotGem = win && world.gemsCollected > 0;
+  const relicsTotal = world.relicsTotal;
+  const gotRelic = win && world.relicsCollected > 0;
 
   if (win && chapter) {
     const prev = save.floors[def.id];
@@ -2123,6 +2127,7 @@ function finish(win: boolean) {
       bestPct: Math.max(prev?.bestPct ?? 0, pct),
       bestTime: prev?.done ? Math.min(prev.bestTime, elapsed) : elapsed,
       secret: gotGem || !!prev?.secret,
+      relic: gotRelic || !!prev?.relic,
     };
     store();
   }
@@ -2146,6 +2151,7 @@ function finish(win: boolean) {
     : [{ ok: false, label: t('result.failInfo'), val: '0%' }];
   // el tesoro secreto no da estrella: solo se muestra si el piso tiene uno
   if (win && gemsTotal > 0) goals.push({ ok: gotGem, label: t('result.goalSecret'), val: gotGem ? t('result.found') : '', secret: true });
+  if (win && relicsTotal > 0) goals.push({ ok: gotRelic, label: t('result.goalRelic'), val: gotRelic ? t('result.found') : '', secret: true });
   $('result-goals').innerHTML = goals.map((g, k) =>
     `<li class="${g.ok ? 'ok' : ''}${g.secret ? ' secret' : ''}" style="animation-delay:${150 + k * 120}ms"><span class="goal-mark">${g.ok ? checkSvg : crossSvg}</span>${g.label}<span class="val">${g.val}</span></li>`).join('');
 
@@ -2331,6 +2337,12 @@ function tick(dt: number) {
         sfx.gem();
         for (let k = 0; k < 3; k++) fx.sparkle(e.x, e.y + 0.3 + k * 0.25, e.z, 0xc4b5fd);
         toast(t('toast.secret'));
+        buzz([20, 40, 20]);
+        break;
+      case 'relic':
+        sfx.gem();
+        for (let k = 0; k < 3; k++) fx.sparkle(e.x, e.y + 0.3 + k * 0.25, e.z, 0xf9a8d4);
+        toast(t('toast.relic'));
         buzz([20, 40, 20]);
         break;
       case 'burn':
@@ -2586,7 +2598,7 @@ function frame(dt: number) {
   } else if (mode === 'preview' && world) {
     world.update(dt, { A: 0, B: 0 });
   } else if (mode === 'menu' && world && slime) {
-    for (const item of showcase) if (item.userData.spin) item.rotation.y = menuT * 0.7 + item.userData.phase;
+
     updatePatchGlow(dt);
     world.update(dt, slime.switchCounts);
     stepIdle(dt);

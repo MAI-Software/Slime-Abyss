@@ -95,7 +95,7 @@ const XRAY_LIFT = 0.2;
 
 export type SlimeEvent =
   | { type: 'fall' | 'evaporate' | 'pad' | 'pop'; x: number; y: number; z: number }
-  | { type: 'coin' | 'gem' | 'oil'; x: number; y: number; z: number }
+  | { type: 'coin' | 'gem' | 'oil' | 'relic'; x: number; y: number; z: number }
   | { type: 'board' | 'unboard' | 'land' | 'merge' | 'dizzy' | 'load' | 'shoot' | 'hole'; x: number; y: number; z: number }
   | { type: 'cut'; x: number; z: number }
   | { type: 'burn'; x: number; z: number; what: 'plant' | 'iceblock' }
@@ -1327,13 +1327,13 @@ export class Slime {
       else this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : this.loose[i] > 0 ? CORNER_GRIP : 1;
 
       const chunk = this.gid[i] >= 0 ? this.groups[this.gid[i]].ids.length : 0;
-      if (under && (under.kind === 'coin' || under.kind === 'gem' || under.kind === 'oil') && y < under.base + 1.3 && chunk >= pickMin) {
+      if (under && (under.kind === 'coin' || under.kind === 'gem' || under.kind === 'oil' || under.kind === 'relic') && y < under.base + 1.3 && chunk >= pickMin) {
         const got = w.collectCoin(ci, cj, st);
         if (got) {
           const c = w.coinPosition(ci, cj, this.tmpCoin, st);
           this.events.push({ type: got, x: c.x, y: c.y, z: c.z });
           if (got === 'oil') { if (this.state !== 'burning') this.setState('oiled'); }
-          else for (const f of this.faces) f.cheer(got === 'gem' ? 1.2 : 0.5);
+          else for (const f of this.faces) f.cheer(got === 'gem' || got === 'relic' ? 1.2 : 0.5);
         }
       }
       // aire frío: congela (o apaga las llamas)

@@ -80,6 +80,7 @@ export const de: Dict = {
   toast: {
     noGpu: 'Chrome nutzt die Grafikkarte nicht: Aktiviere „Grafikbeschleunigung verwenden, falls verfügbar“ unter Einstellungen → System und starte Chrome neu',
     secret: 'Geheimer Schatz gefunden!',
+    relic: 'Sammelstück gefunden!',
     oil: 'Öl! Jetzt setzt dich Feuer in Brand',
     ignite: 'In Flammen! Verbrenne Pflanzen und Eis',
     freeze: 'Gefroren! Luftströme tragen dich in einem Stück',
@@ -95,6 +96,7 @@ export const de: Dict = {
     goalCoins: 'Alle Münzen',
     goalKeep: '{pct} % des Schleims behalten',
     goalSecret: 'Geheimer Schatz',
+    goalRelic: 'Verstecktes Sammelstück',
     found: 'Gefunden!',
     next: 'Nächste Ebene',
     toBreakdown: 'Kapitelübersicht ansehen',
@@ -304,6 +306,7 @@ export const de: Dict = {
     place: 'Jetzt in deinem Zimmer ausgestellt',
     ok: 'Super!',
     howSecret: 'Finde den geheimen Schatz auf Ebene {n} von {chapter}',
+    howFound: 'Finde den versteckten Weg auf Ebene {n} von {chapter}',
     howDone: 'Schließe {chapter} ab',
     howCoins: 'Alle Münzen in {chapter}',
     howPerfect: 'Schließe {chapter} zu 100 % ab',
@@ -515,11 +518,11 @@ export const de: Dict = {
     },
     'c2-todos-a-bordo': {
       name: 'Alle einsteigen',
-      tips: ['Nur das Stück auf der Station steigt in die Kugel', 'Zieh dich zusammen, bevor du einsteigst'],
+      tips: ['Nur das Stück auf der Station fährt mit', 'Drück, um den Schleim vor dem Runterfahren zu sammeln'],
     },
     'c2-plantas-en-la-via': {
       name: 'Pflanzen auf dem Gleis',
-      tips: ['Nimm das Öl und entzünde dich an einer Feuerschale', 'Brennend verbrennst du die Pflanzen vor der Station'],
+      tips: ['Nimm das Öl und entzünde dich an einer Feuerschale', 'Brennend verbrennst du die Pflanzen, die das Loch verdecken'],
     },
     'c2-salto-a-la-estacion': {
       name: 'Sprung zur Station',

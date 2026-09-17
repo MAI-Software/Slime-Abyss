@@ -15,7 +15,7 @@ export type Channel = 'A' | 'B';
 
 export type CellKind =
   | 'void' | 'floor' | 'wall' | 'fire' | 'firet' | 'ice' | 'jump' | 'switch' | 'door' | 'start' | 'treasure'
-  | 'coin' | 'blade' | 'spike' | 'gem'
+  | 'coin' | 'blade' | 'spike' | 'gem' | 'relic'
   | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet'
   | 'station' | 'rail' | 'crack'
   | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner' | 'cannon' | 'target';
@@ -74,6 +74,8 @@ export const TILES: readonly TileDef[] = [
   // pinchan el limo que los pisa (el congelado no se pincha); dan un respingo como el fuego
   { char: 'Y', kind: 'spike', label: 'Casilla de pinchos', hazard: true, color: '#9aa4b4' },
   { char: 'G', kind: 'gem', label: 'Tesoro secreto (gema)', color: '#8b5cf6' },
+  // coleccionable escondido en un camino oculto o bloqueado (solo en pisos sin gema; cuál es lo dice collectibles.ts)
+  { char: 'L', kind: 'relic', label: 'Coleccionable (camino oculto)', color: '#f472b6' },
   { char: 'O', kind: 'oil', label: 'Botella de aceite', color: '#e0a526' },
   { char: 'W', kind: 'plant', label: 'Plantas (arden)', raise: 1.1, burnable: true, color: '#3f9d3c' },
   { char: 'Z', kind: 'iceblock', label: 'Bloque de hielo (se derrite)', raise: 1.0, burnable: true, color: '#a9e4ff' },
@@ -160,6 +162,8 @@ export const DEFAULT_KEEP_PCT = 0.75;
 /** Las 3 estrellas de un piso: llegar al tesoro, todas las monedas y conservar limo. */
 export interface FloorResult {
   done: boolean;
+  /** encontró el coleccionable del camino oculto */
+  relic?: boolean;
   allCoins: boolean;
   kept: boolean;
   coins: number;

@@ -79,6 +79,7 @@ export const es = {
   toast: {
     noGpu: 'Chrome no está usando la tarjeta gráfica: activa «Usar aceleración gráfica cuando esté disponible» en Configuración → Sistema y reinicia Chrome',
     secret: '¡Tesoro secreto encontrado!',
+    relic: '¡Coleccionable encontrado!',
     oil: '¡Aceite! Ahora el fuego te hará arder',
     ignite: '¡En llamas! Quema plantas y hielo',
     freeze: '¡Congelado! Las corrientes te llevan entero',
@@ -94,6 +95,7 @@ export const es = {
     goalCoins: 'Todas las monedas',
     goalKeep: 'Conservar el {pct}% del limo',
     goalSecret: 'Tesoro secreto',
+    goalRelic: 'Coleccionable escondido',
     found: '¡Encontrado!',
     next: 'Siguiente piso',
     toBreakdown: 'Ver desglose del capítulo',
@@ -303,6 +305,7 @@ export const es = {
     place: 'Ya está expuesto en tu habitación',
     ok: '¡Genial!',
     howSecret: 'Encuentra el tesoro secreto del piso {n} del {chapter}',
+    howFound: 'Encuentra el camino oculto del piso {n} del {chapter}',
     howDone: 'Completa el {chapter}',
     howCoins: 'Todas las monedas del {chapter}',
     howPerfect: 'Completa el {chapter} al 100 %',
@@ -514,11 +517,11 @@ export const es = {
     },
     'c2-todos-a-bordo': {
       name: 'Todos a bordo',
-      tips: ['Solo sube a la bola el trozo que está en la estación', 'Aprieta para juntar el limo antes de subir'],
+      tips: ['Solo viaja el trozo que está en la estación', 'Aprieta para juntar el limo antes de bajar'],
     },
     'c2-plantas-en-la-via': {
       name: 'Plantas en la vía',
-      tips: ['Coge el aceite y préndete en un brasero', 'Ardiendo, quemas las plantas que tapan la estación'],
+      tips: ['Coge el aceite y préndete en un brasero', 'Ardiendo, quemas las plantas que tapan el agujero'],
     },
     'c2-salto-a-la-estacion': {
       name: 'Salto a la estación',

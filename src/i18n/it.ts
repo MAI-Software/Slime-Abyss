@@ -80,6 +80,7 @@ export const it: Dict = {
   toast: {
     noGpu: 'Chrome non usa la scheda grafica: attiva «Usa l’accelerazione grafica se disponibile» in Impostazioni → Sistema e riavvia Chrome',
     secret: 'Tesoro segreto trovato!',
+    relic: 'Oggetto da collezione trovato!',
     oil: "Olio! Ora il fuoco ti farà prendere fuoco",
     ignite: 'In fiamme! Brucia piante e ghiaccio',
     freeze: "Congelato! Le correnti d'aria ti trasportano intero",
@@ -95,6 +96,7 @@ export const it: Dict = {
     goalCoins: 'Tutte le monete',
     goalKeep: 'Conserva il {pct}% dello slime',
     goalSecret: 'Tesoro segreto',
+    goalRelic: 'Oggetto da collezione nascosto',
     found: 'Trovato!',
     next: 'Piano successivo',
     toBreakdown: 'Vedi il riepilogo del capitolo',
@@ -304,6 +306,7 @@ export const it: Dict = {
     place: 'Ora è esposto nella tua stanza',
     ok: 'Fantastico!',
     howSecret: 'Trova il tesoro segreto del piano {n} di {chapter}',
+    howFound: 'Trova il sentiero nascosto del piano {n} di {chapter}',
     howDone: 'Completa il {chapter}',
     howCoins: 'Tutte le monete del {chapter}',
     howPerfect: 'Completa il {chapter} al 100%',
@@ -515,11 +518,11 @@ export const it: Dict = {
     },
     'c2-todos-a-bordo': {
       name: 'Tutti a bordo',
-      tips: ['Sale sulla palla solo il pezzo che sta sulla stazione', 'Stringi per riunire lo slime prima di salire'],
+      tips: ['Viaggia solo il pezzo che è sulla stazione', 'Stringi per riunire lo slime prima di scendere'],
     },
     'c2-plantas-en-la-via': {
       name: 'Piante sui binari',
-      tips: ['Prendi l’olio e prendi fuoco a un braciere', 'In fiamme bruci le piante che bloccano la stazione'],
+      tips: ['Prendi l’olio e prendi fuoco a un braciere', 'In fiamme, bruci le piante che coprono il buco'],
     },
     'c2-salto-a-la-estacion': {
       name: 'Salto alla stazione',
