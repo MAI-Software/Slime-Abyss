@@ -13,7 +13,7 @@ import { World } from './world';
 import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
 import { BODY_COLORS, CHEEKS, EYES, GEMS_PER_KIND, IRIS_COLORS, IRIS_EYES, LOOK_GEM_PRICES, LOOK_PRICES, LOOK_SOON, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
 import { ACHIEVEMENTS, drawPatchIcon, type Achievement, type AchievementContext } from './achievements';
-import { BLOCK_CLIP, Thumbs, blockBounds, voidCube } from './thumbs';
+import { BLOCK_CLIP, Thumbs, blockBounds, meshBounds, voidCube } from './thumbs';
 import { Input, fullscreenActive, fullscreenSupported, installedApp, type ControlMode } from './input';
 import { Fx } from './fx';
 import { LiquidGauge } from './hud-liquid';
@@ -883,16 +883,16 @@ function refreshTreasure() {
   if (!room || !assets) return;
   const hasGold = save.bought.includes('color:gold');
   const floorCount = Math.min(360, coinsEarned());
-  const chestCount = hasGold ? 120 : 0;
+  const chestCount = hasGold ? 110 : 0;
   const total = floorCount + chestCount;
-  const spot = room.getObjectByName('room_gold_chest')?.position ?? new THREE.Vector3(1.95, 0, -1.9);
+  const spot = room.getObjectByName('room_gold_chest')?.position ?? new THREE.Vector3(-2.1, 0, -0.6);
   // de cara a la alfombra
   const yaw = Math.atan2(-spot.x, -spot.z);
   if (hasGold && !goldChest) {
-    goldChest = assets.clone('chest');
+    goldChest = assets.clone('gold_chest');
     goldChest.position.copy(spot);
     goldChest.rotation.y = yaw;
-    Assets.child(goldChest, 'chest_lid').rotation.x = -1.9;
+    Assets.child(goldChest, 'gold_chest_lid').rotation.x = -1.9;
     room.add(goldChest);
   } else if (!hasGold && goldChest) {
     room.remove(goldChest);
@@ -910,13 +910,15 @@ function refreshTreasure() {
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), scale = new THREE.Vector3(0.6, 0.6, 0.6);
   // en coordenadas del salón (x a la derecha, z hacia la cámara): lejos de la alfombra, las vitrinas, las estanterías y lo expuesto
+  // junto al cofre el oro se desborda hasta el borde de la alfombra
+  const nearChest = (x: number, z: number, r: number) => hasGold && Math.hypot(x - spot.x, z - spot.z) < r;
   const blocked = (x: number, z: number) =>
-    Math.hypot(x, z) < 1.8 || Math.abs(x) > 4.15 || z < -3.3 || z > 4.6
+    (Math.hypot(x, z) < 1.8 && !nearChest(x, z, 1.1)) || Math.abs(x) > 4.15 || z < -3.3 || z > 4.6
     || (Math.abs(x) < 1.2 && z < -2.5) || (Math.abs(x) > 3.2 && z > -2.2 && z < 0.4) || (Math.abs(x) > 1.3 && z < -2.75)
     || [[-3.75, 1.9], [3.75, 1.9], [-3.75, -2.4], [3.75, -2.4]].some(([sx, sz]) => Math.hypot(x - sx, z - sz) < 0.55)
-    || (hasGold && Math.hypot(x - spot.x, z - spot.z) < 0.5);
-  // el primer montón, a los pies del cofre (como si se hubiera desbordado)
-  const piles: [number, number][] = [[spot.x - 0.55, spot.z + 0.5], [2.7, 2.7], [-1.4, 2.9], [3.3, 0.9], [-3.3, 0.9], [-2.2, -2.2], [2.9, -1.0], [0.9, 2.9]];
+    || nearChest(x, z, 0.56);
+  // el primer montón, delante del cofre (como si se hubiera desbordado)
+  const piles: [number, number][] = [[spot.x + Math.sin(yaw) * 0.72, spot.z + Math.cos(yaw) * 0.72], [2.7, 2.7], [-1.4, 2.9], [3.3, 0.9], [-3.3, 0.9], [-2.2, -2.2], [2.9, -1.0], [0.9, 2.9]];
   let k = 0;
   for (; k < floorCount; k++) {
     const [cx, cz] = piles[k % piles.length];
@@ -938,11 +940,12 @@ function refreshTreasure() {
   // cofre: montaña de monedas que rebosa por encima del borde
   const cos = Math.cos(yaw), sin = Math.sin(yaw);
   scale.setScalar(0.45);
+  // sobre el montón de oro del modelo (media elipse de 0.4 x 0.25 y 0.1 de alto encima de la caja, a 0.5)
   for (let c = 0; c < chestCount; c++, k++) {
-    const lx = (rnd() - 0.5) * 0.58, lz = (rnd() - 0.5) * 0.38;
-    const dome = 1 - (lx / 0.32) ** 2 - (lz / 0.22) ** 2;
-    p.set(spot.x + lx * cos + lz * sin, spot.y + 0.38 + Math.max(0, dome) * 0.14 + rnd() * 0.02, spot.z - lx * sin + lz * cos);
-    e.set(-Math.PI / 2 + (rnd() - 0.5) * 0.5, 0, rnd() * Math.PI * 2, 'XZY');
+    const lx = (rnd() - 0.5) * 0.74, lz = (rnd() - 0.5) * 0.44;
+    const dome = Math.sqrt(Math.max(0, 1 - (lx / 0.4) ** 2 - (lz / 0.25) ** 2));
+    p.set(spot.x + lx * cos + lz * sin, spot.y + 0.5 + dome * 0.1 + 0.012 + rnd() * 0.012, spot.z - lx * sin + lz * cos);
+    e.set(-Math.PI / 2 + (rnd() - 0.5) * 0.6, 0, rnd() * Math.PI * 2, 'XZY');
     m.compose(p, q.setFromEuler(e), scale);
     coins.setMatrixAt(k, m);
   }
@@ -1026,19 +1029,56 @@ function refreshRoom() {
   showcase.length = 0;
   for (const id of save.collectibles) {
     const slot = room.getObjectByName(`slot_${id}`);
-    if (!slot) continue;
+    const def = COLLECTIBLES.find((c) => c.id === id);
+    if (!slot || !def) continue;
     const item = assets.clone(id);
-    item.position.copy(slot.position);
-    item.scale.copy(slot.scale);
-    item.userData.phase = showcase.length * 1.3;
-    item.userData.colId = id;
-    // en estanterías y vitrinas giran despacio; lo colgado en la pared y lo del suelo se queda quieto
-    const place = COLLECTIBLES.find((c) => c.id === id)?.place;
-    item.userData.spin = place === 'shelf' || place === 'vitrina';
-    room.add(item);
-    showcase.push(item);
+    item.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      // el cristal de los botes y las bolas deja ver lo de dentro
+      const mat = m.material as THREE.MeshStandardMaterial;
+      if (mat.name === 'GlassCollectible') {
+        mat.transparent = true;
+        mat.opacity = 0.28;
+        mat.depthWrite = false;
+        m.renderOrder = 3;
+      }
+    });
+    const holder = new THREE.Group();
+    holder.position.copy(slot.position);
+    const box = meshBounds(item);
+    const size = box.getSize(new THREE.Vector3());
+    const mid = box.getCenter(new THREE.Vector3());
+    // en estanterías y vitrinas giran despacio (salvo lo plano); lo colgado en la pared y lo del suelo se queda quieto
+    const spin = (def.place === 'shelf' || def.place === 'vitrina') && !def.flat;
+    let scale = slot.scale.x;
+    const fit = FIT[def.place === 'vitrina' && slot.position.y > 1.2 ? 'vitrinaTop' : def.place];
+    if (fit) {
+      // cada pieza llena su hueco igual que las demás, centrada sobre él (girando no toca los lados)
+      const across = spin ? Math.hypot(size.x, size.z) : size.x;
+      scale = Math.min(fit.h / size.y, fit.w / Math.max(across, 1e-3));
+      item.position.set(-mid.x * scale, -box.min.y * scale, -mid.z * scale);
+    }
+    item.scale.setScalar(scale);
+    if (def.flat && fit) holder.rotation.y = Math.atan2(slotView(slot.position, viewDir).x, viewDir.z);
+    holder.add(item);
+    holder.userData.phase = showcase.length * 1.3;
+    holder.userData.colId = id;
+    holder.userData.spin = spin;
+    // para la cámara de la colección: centro y tamaño de lo que se ve
+    holder.userData.center = fit ? slot.position.clone().setY(slot.position.y + (size.y * scale) / 2) : mid.multiplyScalar(scale).add(slot.position);
+    holder.userData.radius = (size.length() * scale) / 2;
+    room.add(holder);
+    showcase.push(holder);
   }
 }
+
+/** Hueco de cada sitio de exposición (ancho y alto que puede ocupar una pieza); pared y suelo usan la escala del hueco. */
+const FIT: Record<string, { w: number; h: number } | undefined> = {
+  shelf: { w: 0.44, h: 0.56 },
+  vitrina: { w: 0.5, h: 0.5 },
+  vitrinaTop: { w: 0.62, h: 0.6 },
+};
 
 // ------------------------------------------------------------------ Mi limo
 
@@ -2331,19 +2371,21 @@ function updateCamera(dt: number) {
     const slot = menuFocus ? room.getObjectByName(`slot_${menuFocus}`) : null;
     if (slot) {
       const place = COLLECTIBLES.find((c) => c.id === menuFocus)?.place;
-      // de frente a la pieza, alejándose de las paredes que tiene cerca (las de los lados se miran desde el centro)
+      const shown = showcase.find((s) => s.userData.colId === menuFocus);
+      // de frente a la pieza, alejándose de las paredes que tiene cerca (las de los lados se miran desde el centro),
+      // a la distancia justa para su tamaño y algo por encima
       slotView(slot.position, viewDir);
-      const dist = place === 'floor' ? 3 : place === 'wall' ? 2.8 : 2.5;
-      menuLook.copy(slot.position).add(o);
-      // lo colgado se mira a su altura; lo del suelo, algo más alto porque es grande
-      camWant.set(menuLook.x + viewDir.x * dist, menuLook.y + (place === 'wall' ? 0.3 : place === 'floor' ? 1.3 : 0.9), menuLook.z + viewDir.z * dist);
+      const radius: number = shown?.userData.radius ?? 0.4;
+      const dist = THREE.MathUtils.clamp(radius * (place === 'wall' || place === 'floor' ? 3.2 : 3.6), 1, 3.2);
+      menuLook.copy(shown?.userData.center ?? slot.position).add(o);
+      camWant.set(menuLook.x + viewDir.x * dist, menuLook.y + dist * 0.32, menuLook.z + viewDir.z * dist);
       camWant.x = o.x + THREE.MathUtils.clamp(camWant.x - o.x, -ROOM_SIDE_X + 0.4, ROOM_SIDE_X - 0.4);
       camWant.z = o.z + THREE.MathUtils.clamp(camWant.z - o.z, ROOM_BACK_Z + 0.4, ROOM_FRONT_Z - 0.4);
-      // la pieza queda a la izquierda del panel: se mira un poco a la derecha de la cámara
-      const shift = (0.95 * dist) / 2.8;
+      // la pieza queda en el centro del hueco libre a la izquierda del panel
+      const panel = Math.min(420, innerWidth) / Math.max(1, innerWidth);
+      const shift = panel * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * dist;
       menuLook.x += viewDir.z * shift;
       menuLook.z -= viewDir.x * shift;
-      menuLook.y += place === 'wall' ? 0.3 : place === 'floor' ? 0.55 : 0.2;
     } else if (currentScreen === 'achievements') {
       // gira hacia un tablón (derecho: logros 0-29, izquierdo: 30-59); al elegir un logro se acerca a su parche
       const k = ACHIEVEMENTS.findIndex((a) => a.id === achFocus);

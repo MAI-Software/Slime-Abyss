@@ -27,6 +27,8 @@ export interface Collectible {
   chapter?: string;
   place: Place;
   unlock: Unlock;
+  /** pieza plana hecha para colgar (sin espalda): en vitrina no gira, mira hacia donde se la ve */
+  flat?: boolean;
 }
 
 /**
@@ -54,21 +56,21 @@ export const COLLECTIBLES: Collectible[] = [
   { id: 'col_root_lantern', chapter: C2, place: 'shelf', unlock: { kind: 'secret', floor: 'c2-bifurcacion' } },
   { id: 'col_mini_train', chapter: C2, place: 'shelf', unlock: { kind: 'secret', floor: 'c2-sobre-railes' } },
   { id: 'col_spring_toy', chapter: C2, place: 'shelf', unlock: { kind: 'secret', floor: 'c2-salto-a-la-estacion' } },
-  { id: 'col_station_sign', chapter: C2, place: 'wall', unlock: { kind: 'chapterDone' } },
+  { id: 'col_station_sign', chapter: C2, place: 'vitrina', flat: true, unlock: { kind: 'chapterDone' } },
   { id: 'col_acorn_jar', chapter: C2, place: 'shelf', unlock: { kind: 'allCoins' } },
-  { id: 'col_leaf_frame', chapter: C2, place: 'wall', unlock: { kind: 'allStars' } },
+  { id: 'col_leaf_frame', chapter: C2, place: 'vitrina', flat: true, unlock: { kind: 'allStars' } },
   // capítulo 3
   { id: 'col_ice_crystal', chapter: C3, place: 'shelf', unlock: { kind: 'secret', floor: 'c3-gran-grieta' } },
   { id: 'col_cracked_egg', chapter: C3, place: 'shelf', unlock: { kind: 'secret', floor: 'c3-suelo-fragil' } },
   { id: 'col_fire_lamp', chapter: C3, place: 'shelf', unlock: { kind: 'secret', floor: 'c3-pista-ardiente' } },
-  { id: 'col_pickaxes', chapter: C3, place: 'wall', unlock: { kind: 'chapterDone' } },
+  { id: 'col_pickaxes', chapter: C3, place: 'vitrina', flat: true, unlock: { kind: 'chapterDone' } },
   { id: 'col_geode', chapter: C3, place: 'shelf', unlock: { kind: 'allCoins' } },
   { id: 'col_crystal_crown', chapter: C3, place: 'shelf', unlock: { kind: 'allStars' } },
   // capítulo 4
   { id: 'col_scarab', chapter: C4, place: 'shelf', unlock: { kind: 'secret', floor: 'c4-dunas' } },
   { id: 'col_hourglass', chapter: C4, place: 'shelf', unlock: { kind: 'secret', floor: 'c4-sendero-diagonal' } },
   { id: 'col_compass', chapter: C4, place: 'shelf', unlock: { kind: 'secret', floor: 'c4-remolino' } },
-  { id: 'col_desert_mask', chapter: C4, place: 'wall', unlock: { kind: 'chapterDone' } },
+  { id: 'col_desert_mask', chapter: C4, place: 'vitrina', flat: true, unlock: { kind: 'chapterDone' } },
   { id: 'col_cactus_pot', chapter: C4, place: 'floor', unlock: { kind: 'allCoins' } },
   { id: 'col_sphinx', chapter: C4, place: 'floor', unlock: { kind: 'allStars' } },
   // logros

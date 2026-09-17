@@ -31,7 +31,6 @@ export const de: Dict = {
     floor: 'Ebene {n}',
     breakdown: 'Kapitelübersicht ansehen',
     collectibles: 'Sammelobjekte {n}/{total}',
-    achievementsTotal: 'Erfolge',
   },
   chapters: {
     'cripta-azul': 'Die Blaue Gruft',
@@ -135,6 +134,7 @@ export const de: Dict = {
     secretsTotal: 'Geheimnisse',
     chaptersDone: 'Kapitel zu 100 %',
     collectibles: 'Sammelobjekte',
+    achievementsTotal: 'Erfolge',
   },
   achievements: {
     title: 'Erfolge',

@@ -31,7 +31,6 @@ export const fr: Dict = {
     floor: 'Étage {n}',
     breakdown: 'Voir le bilan du chapitre',
     collectibles: 'Objets de collection {n}/{total}',
-    achievementsTotal: 'Succès',
   },
   chapters: {
     'cripta-azul': 'La Crypte Bleue',
@@ -135,6 +134,7 @@ export const fr: Dict = {
     secretsTotal: 'Secrets',
     chaptersDone: 'Chapitres à 100 %',
     collectibles: 'Objets de collection',
+    achievementsTotal: 'Succès',
   },
   achievements: {
     title: 'Succès',

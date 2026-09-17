@@ -31,7 +31,6 @@ export const it: Dict = {
     floor: 'Piano {n}',
     breakdown: 'Vedi il riepilogo del capitolo',
     collectibles: 'Collezionabili {n}/{total}',
-    achievementsTotal: 'Obiettivi',
   },
   chapters: {
     'cripta-azul': 'La Cripta Blu',
@@ -135,6 +134,7 @@ export const it: Dict = {
     secretsTotal: 'Segreti',
     chaptersDone: 'Capitoli al 100%',
     collectibles: 'Collezionabili',
+    achievementsTotal: 'Obiettivi',
   },
   achievements: {
     title: 'Obiettivi',

@@ -31,7 +31,6 @@ export const en: Dict = {
     floor: 'Floor {n}',
     breakdown: 'See chapter summary',
     collectibles: 'Collectibles {n}/{total}',
-    achievementsTotal: 'Achievements',
   },
   chapters: {
     'cripta-azul': 'The Blue Crypt',
@@ -135,6 +134,7 @@ export const en: Dict = {
     secretsTotal: 'Secrets',
     chaptersDone: 'Chapters at 100%',
     collectibles: 'Collectibles',
+    achievementsTotal: 'Achievements',
   },
   achievements: {
     title: 'Achievements',

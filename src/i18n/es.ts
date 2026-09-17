@@ -30,7 +30,6 @@ export const es = {
     floor: 'Piso {n}',
     breakdown: 'Ver desglose del capítulo',
     collectibles: 'Coleccionables {n}/{total}',
-    achievementsTotal: 'Logros',
   },
   chapters: {
     'cripta-azul': 'La Cripta Azul',
@@ -134,6 +133,7 @@ export const es = {
     secretsTotal: 'Secretos',
     chaptersDone: 'Capítulos al 100 %',
     collectibles: 'Coleccionables',
+    achievementsTotal: 'Logros',
   },
   achievements: {
     title: 'Logros',

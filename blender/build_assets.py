@@ -135,6 +135,39 @@ def cylinder(bm, radius, depth, center=(0, 0, 0), segments=20, rot=None):
     )["verts"]
 
 
+def lathe(bm, profile, segments=32, matrix=None):
+    """Sólido de revolución alrededor de Z con un perfil [(radio, z)] de abajo arriba (radio 0 = cerrado en el eje)."""
+    before = set(bm.verts)
+    verts = [bm.verts.new((r, 0.0, z)) for r, z in profile]
+    edges = [bm.edges.new((a, b)) for a, b in zip(verts, verts[1:])]
+    bmesh.ops.spin(bm, geom=verts + edges, cent=(0, 0, 0), axis=(0, 0, 1), angle=math.tau, steps=segments, use_merge=True)
+    new = [v for v in bm.verts if v not in before]
+    bmesh.ops.remove_doubles(bm, verts=new, dist=1e-5)
+    new = [v for v in bm.verts if v not in before]
+    if matrix is not None:
+        bmesh.ops.transform(bm, matrix=matrix, verts=new)
+    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+
+
+def taper_tube(bm, points, r0, r1, segments=14):
+    """Tubo por puntos 3D (en el plano XZ) que pasa de radio r0 a r1, con la punta abierta."""
+    rings = []
+    n = len(points)
+    up = Vector((0, 1, 0))
+    for k, p in enumerate(points):
+        p = Vector(p)
+        t = (Vector(points[min(k + 1, n - 1)]) - Vector(points[max(k - 1, 0)])).normalized()
+        a = t.cross(up).normalized()
+        b = a.cross(t).normalized()
+        r = r0 + (r1 - r0) * k / (n - 1)
+        rings.append([bm.verts.new(p + (a * math.cos(i * math.tau / segments) + b * math.sin(i * math.tau / segments)) * r)
+                      for i in range(segments)])
+    for A, B in zip(rings, rings[1:]):
+        for i in range(segments):
+            bm.faces.new((A[i], A[(i + 1) % segments], B[(i + 1) % segments], B[i]))
+    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+
+
 def tube(name, points, radius, mat, parent=None, loc=(0, 0, 0), poly=False, cyclic=False, plane="XZ"):
     """Línea gruesa redondeada (para ojos y bocas dibujadas). Puntos en el plano XZ."""
     cu = bpy.data.curves.new(name + "_curve", "CURVE")
@@ -335,6 +368,71 @@ for x in (-0.24, 0.24):
 bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < -1e-4], context="VERTS")
 bmesh.ops.scale(bm, vec=(1, 1, 0.82), verts=bm.verts)
 mesh_object("chest_lid_trim", bm, M["gold"], smooth=True, parent=lid)
+
+# ================================================================== COFRE DEL ORO (salón)
+# Aparece al comprar el limo de oro. Frente hacia -Y; la tapa gira sobre su bisagra trasera (gold_chest_lid)
+# y dentro asoma un montón de oro con gemas y una copa (el juego añade las monedas sueltas encima y delante).
+
+gold_chest = empty("gold_chest")
+M["chest_wood"] = material("ChestWood", "7c4a24", 0.7)
+M["chest_wood_dark"] = material("ChestWoodDark", "3f2412", 0.9)
+M["chest_gold"] = material("ChestGold", "f5b301", 0.25, 1.0, emit="6b4200", strength=0.2)
+M["chest_iron"] = material("ChestIron", "1f1b2e", 0.6, 0.6)
+GC_W, GC_D, GC_H, GC_FOOT = 0.9, 0.58, 0.46, 0.04
+GC_TOP = GC_FOOT + GC_H
+bm = bmesh.new()
+box(bm, (GC_W, GC_D, GC_H), (0, 0, GC_FOOT + GC_H / 2))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.02, segments=2, affect="EDGES")
+mesh_object("gold_chest_body", bm, M["chest_wood"], parent=gold_chest)
+bm = bmesh.new()
+for z in (GC_FOOT + 0.15, GC_FOOT + 0.3):
+    box(bm, (GC_W + 0.006, GC_D + 0.006, 0.014), (0, 0, z))
+mesh_object("gold_chest_planks", bm, M["chest_wood_dark"], parent=gold_chest)
+bm = bmesh.new()
+for x in (-0.3, 0.3):
+    box(bm, (0.075, GC_D + 0.024, GC_H + 0.016), (x, 0, GC_FOOT + GC_H / 2))
+for sx in (-1, 1):
+    for sy in (-1, 1):
+        for z in (GC_FOOT + 0.05, GC_TOP - 0.05):
+            box(bm, (0.11, 0.11, 0.11), (sx * (GC_W / 2 - 0.045), sy * (GC_D / 2 - 0.045), z))
+box(bm, (0.17, 0.03, 0.2), (0, -GC_D / 2 - 0.014, GC_TOP - 0.1))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.008, segments=1, affect="EDGES")
+for sx in (-1, 1):
+    for sy in (-1, 1):
+        ellipsoid(bm, (0.05, 0.05, 0.035), (sx * (GC_W / 2 - 0.06), sy * (GC_D / 2 - 0.06), 0.03), 12, 8)
+mesh_object("gold_chest_trim", bm, M["chest_gold"], parent=gold_chest)
+bm = bmesh.new()
+ellipsoid(bm, (0.018, 0.01, 0.018), (0, -GC_D / 2 - 0.03, GC_TOP - 0.08), 10, 8)
+box(bm, (0.012, 0.01, 0.05), (0, -GC_D / 2 - 0.03, GC_TOP - 0.115))
+mesh_object("gold_chest_keyhole", bm, M["chest_iron"], parent=gold_chest)
+# tapa (pivote en la bisagra de atrás)
+gc_lid = empty("gold_chest_lid", parent=gold_chest, loc=(0, GC_D / 2, GC_TOP))
+bm = bmesh.new()
+cylinder(bm, GC_D / 2, GC_W, (0, 0, 0), 28, rot=Matrix.Rotation(math.radians(90), 4, "Y"))
+bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < -1e-4], context="VERTS")
+bmesh.ops.scale(bm, vec=(1, 1, 0.72), verts=bm.verts)
+bmesh.ops.translate(bm, vec=(0, -GC_D / 2, 0), verts=bm.verts)
+mesh_object("gold_chest_lid_wood", bm, M["chest_wood"], smooth=True, parent=gc_lid)
+bm = bmesh.new()
+box(bm, (GC_W - 0.02, GC_D - 0.02, 0.02), (0, -GC_D / 2, 0.01))
+mesh_object("gold_chest_lid_inside", bm, M["chest_wood_dark"], parent=gc_lid)
+bm = bmesh.new()
+for x in (-0.3, 0.3):
+    cylinder(bm, GC_D / 2 + 0.014, 0.08, (x, -GC_D / 2, 0), 28, rot=Matrix.Rotation(math.radians(90), 4, "Y"))
+bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < -1e-4], context="VERTS")
+bmesh.ops.scale(bm, vec=(1, 1, 0.74), verts=bm.verts)
+mesh_object("gold_chest_lid_trim", bm, M["chest_gold"], smooth=True, parent=gc_lid)
+# el tesoro: montón de oro, tres gemas talladas y una copa inclinada
+bm = bmesh.new()
+ellipsoid(bm, (0.4, 0.25, 0.1), (0, 0, GC_TOP), 32, 16)
+lathe(bm, [(0.0, 0.0), (0.05, 0.0), (0.05, 0.01), (0.012, 0.03), (0.01, 0.1), (0.045, 0.12), (0.062, 0.17), (0.06, 0.205), (0.052, 0.205),
+           (0.04, 0.135), (0.0, 0.128)], 28, matrix=Matrix.Translation((0.2, 0.07, GC_TOP + 0.02)) @ Matrix.Rotation(0.35, 4, "Y"))
+mesh_object("gold_chest_hoard", bm, M["chest_gold"], smooth=True, parent=gold_chest)
+for gname, color, emit, loc in (("Ruby", "e11d48", "9f1239", (-0.2, -0.05, GC_TOP + 0.09)), ("Sapphire", "2563eb", "1e3a8a", (0.02, 0.09, GC_TOP + 0.1)),
+                                ("Emerald", "10b981", "065f46", (-0.05, -0.13, GC_TOP + 0.06))):
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=6, v_segments=4, radius=1.0, matrix=Matrix.Translation(loc) @ Matrix.Diagonal((0.04, 0.04, 0.034, 1)))
+    mesh_object(f"gold_chest_{gname.lower()}", bm, material(f"Hoard{gname}", color, 0.1, 0.0, emit=emit, strength=0.8), parent=gold_chest)
 
 # ================================================================== CARA DEL LIMO
 # Estilo kawaii. Todo mira a -Y. El juego coloca cada pieza; aquí solo importa la forma.
@@ -1238,17 +1336,41 @@ cylinder(bm, 0.1, 0.05, (0, 0, 0.32), 20)
 mesh_object("col_spring_toy_cap", bm, M["pink"], smooth=True, parent=col)
 
 col = empty("col_acorn_jar")
+M["acorn_nut"] = material("AcornNut", "b86b2e", 0.45)
+M["acorn_cap"] = material("AcornCap", "5c3b1e", 0.95)
 bm = bmesh.new()
-cylinder(bm, 0.1, 0.26, (0, 0, 0.13), 24)
+lathe(bm, [(0.0, 0.004), (0.095, 0.004), (0.108, 0.02), (0.112, 0.2), (0.1, 0.228), (0.082, 0.24), (0.082, 0.262), (0.09, 0.27)], 40)
 mesh_object("col_acorn_jar_glass", bm, M["glass_col"], smooth=True, parent=col)
 bm = bmesh.new()
-cylinder(bm, 0.105, 0.04, (0, 0, 0.28), 24)
+cylinder(bm, 0.097, 0.035, (0, 0, 0.286), 32)
+ellipsoid(bm, (0.03, 0.03, 0.022), (0, 0, 0.306), 16, 10)
 mesh_object("col_acorn_jar_lid", bm, M["wood_col"], smooth=True, parent=col)
-bm = bmesh.new()
-for k in range(5):
-    a = k * 2.3
-    ellipsoid(bm, (0.028, 0.028, 0.035), (0.045 * math.cos(a), 0.045 * math.sin(a), 0.04 + (k % 2) * 0.05), 10, 8)
-mesh_object("col_acorn_jar_acorns", bm, M["bronze"], smooth=True, parent=col)
+tube("col_acorn_jar_twine", [(0.086 * math.cos(k * math.tau / 24), 0.086 * math.sin(k * math.tau / 24)) for k in range(24)], 0.006,
+     M["acorn_cap"], parent=col, loc=(0, 0, 0.25), poly=True, cyclic=True, plane="XY")
+# bellotas apretadas en capas hasta el cuello del bote, cada una con su caperuza y su rabito
+rng_acorn = random.Random(21)
+nuts, caps = bmesh.new(), bmesh.new()
+
+
+def acorn(x, y, z, tilt, spin):
+    m = Matrix.Translation((x, y, z)) @ Matrix.Rotation(spin, 4, "Z") @ Matrix.Rotation(tilt, 4, "X")
+    bmesh.ops.create_uvsphere(nuts, u_segments=12, v_segments=8, radius=1.0,
+                              matrix=m @ Matrix.Translation((0, 0, -0.006)) @ Matrix.Diagonal((0.026, 0.026, 0.034, 1)))
+    bmesh.ops.create_uvsphere(caps, u_segments=12, v_segments=6, radius=1.0,
+                              matrix=m @ Matrix.Translation((0, 0, 0.02)) @ Matrix.Diagonal((0.029, 0.029, 0.016, 1)))
+    bmesh.ops.create_cone(caps, cap_ends=True, cap_tris=True, segments=6, radius1=0.004, radius2=0.0025, depth=0.016,
+                          matrix=m @ Matrix.Translation((0, 0, 0.04)))
+
+
+for layer, z in enumerate((0.036, 0.086, 0.136, 0.186, 0.228)):
+    ring, r = (6, 0.058) if layer < 4 else (4, 0.034)
+    for k in range(ring):
+        ang = k * math.tau / ring + layer * 0.5
+        acorn(r * math.cos(ang), r * math.sin(ang), z + rng_acorn.uniform(-0.006, 0.006), rng_acorn.uniform(0.3, 1.4), rng_acorn.uniform(0, math.tau))
+    if layer < 4:
+        acorn(0, 0, z + 0.01, rng_acorn.uniform(0.2, 1.2), rng_acorn.uniform(0, math.tau))
+mesh_object("col_acorn_jar_acorns", nuts, M["acorn_nut"], smooth=True, parent=col)
+mesh_object("col_acorn_jar_caps", caps, M["acorn_cap"], smooth=True, parent=col)
 
 col = empty("col_ice_crystal")
 bm = bmesh.new()
@@ -1270,16 +1392,37 @@ tube("col_cracked_egg_nest", [(0.12 * math.cos(a * math.tau / 20), 0.12 * math.s
      M["wood_col"], parent=col, loc=(0, 0, 0.04), poly=True, cyclic=True, plane="XY")
 
 col = empty("col_fire_lamp")
+M["lamp_gem"] = material("LampGem", "dc2626", 0.15, 0.0, emit="7f1d1d", strength=0.6)
+M["flame_core"] = material("FlameCore", "fff3c4", 0.3, emit="ffe08a", strength=4.0)
 bm = bmesh.new()
-ellipsoid(bm, (0.15, 0.09, 0.07), (0, 0, 0.09), 24, 14)
-cylinder(bm, 0.05, 0.05, (0, 0, 0.02), 16)
-bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=12, radius1=0.035, radius2=0.012, depth=0.16,
-                      matrix=Matrix.Translation((0.17, 0, 0.14)) @ Matrix.Rotation(-1.1, 4, "Y"))
+# pie torneado
+lathe(bm, [(0.0, 0.0), (0.075, 0.0), (0.08, 0.012), (0.05, 0.028), (0.03, 0.045), (0.034, 0.062)], 36)
+mesh_object("col_fire_lamp_foot", bm, M["gold_col"], smooth=True, parent=col)
+bm = bmesh.new()
+# cuerpo en gota aplastada, cuello y tapa con remate
+lathe(bm, [(0.0, 0.055), (0.07, 0.065), (0.13, 0.095), (0.155, 0.13), (0.145, 0.162), (0.1, 0.186), (0.05, 0.2), (0.04, 0.214), (0.0, 0.214)], 40)
+lathe(bm, [(0.0, 0.21), (0.052, 0.214), (0.056, 0.228), (0.036, 0.24), (0.02, 0.262), (0.0, 0.27)], 32)
+ellipsoid(bm, (0.017, 0.017, 0.017), (0, 0, 0.284), 14, 10)
+bmesh.ops.scale(bm, vec=(1, 0.74, 1), verts=bm.verts)
+# pico largo que se afina y sube
+taper_tube(bm, [(0.1, 0, 0.125), (0.17, 0, 0.14), (0.235, 0, 0.17), (0.285, 0, 0.21), (0.318, 0, 0.245)], 0.042, 0.014)
 mesh_object("col_fire_lamp_body", bm, M["gold_col"], smooth=True, parent=col)
-tube("col_fire_lamp_handle", [(-0.14, 0.1), (-0.21, 0.13), (-0.2, 0.05), (-0.14, 0.06)], 0.012, M["gold_col"], parent=col)
-flame = teardrop("col_fire_lamp_flame", 0.03, M["lamp_glow"])
+tube("col_fire_lamp_handle", [(-0.11, 0.175), (-0.19, 0.205), (-0.24, 0.165), (-0.225, 0.105), (-0.14, 0.11)], 0.013, M["gold_col"], parent=col)
+# franja de bronce con tres gemas en el frente
+tube("col_fire_lamp_band", [(0.157 * math.cos(k * math.tau / 40), 0.116 * math.sin(k * math.tau / 40)) for k in range(40)], 0.008,
+     M["bronze"], parent=col, loc=(0, 0, 0.13), poly=True, cyclic=True, plane="XY")
+bm = bmesh.new()
+for x in (-0.055, 0.0, 0.055):
+    bmesh.ops.create_uvsphere(bm, u_segments=6, v_segments=4, radius=1.0,
+                              matrix=Matrix.Translation((x, -0.118 + abs(x) * 0.12, 0.13)) @ Matrix.Diagonal((0.016, 0.01, 0.016, 1)))
+mesh_object("col_fire_lamp_gems", bm, M["lamp_gem"], parent=col)
+# llama doble: halo naranja y corazón claro
+flame = teardrop("col_fire_lamp_flame", 0.036, M["lamp_glow"])
 flame.parent = col
-flame.location = (0.25, 0, 0.23)
+flame.location = (0.325, 0, 0.268)
+core = teardrop("col_fire_lamp_core", 0.018, M["flame_core"])
+core.parent = col
+core.location = (0.325, -0.006, 0.262)
 
 col = empty("col_geode")
 bm = bmesh.new()
@@ -1840,15 +1983,19 @@ for side, sx in (("right", 1), ("left", -1)):
 # coleccionables: la escala del hueco es la escala con la que se expone la pieza
 SLOTS = []
 # vitrinas
-# vitrinas: hueco del medio con su pieza; los de los lados y el de encima de la tapa quedan libres
-# (slot_vitrina_<vitrina>_<0|2|top>) para piezas futuras
+# vitrinas: hueco del medio con su pieza; en los de los lados y encima de la tapa, piezas que antes colgaban de la pared;
+# los que quedan libres se llaman slot_vitrina_<vitrina>_<0|2|top> (el de encima de la central, libre: taparía el corazón)
+VITRINA_ITEMS = {("center", 0): "col_desert_mask", ("center", 2): "col_pickaxes",
+                 ("left", "top"): "col_station_sign", ("right", "top"): "col_leaf_frame"}
 for vname, vx, vy, vz, along, middle in (("center", 0.0, FURN_Y - 0.36, 0.95, "x", "col_trophy"),
                                           ("left", -(WALL_X - 0.8), 0.9, 0.8, "y", "col_crystal_skull"),
                                           ("right", WALL_X - 0.8, 0.9, 0.8, "y", "col_ancient_vase")):
     for k, off in enumerate((-VITRINA_GAP, 0.0, VITRINA_GAP)):
         loc = (vx + off, vy, vz) if along == "x" else (vx, vy + off, vz)
-        SLOTS.append((f"slot_{middle}" if k == 1 else f"slot_vitrina_{vname}_{k}", loc, 1.3))
-    SLOTS.append((f"slot_vitrina_{vname}_top", (vx, vy, vz + 0.64), 1.3))
+        item = middle if k == 1 else VITRINA_ITEMS.get((vname, k))
+        SLOTS.append((f"slot_{item}" if item else f"slot_vitrina_{vname}_{k}", loc, 1.3))
+    item = VITRINA_ITEMS.get((vname, "top"))
+    SLOTS.append((f"slot_{item}" if item else f"slot_vitrina_{vname}_top", (vx, vy, vz + 0.64), 1.3))
 # estanterías: 3 baldas x 3 huecos (caben 9 en cada una), de arriba abajo
 SHELF_ITEMS = {
     -2.55: (("col_blue_orb", "col_crypt_key", "col_coin_chest"),
@@ -1863,14 +2010,13 @@ for x, shelves in SHELF_ITEMS.items():
         for dx, item in zip((-0.62, 0.0, 0.62), row):
             SLOTS.append((f"slot_{item}", (x + dx, SHELF_Y, top), 1.35))
 # colgados en la pared del fondo (encima de las estanterías y de las velas)
-for item, x, z in (("col_station_sign", -3.2, 3.05), ("col_leaf_frame", -1.95, 2.95), ("col_pickaxes", -1.1, 2.75),
-                   ("col_abyss_heart", 0.0, 2.08), ("col_star_banner", 0.0, 3.42), ("col_painting", 1.1, 2.8), ("col_desert_mask", 1.95, 2.95),
-                   ("col_blueprint", 3.2, 3.05)):
+for item, x, z in (("col_abyss_heart", 0.0, 2.08), ("col_star_banner", 0.0, 3.42), ("col_painting", -2.55, 2.9), ("col_blueprint", 2.55, 2.9)):
     SLOTS.append((f"slot_{item}", (x, WALL_Y - 0.03, z), 0.95))
 # en el suelo, junto a las paredes laterales
 for item, x, y in (("col_cactus_pot", -3.75, -1.9), ("col_sphinx", 3.75, -1.9), ("col_globe", -3.75, 2.4), ("col_cannonballs", 3.75, 2.4)):
     SLOTS.append((f"slot_{item}", (x, y, 0.0), 1.0))
-empty("room_gold_chest", parent=room, loc=(1.95, 1.9, 0.0))
+# a la izquierda de la alfombra: se ve desde el menú y no tapa ninguna pieza (ni las vitrinas ni lo del suelo)
+empty("room_gold_chest", parent=room, loc=(-2.1, 0.6, 0.0))
 for slot, loc, size in SLOTS:
     empty(slot, parent=room, loc=loc).scale = (size, size, size)
 
