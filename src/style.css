@@ -104,6 +104,8 @@ button:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px
 /* pantalla completa: esquina inferior izquierda del menú */
 .fs-btn { position: absolute; bottom: max(12px, env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); z-index: 2; box-shadow: 0 3px 0 var(--ink); }
 .fs-btn[hidden], #btn-pause-fullscreen[hidden] { display: none; }
+/* un solo botón: entra o sale según el estado */
+[aria-pressed="true"] > .fs-enter, [aria-pressed="false"] > .fs-exit { display: none; }
 /* aviso fijo cuando el navegador dibuja sin tarjeta gráfica */
 .gpu-warning { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 3; display: flex; align-items: center; gap: 12px; width: min(620px, calc(100% - 32px)); padding: 10px 10px 10px 16px; background: #fef3c7; color: var(--ink); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 4px 0 var(--ink); font-size: 15px; font-weight: 800; line-height: 1.35; }
 .gpu-warning[hidden] { display: none; }

@@ -11,6 +11,7 @@ export const de: Dict = {
     rotate: 'Dreh dein Handy ins Querformat, um zu spielen',
     close: 'Schließen',
     fullscreen: 'Vollbild',
+    exitFullscreen: 'Vollbild beenden',
     iosFullscreen: 'Auf dem iPhone: Teilen und „Zum Home-Bildschirm“ tippen, um im Vollbild zu spielen',
     stars: '{n} von 3 Sternen',
   },

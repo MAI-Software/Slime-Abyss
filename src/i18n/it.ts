@@ -11,6 +11,7 @@ export const it: Dict = {
     rotate: 'Ruota il telefono in orizzontale per giocare',
     close: 'Chiudi',
     fullscreen: 'Schermo intero',
+    exitFullscreen: 'Esci da schermo intero',
     iosFullscreen: 'Su iPhone: tocca Condividi e «Aggiungi alla schermata Home» per giocare a schermo intero',
     stars: '{n} stelle su 3',
   },

@@ -11,6 +11,7 @@ export const fr: Dict = {
     rotate: 'Tourne ton téléphone pour jouer en paysage',
     close: 'Fermer',
     fullscreen: 'Plein écran',
+    exitFullscreen: 'Quitter le plein écran',
     iosFullscreen: 'Sur iPhone : touche Partager puis « Sur l’écran d’accueil » pour jouer en plein écran',
     stars: '{n} étoiles sur 3',
   },

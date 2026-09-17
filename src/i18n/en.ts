@@ -11,6 +11,7 @@ export const en: Dict = {
     rotate: 'Turn your phone sideways to play',
     close: 'Close',
     fullscreen: 'Full screen',
+    exitFullscreen: 'Exit full screen',
     iosFullscreen: 'On iPhone: tap Share and “Add to Home Screen” to play full screen',
     stars: '{n} of 3 stars',
   },

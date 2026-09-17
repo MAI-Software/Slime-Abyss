@@ -132,6 +132,15 @@ const CANNON_TAG_BASE = 3_000_000_000;
 // Plataforma de salto: el trozo lanzado se estira en la dirección en que va (solo el dibujo, la física no cambia)
 const PAD_STRETCH = 0.035;
 const PAD_STRETCH_MAX = 0.5;
+// Aspecto de mercurio (solo el dibujo: la física y el control no cambian)
+// - bamboleo por inercia: al arrancar, frenar o aterrizar se mece como un flan y vuelve a su forma
+// - superficie viva: ondas que la recorren al moverse y reflejos que se deslizan
+const JELLY_FREQ = 9;          // rad/s del muelle
+const JELLY_DAMP = 0.16;       // poco amortiguado: rebota un par de veces antes de parar
+const JELLY_SWAY = 0.013;      // lo que se desplaza la parte de arriba por unidad de aceleración
+const JELLY_SWAY_MAX = 0.2;
+const JELLY_LAND = 2.4;        // golpe de aplastamiento al aterrizar
+const JELLY_SQUASH_MAX = 0.28;
 
 const STATE_LOOK: Record<SlimeState, { color: number; emissive: number; rim: [number, number, number]; wobble: number }> = {
   normal: { color: 0x2f8cff, emissive: 0x0b3a8c, rim: [0.45, 0.8, 1.0], wobble: 1 },
@@ -148,6 +157,13 @@ export interface Group {
 }
 
 const tmpMatrix = new THREE.Matrix4();
+
+/** Ondulación de la superficie (la comparten el cuerpo y su contorno): temblor suave y ondas que la recorren al moverse. */
+const SURFACE_WAVES = `
+  float wob = sin(uTime * 5.0 + wp.x * 4.0 + wp.z * 3.0) * 0.5 + sin(uTime * 3.3 - wp.z * 5.0 + wp.y * 6.0) * 0.5;
+  float along = dot(wp.xz, uFlow);
+  float rip = sin(along * 10.0 - uTime * 13.0 + wp.y * 3.0) * (0.6 + 0.4 * sin(dot(wp.xz, vec2(-uFlow.y, uFlow.x)) * 6.0 + uTime * 2.0));
+  float surf = wob * 0.022 * uWobble + rip * 0.024 * uRipple * uWobble;`;
 
 export class Slime {
   readonly n: number;
@@ -191,6 +207,9 @@ export class Slime {
   private sgx: Float32Array; private sgy: Float32Array; private sgz: Float32Array; private sgc: Float32Array;
   private svx: Float32Array; private svy: Float32Array; private svz: Float32Array;
   private tmpMuzzle = new THREE.Vector3();
+  /** muelle del bamboleo (x, z: vaivén de la parte de arriba; y: aplastamiento) y velocidad suavizada del trozo principal */
+  private jelly = { x: 0, z: 0, y: 0, vx: 0, vz: 0, vy: 0, sx: 0, sz: 0, lvx: 0, lvz: 0, ripple: 0 };
+  private jellyLand = 0;
   /** vueltas acumuladas y tiempo de mareo restante */
   private turns = 0;
   dizzyT = 0;
@@ -207,7 +226,11 @@ export class Slime {
   /** trozos de al menos 3 limitos en el último agrupado (si bajan, se han unido) */
   private bigGroups = 1;
   private time = 0;
-  private readonly uniforms = { uTime: { value: 0 }, uWobble: { value: 1 }, uRim: { value: new THREE.Vector3(0.45, 0.8, 1.0) }, uOpacity: { value: 1 }, uSparkle: { value: 0 }, uRainbow: { value: 0 } };
+  private readonly uniforms = {
+    uTime: { value: 0 }, uWobble: { value: 1 }, uRim: { value: new THREE.Vector3(0.45, 0.8, 1.0) }, uOpacity: { value: 1 }, uSparkle: { value: 0 }, uRainbow: { value: 0 },
+    /** dirección de avance (xy) para las ondas y los reflejos, e intensidad de las ondas */
+    uFlow: { value: new THREE.Vector2(0, 1) }, uRipple: { value: 0 },
+  };
   state: SlimeState = 'normal';
   stateT = 0;
   private material!: THREE.MeshStandardMaterial;
@@ -302,16 +325,18 @@ export class Slime {
       shader.uniforms.uOpacity = this.uniforms.uOpacity;
       shader.uniforms.uSparkle = this.uniforms.uSparkle;
       shader.uniforms.uRainbow = this.uniforms.uRainbow;
-      // superficie viva: ondula suavemente y brilla en el borde como una gelatina
-      shader.vertexShader = `uniform float uTime;\nuniform float uWobble;\nvarying vec3 vSlimePos;\n${shader.vertexShader}`.replace(
+      shader.uniforms.uFlow = this.uniforms.uFlow;
+      shader.uniforms.uRipple = this.uniforms.uRipple;
+      // superficie viva: ondula suavemente, le recorren ondas al moverse y brilla en el borde como una gelatina
+      shader.vertexShader = `uniform float uTime;\nuniform float uWobble;\nuniform vec2 uFlow;\nuniform float uRipple;\nvarying vec3 vSlimePos;\n${shader.vertexShader}`.replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
         vec3 wp = (modelMatrix * vec4(position, 1.0)).xyz;
-        float wob = sin(uTime * 5.0 + wp.x * 4.0 + wp.z * 3.0) * 0.5 + sin(uTime * 3.3 - wp.z * 5.0 + wp.y * 6.0) * 0.5;
-        transformed += objectNormal * wob * 0.022 * uWobble;
+        ${SURFACE_WAVES}
+        transformed += objectNormal * surf;
         vSlimePos = wp;`,
       );
-      shader.fragmentShader = `uniform float uTime;\nuniform vec3 uRim;\nuniform float uOpacity;\nuniform float uSparkle;\nuniform float uRainbow;\nvarying vec3 vSlimePos;
+      shader.fragmentShader = `uniform float uTime;\nuniform vec3 uRim;\nuniform float uOpacity;\nuniform float uSparkle;\nuniform float uRainbow;\nuniform vec2 uFlow;\nuniform float uRipple;\nvarying vec3 vSlimePos;
         float slimeHash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
         float slimeNoise(vec3 p) {
           vec3 i = floor(p), f = fract(p);
@@ -329,6 +354,9 @@ export class Slime {
         vec3 slimeH = normalize(normalize(vec3(-0.45, 0.75, 0.5)) + normalize(vViewPosition));
         float slimeSpec = max(dot(normalize(normal), slimeH), 0.0);
         outgoingLight += vec3(1.0) * (pow(slimeSpec, 90.0) * 0.75 + pow(slimeSpec, 10.0) * 0.07);
+        // mercurio: reflejos claros que se deslizan por la superficie hacia atrás al avanzar
+        float sheen = slimeNoise(vSlimePos * 1.7 - vec3(uFlow.x, 0.0, uFlow.y) * uTime * (0.4 + uRipple * 1.6) + normalize(normal) * 1.4);
+        outgoingLight += mix(uRim, vec3(1.0), 0.5) * smoothstep(0.64, 0.92, sheen) * (0.14 + 0.2 * uRipple) * (0.35 + 0.65 * slimeRim);
         // colores de gema: destellos diminutos que titilan al moverse (el diamante, con reflejos de colores)
         if (uSparkle > 0.001) {
           float glint = pow(slimeNoise(vSlimePos * 26.0 + vec3(uTime * 1.7, uTime * 0.9, -uTime * 1.3)), 14.0);
@@ -420,11 +448,11 @@ export class Slime {
   /** Trazo de tinta: la cara trasera inflada un poco (con la misma ondulación que el cuerpo). */
   private createHullMaterial() {
     return new THREE.ShaderMaterial({
-      uniforms: { uTime: this.uniforms.uTime, uWobble: this.uniforms.uWobble, uWidth: { value: OUTLINE_WIDTH } },
+      uniforms: { uTime: this.uniforms.uTime, uWobble: this.uniforms.uWobble, uFlow: this.uniforms.uFlow, uRipple: this.uniforms.uRipple, uWidth: { value: OUTLINE_WIDTH } },
       side: THREE.BackSide,
       vertexShader: `
         #include <common>
-        uniform float uTime; uniform float uWobble; uniform float uWidth;
+        uniform float uTime; uniform float uWobble; uniform float uWidth; uniform vec2 uFlow; uniform float uRipple;
         void main() {
           vec3 objectNormal = normal;
           vec3 transformed = position;
@@ -433,8 +461,8 @@ export class Slime {
           #else
             vec3 wp = (modelMatrix * vec4(position, 1.0)).xyz;
           #endif
-          float wob = sin(uTime * 5.0 + wp.x * 4.0 + wp.z * 3.0) * 0.5 + sin(uTime * 3.3 - wp.z * 5.0 + wp.y * 6.0) * 0.5;
-          transformed += objectNormal * (wob * 0.022 * uWobble + uWidth);
+          ${SURFACE_WAVES}
+          transformed += objectNormal * (surf + uWidth);
           #include <project_vertex>
         }`,
       fragmentShader: `void main() { gl_FragColor = vec4(0.055, 0.07, 0.16, 1.0); }`,
@@ -1315,6 +1343,7 @@ export class Slime {
     this.stunT = Math.max(0, this.stunT - dt);
     if (this.landHits >= 6 && this.groups[0]) {
       const g = this.groups[0];
+      this.jellyLand = Math.min(1.5, this.landHits / 20);
       this.events.push({ type: 'land', x: g.cx, y: g.cy, z: g.cz });
     }
     this.landHits = 0;
@@ -1444,6 +1473,47 @@ export class Slime {
 
   // ---------------------------------------------------------------- render
 
+  /** Muelle del bamboleo: se inclina contra la aceleración del trozo principal, rebota al aterrizar y mueve las ondas. */
+  private updateJelly(dt: number) {
+    const j = this.jelly;
+    const lead = this.groups[0];
+    let tx = 0, tz = 0, speed = 0;
+    if (lead && dt > 0) {
+      const k = 1 - Math.exp(-dt * 25);
+      j.sx += (lead.vx - j.sx) * k;
+      j.sz += (lead.vz - j.sz) * k;
+      speed = Math.hypot(j.sx, j.sz);
+      // acotada: al dividirse cambia el trozo principal y su velocidad salta
+      let ax = (j.sx - j.lvx) / dt, az = (j.sz - j.lvz) / dt;
+      const a = Math.hypot(ax, az);
+      if (a > 25) { ax *= 25 / a; az *= 25 / a; }
+      j.lvx = j.sx;
+      j.lvz = j.sz;
+      if (this.state !== 'frozen' && !this.riding[lead.ids[0]]) { tx = -ax * JELLY_SWAY; tz = -az * JELLY_SWAY; }
+    }
+    if (this.state === 'frozen') { j.x *= 0.8; j.z *= 0.8; j.y *= 0.8; j.vx = j.vz = j.vy = 0; this.jellyLand = 0; }
+    const w = JELLY_FREQ, c = 2 * JELLY_DAMP * w;
+    j.vx += ((tx - j.x) * w * w - j.vx * c) * dt;
+    j.vz += ((tz - j.z) * w * w - j.vz * c) * dt;
+    j.x += j.vx * dt;
+    j.z += j.vz * dt;
+    const sway = Math.hypot(j.x, j.z);
+    if (sway > JELLY_SWAY_MAX) { j.x *= JELLY_SWAY_MAX / sway; j.z *= JELLY_SWAY_MAX / sway; }
+    if (this.jellyLand > 0) { j.vy += JELLY_LAND * this.jellyLand; this.jellyLand = 0; }
+    j.vy += (-j.y * w * w - j.vy * c) * dt;
+    j.y = Math.max(-0.15, Math.min(JELLY_SQUASH_MAX, j.y + j.vy * dt));
+    // ondas: más cuanto más rápido va, y un golpe al aterrizar
+    j.ripple = Math.max(Math.min(1, speed / MAX_SPEED) * 0.8, j.ripple - dt * 1.5, Math.abs(j.vy) * 0.25);
+    this.uniforms.uRipple.value = this.state === 'frozen' ? 0 : Math.min(1, j.ripple);
+    if (speed > 0.3) {
+      const f = this.uniforms.uFlow.value;
+      const k = 1 - Math.exp(-dt * 6);
+      f.x += (j.sx / speed - f.x) * k;
+      f.y += (j.sz / speed - f.y) * k;
+      f.normalize();
+    }
+  }
+
   /** Centro dibujado y velocidad media de los trozos con estirón de salto. Devuelve si hay alguno. */
   private stretchCenters(dt: number, alpha: number): boolean {
     const { n, alive, padFly, padS, gid, sgx, sgy, sgz, sgc, svx, svy, svz } = this;
@@ -1492,6 +1562,7 @@ export class Slime {
     const sparkle = this.state === 'normal' ? this.body.sparkle ?? 0 : 0;
     this.uniforms.uSparkle.value += (sparkle - this.uniforms.uSparkle.value) * k;
     this.uniforms.uRainbow.value = this.body.rainbow ? 1 : 0;
+    this.updateJelly(Math.min(dt, 0.05));
     this.xrayColor.value.setRGB(...look.rim);
     for (const f of this.faces) f.frozen = this.state === 'frozen';
     const { n, px, py, pz, ox, oy, oz, alive, dying } = this;
@@ -1502,7 +1573,11 @@ export class Slime {
       this.blob.begin(lead.cx, lead.cy, lead.cz);
       const spheres = this.spheres;
       const stretch = this.stretchCenters(dt, alpha);
-      const { padS, gid, sgx, sgy, sgz, svx, svy, svz } = this;
+      const { padS, gid, sgx, sgy, sgz, svx, svy, svz, jelly, riding, flying } = this;
+      // bamboleo del trozo principal: la parte de arriba se mece y todo se aplasta al aterrizar (base en el suelo)
+      const wobbly = Math.abs(jelly.x) + Math.abs(jelly.z) + Math.abs(jelly.y) > 0.002;
+      const half = Math.max(0.12, lead.maxY - lead.cy);
+      const bottom = lead.cy - half;
       for (let i = 0; i < n; i++) {
         if (!alive[i]) continue;
         let x = ox[i] + (px[i] - ox[i]) * alpha;
@@ -1522,6 +1597,14 @@ export class Slime {
             y = sgy[g] + (dy - uy * along) * side + uy * along * (1 + a);
             z = sgz[g] + (dz - uz * along) * side + uz * along * (1 + a);
           }
+        }
+        if (wobbly && g === 0 && !riding[i] && !flying[i]) {
+          const up = Math.min(1, Math.max(0, (y - bottom) / (half * 2)));
+          x += jelly.x * up;
+          z += jelly.z * up;
+          y = bottom + (y - bottom) * (1 - jelly.y);
+          x = lead.cx + (x - lead.cx) * (1 + jelly.y * 0.5);
+          z = lead.cz + (z - lead.cz) * (1 + jelly.y * 0.5);
         }
         const life = dying[i] > 0 ? Math.max(1 - dying[i] / DIE_TIME, 0.05) : 1;
         if (this.blob.addBall(x, y, z, life)) continue;
@@ -1555,7 +1638,7 @@ export class Slime {
       if (k > 0) continue;
       let airborne = 0;
       for (const i of g.ids) if (this.air[i] > 0.15) airborne++;
-      face.update(g, dt, lookX, lookZ, airborne / g.ids.length, this.camYaw, this.camPitch, this.squeezing);
+      face.update(g, dt, lookX, lookZ, airborne / g.ids.length, this.camYaw, this.camPitch, this.squeezing, this.jelly);
     }
 
     // daño → cara de dolor (un único limo, una única cara)
@@ -1710,7 +1793,7 @@ class Face {
     this.happyT = Math.max(this.happyT, t);
   }
 
-  update(g: Group, dt: number, lookX: number, lookZ: number, airFrac: number, yaw: number, pitch: number, squeeze = false) {
+  update(g: Group, dt: number, lookX: number, lookZ: number, airFrac: number, yaw: number, pitch: number, squeeze = false, sway?: { x: number; y: number; z: number }) {
     this.t += dt;
     this.painT -= dt;
     this.happyT -= dt;
@@ -1744,9 +1827,10 @@ class Face {
     // arriba y en el lado del trozo que da a la cámara, inclinada hacia ella
     const sy = Math.sin(yaw), cy = Math.cos(yaw);
     const out = Math.max(0.2, g.maxZ - g.cz) + 0.24;
-    const tx = g.cx + sy * out;
-    const ty = g.maxY * 0.6 + g.cy * 0.4 + 0.16;
-    const tz = g.cz + cy * out;
+    // la cara va pegada a la parte de arriba: se mece y baja con el bamboleo
+    const tx = g.cx + sy * out + (sway ? sway.x * 0.8 : 0);
+    const ty = g.maxY * 0.6 + g.cy * 0.4 + 0.16 - (sway ? sway.y * (g.maxY - g.cy + 0.2) : 0);
+    const tz = g.cz + cy * out + (sway ? sway.z * 0.8 : 0);
     // velocidad vista desde la cámara (x: derecha de la pantalla, z: hacia la cámara)
     const svx = g.vx * cy - g.vz * sy;
     const svz = g.vx * sy + g.vz * cy;

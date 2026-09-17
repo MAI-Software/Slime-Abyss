@@ -78,6 +78,7 @@ export function createBlockMaterial(o: BlockMaterialOptions): THREE.MeshPhongMat
       varying vec3 vViewY;
       varying vec3 vViewZ;
       vec3 blockNormalSample;
+      vec3 blockDetailSample;
       vec3 blockTan;
       vec3 blockBit;
       float blockGloss;
@@ -102,6 +103,8 @@ export function createBlockMaterial(o: BlockMaterialOptions): THREE.MeshPhongMat
         vec2 lp = vLevelPos.xz * 0.5;
         texel = texture2D(uTopMap, lp).rgb;
         blockNormalSample = texture2D(uTopNormal, lp).xyz;
+        // detalle: el mismo relieve a otra escala, para que de cerca no se vea liso
+        blockDetailSample = texture2D(uTopNormal, lp.yx * 3.7 + 0.31).xyz;
         blockTan = vec3(1.0, 0.0, 0.0);
         blockBit = vec3(0.0, 0.0, 1.0);
       } else {
@@ -109,6 +112,7 @@ export function createBlockMaterial(o: BlockMaterialOptions): THREE.MeshPhongMat
         vec2 suv = (alongZ ? vec2(vLevelPos.z, -vLevelPos.y) : vec2(vLevelPos.x, -vLevelPos.y)) * 0.5;
         texel = texture2D(uSideMap, suv).rgb;
         blockNormalSample = texture2D(uSideNormal, suv).xyz;
+        blockDetailSample = texture2D(uSideNormal, suv * 3.7 + 0.31).xyz;
         blockTan = alongZ ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
         blockBit = vec3(0.0, -1.0, 0.0);
         // más oscuro hacia abajo: da profundidad al vacío
@@ -140,6 +144,7 @@ export function createBlockMaterial(o: BlockMaterialOptions): THREE.MeshPhongMat
       .replace('#include <normal_fragment_maps>', `
       {
         vec3 mapN = blockNormalSample * 2.0 - 1.0;
+        mapN.xy += (blockDetailSample.xy * 2.0 - 1.0) * 0.3;
         mapN.xy *= uBump;
         vec3 T = levelToView(blockTan);
         vec3 B = levelToView(blockBit);

@@ -516,17 +516,20 @@ function openChapter(ch: ChapterDef) {
 // ------------------------------------------------------------------ pantalla completa
 
 /*
-  En el móvil se entra sola al primer toque (los navegadores solo la dejan pedir tras un gesto) y hay botón en el menú
-  y en la pausa. El Safari de iPhone no tiene pantalla completa para páginas: el botón explica cómo instalarla.
+  Nunca se entra sola: la pide el jugador con el botón del menú o el de la pausa, y el mismo botón la quita.
+  El Safari de iPhone no tiene pantalla completa para páginas: el botón explica cómo instalarla.
 */
-const touchDevice = matchMedia('(pointer: coarse)').matches;
 function syncFullscreenButtons() {
   const on = fullscreenActive();
+  const label = t(on ? 'common.exitFullscreen' : 'common.fullscreen');
   // instalada desde la pantalla de inicio ya ocupa todo: sin botones
-  const hide = installedApp() || (on && touchDevice);
-  $('btn-fullscreen').hidden = hide;
-  $('btn-pause-fullscreen').hidden = hide || on;
-  $('btn-fullscreen').setAttribute('aria-pressed', String(on));
+  for (const id of ['btn-fullscreen', 'btn-pause-fullscreen']) {
+    $(id).hidden = installedApp();
+    $(id).setAttribute('aria-pressed', String(on));
+  }
+  $('btn-fullscreen').setAttribute('aria-label', label);
+  $('btn-fullscreen').title = label;
+  $('btn-pause-fullscreen').querySelector('.fs-label')!.textContent = label;
 }
 function toggleFullscreen() {
   sfx.click();
@@ -537,10 +540,6 @@ function toggleFullscreen() {
 $('btn-fullscreen').addEventListener('click', toggleFullscreen);
 $('btn-pause-fullscreen').addEventListener('click', toggleFullscreen);
 for (const ev of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(ev, syncFullscreenButtons);
-if (touchDevice && fullscreenSupported()) {
-  // primer toque en cualquier sitio (también sobre el aviso de girar el móvil)
-  window.addEventListener('pointerup', () => input.requestFullscreen(), { once: true, capture: true });
-}
 syncFullscreenButtons();
 
 $('btn-chapter-breakdown').addEventListener('click', () => { sfx.click(); if (chapter) showBreakdown(chapter); });
@@ -548,7 +547,6 @@ $('btn-story').addEventListener('click', () => {
   unlockAudio();
   sfx.click();
   if (input.mode === 'gyro') input.requestPermission();
-  input.requestFullscreen();
   openScreen('story');
 });
 
@@ -1008,6 +1006,7 @@ $<HTMLSelectElement>('lang-select').addEventListener('change', (e) => {
   save.lang = lang;
   store();
   setLang(lang);
+  syncFullscreenButtons();
   refreshScreen();
 });
 

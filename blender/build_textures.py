@@ -118,7 +118,48 @@ def save(name, rgb, colorspace="sRGB"):
     print("OK ->", img.filepath_raw)
 
 
-def save_pair(name, color, height, strength):
+def finish(color, height, seed, grime=1.0, wear=1.0, speck=1.0, moss=0.0, sparkle=0.0, scratches=0.0):
+    """Acabado común: cavidades oscuras, cantos gastados, manchas, grano fino y el detalle propio de cada tema."""
+    rng = np.random.default_rng(seed + 1000)
+    local = height - blur(height, 6)
+    cav = np.clip(-local * 7, 0, 1)                          # juntas, grietas y hoyos
+    edge = np.clip(local * 9, 0, 1)                          # cantos que sobresalen
+    wide = np.clip(blur(height, 14) - height, 0, 1)          # sombra amplia al fondo de las juntas
+    color = color * (1 - (0.3 * cav + 0.5 * wide) * grime)[..., None] + (edge * 0.09 * wear)[..., None]
+    # manchas de humedad o polvo a media escala
+    stains = smoothstep(0.55, 0.82, fbm(5, 4, rng))
+    color = color * (1 - stains * 0.1 * grime)[..., None]
+    # grano fino: la superficie no se ve lisa de cerca
+    grain = fbm(192, 2, rng) - 0.5
+    color = color * (1 + grain * 0.14 * speck)[..., None]
+    height = height + grain * 0.035 * speck
+    if moss:
+        # musgo en lo hundido de las zonas húmedas
+        m = (smoothstep(0.5, 0.75, fbm(6, 4, rng)) * np.clip(cav * 1.6 + wide * 2, 0, 1) * moss)[..., None]
+        green = np.array((0.33, 0.45, 0.25), np.float32) * (0.85 + 0.3 * fbm(64, 3, rng)[..., None])
+        color = color * (1 - m) + green * m
+    if sparkle:
+        # cristalitos de escarcha que brillan
+        s = smoothstep(0.9, 0.97, fbm(160, 1, rng)) * smoothstep(0.35, 0.6, height)
+        color = color + (s * 0.28 * sparkle)[..., None]
+    if scratches:
+        # arañazos rectos en varias direcciones, solo en algunas zonas
+        mask = smoothstep(0.45, 0.7, fbm(7, 3, rng))
+        sc = np.zeros_like(height)
+        for k in range(3):
+            a = rng.uniform(0, np.pi)
+            # periodo entero en los dos ejes para que la textura siga repitiendo
+            fx, fy = round(np.cos(a) * 9), round(np.sin(a) * 9)
+            line = np.cos((XX * fx + YY * fy) * 2 * np.pi / SIZE + fbm(4, 2, rng) * 6)
+            sc = np.maximum(sc, smoothstep(0.9993, 1.0, line) * smoothstep(0.6, 0.8, fbm(3, 2, rng)))
+        sc = sc * mask * scratches
+        color = color + (sc * 0.16)[..., None]
+        height = height - sc * 0.05
+    return np.clip(color, 0, 1), height
+
+
+def save_pair(name, color, height, strength, **look):
+    color, height = finish(color, height, sum(map(ord, name)), **look)
     save(name, color)
     save(name + "_n", normals_from_height(height, strength), "Non-Color")
 
@@ -132,7 +173,7 @@ def flagstones(seed, per_side, palette, mortar_col, crack_amount):
     d1, d2, cell = voronoi(pts)
     edge = d2 - d1
     gap = smoothstep(1.5, 7.0, edge)                       # 0 en la junta
-    rim = smoothstep(0.0, 34.0, edge)                      # borde redondeado de la losa
+    rim = np.sqrt(smoothstep(0.0, 34.0, edge))             # borde redondeado (abombado) de la losa
     grain = fbm(32, 6, rng)
     big = fbm(8, 3, rng)
     # grietas finas: bordes de un voronoi pequeño, solo en algunas zonas
@@ -163,7 +204,7 @@ def masonry(seed, cols_n, rows_n, palette, mortar_col, mortar_px, moss):
     dist = np.minimum.reduce([fx, bw - fx, fy, bh - fy])
     wobble = (fbm(24, 4, rng) - 0.5) * mortar_px * 1.4
     gap = smoothstep(mortar_px * 0.35, mortar_px * 1.3, dist + wobble)
-    rim = smoothstep(0, mortar_px * 7, dist + wobble)
+    rim = np.sqrt(smoothstep(0, mortar_px * 7, dist + wobble))
     grain = fbm(28, 6, rng)
     chips = smoothstep(0.7, 0.84, fbm(36, 3, rng)) * (1 - rim * 0.6)
 
@@ -241,29 +282,29 @@ def sand_overlay(color, height, seed, amount):
 # ------------------------------------------------------------------ generar
 
 save_pair("floor", *flagstones(7, 5, [(0.93, 0.82, 0.62), (0.87, 0.76, 0.58), (0.95, 0.86, 0.68), (0.84, 0.75, 0.61)],
-                                (0.52, 0.43, 0.35), 0.7), strength=4.0)
+                                (0.52, 0.43, 0.35), 0.7), strength=4.5, moss=0.35)
 save_pair("wall_top", *flagstones(21, 6, [(0.62, 0.59, 0.74), (0.57, 0.54, 0.69), (0.66, 0.63, 0.78)],
-                                   (0.36, 0.33, 0.45), 0.45), strength=4.0)
+                                   (0.36, 0.33, 0.45), 0.45), strength=4.5, moss=0.25)
 save_pair("brick", *masonry(3, 4, 8, [(0.61, 0.57, 0.73), (0.56, 0.52, 0.68), (0.66, 0.62, 0.78), (0.53, 0.5, 0.65)],
-                             (0.32, 0.29, 0.4), 4, 0.5), strength=5.0)
+                             (0.32, 0.29, 0.4), 4, 0.5), strength=5.5, moss=0.3)
 save_pair("stone_side", *masonry(11, 2, 4, [(0.7, 0.62, 0.52), (0.65, 0.58, 0.49), (0.74, 0.66, 0.56)],
-                                  (0.42, 0.36, 0.3), 5, 0.3), strength=5.0)
-save_pair("ice", *ice(5), strength=2.5)
+                                  (0.42, 0.36, 0.3), 5, 0.3), strength=5.5, moss=0.2)
+save_pair("ice", *ice(5), strength=2.5, grime=0.2, wear=1.4, speck=0.5, sparkle=1.0)
 
 # ------------------------------------------------------------------ temas por capítulo (se cargan al jugar ese capítulo)
 # Arena (capítulos 4 a 6): arenisca cálida con arena en las juntas
 c, h = flagstones(31, 4, [(0.93, 0.74, 0.5), (0.88, 0.68, 0.45), (0.96, 0.8, 0.56), (0.85, 0.66, 0.46)], (0.62, 0.45, 0.3), 0.35)
-save_pair("desert_floor", *sand_overlay(c, h, 32, 0.35), strength=3.5)
-save_pair("desert_wall_top", *flagstones(33, 5, [(0.86, 0.62, 0.4), (0.8, 0.57, 0.37), (0.9, 0.67, 0.44)], (0.55, 0.38, 0.25), 0.25), strength=3.5)
-save_pair("desert_brick", *masonry(34, 3, 6, [(0.85, 0.6, 0.38), (0.8, 0.55, 0.34), (0.9, 0.66, 0.42), (0.76, 0.52, 0.33)], (0.6, 0.43, 0.28), 4, 0.0), strength=4.5)
-save_pair("desert_side", *masonry(35, 2, 4, [(0.78, 0.56, 0.36), (0.72, 0.51, 0.33), (0.82, 0.6, 0.39)], (0.52, 0.37, 0.24), 5, 0.0), strength=4.5)
+save_pair("desert_floor", *sand_overlay(c, h, 32, 0.35), strength=4.0, grime=0.8, speck=1.6)
+save_pair("desert_wall_top", *flagstones(33, 5, [(0.86, 0.62, 0.4), (0.8, 0.57, 0.37), (0.9, 0.67, 0.44)], (0.55, 0.38, 0.25), 0.25), strength=4.0, speck=1.5)
+save_pair("desert_brick", *masonry(34, 3, 6, [(0.85, 0.6, 0.38), (0.8, 0.55, 0.34), (0.9, 0.66, 0.42), (0.76, 0.52, 0.33)], (0.6, 0.43, 0.28), 4, 0.0), strength=5.0, speck=1.5)
+save_pair("desert_side", *masonry(35, 2, 4, [(0.78, 0.56, 0.36), (0.72, 0.51, 0.33), (0.82, 0.6, 0.39)], (0.52, 0.37, 0.24), 5, 0.0), strength=5.0, speck=1.5)
 # Hielo (capítulos 7 a 9): nieve prensada y ladrillos de hielo
-save_pair("frost_floor", *flagstones(41, 5, [(0.9, 0.95, 1.0), (0.84, 0.91, 0.98), (0.94, 0.97, 1.0), (0.8, 0.88, 0.96)], (0.6, 0.74, 0.88), 0.25), strength=3.0)
-save_pair("frost_wall_top", *flagstones(42, 6, [(0.72, 0.84, 0.96), (0.66, 0.8, 0.94), (0.78, 0.88, 0.98)], (0.45, 0.6, 0.78), 0.3), strength=3.0)
-save_pair("frost_brick", *masonry(43, 4, 8, [(0.66, 0.82, 0.96), (0.6, 0.78, 0.94), (0.72, 0.86, 0.98), (0.56, 0.74, 0.92)], (0.86, 0.93, 1.0), 4, 0.0), strength=4.0)
-save_pair("frost_side", *masonry(44, 2, 4, [(0.58, 0.74, 0.9), (0.52, 0.7, 0.88), (0.64, 0.8, 0.94)], (0.82, 0.9, 0.98), 5, 0.0), strength=4.0)
+save_pair("frost_floor", *flagstones(41, 5, [(0.9, 0.95, 1.0), (0.84, 0.91, 0.98), (0.94, 0.97, 1.0), (0.8, 0.88, 0.96)], (0.6, 0.74, 0.88), 0.25), strength=3.5, grime=0.5, sparkle=1.0)
+save_pair("frost_wall_top", *flagstones(42, 6, [(0.72, 0.84, 0.96), (0.66, 0.8, 0.94), (0.78, 0.88, 0.98)], (0.45, 0.6, 0.78), 0.3), strength=3.5, grime=0.5, sparkle=0.8)
+save_pair("frost_brick", *masonry(43, 4, 8, [(0.66, 0.82, 0.96), (0.6, 0.78, 0.94), (0.72, 0.86, 0.98), (0.56, 0.74, 0.92)], (0.86, 0.93, 1.0), 4, 0.0), strength=4.5, grime=0.4, sparkle=0.6)
+save_pair("frost_side", *masonry(44, 2, 4, [(0.58, 0.74, 0.9), (0.52, 0.7, 0.88), (0.64, 0.8, 0.94)], (0.82, 0.9, 0.98), 5, 0.0), strength=4.5, grime=0.4, sparkle=0.6)
 # Tecnológico (capítulos 10 a 12): placas de metal con remaches y franjas de luz
-save_pair("tech_floor", *panels(51, 2, 2, [(0.62, 0.66, 0.72), (0.56, 0.6, 0.67), (0.66, 0.7, 0.76)], (0.16, 0.18, 0.22), None, 0.4), strength=3.5)
-save_pair("tech_wall_top", *panels(52, 4, 4, [(0.36, 0.4, 0.48), (0.32, 0.36, 0.44), (0.4, 0.44, 0.52)], (0.1, 0.12, 0.16), None, 0.2), strength=3.5)
-save_pair("tech_brick", *panels(53, 2, 4, [(0.4, 0.44, 0.52), (0.36, 0.4, 0.48), (0.44, 0.48, 0.56)], (0.08, 0.1, 0.14), (0.35, 0.95, 1.0), 0.0), strength=4.0)
-save_pair("tech_side", *panels(54, 2, 4, [(0.46, 0.5, 0.58), (0.42, 0.46, 0.54)], (0.12, 0.14, 0.18), (0.95, 0.4, 0.85), 0.0), strength=4.0)
+save_pair("tech_floor", *panels(51, 2, 2, [(0.62, 0.66, 0.72), (0.56, 0.6, 0.67), (0.66, 0.7, 0.76)], (0.16, 0.18, 0.22), None, 0.4), strength=4.0, speck=0.6, scratches=1.0)
+save_pair("tech_wall_top", *panels(52, 4, 4, [(0.36, 0.4, 0.48), (0.32, 0.36, 0.44), (0.4, 0.44, 0.52)], (0.1, 0.12, 0.16), None, 0.2), strength=4.0, speck=0.6, scratches=0.8)
+save_pair("tech_brick", *panels(53, 2, 4, [(0.4, 0.44, 0.52), (0.36, 0.4, 0.48), (0.44, 0.48, 0.56)], (0.08, 0.1, 0.14), (0.35, 0.95, 1.0), 0.0), strength=4.5, speck=0.6, scratches=0.6)
+save_pair("tech_side", *panels(54, 2, 4, [(0.46, 0.5, 0.58), (0.42, 0.46, 0.54)], (0.12, 0.14, 0.18), (0.95, 0.4, 0.85), 0.0), strength=4.5, speck=0.6, scratches=0.6)
