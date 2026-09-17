@@ -11,7 +11,7 @@ import { DEFAULT_KEEP_PCT, createEmptyLevel, starsOf, traceRails, type ChapterDe
 import { EDITOR_LIMITS, LevelEditor, PALETTE, TILE_IDS, drawCell, type EditorTool } from './editor';
 import { World } from './world';
 import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
-import { BODY_COLORS, CHEEKS, EYES, GEMS_PER_KIND, IRIS_COLORS, IRIS_EYES, LOOK_GEM_PRICES, LOOK_PRICES, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
+import { BODY_COLORS, CHEEKS, EYES, GEMS_PER_KIND, IRIS_COLORS, IRIS_EYES, LOOK_GEM_PRICES, LOOK_PRICES, LOOK_SOON, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
 import { ACHIEVEMENTS, drawPatchIcon, type Achievement, type AchievementContext } from './achievements';
 import { Thumbs } from './thumbs';
 import { Input, fullscreenActive, fullscreenSupported, installedApp, type ControlMode } from './input';
@@ -554,15 +554,26 @@ $('btn-story').addEventListener('click', () => {
 
 const collectiblesOf = (ch: ChapterDef) => COLLECTIBLES.filter((c) => c.chapter === ch.id);
 
+const chapterAllStars = (ch: ChapterDef) => ch.floors.every((f) => floorStars(f.id) === 3);
+
 function isUnlocked(c: Collectible): boolean {
+  if (c.unlock.kind === 'achievement') return save.achievements.includes(c.unlock.id);
+  if (c.unlock.kind === 'secret') return !!floorSave(c.unlock.floor)?.secret;
   const ch = CHAPTERS.find((x) => x.id === c.chapter);
   if (!ch) return false;
   switch (c.unlock.kind) {
-    case 'secret': return !!floorSave(c.unlock.floor)?.secret;
     case 'chapterDone': return chapterDone(ch);
     case 'allCoins': return ch.floors.every((f) => coinsTotalOf(f) === 0 || !!floorSave(f.id)?.allCoins);
-    case 'perfect': return chapterPerfect(ch);
+    case 'allStars': return chapterAllStars(ch);
   }
+}
+
+/** Entrega logros y coleccionables conseguidos fuera de un piso (creador, Mi limo...), los enseña y vuelve a la pantalla. */
+function rewardsNow(back: ScreenId) {
+  const achievements = grantAchievements();
+  pendingRewards.push(...grantCollectibles().map((id) => ({ kind: 'collectible' as const, id })),
+    ...achievements.map((id) => ({ kind: 'achievement' as const, id })));
+  if (pendingRewards.length) afterReward(() => openScreen(back));
 }
 
 /** Entrega los coleccionables cuya condición ya se cumple y devuelve los nuevos. */
@@ -589,6 +600,11 @@ function achievementContext(): AchievementContext {
     secretFound: (id) => !!floorSave(id)?.secret,
     chapterDone: (id) => { const ch = CHAPTERS.find((c) => c.id === id); return !!ch && chapterDone(ch); },
     chapterAllCoins: (id) => { const ch = CHAPTERS.find((c) => c.id === id); return !!ch && ch.floors.every((f) => coinsTotalOf(f) === 0 || !!floorSave(f.id)?.allCoins); },
+    chapterAllStars: (id) => { const ch = CHAPTERS.find((c) => c.id === id); return !!ch && chapterAllStars(ch); },
+    gems: (kind) => gemsOf(kind).n,
+    collectibles: save.collectibles.length,
+    creations: save.creations.filter(Boolean).length,
+    fastest: Math.min(...allFloors.map((f) => (floorSave(f.id)?.done ? floorSave(f.id)!.bestTime : Infinity))),
     stats: save.stats,
   };
 }
@@ -720,16 +736,21 @@ function refreshPatches() {
 }
 
 function howToGet(c: Collectible): string {
+  if (c.unlock.kind === 'achievement') {
+    const id = c.unlock.id;
+    const a = ACHIEVEMENTS.find((x) => x.id === id);
+    return t('collection.howAchievement', { name: a ? achName(a) : id });
+  }
   const ch = CHAPTERS.find((x) => x.id === c.chapter)!;
   const title = chapterTitle(ch);
   switch (c.unlock.kind) {
     case 'secret': {
       const floor = c.unlock.floor;
-      return t('collection.howSecret', { n: ch.floors.findIndex((f) => f.id === floor) + 1 });
+      return t('collection.howSecret', { n: ch.floors.findIndex((f) => f.id === floor) + 1, chapter: title });
     }
     case 'chapterDone': return t('collection.howDone', { chapter: title });
     case 'allCoins': return t('collection.howCoins', { chapter: title });
-    case 'perfect': return t('collection.howPerfect', { chapter: title });
+    case 'allStars': return t('collection.howStars', { chapter: title });
   }
 }
 
@@ -792,6 +813,9 @@ function refreshRoom() {
     item.position.copy(slot.position);
     item.scale.copy(slot.scale);
     item.userData.phase = showcase.length * 1.3;
+    // en estanterías y vitrinas giran despacio; lo colgado en la pared y lo del suelo se queda quieto
+    const place = COLLECTIBLES.find((c) => c.id === id)?.place;
+    item.userData.spin = place === 'shelf' || place === 'vitrina';
     room.add(item);
     showcase.push(item);
   }
@@ -838,12 +862,13 @@ function renderMySlime() {
       const price = LOOK_PRICES[id];
       const gemPrice = LOOK_GEM_PRICES[id];
       const gemName = gemPrice ? t(`myslime.gems.${gemPrice}`) : '';
+      const soon = LOOK_SOON.has(id);
       b.setAttribute('aria-pressed', String(save.look[key] === opt));
       if (key === 'color' || key === 'iris') {
         const body = key === 'color' ? BODY_COLORS[opt as keyof typeof BODY_COLORS] : { color: IRIS_COLORS[opt as keyof typeof IRIS_COLORS] };
         b.className = `swatch${'metalness' in body ? ' metallic' : ''}${'opacity' in body ? ' water' : ''}${'sparkle' in body ? ' gem-swatch' : ''}${open ? '' : ' locked'}${(price || gemPrice) && !open ? ' priced' : ''}`;
         b.style.setProperty('--swatch', hexCss(body.color));
-        b.setAttribute('aria-label', open ? name : price ? `${name} · ${price}` : gemPrice ? `${name} · ${GEMS_PER_KIND} ${gemName}` : `${name} · ${t('achievements.locked')}`);
+        b.setAttribute('aria-label', open ? name : soon ? `${name} · ${t('myslime.soon')}` : price ? `${name} · ${price}` : gemPrice ? `${name} · ${GEMS_PER_KIND} ${gemName}` : `${name} · ${t('achievements.locked')}`);
         b.title = name;
         if (!open) {
           b.innerHTML = price ? `${lockSvg}<span class="price-tag">${coinSvg}${price}</span>`
@@ -852,7 +877,7 @@ function renderMySlime() {
       } else {
         // se elige viendo el rasgo, no leyendo su nombre ('none': solo el círculo del color)
         b.className = `chip thumb-chip${open ? '' : ' locked'}`;
-        b.setAttribute('aria-label', open ? name : `${name} · ${t('achievements.locked')}`);
+        b.setAttribute('aria-label', open ? name : `${name} · ${t(soon ? 'myslime.soon' : 'achievements.locked')}`);
         b.title = name;
         const src = lookPreview(key, opt);
         b.innerHTML = `${src ? `<img src="${src}" alt="" draggable="false">` : escapeHtml(name)}${open ? '' : lockSvg}`;
@@ -900,15 +925,18 @@ function renderMySlime() {
         }
         if (!open) {
           sfx.click();
-          if (needed) toast(t('achievements.unlockHint', { name: achName(needed) }), 2600);
+          if (soon) toast(t('myslime.soon'), 2200);
+          else if (needed) toast(t('achievements.unlockHint', { name: achName(needed) }), 2600);
           return;
         }
         sfx.click();
+        if (save.look[key] !== opt) save.stats.looks++;
         (save.look as unknown as Record<string, string>)[key] = opt;
         store();
         applyLook();
         slime?.poke();
         renderMySlime();
+        rewardsNow('myslime');
       });
       row.appendChild(b);
     }
@@ -1239,6 +1267,8 @@ function playCreation(k: number) {
   const problems = creationProblems(level);
   if (problems.length) { toast(problems[0], 3200); return; }
   testingCreation = k;
+  save.stats.tests++;
+  store();
   // copia: jugar no puede tocar lo guardado; sin capítulo, no cuenta para monedas, estrellas ni logros de piso
   startLevel({ ...structuredClone(level), name: creationName(level, k) }, null, 0);
 }
@@ -1307,7 +1337,7 @@ function setupEditor() {
   $('btn-editor-undo').addEventListener('click', () => { sfx.click(); editor!.undo(); syncEditorUi(); });
   $('btn-editor-fit').addEventListener('click', () => { sfx.click(); editor!.fit(); });
   $('editor-name').addEventListener('input', () => saveEditor());
-  $('btn-editor-back').addEventListener('click', () => { sfx.click(); saveEditor(); openScreen('creator'); });
+  $('btn-editor-back').addEventListener('click', () => { sfx.click(); saveEditor(); openScreen('creator'); rewardsNow('creator'); });
   $('btn-editor-test').addEventListener('click', () => { sfx.click(); saveEditor(); playCreation(editingSlot); });
   addEventListener('keydown', (e) => {
     if (currentScreen !== 'editor' || document.activeElement === $('editor-name')) return;
@@ -1416,8 +1446,13 @@ function finish(win: boolean) {
       secret: gotGem || !!prev?.secret,
     };
     store();
+  }
+  if (!win) { save.stats.fails++; store(); }
+  {
+    // primero los logros: algunos coleccionables se consiguen con ellos
+    const achievements = grantAchievements();
     pendingRewards.push(...grantCollectibles().map((id) => ({ kind: 'collectible' as const, id })));
-    pendingRewards.push(...grantAchievements().map((id) => ({ kind: 'achievement' as const, id })));
+    pendingRewards.push(...achievements.map((id) => ({ kind: 'achievement' as const, id })));
   }
 
   $('result-title').textContent = win ? t('result.done') : t('result.failed');
@@ -1605,10 +1640,11 @@ function tick(dt: number) {
       case 'board': sfx.board(); fx.splat(e.x, e.y, e.z); buzz(20); save.stats.rides++; break;
       case 'unboard': sfx.unboard(); fx.splat(e.x, e.y, e.z); buzz(15); break;
       case 'load': sfx.board(); fx.splat(e.x, e.y, e.z); buzz(20); break;
-      case 'shoot': sfx.cannon(); fx.splat(e.x, e.y, e.z); buzz(45); break;
+      case 'shoot': sfx.cannon(); fx.splat(e.x, e.y, e.z); buzz(45); save.stats.shots++; break;
       case 'land': sfx.land(); buzz(10); break;
       case 'merge': sfx.merge(); if (input.squeeze) save.stats.squeezes++; break;
-      case 'dizzy': sfx.dizzy(); buzz([20, 40, 20]); break;
+      case 'dizzy': sfx.dizzy(); buzz([20, 40, 20]); save.stats.dizzy++; break;
+      case 'hole': save.stats.holes++; break;
       case 'coin': sfx.coin(); fx.sparkle(e.x, e.y + 0.4, e.z); buzz(15); break;
       case 'cut': sfx.cut(); buzz(8); break;
       case 'oil': sfx.oil(); fx.sparkle(e.x, e.y + 0.3, e.z, 0xf5a524); break;
@@ -1628,7 +1664,7 @@ function tick(dt: number) {
         const key = STATE_TOASTS[e.to] ?? (e.from === 'frozen' ? 'toast.thaw' : e.from === 'burning' ? 'toast.extinguish' : null);
         if (key) toast(t(key), 2600);
         if (e.to === 'burning') { sfx.ignite(); buzz([15, 30, 15]); }
-        if (e.to === 'frozen') { sfx.freeze(); buzz(40); }
+        if (e.to === 'frozen') { sfx.freeze(); buzz(40); save.stats.freezes++; }
         if (e.from === 'frozen' && e.to === 'normal') sfx.thaw();
         break;
       }
@@ -1703,18 +1739,23 @@ function updateCamera(dt: number) {
     const slot = menuFocus ? room.getObjectByName(`slot_${menuFocus}`) : null;
     if (slot) {
       menuLook.copy(slot.position).add(o);
-      camWant.set(menuLook.x + 0.2, menuLook.y + 1.0, menuLook.z + 2.8);
+      const place = COLLECTIBLES.find((c) => c.id === menuFocus)?.place;
+      // lo colgado se mira de frente a su altura; lo del suelo, algo más alto porque es grande
+      const lift = place === 'wall' ? 0.3 : place === 'floor' ? 0.55 : 0.2;
+      camWant.set(menuLook.x + 0.2, menuLook.y + (place === 'wall' ? 0.3 : place === 'floor' ? 1.3 : 1.0), menuLook.z + (place === 'floor' ? 3.3 : 2.8));
       menuLook.x += 0.95;
-      menuLook.y += 0.2;
+      menuLook.y += lift;
     } else if (currentScreen === 'achievements') {
-      // gira hacia el tablón de la pared derecha (a la izquierda del panel); al elegir un logro se acerca a su parche
+      // gira hacia un tablón (derecho: logros 0-29, izquierdo: 30-59); al elegir un logro se acerca a su parche
       const k = ACHIEVEMENTS.findIndex((a) => a.id === achFocus);
-      const target = room.getObjectByName(k >= 0 ? `ach_slot_${k}` : 'board_view');
+      const left = k >= 30;
+      const target = room.getObjectByName(k >= 0 ? `ach_slot_${k}` : 'board_view_right');
       const p = target ? target.position : menuLook.set(4.4, 2.4, 0.2);
       const near = k >= 0;
+      const side = left ? -1 : 1;
       // de lejos, todo el tablón ocupa la mitad izquierda de la pantalla (mirada paralela, desplazada a la derecha)
-      menuLook.set(o.x + p.x, o.y + p.y, o.z + p.z + (near ? 0.5 : 2.35));
-      camWant.set(o.x + p.x - (near ? 1.35 : 4.45), o.y + p.y + (near ? 0.05 : 0.05), o.z + p.z + (near ? 0.5 : 2.35));
+      menuLook.set(o.x + p.x, o.y + p.y, o.z + p.z + (near ? 0.5 * side : 2.35));
+      camWant.set(o.x + p.x - side * (near ? 1.9 : 4.45), o.y + p.y + 0.05, o.z + p.z + (near ? 0.5 * side : 2.35));
     } else if (currentScreen === 'myslime') {
       // de cerca y de frente, con el limo a la izquierda del panel
       menuLook.set(o.x + 0.8, o.y + 0.45, o.z);
@@ -1821,7 +1862,7 @@ function frame(dt: number) {
     stepIdle(dt);
     if (winT > 1.5) finish(true);
   } else if (mode === 'menu' && world && slime) {
-    for (const item of showcase) item.rotation.y = menuT * 0.7 + item.userData.phase;
+    for (const item of showcase) if (item.userData.spin) item.rotation.y = menuT * 0.7 + item.userData.phase;
     world.update(dt, slime.switchCounts);
     stepIdle(dt);
   } else if (world) {

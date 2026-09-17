@@ -39,7 +39,7 @@ export const BODY_COLORS = {
   metal: { color: 0xe8edf5, emissive: 0x39424f, rim: [0.95, 0.98, 1.0], metalness: 0.6, roughness: 0.18 },
   gold: { color: 0xffd24a, emissive: 0x8a5a00, rim: [1.0, 0.93, 0.6], metalness: 0.55, roughness: 0.22 },
   rosegold: { color: 0xf3b3a0, emissive: 0x6b3428, rim: [1.0, 0.86, 0.82], metalness: 0.55, roughness: 0.2 },
-  jade: { color: 0x3aa887, emissive: 0x0d4636, rim: [0.72, 1.0, 0.9], roughness: 0.32 },
+
   midnight: { color: 0x243a8f, emissive: 0x0a1238, rim: [0.6, 0.78, 1.0], roughness: 0.08 },
   // agua: casi incolora y translúcida (el congelado es celeste opaco y no tiembla)
   water: { color: 0xa6e3f2, emissive: 0x0f5266, rim: [0.8, 0.96, 1.0], roughness: 0.03, opacity: 0.22 },
@@ -52,16 +52,16 @@ export const BODY_COLORS = {
 export type BodyColorId = keyof typeof BODY_COLORS;
 
 /** 'none' va primero en cada apartado: sin ese rasgo (la vista previa es solo el círculo del color). */
-export const EYES = ['none', 'round', 'dot', 'cat', 'sparkle', 'star', 'heart', 'sleepy', 'wink', 'glasses', 'tomoe', 'ripple'] as const;
-export const MOUTHS = ['none', 'cat', 'smile', 'tongue', 'fang', 'grin', 'pout', 'smirk', 'vampire', 'wobbly'] as const;
-export const CHEEKS = ['none', 'lines', 'spots', 'whiskers', 'hearts', 'stars', 'freckles', 'swirls', 'bandage', 'sparkles'] as const;
+export const EYES = ['none', 'round', 'dot', 'cat', 'sparkle', 'star', 'heart', 'sleepy', 'wink', 'glasses', 'tomoe', 'ripple', 'button', 'spiral', 'moon', 'teary'] as const;
+export const MOUTHS = ['none', 'cat', 'smile', 'tongue', 'fang', 'grin', 'pout', 'smirk', 'vampire', 'wobbly', 'flat', 'zigzag', 'bunny', 'kiss', 'drool', 'teeth'] as const;
+export const CHEEKS = ['none', 'lines', 'spots', 'whiskers', 'hearts', 'stars', 'freckles', 'swirls', 'bandage', 'sparkles', 'paint', 'flowers', 'mole'] as const;
 
 /** Colores de iris para los ojos con iris normal (material "Iris" del modelo). */
 export const IRIS_COLORS = {
   blue: 0x1e3a8a, brown: 0x6b3f1d, green: 0x15803d, violet: 0x6d28d9, amber: 0xb45309, pink: 0xbe185d, gray: 0x475569,
 } as const;
 export type IrisId = keyof typeof IRIS_COLORS;
-export const IRIS_EYES = new Set<string>(['round', 'sparkle', 'wink', 'glasses']);
+export const IRIS_EYES = new Set<string>(['round', 'sparkle', 'wink', 'glasses', 'teary']);
 
 /** Ojos con modelo distinto a cada lado (face_eye_<id>_l / _r). */
 export const EYES_PER_SIDE = new Set<string>(['wink']);
@@ -95,7 +95,7 @@ export const LOOK_UNLOCKS: Record<string, string> = {
   'eyes:tomoe': 'coins-c1',
   'eyes:ripple': 'stars-50',
   'color:water': 'chapter-2',
-  'color:metal': 'stars-30',
+
   'mouth:smirk': 'chapter-2',
   'eyes:sleepy': 'floors-10',
   'color:midnight': 'floors-20',
@@ -104,7 +104,7 @@ export const LOOK_UNLOCKS: Record<string, string> = {
   'cheeks:sparkles': 'secret-roots',
   'eyes:glasses': 'rider-50',
   'cheeks:swirls': 'squeeze-30',
-  'color:jade': 'full-slime-5',
+
 };
 
 /** Opciones que se compran con monedas: "apartado:opción" → precio. Las monedas no se pueden farmear (mejor marca de cada piso). */
@@ -122,9 +122,18 @@ export const LOOK_GEM_PRICES: Record<string, GemKind> = {
   'color:diamond': 'diamond',
 };
 
+/** Opciones que ya existen pero aún no tienen forma de conseguirse: se ven bloqueadas («Próximamente»). */
+export const LOOK_SOON = new Set<string>([
+  'color:metal',
+  'eyes:button', 'eyes:spiral', 'eyes:moon', 'eyes:teary',
+  'mouth:flat', 'mouth:zigzag', 'mouth:bunny', 'mouth:kiss', 'mouth:drool', 'mouth:teeth',
+  'cheeks:paint', 'cheeks:flowers', 'cheeks:mole',
+]);
+
 /** bought: opciones compradas ("apartado:opción"). */
 export function lookOptionUnlocked(key: keyof SlimeLook, opt: string, achievements: readonly string[], bought: readonly string[] = []) {
   const id = `${key}:${opt}`;
+  if (LOOK_SOON.has(id)) return false;
   if (LOOK_PRICES[id] || LOOK_GEM_PRICES[id]) return bought.includes(id);
   const needed = LOOK_UNLOCKS[id];
   return !needed || achievements.includes(needed);

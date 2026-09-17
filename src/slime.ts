@@ -96,7 +96,7 @@ const XRAY_LIFT = 0.2;
 export type SlimeEvent =
   | { type: 'fall' | 'evaporate' | 'pad' | 'pop'; x: number; y: number; z: number }
   | { type: 'coin' | 'gem' | 'oil'; x: number; y: number; z: number }
-  | { type: 'board' | 'unboard' | 'land' | 'merge' | 'dizzy' | 'load' | 'shoot'; x: number; y: number; z: number }
+  | { type: 'board' | 'unboard' | 'land' | 'merge' | 'dizzy' | 'load' | 'shoot' | 'hole'; x: number; y: number; z: number }
   | { type: 'cut'; x: number; z: number }
   | { type: 'burn'; x: number; z: number; what: 'plant' | 'iceblock' }
   | { type: 'state'; from: SlimeState; to: SlimeState };
@@ -196,6 +196,7 @@ export class Slime {
   private gvx: Float32Array; private gvz: Float32Array; private gcnt: Float32Array;
   private padX: Float32Array; private padZ: Float32Array; private padTop: Float32Array;
   private lastCutEvent = -1;
+  private lastHoleEvent = -10;
   /** limitos que van en una bola por la vía (no siguen la física) */
   private riding: Uint8Array;
   /** agujero por el que está cayendo cada limito (-1 ninguno) */
@@ -1278,6 +1279,8 @@ export class Slime {
           const exit = w.holeExit(hIdx);
           this.holeIn[i] = -1;
           if (exit) {
+            // una sola vez por caída (van pasando limitos durante un rato)
+            if (this.time - this.lastHoleEvent > 1.5) { this.lastHoleEvent = this.time; this.events.push({ type: 'hole', x: exit.x, y: exit.y, z: exit.z }); }
             const hcx = (hIdx % w.w) + 0.5, hcz = Math.floor(hIdx / w.w) + 0.5;
             const nx = exit.x + Math.max(-0.3, Math.min(0.3, x - hcx)), nz = exit.z + Math.max(-0.3, Math.min(0.3, z - hcz)), ny = exit.y + 2.5;
             this.px[i] = this.ox[i] = nx;

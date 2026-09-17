@@ -1088,6 +1088,446 @@ for side in (-1, 1):
     tube(f"col_trophy_handle{side}", arc, 0.014, M["gold_col"], parent=col)
 
 
+# ================================================================== CARAS NUEVAS
+# Opciones de Mi limo que de momento se ven bloqueadas ("Próximamente").
+M["button_eye"] = material("ButtonEye", "3b2a52", 0.45)
+M["tear"] = material("Tear", "9ee7ff", 0.1, emit="4cc9f0", strength=0.3)
+M["face_paint"] = material("FacePaint", "4f46e5", 0.7)
+M["petal"] = material("Petal", "f9a8d4", 0.7)
+M["petal_center"] = material("PetalCenter", "fcd34d", 0.6)
+M["mole"] = material("Mole", "4a2c20", 0.7)
+M["kiss"] = material("KissLips", "f43f5e", 0.5)
+
+# ojos de botón cosido
+eye = empty("face_eye_button")
+flat_shape("face_eye_button_disc", ellipse_pts(0.06, 0.066), 0.012, M["button_eye"], front=-0.012, parent=eye)
+tube("face_eye_button_rim", ellipse_pts(0.047, 0.052, 0, 0, 32), 0.0045, M["black"], parent=eye, loc=(0, -0.014, 0), poly=True, cyclic=True)
+for k, (x, z) in enumerate(((-0.014, 0.014), (0.014, 0.014), (-0.014, -0.014), (0.014, -0.014))):
+    flat_shape(f"face_eye_button_hole{k}", ellipse_pts(0.0075, 0.0075, x, z, 12), 0.002, M["white"], front=-0.016, parent=eye)
+
+# ojos hipnóticos: espiral sobre blanco
+eye = eye_base("face_eye_spiral", 0.062, 0.082, M["white"])
+look = empty("face_eye_spiral_look", parent=eye, loc=(0, -0.03, 0))
+pts = [((0.006 + 0.045 * (k / 39)) * math.cos(k / 39 * math.tau * 2.2), (0.006 + 0.045 * (k / 39)) * 1.25 * math.sin(k / 39 * math.tau * 2.2)) for k in range(40)]
+tube("face_eye_spiral_line", pts, 0.0055, M["black"], parent=look)
+
+# ojos de media luna (cerrados y contentos)
+moon = [(0.05 * math.cos(math.pi * i / 16), 0.035 * math.sin(math.pi * i / 16) - 0.012) for i in range(17)]
+moon += [(0.05 * math.cos(math.pi * (16 - i) / 16) * 0.8, 0.012 * math.sin(math.pi * (16 - i) / 16) - 0.006) for i in range(17)]
+flat_shape("face_eye_moon", moon, 0.008, M["black"], front=-0.02)
+
+# ojos llorosos: grandes y brillantes con una lágrima
+eye = eye_base("face_eye_teary", 0.068, 0.088, M["white"])
+look = empty("face_eye_teary_look", parent=eye, loc=(0, -0.02, -0.012))
+bm = bmesh.new()
+ellipsoid(bm, (0.05, 0.012, 0.062), (0, 0, 0), 32, 18)
+mesh_object("face_eye_teary_iris", bm, M["iris"], smooth=True, parent=look)
+bm = bmesh.new()
+ellipsoid(bm, (0.022, 0.008, 0.026), (0, 0, 0), 20, 12)
+mesh_object("face_eye_teary_pupil", bm, M["black"], smooth=True, parent=look, loc=(0, -0.007, 0))
+shines("face_eye_teary", look, 0.019, 0.01)
+bm = bmesh.new()
+ellipsoid(bm, (0.014, 0.008, 0.02), (0, 0, 0), 16, 10)
+mesh_object("face_eye_teary_tear", bm, M["tear"], smooth=True, parent=eye, loc=(0.04, -0.035, -0.085))
+
+# bocas
+tube("face_mouth_flat", [(-0.036, 0.004), (0.036, -0.004)], 0.009, M["black"], poly=True)
+tube("face_mouth_zigzag", [(-0.044, 0.0), (-0.029, 0.012), (-0.015, -0.01), (0.0, 0.012), (0.015, -0.01), (0.029, 0.012), (0.044, 0.0)],
+     0.008, M["black"], poly=True)
+mouth = empty("face_mouth_bunny")
+tube("face_mouth_bunny_line", [(-0.034, 0.008), (-0.017, -0.006), (0.0, -0.009), (0.017, -0.006), (0.034, 0.008)], 0.008, M["black"], parent=mouth)
+for k, x in enumerate((-0.009, 0.009)):
+    flat_shape(f"face_mouth_bunny_tooth{k}", [(x - 0.008, -0.006), (x + 0.008, -0.006), (x + 0.008, -0.03), (x - 0.008, -0.03)], 0.004, M["white"],
+               front=-0.004, parent=mouth)
+    tube(f"face_mouth_bunny_edge{k}", [(x - 0.008, -0.006), (x - 0.008, -0.03), (x + 0.008, -0.03), (x + 0.008, -0.006)], 0.0025, M["black"],
+         parent=mouth, loc=(0, -0.006, 0), poly=True)
+mouth = empty("face_mouth_kiss")
+flat_shape("face_mouth_kiss_lips", heart_shape(0.0016, 0.0), 0.006, M["kiss"], front=-0.006, parent=mouth)
+tube("face_mouth_kiss_line", [(-0.012, 0.0), (0.012, 0.0)], 0.0035, M["mouth"], parent=mouth, loc=(0, -0.013, 0), poly=True)
+mouth = empty("face_mouth_drool")
+tube("face_mouth_drool_line", [(-0.04, 0.01), (-0.02, -0.01), (0.0, -0.015), (0.02, -0.01), (0.04, 0.01)], 0.009, M["black"], parent=mouth)
+bm = bmesh.new()
+ellipsoid(bm, (0.011, 0.007, 0.017), (0, 0, 0), 16, 10)
+mesh_object("face_mouth_drool_drop", bm, M["tear"], smooth=True, parent=mouth, loc=(0.03, -0.01, -0.02))
+mouth = empty("face_mouth_teeth")
+grin_pts = [(-0.05, 0.012), (0.05, 0.012), (0.038, -0.024), (-0.038, -0.024)]
+flat_shape("face_mouth_teeth_white", grin_pts, 0.006, M["white"], front=-0.004, parent=mouth)
+tube("face_mouth_teeth_outline", grin_pts + [grin_pts[0]], 0.005, M["black"], parent=mouth, loc=(0, -0.006, 0), poly=True)
+tube("face_mouth_teeth_mid", [(-0.046, -0.006), (0.046, -0.006)], 0.0028, M["black"], parent=mouth, loc=(0, -0.006, 0), poly=True)
+for k, x in enumerate((-0.025, 0.0, 0.025)):
+    tube(f"face_mouth_teeth_gap{k}", [(x, 0.012), (x, -0.024)], 0.0025, M["black"], parent=mouth, loc=(0, -0.006, 0), poly=True)
+
+# mofletes
+paint = empty("face_blush_paint")
+for k, z in enumerate((0.012, -0.008)):
+    flat_shape(f"face_blush_paint_stripe{k}", [(-0.035, z + 0.005), (0.035, z + 0.009), (0.035, z - 0.002), (-0.035, z - 0.006)], 0.004,
+               M["face_paint"], parent=paint)
+flowers = empty("face_blush_flowers")
+for p in range(5):
+    a = p * math.tau / 5 + math.pi / 2
+    flat_shape(f"face_blush_flowers_petal{p}", ellipse_pts(0.011, 0.008, 0.013 * math.cos(a), 0.013 * math.sin(a), 16), 0.004, M["petal"],
+               parent=flowers)
+flat_shape("face_blush_flowers_center", ellipse_pts(0.007, 0.007, 0, 0, 12), 0.004, M["petal_center"], front=-0.002, parent=flowers)
+flat_shape("face_blush_mole", ellipse_pts(0.007, 0.007, 0.018, -0.012, 14), 0.004, M["mole"])
+
+
+# ================================================================== COLECCIONABLES NUEVOS
+# Estantería (~0.4 de alto), pared (se cuelgan: parte trasera en Y = 0, miran a -Y) y suelo (~1 de alto).
+M["glass_col"] = material("GlassCollectible", "d6f2ff", 0.05, 0.0, emit="7dd3fc", strength=0.25)
+M["lamp_glow"] = material("LampGlow", "ffd27a", 0.3, emit="ffb347", strength=2.5)
+M["iron_col"] = material("IronCollectible", "374151", 0.45, 0.8)
+M["red_col"] = material("RedCollectible", "dc2626", 0.5)
+M["green_col"] = material("GreenCollectible", "16a34a", 0.6)
+M["leaf_gold"] = material("LeafGold", "fbbf24", 0.25, 1.0, emit="a16207", strength=0.4)
+M["ice_col"] = material("IceCollectible", "a5f3fc", 0.05, 0.1, emit="22d3ee", strength=0.5)
+M["egg"] = material("Egg", "fef3c7", 0.6)
+M["rock"] = material("Rock", "57534e", 0.9)
+M["amethyst"] = material("Amethyst", "a855f7", 0.1, 0.1, emit="7e22ce", strength=0.6)
+M["scarab"] = material("Scarab", "0d9488", 0.2, 0.9)
+M["sand_col"] = material("SandCollectible", "e8b86d", 0.9)
+M["paper"] = material("Paper", "f8fafc", 0.9)
+M["blueprint"] = material("Blueprint", "1d4ed8", 0.8)
+M["slime_col"] = material("SlimeCollectible", "2f8cff", 0.25, 0.0, emit="0b3a8c", strength=0.3)
+M["purple_cloth"] = material("PurpleCloth", "7c3aed", 0.9)
+M["cactus"] = material("Cactus", "4d7c0f", 0.8)
+M["flower_pink"] = material("FlowerPink", "f472b6", 0.6)
+M["blue_sea"] = material("GlobeSea", "2563eb", 0.4)
+M["snow"] = material("Snow", "ffffff", 0.7)
+M["pine"] = material("Pine", "166534", 0.8)
+
+# --- estantería ---
+col = empty("col_root_lantern")
+bm = bmesh.new()
+cylinder(bm, 0.1, 0.04, (0, 0, 0.02), 16)
+cylinder(bm, 0.08, 0.03, (0, 0, 0.28), 16)
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=16, radius1=0.08, radius2=0.02, depth=0.08, matrix=Matrix.Translation((0, 0, 0.33)))
+for k in range(4):
+    a = k * math.tau / 4 + math.pi / 4
+    box(bm, (0.015, 0.015, 0.24), (0.075 * math.cos(a), 0.075 * math.sin(a), 0.15))
+mesh_object("col_root_lantern_frame", bm, M["iron_col"], smooth=True, parent=col)
+bm = bmesh.new()
+cylinder(bm, 0.065, 0.22, (0, 0, 0.15), 16)
+mesh_object("col_root_lantern_glow", bm, M["lamp_glow"], smooth=True, parent=col)
+tube("col_root_lantern_ring", [(0.035 * math.cos(a * math.tau / 16), 0.4 + 0.035 * math.sin(a * math.tau / 16)) for a in range(16)], 0.008,
+     M["iron_col"], parent=col, poly=True, cyclic=True)
+
+col = empty("col_mini_train")
+bm = bmesh.new()
+box(bm, (0.32, 0.14, 0.1), (0, 0, 0.1))
+box(bm, (0.12, 0.14, 0.12), (0.1, 0, 0.21))
+cylinder(bm, 0.03, 0.1, (-0.1, 0, 0.2), 12)
+mesh_object("col_mini_train_body", bm, M["red_col"], parent=col)
+bm = bmesh.new()
+for x in (-0.1, 0.1):
+    for y in (-0.075, 0.075):
+        cylinder(bm, 0.045, 0.02, (x, y, 0.045), 16, rot=Matrix.Rotation(math.pi / 2, 4, "X"))
+box(bm, (0.13, 0.15, 0.02), (0.1, 0, 0.28))
+mesh_object("col_mini_train_wheels", bm, M["iron_col"], smooth=True, parent=col)
+
+col = empty("col_spring_toy")
+bm = bmesh.new()
+cylinder(bm, 0.11, 0.04, (0, 0, 0.02), 20)
+mesh_object("col_spring_toy_base", bm, M["iron_col"], smooth=True, parent=col)
+spring = []
+for k in range(64):
+    t = k / 63
+    spring.append((0.07 * math.cos(t * math.tau * 5), 0.05 + t * 0.24))
+tube("col_spring_toy_coil", spring, 0.012, M["iron_col"], parent=col)
+bm = bmesh.new()
+cylinder(bm, 0.1, 0.05, (0, 0, 0.32), 20)
+mesh_object("col_spring_toy_cap", bm, M["pink"], smooth=True, parent=col)
+
+col = empty("col_acorn_jar")
+bm = bmesh.new()
+cylinder(bm, 0.1, 0.26, (0, 0, 0.13), 24)
+mesh_object("col_acorn_jar_glass", bm, M["glass_col"], smooth=True, parent=col)
+bm = bmesh.new()
+cylinder(bm, 0.105, 0.04, (0, 0, 0.28), 24)
+mesh_object("col_acorn_jar_lid", bm, M["wood_col"], smooth=True, parent=col)
+bm = bmesh.new()
+for k in range(5):
+    a = k * 2.3
+    ellipsoid(bm, (0.028, 0.028, 0.035), (0.045 * math.cos(a), 0.045 * math.sin(a), 0.04 + (k % 2) * 0.05), 10, 8)
+mesh_object("col_acorn_jar_acorns", bm, M["bronze"], smooth=True, parent=col)
+
+col = empty("col_ice_crystal")
+bm = bmesh.new()
+for k, (x, y, h, tilt) in enumerate(((0, 0, 0.4, 0), (0.07, 0.02, 0.26, 0.35), (-0.07, -0.01, 0.22, -0.4), (0.02, -0.06, 0.18, 0.3))):
+    m = Matrix.Translation((x, y, 0.02)) @ Matrix.Rotation(tilt, 4, "Y") @ Matrix.Translation((0, 0, h / 2))
+    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=True, segments=6, radius1=0.045, radius2=0.0, depth=h, matrix=m)
+mesh_object("col_ice_crystal_shards", bm, M["ice_col"], parent=col)
+bm = bmesh.new()
+cylinder(bm, 0.11, 0.03, (0, 0, 0.015), 12)
+mesh_object("col_ice_crystal_base", bm, M["rock"], parent=col)
+
+col = empty("col_cracked_egg")
+bm = bmesh.new()
+ellipsoid(bm, (0.11, 0.11, 0.15), (0, 0, 0.17), 24, 16)
+mesh_object("col_cracked_egg_shell", bm, M["egg"], smooth=True, parent=col)
+tube("col_cracked_egg_crack", [(-0.1, 0.2), (-0.05, 0.16), (-0.02, 0.22), (0.02, 0.15), (0.06, 0.21), (0.1, 0.17)], 0.006, M["black"],
+     parent=col, loc=(0, -0.1, 0), poly=True)
+tube("col_cracked_egg_nest", [(0.12 * math.cos(a * math.tau / 20), 0.12 * math.sin(a * math.tau / 20)) for a in range(20)], 0.03,
+     M["wood_col"], parent=col, loc=(0, 0, 0.04), poly=True, cyclic=True, plane="XY")
+
+col = empty("col_fire_lamp")
+bm = bmesh.new()
+ellipsoid(bm, (0.15, 0.09, 0.07), (0, 0, 0.09), 24, 14)
+cylinder(bm, 0.05, 0.05, (0, 0, 0.02), 16)
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=12, radius1=0.035, radius2=0.012, depth=0.16,
+                      matrix=Matrix.Translation((0.17, 0, 0.14)) @ Matrix.Rotation(-1.1, 4, "Y"))
+mesh_object("col_fire_lamp_body", bm, M["gold_col"], smooth=True, parent=col)
+tube("col_fire_lamp_handle", [(-0.14, 0.1), (-0.21, 0.13), (-0.2, 0.05), (-0.14, 0.06)], 0.012, M["gold_col"], parent=col)
+flame = teardrop("col_fire_lamp_flame", 0.03, M["lamp_glow"])
+flame.parent = col
+flame.location = (0.25, 0, 0.23)
+
+col = empty("col_geode")
+bm = bmesh.new()
+ellipsoid(bm, (0.16, 0.12, 0.16), (0, 0.02, 0.15), 20, 14)
+mesh_object("col_geode_rock", bm, M["rock"], smooth=True, parent=col)
+bm = bmesh.new()
+rng_geode = random.Random(8)
+for k in range(12):
+    a = rng_geode.uniform(0, math.tau)
+    r = rng_geode.uniform(0, 0.09)
+    x, z = r * math.cos(a), 0.15 + r * math.sin(a)
+    m = Matrix.Translation((x, -0.09, z)) @ Matrix.Rotation(math.pi / 2, 4, "X") @ Matrix.Rotation(rng_geode.uniform(-0.4, 0.4), 4, "Y")
+    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=True, segments=5, radius1=0.022, radius2=0.0, depth=0.07, matrix=m)
+mesh_object("col_geode_crystals", bm, M["amethyst"], parent=col)
+
+col = empty("col_crystal_crown")
+bm = bmesh.new()
+cylinder(bm, 0.14, 0.07, (0, 0, 0.1), 32)
+for k in range(8):
+    a = k * math.tau / 8
+    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=8, radius1=0.03, radius2=0.004, depth=0.12,
+                          matrix=Matrix.Translation((0.13 * math.cos(a), 0.13 * math.sin(a), 0.19)))
+mesh_object("col_crystal_crown_band", bm, M["gold_col"], smooth=True, parent=col)
+bm = bmesh.new()
+for k in range(8):
+    a = k * math.tau / 8 + math.pi / 8
+    ellipsoid(bm, (0.018, 0.018, 0.022), (0.142 * math.cos(a), 0.142 * math.sin(a), 0.1), 10, 8)
+mesh_object("col_crystal_crown_gems", bm, M["ice_col"], smooth=True, parent=col)
+
+col = empty("col_scarab")
+bm = bmesh.new()
+cylinder(bm, 0.12, 0.04, (0, 0, 0.02), 20)
+mesh_object("col_scarab_stand", bm, M["sand_col"], smooth=True, parent=col)
+bm = bmesh.new()
+ellipsoid(bm, (0.09, 0.13, 0.07), (0, 0.01, 0.1), 20, 12)
+ellipsoid(bm, (0.05, 0.04, 0.04), (0, -0.13, 0.09), 14, 8)
+mesh_object("col_scarab_shell", bm, M["scarab"], smooth=True, parent=col)
+bm = bmesh.new()
+for sx in (-1, 1):
+    for y in (-0.06, 0.0, 0.07):
+        box(bm, (0.08, 0.012, 0.012), (sx * 0.1, y, 0.06))
+box(bm, (0.004, 0.2, 0.006), (0, 0.02, 0.17))
+mesh_object("col_scarab_legs", bm, M["black"], parent=col)
+
+col = empty("col_hourglass")
+bm = bmesh.new()
+for z in (0.02, 0.4):
+    cylinder(bm, 0.12, 0.04, (0, 0, z), 20)
+for k in range(3):
+    a = k * math.tau / 3
+    cylinder(bm, 0.012, 0.36, (0.1 * math.cos(a), 0.1 * math.sin(a), 0.21), 8)
+mesh_object("col_hourglass_frame", bm, M["wood_col"], smooth=True, parent=col)
+bm = bmesh.new()
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=20, radius1=0.08, radius2=0.012, depth=0.17, matrix=Matrix.Translation((0, 0, 0.125)))
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=20, radius1=0.012, radius2=0.08, depth=0.17, matrix=Matrix.Translation((0, 0, 0.295)))
+mesh_object("col_hourglass_glass", bm, M["glass_col"], smooth=True, parent=col)
+bm = bmesh.new()
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=16, radius1=0.065, radius2=0.01, depth=0.08, matrix=Matrix.Translation((0, 0, 0.08)))
+mesh_object("col_hourglass_sand", bm, M["sand_col"], smooth=True, parent=col)
+
+col = empty("col_compass")
+bm = bmesh.new()
+cylinder(bm, 0.07, 0.03, (0, 0.05, 0.015), 16)
+box(bm, (0.03, 0.03, 0.12), (0, 0.05, 0.08))
+mesh_object("col_compass_stand", bm, M["wood_col"], smooth=True, parent=col)
+bm = bmesh.new()
+cylinder(bm, 0.14, 0.04, (0, 0.02, 0.25), 32, rot=Matrix.Rotation(math.pi / 2, 4, "X"))
+mesh_object("col_compass_case", bm, M["bronze"], smooth=True, parent=col)
+flat_shape("col_compass_face", ellipse_pts(0.12, 0.12, 0, 0.25, 32), 0.005, M["paper"], front=-0.005, parent=col)
+flat_shape("col_compass_north", [(-0.018, 0.25), (0.018, 0.25), (0.0, 0.35)], 0.004, M["red_col"], front=-0.01, parent=col)
+flat_shape("col_compass_south", [(-0.018, 0.25), (0.0, 0.15), (0.018, 0.25)], 0.004, M["black"], front=-0.01, parent=col)
+
+col = empty("col_slime_plush")
+bm = bmesh.new()
+ellipsoid(bm, (0.17, 0.15, 0.13), (0, 0, 0.13), 28, 18)
+mesh_object("col_slime_plush_body", bm, M["slime_col"], smooth=True, parent=col)
+bm = bmesh.new()
+for x in (-0.05, 0.05):
+    ellipsoid(bm, (0.018, 0.01, 0.026), (x, -0.135, 0.16), 12, 8)
+mesh_object("col_slime_plush_eyes", bm, M["black"], smooth=True, parent=col)
+tube("col_slime_plush_smile", [(-0.03, 0.115), (-0.015, 0.1), (0.0, 0.112), (0.015, 0.1), (0.03, 0.115)], 0.006, M["black"], parent=col,
+     loc=(0, -0.145, 0))
+
+col = empty("col_dizzy_top")
+bm = bmesh.new()
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=24, radius1=0.005, radius2=0.14, depth=0.16, matrix=Matrix.Translation((0, 0, 0.09)))
+mesh_object("col_dizzy_top_body", bm, M["flower_pink"], smooth=True, parent=col)
+bm = bmesh.new()
+cylinder(bm, 0.14, 0.05, (0, 0, 0.19), 24)
+cylinder(bm, 0.02, 0.12, (0, 0, 0.27), 12)
+mesh_object("col_dizzy_top_cap", bm, M["purple_cloth"], smooth=True, parent=col)
+tube("col_dizzy_top_stripe", [(0.142 * math.cos(a * math.tau / 24), 0.142 * math.sin(a * math.tau / 24)) for a in range(24)], 0.012,
+     M["petal_center"], parent=col, loc=(0, 0, 0.17), poly=True, cyclic=True, plane="XY")
+
+col = empty("col_snow_globe")
+bm = bmesh.new()
+cylinder(bm, 0.12, 0.08, (0, 0, 0.04), 24)
+mesh_object("col_snow_globe_base", bm, M["wood_col"], smooth=True, parent=col)
+bm = bmesh.new()
+ellipsoid(bm, (0.13, 0.13, 0.13), (0, 0, 0.2), 28, 18)
+mesh_object("col_snow_globe_glass", bm, M["glass_col"], smooth=True, parent=col)
+bm = bmesh.new()
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=10, radius1=0.05, radius2=0.0, depth=0.14, matrix=Matrix.Translation((0, 0, 0.18)))
+mesh_object("col_snow_globe_tree", bm, M["pine"], smooth=True, parent=col)
+bm = bmesh.new()
+rng_snow = random.Random(4)
+for k in range(14):
+    a, r = rng_snow.uniform(0, math.tau), rng_snow.uniform(0, 0.09)
+    ellipsoid(bm, (0.008, 0.008, 0.008), (r * math.cos(a), r * math.sin(a), rng_snow.uniform(0.12, 0.3)), 6, 4)
+cylinder(bm, 0.1, 0.02, (0, 0, 0.1), 20)
+mesh_object("col_snow_globe_snow", bm, M["snow"], smooth=True, parent=col)
+
+# --- pared ---
+col = empty("col_station_sign")
+flat_shape("col_station_sign_board", [(-0.3, 0.05), (0.3, 0.05), (0.3, 0.4), (-0.3, 0.4)], 0.04, M["green_col"], front=-0.05, parent=col)
+tube("col_station_sign_border", [(-0.27, 0.08), (0.27, 0.08), (0.27, 0.37), (-0.27, 0.37), (-0.27, 0.08)], 0.01, M["paper"], parent=col,
+     loc=(0, -0.055, 0), poly=True)
+for k, x in enumerate((-0.12, 0.12)):
+    tube(f"col_station_sign_rail{k}", [(x - 0.06, 0.14), (x + 0.06, 0.32)], 0.012, M["paper"], parent=col, loc=(0, -0.058, 0), poly=True)
+tube("col_station_sign_cord", [(-0.22, 0.4), (0.0, 0.55), (0.22, 0.4)], 0.008, M["iron_col"], parent=col, loc=(0, -0.03, 0), poly=True)
+
+col = empty("col_leaf_frame")
+flat_shape("col_leaf_frame_back", [(-0.26, 0.0), (0.26, 0.0), (0.26, 0.6), (-0.26, 0.6)], 0.02, M["purple_cloth"], front=-0.03, parent=col)
+bm = bmesh.new()
+for (sx, sz, cx, cz) in ((0.58, 0.05, 0, 0.0), (0.58, 0.05, 0, 0.6), (0.05, 0.6, -0.27, 0.3), (0.05, 0.6, 0.27, 0.3)):
+    box(bm, (sx, 0.05, sz), (cx, -0.035, cz))
+mesh_object("col_leaf_frame_frame", bm, M["gold_col"], parent=col)
+leaf = [(0.16 * math.sin(math.pi * i / 20) * (1 - i / 40), 0.1 + 0.4 * i / 20) for i in range(21)]
+leaf += [(-x, z) for x, z in reversed(leaf[1:-1])]
+flat_shape("col_leaf_frame_leaf", leaf, 0.01, M["leaf_gold"], front=-0.045, parent=col)
+
+col = empty("col_pickaxes")
+flat_shape("col_pickaxes_plaque", ellipse_pts(0.24, 0.2, 0, 0.3, 32), 0.03, M["wood_col"], front=-0.03, parent=col)
+for k, sgn in enumerate((-1, 1)):
+    ang = sgn * 0.7
+    c, s = math.cos(ang), math.sin(ang)
+    handle = [(-0.28 * s, 0.3 - 0.28 * c), (0.28 * s, 0.3 + 0.28 * c)]
+    tube(f"col_pickaxes_handle{k}", handle, 0.018, M["wood"], parent=col, loc=(0, -0.05, 0), poly=True)
+    hx, hz = 0.26 * s, 0.3 + 0.26 * c
+    head = [(hx - 0.14 * c, hz + 0.14 * s - 0.04), (hx, hz + 0.02), (hx + 0.14 * c, hz - 0.14 * s - 0.04)]
+    tube(f"col_pickaxes_head{k}", head, 0.022, M["iron_col"], parent=col, loc=(0, -0.06, 0))
+
+col = empty("col_star_banner")
+tube("col_star_banner_rod", [(-0.3, 0.62), (0.3, 0.62)], 0.018, M["gold_col"], parent=col, loc=(0, -0.03, 0), poly=True)
+flat_shape("col_star_banner_cloth", [(-0.26, 0.6), (0.26, 0.6), (0.26, 0.15), (0.0, 0.0), (-0.26, 0.15)], 0.015, M["purple_cloth"], front=-0.04,
+           parent=col)
+flat_shape("col_star_banner_star", star_pts(0.14, 0.06, 5, 0, 0.36), 0.01, M["leaf_gold"], front=-0.05, parent=col)
+
+col = empty("col_painting")
+flat_shape("col_painting_canvas", [(-0.28, 0.0), (0.28, 0.0), (0.28, 0.5), (-0.28, 0.5)], 0.02, M["paper"], front=-0.03, parent=col)
+bm = bmesh.new()
+for (sx, sz, cx, cz) in ((0.62, 0.05, 0, -0.01), (0.62, 0.05, 0, 0.51), (0.05, 0.56, -0.29, 0.25), (0.05, 0.56, 0.29, 0.25)):
+    box(bm, (sx, 0.06, sz), (cx, -0.035, cz))
+mesh_object("col_painting_frame", bm, M["gold_col"], parent=col)
+flat_shape("col_painting_slime", [(0.16 * math.cos(math.pi * i / 24), 0.12 + 0.2 * math.sin(math.pi * i / 24)) for i in range(25)], 0.006,
+           M["slime_col"], front=-0.04, parent=col)
+for k, x in enumerate((-0.05, 0.05)):
+    flat_shape(f"col_painting_eye{k}", ellipse_pts(0.015, 0.022, x, 0.22, 12), 0.004, M["black"], front=-0.045, parent=col)
+
+col = empty("col_desert_mask")
+mask = ellipse_pts(0.17, 0.26, 0, 0.3, 40)
+flat_shape("col_desert_mask_face", mask, 0.05, M["sand_col"], front=-0.05, parent=col)
+for k, x in enumerate((-0.07, 0.07)):
+    flat_shape(f"col_desert_mask_eye{k}", [(x - 0.045, 0.36), (x + 0.045, 0.34), (x + 0.02, 0.3), (x - 0.04, 0.31)], 0.004, M["black"], front=-0.055,
+               parent=col)
+for k, z in enumerate((0.2, 0.15)):
+    tube(f"col_desert_mask_stripe{k}", [(-0.09, z), (0.09, z)], 0.008, M["red_col"], parent=col, loc=(0, -0.055, 0), poly=True)
+flat_shape("col_desert_mask_crest", star_pts(0.1, 0.04, 6, 0, 0.58), 0.02, M["leaf_gold"], front=-0.045, parent=col)
+
+col = empty("col_blueprint")
+flat_shape("col_blueprint_sheet", [(-0.3, 0.0), (0.3, 0.0), (0.3, 0.46), (-0.3, 0.46)], 0.008, M["blueprint"], front=-0.012, parent=col)
+bm = bmesh.new()
+for k in range(1, 6):
+    box(bm, (0.58, 0.004, 0.004), (0, -0.014, k * 0.077))
+for k in range(1, 8):
+    box(bm, (0.004, 0.004, 0.44), (-0.3 + k * 0.075, -0.014, 0.23))
+mesh_object("col_blueprint_grid", bm, M["paper"], parent=col)
+tube("col_blueprint_ramp", [(-0.2, 0.08), (-0.05, 0.08), (0.05, 0.2), (0.2, 0.2), (0.2, 0.36)], 0.009, M["paper"], parent=col, loc=(0, -0.018, 0), poly=True)
+bm = bmesh.new()
+for x, z in ((-0.27, 0.43), (0.27, 0.43)):
+    cylinder(bm, 0.018, 0.02, (x, -0.02, z), 12, rot=Matrix.Rotation(math.pi / 2, 4, "X"))
+mesh_object("col_blueprint_pins", bm, M["red_col"], smooth=True, parent=col)
+
+# --- suelo ---
+col = empty("col_cactus_pot")
+bm = bmesh.new()
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=24, radius1=0.16, radius2=0.2, depth=0.26, matrix=Matrix.Translation((0, 0, 0.13)))
+mesh_object("col_cactus_pot_pot", bm, M["terracotta"], smooth=True, parent=col)
+bm = bmesh.new()
+ellipsoid(bm, (0.11, 0.11, 0.36), (0, 0, 0.58), 20, 14)
+ellipsoid(bm, (0.06, 0.06, 0.13), (0.17, 0, 0.62), 14, 10)
+ellipsoid(bm, (0.06, 0.06, 0.1), (-0.16, 0, 0.72), 14, 10)
+box(bm, (0.08, 0.06, 0.05), (0.12, 0, 0.52))
+box(bm, (0.08, 0.06, 0.05), (-0.11, 0, 0.64))
+mesh_object("col_cactus_pot_cactus", bm, M["cactus"], smooth=True, parent=col)
+bm = bmesh.new()
+for k in range(5):
+    a = k * math.tau / 5
+    ellipsoid(bm, (0.035, 0.035, 0.02), (0.03 * math.cos(a), 0.03 * math.sin(a), 0.94), 10, 6)
+mesh_object("col_cactus_pot_flower", bm, M["flower_pink"], smooth=True, parent=col)
+
+col = empty("col_sphinx")
+bm = bmesh.new()
+box(bm, (0.5, 0.8, 0.12), (0, 0.05, 0.06))
+box(bm, (0.36, 0.62, 0.22), (0, 0.12, 0.23))
+box(bm, (0.1, 0.34, 0.08), (-0.12, -0.3, 0.16))
+box(bm, (0.1, 0.34, 0.08), (0.12, -0.3, 0.16))
+box(bm, (0.22, 0.22, 0.26), (0, -0.16, 0.5))
+mesh_object("col_sphinx_body", bm, M["sand_col"], parent=col)
+flat_shape("col_sphinx_headdress", [(-0.2, 0.62), (0.2, 0.62), (0.26, 0.36), (0.12, 0.36), (0.1, 0.56), (-0.1, 0.56), (-0.12, 0.36), (-0.26, 0.36)],
+           0.24, M["leaf_gold"], front=-0.28, parent=col)
+bm = bmesh.new()
+for x in (-0.05, 0.05):
+    box(bm, (0.04, 0.01, 0.02), (x, -0.275, 0.52))
+mesh_object("col_sphinx_eyes", bm, M["black"], parent=col)
+
+col = empty("col_globe")
+bm = bmesh.new()
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=24, radius1=0.2, radius2=0.08, depth=0.1, matrix=Matrix.Translation((0, 0, 0.05)))
+cylinder(bm, 0.025, 0.4, (0, 0, 0.3), 12)
+mesh_object("col_globe_stand", bm, M["wood_col"], smooth=True, parent=col)
+bm = bmesh.new()
+ellipsoid(bm, (0.26, 0.26, 0.26), (0, 0, 0.78), 32, 20)
+mesh_object("col_globe_sea", bm, M["blue_sea"], smooth=True, parent=col)
+bm = bmesh.new()
+rng_globe = random.Random(12)
+for k in range(9):
+    lon, lat = rng_globe.uniform(0, math.tau), rng_globe.uniform(-0.9, 0.9)
+    cx, cy, cz = 0.262 * math.cos(lat) * math.cos(lon), 0.262 * math.cos(lat) * math.sin(lon), 0.78 + 0.262 * math.sin(lat)
+    ellipsoid(bm, (0.06, 0.06, 0.05), (cx, cy, cz), 12, 8)
+mesh_object("col_globe_land", bm, M["green_col"], smooth=True, parent=col)
+tube("col_globe_ring", [(0.3 * math.cos(math.pi * i / 16 - math.pi / 2), 0.78 + 0.3 * math.sin(math.pi * i / 16 - math.pi / 2)) for i in range(17)],
+     0.015, M["gold_col"], parent=col)
+
+col = empty("col_cannonballs")
+bm = bmesh.new()
+box(bm, (0.62, 0.62, 0.08), (0, 0, 0.04))
+mesh_object("col_cannonballs_pallet", bm, M["wood_col"], parent=col)
+bm = bmesh.new()
+R_BALL = 0.1
+for layer, n in enumerate((3, 2, 1)):
+    z = 0.08 + R_BALL + layer * R_BALL * 1.414
+    for i in range(n):
+        for j in range(n):
+            ellipsoid(bm, (R_BALL, R_BALL, R_BALL), ((i - (n - 1) / 2) * 2 * R_BALL, (j - (n - 1) / 2) * 2 * R_BALL, z), 16, 10)
+mesh_object("col_cannonballs_balls", bm, M["iron_col"], smooth=True, parent=col)
+
+
 # ================================================================== PARCHES DE LOGROS
 # Parches de tela con costura alrededor (el juego los tiñe y les pone el bordado del icono delante).
 # Miran a -Y y su cara trasera queda en Y = 0 (se cosen a una superficie).
@@ -1299,34 +1739,63 @@ mesh_object("room_candles", bm_wax, M["pedestal"], smooth=True, parent=room)
 mesh_object("room_candle_flames", bm_flame, M["candle"], smooth=True, parent=room)
 
 
-# tablón de fieltro con marco en la pared derecha: los logros se cosen en él (huecos ach_slot_<n>, 4 x 3)
+# tablones de fieltro con marco en las paredes laterales: los logros se cosen en ellos
+# (huecos ach_slot_<n>: 0-29 en la pared derecha, 30-59 en la izquierda; 6 columnas x 5 filas cada uno)
 M["board_felt"] = material("BoardFelt", "2f4f5f", 0.98)
-BOARD_Y0, BOARD_Y1, BOARD_Z0, BOARD_Z1 = -2.35, 1.95, 1.22, 3.8
-bm = bmesh.new()
-box(bm, (0.04, BOARD_Y1 - BOARD_Y0, BOARD_Z1 - BOARD_Z0), (WALL_X - 0.02, (BOARD_Y0 + BOARD_Y1) / 2, (BOARD_Z0 + BOARD_Z1) / 2))
-mesh_object("room_board_felt", bm, M["board_felt"], parent=room)
-bm = bmesh.new()
-FR = 0.09
-box(bm, (0.08, BOARD_Y1 - BOARD_Y0 + 2 * FR, FR), (WALL_X - 0.04, (BOARD_Y0 + BOARD_Y1) / 2, BOARD_Z1 + FR / 2))
-box(bm, (0.08, BOARD_Y1 - BOARD_Y0 + 2 * FR, FR), (WALL_X - 0.04, (BOARD_Y0 + BOARD_Y1) / 2, BOARD_Z0 - FR / 2))
-box(bm, (0.08, FR, BOARD_Z1 - BOARD_Z0), (WALL_X - 0.04, BOARD_Y0 - FR / 2, (BOARD_Z0 + BOARD_Z1) / 2))
-box(bm, (0.08, FR, BOARD_Z1 - BOARD_Z0), (WALL_X - 0.04, BOARD_Y1 + FR / 2, (BOARD_Z0 + BOARD_Z1) / 2))
-bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.012, segments=1, affect="EDGES")
-mesh_object("room_board_frame", bm, M["shelf_wood"], parent=room)
-for r, z in enumerate((3.46, 2.84, 2.22, 1.6)):
-    for c, y in enumerate((-1.92, -1.06, -0.2, 0.66, 1.52)):
-        slot = empty(f"ach_slot_{r * 5 + c}", parent=room, loc=(WALL_X - 0.04, y, z))
-        slot.rotation_euler = (0, 0, -math.pi / 2)
-        slot.scale = (0.9, 0.9, 0.9)
-empty("board_view", parent=room, loc=(WALL_X - 0.04, (BOARD_Y0 + BOARD_Y1) / 2, (BOARD_Z0 + BOARD_Z1) / 2))
+BOARD_Y0, BOARD_Y1, BOARD_Z0, BOARD_Z1 = -2.9, 2.6, 1.3, 3.95
+BOARD_COLS = (-2.45, -1.55, -0.65, 0.25, 1.15, 2.05)
+BOARD_ROWS = (3.66, 3.15, 2.64, 2.13, 1.62)
+for side, sx in (("right", 1), ("left", -1)):
+    wx = sx * WALL_X
+    bm = bmesh.new()
+    box(bm, (0.04, BOARD_Y1 - BOARD_Y0, BOARD_Z1 - BOARD_Z0), (wx - sx * 0.02, (BOARD_Y0 + BOARD_Y1) / 2, (BOARD_Z0 + BOARD_Z1) / 2))
+    mesh_object(f"room_board_felt_{side}", bm, M["board_felt"], parent=room)
+    bm = bmesh.new()
+    FR = 0.09
+    box(bm, (0.08, BOARD_Y1 - BOARD_Y0 + 2 * FR, FR), (wx - sx * 0.04, (BOARD_Y0 + BOARD_Y1) / 2, BOARD_Z1 + FR / 2))
+    box(bm, (0.08, BOARD_Y1 - BOARD_Y0 + 2 * FR, FR), (wx - sx * 0.04, (BOARD_Y0 + BOARD_Y1) / 2, BOARD_Z0 - FR / 2))
+    box(bm, (0.08, FR, BOARD_Z1 - BOARD_Z0), (wx - sx * 0.04, BOARD_Y0 - FR / 2, (BOARD_Z0 + BOARD_Z1) / 2))
+    box(bm, (0.08, FR, BOARD_Z1 - BOARD_Z0), (wx - sx * 0.04, BOARD_Y1 + FR / 2, (BOARD_Z0 + BOARD_Z1) / 2))
+    bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.012, segments=1, affect="EDGES")
+    mesh_object(f"room_board_frame_{side}", bm, M["shelf_wood"], parent=room)
+    base = 0 if sx > 0 else 30
+    for r, z in enumerate(BOARD_ROWS):
+        # en la pared izquierda se lee de izquierda a derecha mirándola: del fondo hacia delante
+        cols = BOARD_COLS if sx > 0 else tuple(reversed(BOARD_COLS))
+        for c, y in enumerate(cols):
+            slot = empty(f"ach_slot_{base + r * 6 + c}", parent=room, loc=(wx - sx * 0.04, y, z))
+            slot.rotation_euler = (0, 0, -sx * math.pi / 2)
+            slot.scale = (0.78, 0.78, 0.78)
+    empty(f"board_view_{side}", parent=room, loc=(wx - sx * 0.04, (BOARD_Y0 + BOARD_Y1) / 2, (BOARD_Z0 + BOARD_Z1) / 2))
 
-# la escala del hueco es la escala con la que se expone la pieza
-for slot, loc, size in (("slot_col_trophy", (0.0, FURN_Y - 0.36, 0.95), 1.3),
-                        ("slot_col_crystal_skull", (-(WALL_X - 0.8), 0.9, 0.8), 1.35),
-                        ("slot_col_ancient_vase", (WALL_X - 0.8, 0.9, 0.8), 1.25),
-                        ("slot_col_crypt_key", (-2.55, SHELF_Y, SHELF_TOPS[1]), 1.6),
-                        ("slot_col_blue_orb", (-2.55, SHELF_Y, SHELF_TOPS[2]), 1.6),
-                        ("slot_col_coin_chest", (2.55, SHELF_Y, SHELF_TOPS[1]), 1.8)):
+# coleccionables: la escala del hueco es la escala con la que se expone la pieza
+SLOTS = []
+# vitrinas
+SLOTS += [("slot_col_trophy", (0.0, FURN_Y - 0.36, 0.95), 1.3),
+          ("slot_col_crystal_skull", (-(WALL_X - 0.8), 0.9, 0.8), 1.35),
+          ("slot_col_ancient_vase", (WALL_X - 0.8, 0.9, 0.8), 1.25)]
+# estanterías: 3 baldas x 3 huecos (caben 9 en cada una), de arriba abajo
+SHELF_ITEMS = {
+    -2.55: (("col_blue_orb", "col_crypt_key", "col_coin_chest"),
+            ("col_root_lantern", "col_mini_train", "col_spring_toy"),
+            ("col_acorn_jar", "col_ice_crystal", "col_cracked_egg")),
+    2.55: (("col_fire_lamp", "col_geode", "col_crystal_crown"),
+           ("col_scarab", "col_hourglass", "col_compass"),
+           ("col_slime_plush", "col_dizzy_top", "col_snow_globe")),
+}
+for x, shelves in SHELF_ITEMS.items():
+    for top, row in zip((SHELF_TOPS[2], SHELF_TOPS[1], SHELF_TOPS[0]), shelves):
+        for dx, item in zip((-0.62, 0.0, 0.62), row):
+            SLOTS.append((f"slot_{item}", (x + dx, SHELF_Y, top), 1.35))
+# colgados en la pared del fondo (encima de las estanterías, de las velas y de la ventana)
+for item, x, z in (("col_station_sign", -3.2, 3.05), ("col_leaf_frame", -1.95, 2.95), ("col_pickaxes", -1.1, 2.75),
+                   ("col_star_banner", 0.0, 3.26), ("col_painting", 1.1, 2.8), ("col_desert_mask", 1.95, 2.95),
+                   ("col_blueprint", 3.2, 3.05)):
+    SLOTS.append((f"slot_{item}", (x, WALL_Y - 0.03, z), 0.95))
+# en el suelo, junto a las paredes laterales
+for item, x, y in (("col_cactus_pot", -3.75, -1.9), ("col_sphinx", 3.75, -1.9), ("col_globe", -3.75, 2.4), ("col_cannonballs", 3.75, 2.4)):
+    SLOTS.append((f"slot_{item}", (x, y, 0.0), 1.0))
+for slot, loc, size in SLOTS:
     empty(slot, parent=room, loc=loc).scale = (size, size, size)
 
 # ================================================================== guardar y exportar
