@@ -9,7 +9,7 @@
 import { ROUTES, type Step } from './dev-routes';
 
 interface DevSlime {
-  groups: { cx: number; cz: number }[];
+  groups: { cx: number; cz: number; ids: number[] }[];
   riding: Uint8Array;
   flying: Uint8Array;
   aliveCount: number;
@@ -31,6 +31,21 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const key = (type: string, code: string) => window.dispatchEvent(new KeyboardEvent(type, { code, key: ' ', bubbles: true }));
 const playing = () => api().state().mode === 'play';
 
+/** Mayor número de limitos separados del trozo principal visto en la prueba (y dónde). */
+let apart = { n: 0, x: 0, z: 0 };
+function sampleApart() {
+  const sl = api().slime();
+  const lead = sl?.groups[0];
+  if (!sl || !lead) return;
+  const n = sl.aliveCount - lead.ids.length;
+  if (n > apart.n) apart = { n, x: lead.cx, z: lead.cz };
+}
+/** Avanza la simulación en pasos cortos midiendo las separaciones. */
+function advance(t: number) {
+  const S = api();
+  for (let s = 0; s < t - 1e-6 && playing(); s += 0.05) { S.run(Math.min(0.05, t - s)); sampleApart(); }
+}
+
 function goTo(tx: number, tz: number, radius = 0.45, t = 8, until?: () => boolean) {
   const S = api();
   S.drive(() => {
@@ -44,6 +59,7 @@ function goTo(tx: number, tz: number, radius = 0.45, t = 8, until?: () => boolea
   });
   for (let s = 0; s < t && playing(); s += 0.05) {
     S.run(0.05);
+    sampleApart();
     const g = S.slime()?.groups[0];
     if (g && Math.hypot(tx - g.cx, tz - g.cz) < radius) return;
     if (until?.()) return;
@@ -79,6 +95,7 @@ async function run(c: number, k: number, steps: Step[], trace?: string[]): Promi
   S.drive(null);
   S.start(c, k);
   await sleep(1200);
+  apart = { n: 0, x: 0, z: 0 };
   S.drive(() => [0, 0]);
   S.run(0.8);
   for (const st of steps) {
@@ -86,8 +103,8 @@ async function run(c: number, k: number, steps: Step[], trace?: string[]): Promi
     if (st.squeeze !== undefined) key(st.squeeze ? 'keydown' : 'keyup', 'Space');
     if (st.to) goTo(st.to[0], st.to[1], st.radius, st.t);
     if (st.cannon) shoot(st.cannon[0], st.cannon[1]);
-    if (st.dir) { const d = st.dir; S.drive(() => d); S.run(st.t ?? 1); }
-    if (st.wait) { S.drive(() => [0, 0]); S.run(st.wait); }
+    if (st.dir) { const d = st.dir; S.drive(() => d); advance(st.t ?? 1); }
+    if (st.wait) { S.drive(() => [0, 0]); advance(st.wait); }
     if (st.fire) waitFireOff(st.fire[0], st.fire[1]);
     if (trace) {
       const w = S.world(), sl = S.slime();
@@ -105,7 +122,7 @@ async function run(c: number, k: number, steps: Step[], trace?: string[]): Promi
   const pct = sl ? sl.aliveCount / sl.n : 0;
   const coins = w.coinsCollected === w.coinsTotal;
   const ok = done && coins && pct > 0.9;
-  const line = `${ok ? 'OK ' : 'MAL'} c${c + 1}f${k + 1} ${w.def.id}: ${done ? 'tesoro' : 'SIN TESORO'} · limo ${Math.round(pct * 100)}% · monedas ${w.coinsCollected}/${w.coinsTotal}${w.gemsTotal ? ` · gema ${w.gemsCollected}/${w.gemsTotal}` : ''}`;
+  const line = `${ok ? 'OK ' : 'MAL'} c${c + 1}f${k + 1} ${w.def.id}: ${done ? 'tesoro' : 'SIN TESORO'} · limo ${Math.round(pct * 100)}% · monedas ${w.coinsCollected}/${w.coinsTotal}${w.gemsTotal ? ` · gema ${w.gemsCollected}/${w.gemsTotal}` : ''} · separado máx ${apart.n} en (${apart.x.toFixed(1)}, ${apart.z.toFixed(1)})`;
   return { id: w.def.id, ok, line };
 }
 

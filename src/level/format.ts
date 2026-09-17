@@ -207,6 +207,34 @@ export function traceRails(level: LevelData): { paths: Map<number, number[]>; er
 }
 
 /**
+  Rampas: suben exactamente una altura. Por su lado bajo llega suelo a su altura, por el alto suelo una altura más
+  arriba y a los lados muro, vacío u otra rampa igual; si no, el limo choca contra el escalón y se deshace.
+  (Entre alturas distintas solo se sube por rampa: un desnivel sin rampa corta el paso.)
+*/
+export function rampErrors(level: LevelData): string[] {
+  const { w, d } = levelSize(level);
+  const at = (i: number, j: number) => (i >= 0 && j >= 0 && i < w && j < d ? level.tiles[j][i] : '.');
+  const hAt = (i: number, j: number) => Number(level.heights[j]?.[i] ?? 0);
+  const rise = (c: string) => {
+    const r = TILE_BY_CHAR.get(c)?.rise;
+    return r ? { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[r] : null;
+  };
+  const solid = (c: string) => { const k = TILE_BY_CHAR.get(c)?.kind; return !k || k === 'void' || k === 'wall' || k === 'rail'; };
+  const errors: string[] = [];
+  for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) {
+    const r = rise(at(i, j));
+    if (!r) continue;
+    const h = hAt(i, j);
+    const lo: [number, number] = [i - r[0], j - r[1]], hi: [number, number] = [i + r[0], j + r[1]];
+    const sideOk = [[i + r[1], j + r[0]], [i - r[1], j - r[0]]].every(([a, b]) => solid(at(a, b)) || (at(a, b) === at(i, j) && hAt(a, b) === h));
+    const loOk = solid(at(...lo)) || (rise(at(...lo)) ? at(...lo) === at(i, j) && hAt(...lo) === h - 1 : hAt(...lo) === h);
+    const hiOk = solid(at(...hi)) || (rise(at(...hi)) ? at(...hi) === at(i, j) && hAt(...hi) === h + 1 : hAt(...hi) === h + 1);
+    if (!sideOk || !loOk || !hiOk) errors.push(`La rampa de (${i}, ${j}) no está alineada: abajo tiene que quedar a su altura, arriba una altura más y a los lados muro u otra rampa igual.`);
+  }
+  return errors;
+}
+
+/**
   Diana de cada cañón (índices de casilla; -1 si no tiene): la más cercana de las que no se alcanzan andando
   desde el cañón. Así un cañón nunca apunta a la sala en la que ya está.
 */
@@ -280,6 +308,7 @@ export function validateLevel(level: LevelData): string[] {
     if (sw && need !== undefined && (need < 1 || need > level.count)) errors.push(`El interruptor ${ch} pide un peso imposible (${need}).`);
   }
   errors.push(...traceRails(level).errors);
+  errors.push(...rampErrors(level));
   const targets = cannonTargets(level);
   for (const [from, to] of targets) {
     if (to < 0) errors.push(`El cañón de (${from % w}, ${Math.floor(from / w)}) no tiene ninguna diana a la que no se llegue andando.`);

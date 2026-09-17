@@ -41,9 +41,6 @@ const OIL_FRICTION = 0.35;
 const OIL_SPEED = 1.12;
 // Inclinación: con el mando a fondo el suelo "se inclina" y el líquido corre hacia el lado bajo.
 const SLOPE_ACC = 7;
-// Esquinas de muro: la gota que roza la arista se frena y se suelta un momento.
-const CORNER_LOOSE_T = 0.32;
-const CORNER_GRIP = 0.12;
 const WALL_DRAG = 5;
 // Radio alrededor de la plataforma dentro del que el trozo sale lanzado entero:
 // solo las gotas que van muy separadas se quedan atrás.
@@ -61,7 +58,9 @@ const FIRE_STUN = 0.4;
 /** altura de las púas de la casilla de pinchos */
 const SPIKE_H = 0.42;
 const SUBSTEPS = 3;
-const STEP_UP = 0.56;       // escalón que el limo sube solo (0.5 de altura de losa)
+// escalón que el limo sube solo: plataformas de salto (0.38) y cañones (0.3), pero NO un desnivel de una altura (0.5):
+// entre alturas distintas solo se sube por rampa; un desnivel sin rampa corta el paso
+const STEP_UP = 0.42;
 const CUT_COOLDOWN = 0.7;   // tiempo sin cohesión entre mitades tras pasar por un divisor
 const CUT_TAG_BASE = 1_000_000;
 
@@ -185,7 +184,6 @@ export class Slime {
   private fell: Uint8Array;
   /** agarre de cada limito a sus vecinos (1 normal, OVERHANG_GRIP si asoma al vacío) */
   private grip: Float32Array;
-  private loose: Float32Array;
   private gvx: Float32Array; private gvz: Float32Array; private gcnt: Float32Array;
   private padX: Float32Array; private padZ: Float32Array; private padTop: Float32Array;
   private lastCutEvent = -1;
@@ -208,7 +206,10 @@ export class Slime {
   private svx: Float32Array; private svy: Float32Array; private svz: Float32Array;
   private tmpMuzzle = new THREE.Vector3();
   /** muelle del bamboleo (x, z: vaivén de la parte de arriba; y: aplastamiento) y velocidad suavizada del trozo principal */
-  private jelly = { x: 0, z: 0, y: 0, vx: 0, vz: 0, vy: 0, sx: 0, sz: 0, lvx: 0, lvz: 0, ripple: 0 };
+  private jelly = { x: 0, z: 0, y: 0, vx: 0, vz: 0, vy: 0, sx: 0, sz: 0, psx: 0, psz: 0, ripple: 0 };
+  /** gotas que han chocado de frente contra un muro en este paso y su velocidad sumada */
+  private wallHits = 0;
+  private wallHitSpeed = 0;
   private jellyLand = 0;
   /** vueltas acumuladas y tiempo de mareo restante */
   private turns = 0;
@@ -285,7 +286,6 @@ export class Slime {
     this.padFlags = new Uint8Array(n);
     this.fell = new Uint8Array(n);
     this.grip = new Float32Array(n).fill(1);
-    this.loose = new Float32Array(n);
     this.gvx = new Float32Array(n); this.gvz = new Float32Array(n); this.gcnt = new Float32Array(n);
     this.padX = new Float32Array(n); this.padZ = new Float32Array(n); this.padTop = new Float32Array(n);
     for (let k = 0; k < n; k++) this.groupPool.push({ ids: [], cx: 0, cy: 0, cz: 0, maxY: 0, maxZ: 0, vx: 0, vz: 0 });
@@ -580,6 +580,17 @@ export class Slime {
     }
     this.postStep(dt);
     this.computeGroups();
+    this.detectHit();
+  }
+
+  /** Golpe seco contra un muro (muchas gotas chocando de frente): el dibujo se aplasta y se ensancha, plaf, sin partirse. */
+  private detectHit() {
+    if (this.wallHits >= 8 && this.state !== 'frozen') {
+      const speed = this.wallHitSpeed / this.wallHits;
+      this.jellyLand = Math.max(this.jellyLand, Math.min(1, (speed - 2) / 2) * Math.min(1, this.wallHits / 12));
+    }
+    this.wallHits = 0;
+    this.wallHitSpeed = 0;
   }
 
   private substep(h: number, tiltX: number, tiltZ: number) {
@@ -1042,15 +1053,12 @@ export class Slime {
           this.vz[i] -= nz * vn;
         }
         if (ny < 0.5 && this.state === 'burning' && w.burnable(ci, cj)) this.burnHits.push(cj * w.w + ci);
+        if (ny < 0.5 && vn < -2.5) { this.wallHits++; this.wallHitSpeed += -vn; }
         if (ny < 0.5 && this.state !== 'frozen') {
-          // contra un muro: el líquido se pega un poco; en la arista vertical, se suelta una gota
+          // contra un muro: el líquido se pega un poco (sin soltar gotas: un golpe no lo parte)
           const drag = 1 - WALL_DRAG / 180;
           this.vx[i] *= drag;
           this.vz[i] *= drag;
-          if (qx !== x - nx * pen && qz !== z - nz * pen && y < top) {
-            if (this.loose[i] <= 0) { this.vx[i] *= 0.55; this.vz[i] *= 0.55; }
-            this.loose[i] = CORNER_LOOSE_T;
-          }
         }
         if (ny > 0.5) {
           if (this.vy[i] <= 0.5) {
@@ -1259,7 +1267,6 @@ export class Slime {
       }
 
       this.applyDividers(i);
-      this.loose[i] = Math.max(0, this.loose[i] - dt);
       const ci = Math.floor(x), cj = Math.floor(z);
       const under = w.cell(ci, cj);
       const idx = under ? cj * w.w + ci : -1;
@@ -1274,7 +1281,7 @@ export class Slime {
       if (this.state === 'frozen') this.grip[i] = 1;
       else if (inWind) this.grip[i] = WIND_GRIP;
       else if (this.overHole(x, y, z)) this.grip[i] = OVERHANG_GRIP;
-      else this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : this.loose[i] > 0 ? CORNER_GRIP : 1;
+      else this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : 1;
 
       const chunk = this.gid[i] >= 0 ? this.groups[this.gid[i]].ids.length : 0;
       if (under && (under.kind === 'coin' || under.kind === 'gem' || under.kind === 'oil') && y < under.base + 1.3 && chunk >= pickMin) {
@@ -1483,12 +1490,12 @@ export class Slime {
       j.sx += (lead.vx - j.sx) * k;
       j.sz += (lead.vz - j.sz) * k;
       speed = Math.hypot(j.sx, j.sz);
-      // acotada: al dividirse cambia el trozo principal y su velocidad salta
-      let ax = (j.sx - j.lvx) / dt, az = (j.sz - j.lvz) / dt;
+      // vaivén: sigue la aceleración suavizada (acotada: al dividirse cambia el trozo principal y su velocidad salta)
+      let ax = (j.sx - j.psx) / dt, az = (j.sz - j.psz) / dt;
+      j.psx = j.sx;
+      j.psz = j.sz;
       const a = Math.hypot(ax, az);
       if (a > 25) { ax *= 25 / a; az *= 25 / a; }
-      j.lvx = j.sx;
-      j.lvz = j.sz;
       if (this.state !== 'frozen' && !this.riding[lead.ids[0]]) { tx = -ax * JELLY_SWAY; tz = -az * JELLY_SWAY; }
     }
     if (this.state === 'frozen') { j.x *= 0.8; j.z *= 0.8; j.y *= 0.8; j.vx = j.vz = j.vy = 0; this.jellyLand = 0; }

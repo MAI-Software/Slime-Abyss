@@ -71,7 +71,7 @@ const CHAPTER1 = [
       '.....#0C0#.....',
       '.....#000#.....',
       '.....#uuu#.....',
-      '.....#222#.....',
+      '.....#111#.....',
       '...#22222222#..',
       '...#2C222222#..',
       '...#2222.222#..',
@@ -196,7 +196,7 @@ const CHAPTER1 = [
       '###dd#DD###',
       '###SS#00###',
       '###00#00###',
-      '###00#0C###',
+      '###00#C0###',
       '###00#00###',
       '###00K00###',
       '###00000###',
@@ -841,7 +841,7 @@ const CHAPTER3 = [
       '...BBB.BBB...',
       '...BBB.BBB...',
       '..#000#000#..',
-      '..#0C0#0C0#..',
+      '..#00C#C00#..',
       '..#000#000#..',
       '..#000K000#..',
       '..#000K000#..',
@@ -1307,7 +1307,7 @@ function build(def) {
       heights[j] = heights[j].slice(0, i) + base + heights[j].slice(i + 1);
     }
   }
-  checkNoStepsUp(def, tiles, heights);
+  checkRamps(def, tiles, heights);
   checkNoDeadEnds(def, tiles, heights);
   checkCoins(def, tiles);
   const { map, h, file, ...meta } = def;
@@ -1324,8 +1324,19 @@ function checkNoDeadEnds(def, tiles, heights) {
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   const at = (i, j) => (j >= 0 && j < H && i >= 0 && i < W ? tiles[j][i] : '.');
   const walk = (i, j) => at(i, j) !== '.' && at(i, j) !== '#' && !'=@%'.includes(at(i, j));
-  // la rampa llega hasta un escalón más arriba
-  const top = (i, j) => Number(heights[j][i]) + ('nueo'.includes(at(i, j)) ? 1 : 0);
+  // altura del borde de una casilla hacia (di, dj): la rampa está una altura más arriba por su lado alto
+  const RISE = { n: [0, -1], u: [0, 1], e: [1, 0], o: [-1, 0] };
+  const edge = (i, j, di, dj) => {
+    const h = Number(heights[j][i]);
+    const r = RISE[at(i, j)];
+    if (!r) return h;
+    return r[0] === di && r[1] === dj ? h + 1 : r[0] === -di && r[1] === -dj ? h : h + 0.5;
+  };
+  // se pasa de una casilla a la vecina si su borde no está más alto (el limo no sube desniveles, solo rampas)
+  const passable = (i, j, a, b) => {
+    const di = Math.sign(a - i), dj = Math.sign(b - j);
+    return edge(a, b, -di, -dj) <= edge(i, j, di, dj);
+  };
   // estación → estación del otro extremo de su vía
   const partner = (i, j) => {
     let prev = [i, j];
@@ -1379,7 +1390,8 @@ function checkNoDeadEnds(def, tiles, heights) {
     for (const [di, dj] of reach > 1 ? [...dirs, ...(dirs === DIRS ? [] : DIRS)] : DIRS) {
       for (let k = 1; k <= reach; k++) {
         const a = i + di * k, b = j + dj * k;
-        if (walk(a, b) && top(a, b) <= top(i, j) + 1) out.push([a, b]);
+        // a más de una casilla (saltos y corrientes) se puede caer más abajo, no subir
+        if (walk(a, b) && (k === 1 ? passable(i, j, a, b) : Number(heights[b][a]) <= Number(heights[j][i]))) out.push([a, b]);
       }
     }
     return out;
@@ -1416,7 +1428,36 @@ function checkCoins(def, tiles) {
   }
 }
 
-/** Avisa si hay suelo contiguo que sube (el diseño pide solo bajadas). */
+/**
+  Rampas: un solo tipo, que sube exactamente una altura. Por su lado bajo tiene que llegar suelo a su altura, por el
+  alto suelo una altura más arriba y a los lados muro, vacío u otra rampa igual (si no, el limo choca y se deshace).
+*/
+function checkRamps(def, tiles, heights) {
+  const H = tiles.length, W = tiles[0].length;
+  const at = (i, j) => (j >= 0 && j < H && i >= 0 && i < W ? tiles[j][i] : '.');
+  const hAt = (i, j) => Number(heights[j][i]);
+  const RISE = { n: [0, -1], u: [0, 1], e: [1, 0], o: [-1, 0] };
+  const solid = (c) => c === '#' || c === '.' || '=@%'.includes(c);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const r = RISE[at(i, j)];
+    if (!r) continue;
+    const h = hAt(i, j);
+    const lo = [i - r[0], j - r[1]], hi = [i + r[0], j + r[1]];
+    const bad = [];
+    if (!solid(at(...lo)) && !RISE[at(...lo)] && hAt(...lo) !== h) bad.push(`abajo altura ${hAt(...lo)} en vez de ${h}`);
+    if (RISE[at(...lo)] && (at(...lo) !== at(i, j) || hAt(...lo) !== h - 1)) bad.push('rampa de abajo desalineada');
+    if (!solid(at(...hi)) && !RISE[at(...hi)] && hAt(...hi) !== h + 1) bad.push(`arriba altura ${hAt(...hi)} en vez de ${h + 1}`);
+    if (RISE[at(...hi)] && (at(...hi) !== at(i, j) || hAt(...hi) !== h + 1)) bad.push('rampa de arriba desalineada');
+    for (const [a, b] of [[i + r[1], j + r[0]], [i - r[1], j - r[0]]]) {
+      const c = at(a, b);
+      if (solid(c)) continue;
+      if (c !== at(i, j) || hAt(a, b) !== h) bad.push(`lado (${a}, ${b}) no es muro ni rampa igual`);
+    }
+    if (bad.length) console.warn(`  aviso ${def.id}: rampa en (${i}, ${j}): ${bad.join('; ')}`);
+  }
+}
+
+/** (sin uso) Avisaba si había suelo contiguo que sube; ahora los desniveles sin rampa cortan el paso a propósito. */
 function checkNoStepsUp(def, tiles, heights) {
   if (def.h) return;
   // la vía no se pisa y las estaciones pueden estar a cualquier altura (la bola sube)
