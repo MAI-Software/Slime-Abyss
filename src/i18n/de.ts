@@ -138,7 +138,12 @@ export const de: Dict = {
   },
   achievements: {
     title: 'Erfolge',
-    hint: 'Jeder Erfolg näht einen Aufnäher an die Tafel in deinem Zimmer.',
+    hint: 'Jeder Erfolg näht einen Aufnäher an die Tafel in deinem Zimmer. Tippe auf einen Aufnäher oder Erfolg, um ihn aus der Nähe zu sehen.',
+    inProgress: 'In Arbeit',
+    rewardLabel: 'Belohnung',
+    whereLabel: 'Wo er hängt',
+    boardLeft: 'Linke Tafel · Reihe {row}, Spalte {col}',
+    boardRight: 'Rechte Tafel · Reihe {row}, Spalte {col}',
     new: 'Neuer Erfolg!',
     reward: 'Belohnung: {item}',
     noReward: 'Ein Aufnäher für deine Tafel',

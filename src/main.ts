@@ -241,6 +241,12 @@ function updateLights(dt: number) {
       const halo = candleHalos[k];
       if (halo) { halo.material.opacity = 0.55 * f; halo.scale.setScalar(0.62 * (0.92 + f * 0.08)); }
     }
+    // el parche elegido tiene su propia luz
+    const lit = achFocus ? patches.get(achFocus) : null;
+    if (lit && lit.glow > 0.01) {
+      const b = lit.basePos;
+      lightPool.add(o.x + b.x - Math.sign(b.x) * 0.7, o.y + b.y + 0.1, o.z + b.z, 0xfff1c4, 3.2 * lit.glow, 2.4);
+    }
 
   } else if (world && slime) {
     if (slime.state === 'burning' && slime.center(tmpLight)) {
@@ -338,13 +344,28 @@ const pendingRewards: { kind: 'collectible' | 'achievement' | 'look'; id: string
 /** logro que enfoca la cámara en la pantalla Logros */
 let achFocus: string | null = null;
 /** parches cosidos en el tablón de la habitación */
-const patches = new Map<string, { root: THREE.Object3D; fabric: THREE.MeshStandardMaterial[]; thread: THREE.MeshStandardMaterial[]; decal: THREE.CanvasTexture; unlocked: boolean | null }>();
+const patches = new Map<string, { root: THREE.Object3D; fabric: THREE.MeshStandardMaterial[]; thread: THREE.MeshStandardMaterial[]; decal: THREE.CanvasTexture; unlocked: boolean | null; glow: number; basePos: THREE.Vector3; baseScale: THREE.Vector3 }>();
+/** brillo detrás del parche elegido */
+let patchHalo: THREE.Sprite | null = null;
 let rewardThen: (() => void) | null = null;
 const camTarget = new THREE.Vector3();
 const camPos = new THREE.Vector3();
 const tmpCenter = new THREE.Vector3();
 const tmpFx = new THREE.Vector3();
 const camWant = new THREE.Vector3();
+// viaje de la cámara del menú entre planos
+let menuShot = '';
+let shotT = 0, shotDur = 0;
+const shotFromPos = new THREE.Vector3(), shotFromLook = new THREE.Vector3();
+const viewDir = new THREE.Vector3();
+const easeInOutCubic = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
+/** Planos interiores de la habitación del menú (coordenadas del salón). */
+const ROOM_BACK_Z = -3.5, ROOM_FRONT_Z = 5, ROOM_SIDE_X = 4.5;
+/** Desde dónde se mira de frente un hueco: se aleja de las paredes que tiene cerca (fondo y laterales). */
+function slotView(p: THREE.Vector3, out: THREE.Vector3) {
+  const back = Math.max(0.05, p.z - ROOM_BACK_Z), left = Math.max(0.05, p.x + ROOM_SIDE_X), right = Math.max(0.05, ROOM_SIDE_X - p.x);
+  return out.set(1 / left ** 2 - 1 / right ** 2, 0, 1 / back ** 2).normalize();
+}
 const lookAhead = new THREE.Vector2();
 let camZoom = 1;
 // cámara de juego: el joystick derecho la gira (yaw) y la inclina (pitch); en giroscopio vuelve sola a su sitio
@@ -668,8 +689,81 @@ function patchCanvas(a: Achievement, size: number, unlocked: boolean) {
   return c;
 }
 
+/** El parche elegido se ilumina y se adelanta un poco del tablón. */
+function updatePatchGlow(dt: number) {
+  if (!room) return;
+  const k = 1 - Math.exp(-dt * 8);
+  let lit: (typeof patches extends Map<string, infer P> ? P : never) | null = null;
+  for (const [id, p] of patches) {
+    const want = id === achFocus && currentScreen === 'achievements' ? 1 : 0;
+    if (want === 0 && p.glow < 1e-3) continue;
+    p.glow += (want - p.glow) * k;
+    if (p.glow < 1e-3) p.glow = 0;
+    const a = ACHIEVEMENTS.find((x) => x.id === id)!;
+    const pulse = 0.75 + 0.25 * Math.sin(menuT * 4);
+    for (const m of p.fabric) m.emissive.setHex(p.unlocked ? a.color : 0x8d82b8).multiplyScalar(0.45 * p.glow * pulse);
+    for (const m of p.thread) m.emissive.setHex(0xfff4d6).multiplyScalar(0.35 * p.glow * pulse);
+    p.root.scale.copy(p.baseScale).multiplyScalar(1 + 0.16 * p.glow);
+    // sale hacia el centro de la habitación
+    p.root.position.copy(p.basePos).x -= Math.sign(p.basePos.x) * 0.08 * p.glow;
+    if (p.glow > 0.01) { lit = p; markBusy(250); }
+  }
+  if (!patchHalo) {
+    patchHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTexture(), color: 0xfff1c4, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    patchHalo.renderOrder = 1;
+    room.add(patchHalo);
+  }
+  patchHalo.visible = !!lit;
+  if (lit) {
+    patchHalo.position.copy(lit.basePos).x -= Math.sign(lit.basePos.x) * 0.05;
+    patchHalo.scale.setScalar(0.95 * (0.9 + 0.1 * Math.sin(menuT * 4)));
+    patchHalo.material.opacity = 0.8 * lit.glow;
+  }
+}
+
+/** Ficha del logro elegido (junto a su parche): estado, qué pide, cuánto falta, premio y dónde está cosido. */
+function renderAchDetail(ctx: AchievementContext) {
+  const box = $('ach-detail');
+  const k = ACHIEVEMENTS.findIndex((a) => a.id === achFocus);
+  if (k < 0) { box.hidden = true; box.innerHTML = ''; return; }
+  const a = ACHIEVEMENTS[k];
+  const got = save.achievements.includes(a.id);
+  const [v, goal] = a.progress(ctx);
+  const shown = got ? goal : Math.min(v, goal);
+  const pct = Math.round((shown / goal) * 100);
+  const reward = achievementRewardText(a.id);
+  const slot = k % 30;
+  const where = t(k >= 30 ? 'achievements.boardLeft' : 'achievements.boardRight', { row: Math.floor(slot / 6) + 1, col: (slot % 6) + 1 });
+  box.innerHTML = `
+    <button class="icon-btn ach-detail-close" type="button" aria-label="${escapeHtml(t('common.close'))}"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <div class="ach-detail-head">
+      <span class="ach-detail-patch"></span>
+      <div class="ach-detail-title">
+        <span class="ach-detail-state${got ? ' got' : ''}">${got ? checkSvg : ''}${escapeHtml(got ? t('achievements.done') : t('achievements.inProgress'))}</span>
+        <h3>${escapeHtml(achName(a))}</h3>
+      </div>
+    </div>
+    <p class="ach-detail-desc">${escapeHtml(t(`achievements.descs.${a.id}`))}</p>
+    <div class="ach-detail-progress">
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="${goal}" aria-valuenow="${shown}"><i style="width:${pct}%"></i></div>
+      <span>${shown}/${goal}</span>
+    </div>
+    <dl class="ach-detail-facts">
+      <div><dt>${escapeHtml(t('achievements.rewardLabel'))}</dt><dd>${escapeHtml(reward ?? t('achievements.noReward'))}</dd></div>
+      <div><dt>${escapeHtml(t('achievements.whereLabel'))}</dt><dd>${escapeHtml(where)}</dd></div>
+    </dl>`;
+  box.querySelector('.ach-detail-patch')!.appendChild(patchCanvas(a, 128, got));
+  box.querySelector('.ach-detail-close')!.addEventListener('click', () => {
+    sfx.click();
+    achFocus = null;
+    renderAchievements();
+  });
+  box.hidden = false;
+}
+
 function renderAchievements() {
   const ctx = achievementContext();
+  renderAchDetail(ctx);
   $('achievements-count').textContent = `${save.achievements.length}/${ACHIEVEMENTS.length}`;
   const list = $('achievements-list');
   list.innerHTML = '';
@@ -712,6 +806,7 @@ function refreshPatches() {
       obj.quaternion.copy(slot.quaternion);
       obj.scale.copy(slot.scale);
       obj.rotateZ(((k * 37) % 13 - 6) * 0.012);
+      obj.userData.achId = a.id;
       const fabric: THREE.MeshStandardMaterial[] = [];
       const thread: THREE.MeshStandardMaterial[] = [];
       obj.traverse((o) => {
@@ -728,7 +823,7 @@ function refreshPatches() {
       plane.renderOrder = 2;
       obj.add(plane);
       room!.add(obj);
-      p = { root: obj, fabric, thread, decal, unlocked: null };
+      p = { root: obj, fabric, thread, decal, unlocked: null, glow: 0, basePos: obj.position.clone(), baseScale: obj.scale.clone() };
       patches.set(a.id, p);
     }
     const got = save.achievements.includes(a.id);
@@ -816,7 +911,7 @@ function refreshTreasure() {
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), scale = new THREE.Vector3(0.6, 0.6, 0.6);
   // en coordenadas del salón (x a la derecha, z hacia la cámara): lejos de la alfombra, las vitrinas, las estanterías y lo expuesto
   const blocked = (x: number, z: number) =>
-    Math.hypot(x, z) < 1.8 || Math.abs(x) > 4.15 || Math.abs(z) > 3.3
+    Math.hypot(x, z) < 1.8 || Math.abs(x) > 4.15 || z < -3.3 || z > 4.6
     || (Math.abs(x) < 1.2 && z < -2.5) || (Math.abs(x) > 3.2 && z > -2.2 && z < 0.4) || (Math.abs(x) > 1.3 && z < -2.75)
     || [[-3.75, 1.9], [3.75, 1.9], [-3.75, -2.4], [3.75, -2.4]].some(([sx, sz]) => Math.hypot(x - sx, z - sz) < 0.55)
     || (hasGold && Math.hypot(x - spot.x, z - spot.z) < 0.5);
@@ -856,6 +951,44 @@ function refreshTreasure() {
   room.add(coins);
 }
 
+/** Tocar la habitación: un parche abre su logro y una pieza expuesta, su ficha de la colección. */
+const picker = new THREE.Raycaster();
+const pickNdc = new THREE.Vector2();
+function pickInRoom(e: MouseEvent) {
+  if (mode !== 'menu' || !room) return;
+  const el = e.target as HTMLElement;
+  if (el !== canvas && !el.classList.contains('screen')) return;
+  if (currentScreen !== 'main' && currentScreen !== 'achievements' && currentScreen !== 'collection') return;
+  const r = canvas.getBoundingClientRect();
+  pickNdc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  picker.setFromCamera(pickNdc, camera);
+  const hits = picker.intersectObjects([...[...patches.values()].map((p) => p.root), ...showcase], true);
+  let o: THREE.Object3D | null = hits[0]?.object ?? null;
+  while (o && !o.userData.achId && !o.userData.colId) o = o.parent;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reveal = (list: string) => $(list).querySelector('.focused')?.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
+  if (o?.userData.achId) {
+    sfx.click();
+    if (currentScreen !== 'achievements') openScreen('achievements');
+    achFocus = o.userData.achId as string;
+    renderAchievements();
+    reveal('achievements-list');
+  } else if (o?.userData.colId) {
+    sfx.click();
+    if (currentScreen !== 'collection') openScreen('collection');
+    menuFocus = o.userData.colId as string;
+    renderCollection();
+    reveal('collection-list');
+  } else if (currentScreen === 'achievements' && achFocus) {
+    achFocus = null;
+    renderAchievements();
+  } else if (currentScreen === 'collection' && menuFocus) {
+    menuFocus = null;
+    renderCollection();
+  }
+}
+document.addEventListener('click', pickInRoom);
+
 /** Habitación del menú (se crea una vez) con los coleccionables conseguidos en su sitio. */
 function refreshRoom() {
   if (!assets) return;
@@ -864,6 +997,8 @@ function refreshRoom() {
     room.traverse((o) => {
       const m = o as THREE.Mesh;
       if (!m.isMesh) return;
+      // la habitación está cerrada, pero la luz del sol entra igual: ni techo ni pared delantera dan sombra
+      if (/^room_(ceiling|front_wall|door)/.test(m.name) || /^room_(ceiling|front_wall|door)/.test(m.parent?.name ?? '')) m.castShadow = false;
       const mat = m.material as THREE.MeshStandardMaterial;
       if (mat.name === 'Glass') {
         mat.transparent = true;
@@ -896,6 +1031,7 @@ function refreshRoom() {
     item.position.copy(slot.position);
     item.scale.copy(slot.scale);
     item.userData.phase = showcase.length * 1.3;
+    item.userData.colId = id;
     // en estanterías y vitrinas giran despacio; lo colgado en la pared y lo del suelo se queda quieto
     const place = COLLECTIBLES.find((c) => c.id === id)?.place;
     item.userData.spin = place === 'shelf' || place === 'vitrina';
@@ -2023,13 +2159,20 @@ function updateCamera(dt: number) {
     const o = room.position;
     const slot = menuFocus ? room.getObjectByName(`slot_${menuFocus}`) : null;
     if (slot) {
-      menuLook.copy(slot.position).add(o);
       const place = COLLECTIBLES.find((c) => c.id === menuFocus)?.place;
-      // lo colgado se mira de frente a su altura; lo del suelo, algo más alto porque es grande
-      const lift = place === 'wall' ? 0.3 : place === 'floor' ? 0.55 : 0.2;
-      camWant.set(menuLook.x + 0.2, menuLook.y + (place === 'wall' ? 0.3 : place === 'floor' ? 1.3 : 1.0), menuLook.z + (place === 'floor' ? 3.3 : 2.8));
-      menuLook.x += 0.95;
-      menuLook.y += lift;
+      // de frente a la pieza, alejándose de las paredes que tiene cerca (las de los lados se miran desde el centro)
+      slotView(slot.position, viewDir);
+      const dist = place === 'floor' ? 3 : place === 'wall' ? 2.8 : 2.5;
+      menuLook.copy(slot.position).add(o);
+      // lo colgado se mira a su altura; lo del suelo, algo más alto porque es grande
+      camWant.set(menuLook.x + viewDir.x * dist, menuLook.y + (place === 'wall' ? 0.3 : place === 'floor' ? 1.3 : 0.9), menuLook.z + viewDir.z * dist);
+      camWant.x = o.x + THREE.MathUtils.clamp(camWant.x - o.x, -ROOM_SIDE_X + 0.4, ROOM_SIDE_X - 0.4);
+      camWant.z = o.z + THREE.MathUtils.clamp(camWant.z - o.z, ROOM_BACK_Z + 0.4, ROOM_FRONT_Z - 0.4);
+      // la pieza queda a la izquierda del panel: se mira un poco a la derecha de la cámara
+      const shift = (0.95 * dist) / 2.8;
+      menuLook.x += viewDir.z * shift;
+      menuLook.z -= viewDir.x * shift;
+      menuLook.y += place === 'wall' ? 0.3 : place === 'floor' ? 0.55 : 0.2;
     } else if (currentScreen === 'achievements') {
       // gira hacia un tablón (derecho: logros 0-29, izquierdo: 30-59); al elegir un logro se acerca a su parche
       const k = ACHIEVEMENTS.findIndex((a) => a.id === achFocus);
@@ -2039,7 +2182,8 @@ function updateCamera(dt: number) {
       const near = k >= 0;
       const side = left ? -1 : 1;
       // de lejos, todo el tablón ocupa la mitad izquierda de la pantalla (mirada paralela, desplazada a la derecha)
-      menuLook.set(o.x + p.x, o.y + p.y, o.z + p.z + (near ? 0.5 * side : 2.35));
+      // de cerca, el parche arriba a la izquierda y su ficha debajo
+      menuLook.set(o.x + p.x, o.y + p.y - (near ? 0.3 : 0), o.z + p.z + (near ? 0.5 * side : 2.35));
       camWant.set(o.x + p.x - side * (near ? 1.9 : 4.45), o.y + p.y + 0.05, o.z + p.z + (near ? 0.5 * side : 2.35));
     } else if (currentScreen === 'myslime') {
       // de cerca y de frente, con el limo a la izquierda del panel
@@ -2053,7 +2197,18 @@ function updateCamera(dt: number) {
       menuLook.set(o.x + 1.35, o.y + 0.8, o.z - 0.6);
       camWant.set(o.x + 0.75 + Math.sin(menuT * 0.25) * 0.2, o.y + 2.4, o.z + 3.9);
     }
-    camTarget.lerp(menuLook, 1 - Math.exp(-dt * 3));
+    // plano nuevo (otra pantalla u otra pieza): viaje con arranque y frenada suaves, algo en arco
+    const shot = `${currentScreen}|${menuFocus ?? ''}|${achFocus ?? ''}`;
+    if (shot !== menuShot) {
+      menuShot = shot;
+      if (camPos.lengthSq() > 0) {
+        shotFromPos.copy(camPos);
+        shotFromLook.copy(camTarget);
+        shotT = 0;
+        shotDur = THREE.MathUtils.clamp(camPos.distanceTo(camWant) / 2.2, 0.9, 1.8);
+      }
+    }
+    if (shotT >= shotDur) camTarget.lerp(menuLook, 1 - Math.exp(-dt * 3));
   } else {
     if (mode === 'play') {
       if (input.mode === 'gyro') {
@@ -2076,7 +2231,14 @@ function updateCamera(dt: number) {
     camWant.set(camTarget.x + Math.sin(camYaw) * flat, camTarget.y + Math.sin(camPitch) * dist, camTarget.z + Math.cos(camYaw) * flat);
   }
   if (camPos.lengthSq() === 0) camPos.copy(camWant);
-  else camPos.lerp(camWant, 1 - Math.exp(-dt * (mode === 'menu' ? 2 : 5)));
+  else if (mode === 'menu' && shotT < shotDur) {
+    shotT = Math.min(shotDur, shotT + dt);
+    const e = easeInOutCubic(shotT / shotDur);
+    camPos.lerpVectors(shotFromPos, camWant, e);
+    camPos.y += Math.sin(Math.PI * e) * Math.min(0.5, shotFromPos.distanceTo(camWant) * 0.08);
+    camTarget.lerpVectors(shotFromLook, menuLook, e);
+    markBusy(250);
+  } else camPos.lerp(camWant, 1 - Math.exp(-dt * (mode === 'menu' ? 2 : 5)));
   // la cámara del menú aún viaja (a los logros, a Mi limo...): movimiento fluido
   if (camPos.distanceToSquared(camWant) > 4e-4) markBusy(250);
   camera.position.copy(camPos);
@@ -2154,6 +2316,7 @@ function frame(dt: number) {
     world.update(dt, { A: 0, B: 0 });
   } else if (mode === 'menu' && world && slime) {
     for (const item of showcase) if (item.userData.spin) item.rotation.y = menuT * 0.7 + item.userData.phase;
+    updatePatchGlow(dt);
     world.update(dt, slime.switchCounts);
     stepIdle(dt);
   } else if (world) {

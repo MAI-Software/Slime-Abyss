@@ -1601,13 +1601,18 @@ hex_pts = [(0.3 * math.cos(math.pi / 6 + i * math.pi / 3), 0.3 * math.sin(math.p
 patch("patch_hex", hex_pts, scaled(hex_pts, 0.84))
 
 # ================================================================== HABITACIÓN DEL MENÚ
-# Suelo de 9x7 centrado en el origen (donde está el limo), paredes al fondo (+Y) y a los lados; sin pared delantera.
+# Habitación cerrada: suelo de 9 de ancho con el limo en el origen, pared del fondo (+Y), laterales, pared delantera
+# con la puerta (-Y, detrás de la cámara del menú) y techo con vigas. La pared delantera y el techo no dan sombra.
 # Todo se coloca respecto a unos planos fijos para que nada se cruce ni parpadee:
 #   cara interior de la pared del fondo en Y = WALL_Y; de las laterales en X = ±WALL_X
 #   el zócalo (tabla, paneles, moldura, rodapié) sobresale como mucho TRIM_D de la pared
 #   los muebles pegados a la pared empiezan delante de eso (Y <= FURN_Y)
 # Huecos: slot_<coleccionable> (dónde se expone cada pieza) y light_* (dónde el juego pone luces).
 WALL_Y, WALL_X, WALL_H = 3.5, 4.5, 4.2
+# cara interior de la pared delantera en Y = -FRONT_Y (la cámara del menú queda dentro)
+FRONT_Y = 5.0
+ROOM_MID_Y = (WALL_Y - FRONT_Y) / 2
+ROOM_D = WALL_Y + FRONT_Y
 TRIM_D = 0.07
 FURN_Y = WALL_Y - TRIM_D - 0.01
 
@@ -1629,13 +1634,13 @@ room = empty("menu_room")
 # suelo: tablas con juntas reales (huecos sobre una base oscura, sin caras superpuestas)
 rng_floor = random.Random(3)
 bm = bmesh.new()
-box(bm, (2 * WALL_X, 2 * WALL_Y, 0.04), (0, 0, -0.04))
+box(bm, (2 * WALL_X, ROOM_D, 0.04), (0, ROOM_MID_Y, -0.04))
 mesh_object("room_floor_base", bm, M["plank_dark"], parent=room)
 bm = bmesh.new()
-rows = 14
-row_w = 2 * WALL_Y / rows
+rows = 17
+row_w = ROOM_D / rows
 for r in range(rows):
-    y = -WALL_Y + row_w * (r + 0.5)
+    y = -FRONT_Y + row_w * (r + 0.5)
     x = -WALL_X + rng_floor.uniform(0.2, 1.4)
     edges = [-WALL_X]
     while x < WALL_X - 0.4:
@@ -1650,15 +1655,31 @@ mesh_object("room_floor", bm, M["plank"], parent=room)
 bm = bmesh.new()
 box(bm, (2 * WALL_X + 0.6, 0.3, WALL_H), (0, WALL_Y + 0.15, WALL_H / 2))
 for sx in (-1, 1):
-    box(bm, (0.3, 2 * WALL_Y + 0.3, WALL_H), (sx * (WALL_X + 0.15), 0.15, WALL_H / 2))
+    box(bm, (0.3, ROOM_D + 0.6, WALL_H), (sx * (WALL_X + 0.15), ROOM_MID_Y, WALL_H / 2))
 mesh_object("room_walls", bm, M["wallpaper"], parent=room)
+bm = bmesh.new()
+box(bm, (2 * WALL_X + 0.6, 0.3, WALL_H), (0, -FRONT_Y - 0.15, WALL_H / 2))
+mesh_object("room_front_wall", bm, M["wallpaper"], parent=room)
+
+# techo de yeso oscuro con vigas de madera de pared a pared
+M["ceiling"] = material("Ceiling", "3b2f5c", 0.95)
+bm = bmesh.new()
+box(bm, (2 * WALL_X + 0.6, ROOM_D + 0.6, 0.2), (0, ROOM_MID_Y, WALL_H + 0.1))
+mesh_object("room_ceiling", bm, M["ceiling"], parent=room)
+bm = bmesh.new()
+BEAMS = 6
+for k in range(BEAMS):
+    box(bm, (2 * WALL_X, 0.22, 0.16), (0, -FRONT_Y + 0.7 + k * (ROOM_D - 1.4) / (BEAMS - 1), WALL_H - 0.08))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.015, segments=1, affect="EDGES")
+mesh_object("room_ceiling_beams", bm, M["shelf_wood"], parent=room)
 
 
 def wall_strip(bm, depth, height, z0):
-    """Franja pegada a las tres paredes (fondo y laterales) que se unen en las esquinas sin cruzarse."""
+    """Franja pegada a las cuatro paredes que se unen en las esquinas sin cruzarse."""
     box(bm, (2 * WALL_X, depth, height), (0, WALL_Y - depth / 2, z0 + height / 2))
+    box(bm, (2 * WALL_X, depth, height), (0, -FRONT_Y + depth / 2, z0 + height / 2))
     for sx in (-1, 1):
-        box(bm, (depth, 2 * WALL_Y - depth, height), (sx * (WALL_X - depth / 2), -depth / 2, z0 + height / 2))
+        box(bm, (depth, ROOM_D - 2 * depth, height), (sx * (WALL_X - depth / 2), ROOM_MID_Y, z0 + height / 2))
 
 
 # zócalo: tabla fina, moldura a media altura, rodapié y cornisa
@@ -1676,16 +1697,40 @@ face_y = WALL_Y - 0.03 - PANEL_D / 2
 span = 2 * WALL_X - 0.3
 n = int((span + PANEL_GAP) // (PANEL_W + PANEL_GAP))
 start = -(n * (PANEL_W + PANEL_GAP) - PANEL_GAP) / 2 + PANEL_W / 2
+DOOR_X, DOOR_W, DOOR_H = 2.6, 1.1, 2.3
 for k in range(n):
-    box(bm, (PANEL_W, PANEL_D, 0.64), (start + k * (PANEL_W + PANEL_GAP), face_y, 0.54))
-span = 2 * WALL_Y - 0.03 - 0.3
+    x = start + k * (PANEL_W + PANEL_GAP)
+    box(bm, (PANEL_W, PANEL_D, 0.64), (x, face_y, 0.54))
+    # pared delantera: los mismos paneles salvo donde está la puerta
+    if abs(x - DOOR_X) > DOOR_W / 2 + PANEL_W / 2 + 0.12:
+        box(bm, (PANEL_W, PANEL_D, 0.64), (x, -FRONT_Y + 0.03 + PANEL_D / 2, 0.54))
+span = ROOM_D - 0.06 - 0.3
 n = int((span + PANEL_GAP) // (PANEL_W + PANEL_GAP))
-mid = -0.015
+mid = ROOM_MID_Y
 start = mid - (n * (PANEL_W + PANEL_GAP) - PANEL_GAP) / 2 + PANEL_W / 2
 for sx in (-1, 1):
     for k in range(n):
         box(bm, (PANEL_D, PANEL_W, 0.64), (sx * (WALL_X - 0.03 - PANEL_D / 2), start + k * (PANEL_W + PANEL_GAP), 0.54))
 mesh_object("room_wainscot_panels", bm, M["wainscot_panel"], parent=room)
+
+# puerta de la habitación en la pared delantera (hoja con cuarterones, marco y pomo)
+fy = -FRONT_Y
+bm = bmesh.new()
+box(bm, (DOOR_W, 0.06, DOOR_H), (DOOR_X, fy + 0.07, DOOR_H / 2))
+mesh_object("room_door", bm, M["wainscot_panel"], parent=room)
+bm = bmesh.new()
+for sx in (-1, 1):
+    box(bm, (0.12, 0.12, DOOR_H + 0.12), (DOOR_X + sx * (DOOR_W / 2 + 0.06), fy + 0.06, (DOOR_H + 0.12) / 2))
+box(bm, (DOOR_W + 0.24, 0.12, 0.12), (DOOR_X, fy + 0.06, DOOR_H + 0.06))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.012, segments=1, affect="EDGES")
+mesh_object("room_door_frame", bm, M["shelf_wood"], parent=room)
+bm = bmesh.new()
+for z in (0.62, 1.62):
+    box(bm, (DOOR_W - 0.3, 0.02, 0.8), (DOOR_X, fy + 0.11, z))
+mesh_object("room_door_panels", bm, M["wainscot"], parent=room)
+bm = bmesh.new()
+ellipsoid(bm, (0.05, 0.05, 0.05), (DOOR_X - DOOR_W / 2 + 0.14, fy + 0.15, 1.1), 12, 8)
+mesh_object("room_door_knob", bm, M["brass"], smooth=True, parent=room)
 
 # alfombra
 bm = bmesh.new()
@@ -1817,7 +1862,7 @@ for x, shelves in SHELF_ITEMS.items():
     for top, row in zip((SHELF_TOPS[2], SHELF_TOPS[1], SHELF_TOPS[0]), shelves):
         for dx, item in zip((-0.62, 0.0, 0.62), row):
             SLOTS.append((f"slot_{item}", (x + dx, SHELF_Y, top), 1.35))
-# colgados en la pared del fondo (encima de las estanterías, de las velas y de la ventana)
+# colgados en la pared del fondo (encima de las estanterías y de las velas)
 for item, x, z in (("col_station_sign", -3.2, 3.05), ("col_leaf_frame", -1.95, 2.95), ("col_pickaxes", -1.1, 2.75),
                    ("col_abyss_heart", 0.0, 2.08), ("col_star_banner", 0.0, 3.42), ("col_painting", 1.1, 2.8), ("col_desert_mask", 1.95, 2.95),
                    ("col_blueprint", 3.2, 3.05)):

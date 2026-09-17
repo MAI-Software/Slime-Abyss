@@ -138,7 +138,12 @@ export const it: Dict = {
   },
   achievements: {
     title: 'Obiettivi',
-    hint: 'Ogni obiettivo cuce una toppa sulla bacheca della tua stanza.',
+    hint: 'Ogni obiettivo cuce una toppa sulla bacheca della tua stanza. Tocca una toppa o un obiettivo per vederlo da vicino.',
+    inProgress: 'In corso',
+    rewardLabel: 'Premio',
+    whereLabel: 'Dove si trova',
+    boardLeft: 'Bacheca sinistra · fila {row}, colonna {col}',
+    boardRight: 'Bacheca destra · fila {row}, colonna {col}',
     new: 'Nuovo obiettivo!',
     reward: 'Premio: {item}',
     noReward: 'Una toppa per la tua bacheca',

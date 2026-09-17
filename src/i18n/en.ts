@@ -138,7 +138,12 @@ export const en: Dict = {
   },
   achievements: {
     title: 'Achievements',
-    hint: 'Every achievement sews a patch onto the board in your room.',
+    hint: 'Every achievement sews a patch onto the board in your room. Tap a patch or an achievement to see it up close.',
+    inProgress: 'In progress',
+    rewardLabel: 'Reward',
+    whereLabel: 'Where it is',
+    boardLeft: 'Left board · row {row}, column {col}',
+    boardRight: 'Right board · row {row}, column {col}',
     new: 'New achievement!',
     reward: 'Reward: {item}',
     noReward: 'A patch for your board',

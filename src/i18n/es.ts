@@ -137,7 +137,12 @@ export const es = {
   },
   achievements: {
     title: 'Logros',
-    hint: 'Cada logro cose un parche en el tablón de tu habitación.',
+    hint: 'Cada logro cose un parche en el tablón de tu habitación. Toca un parche o un logro para verlo de cerca.',
+    inProgress: 'En progreso',
+    rewardLabel: 'Premio',
+    whereLabel: 'Dónde está',
+    boardLeft: 'Tablón izquierdo · fila {row}, columna {col}',
+    boardRight: 'Tablón derecho · fila {row}, columna {col}',
     new: '¡Nuevo logro!',
     reward: 'Premio: {item}',
     noReward: 'Un parche para tu tablón',

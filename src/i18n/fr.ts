@@ -138,7 +138,12 @@ export const fr: Dict = {
   },
   achievements: {
     title: 'Succès',
-    hint: 'Chaque succès coud un écusson sur le tableau de ta chambre.',
+    hint: 'Chaque succès coud un écusson sur le tableau de ta chambre. Touche un écusson ou un succès pour le voir de près.',
+    inProgress: 'En cours',
+    rewardLabel: 'Récompense',
+    whereLabel: 'Où il est',
+    boardLeft: 'Tableau gauche · rangée {row}, colonne {col}',
+    boardRight: 'Tableau droit · rangée {row}, colonne {col}',
     new: 'Nouveau succès !',
     reward: 'Récompense : {item}',
     noReward: 'Un écusson pour ton tableau',
