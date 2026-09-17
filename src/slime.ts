@@ -42,6 +42,12 @@ const OIL_SPEED = 1.12;
 // Inclinación: con el mando a fondo el suelo "se inclina" y el líquido corre hacia el lado bajo.
 const SLOPE_ACC = 7;
 const WALL_DRAG = 5;
+// Aristas salientes (esquina de muro con paso libre a los dos lados): la gota que pasa rozándola deprisa se suelta y
+// se queda atrás. Contra un muro liso o metido en un rincón no se suelta nada: se deforma pero no se parte.
+const CORNER_LOOSE_T = 0.32;
+const CORNER_GRIP = 0.12;
+const CORNER_MIN_SPEED = 1.6;
+const CORNER_MAX_DROPS = 3;   // limitos sueltos a la vez: una gota, nunca un trozo grande
 // Radio alrededor de la plataforma dentro del que el trozo sale lanzado entero:
 // solo las gotas que van muy separadas se quedan atrás.
 const PAD_REACH = 1.3;
@@ -184,6 +190,9 @@ export class Slime {
   private fell: Uint8Array;
   /** agarre de cada limito a sus vecinos (1 normal, OVERHANG_GRIP si asoma al vacío) */
   private grip: Float32Array;
+  /** tiempo que le queda a cada limito suelto tras rozar una arista, y cuántos hay sueltos ahora */
+  private loose: Float32Array;
+  private looseActive = 0;
   private gvx: Float32Array; private gvz: Float32Array; private gcnt: Float32Array;
   private padX: Float32Array; private padZ: Float32Array; private padTop: Float32Array;
   private lastCutEvent = -1;
@@ -286,6 +295,7 @@ export class Slime {
     this.padFlags = new Uint8Array(n);
     this.fell = new Uint8Array(n);
     this.grip = new Float32Array(n).fill(1);
+    this.loose = new Float32Array(n);
     this.gvx = new Float32Array(n); this.gvz = new Float32Array(n); this.gcnt = new Float32Array(n);
     this.padX = new Float32Array(n); this.padZ = new Float32Array(n); this.padTop = new Float32Array(n);
     for (let k = 0; k < n; k++) this.groupPool.push({ ids: [], cx: 0, cy: 0, cz: 0, maxY: 0, maxZ: 0, vx: 0, vz: 0 });
@@ -811,6 +821,8 @@ export class Slime {
       const c = w.cannonAt(Math.floor(g.cx), Math.floor(g.cz));
       if (!c || !Number.isFinite(c.tx) || c.loaded || this.cannonLock.has(c.idx)) continue;
       if (Math.hypot(g.cx - c.x, g.cz - c.z) > 0.42) continue;
+      // una gota suelta no se dispara sola: el cañón espera al limo
+      if (g.ids.length < Math.min(PICKUP_MIN, this.groups[0].ids.length)) continue;
       let grounded = 0, busy = false;
       for (const i of g.ids) {
         if (this.riding[i] || this.flying[i]) busy = true;
@@ -993,6 +1005,12 @@ export class Slime {
     }
   }
 
+  /** ¿Se puede pasar por la casilla a la altura de este limito? (sin muro ni bloque más alto que un escalón) */
+  private openAt(i: number, j: number, y: number) {
+    const c = this.world.cell(i, j);
+    return !c || c.top <= y - R + STEP_UP;
+  }
+
   private collide(i: number) {
     const w = this.world;
     let x = this.px[i], y = this.py[i], z = this.pz[i];
@@ -1015,6 +1033,8 @@ export class Slime {
         }
         const top = w.topAt(cell, ci, cj, qx, qz);
         if (y - R >= top) continue;
+        // en diagonal fuera de la casilla: roza su arista vertical
+        const edgeSx = x < ci ? -1 : x > ci + 1 ? 1 : 0, edgeSz = z < cj ? -1 : z > cj + 1 ? 1 : 0;
         const qy = Math.min(y, top);
         const dx = x - qx, dy = y - qy, dz = z - qz;
         const d2 = dx * dx + dy * dy + dz * dz;
@@ -1055,10 +1075,20 @@ export class Slime {
         if (ny < 0.5 && this.state === 'burning' && w.burnable(ci, cj)) this.burnHits.push(cj * w.w + ci);
         if (ny < 0.5 && vn < -2.5) { this.wallHits++; this.wallHitSpeed += -vn; }
         if (ny < 0.5 && this.state !== 'frozen') {
-          // contra un muro: el líquido se pega un poco (sin soltar gotas: un golpe no lo parte)
+          // contra un muro: el líquido se pega un poco
           const drag = 1 - WALL_DRAG / 180;
           this.vx[i] *= drag;
           this.vz[i] *= drag;
+          // arista saliente: libre a los dos lados de la esquina (en un rincón, alguno de los dos es muro)
+          // (solo muros de verdad: plataformas y cañones, que se pisan, no sueltan gotas)
+          if (edgeSx && edgeSz && top - (y - R) > STEP_UP && this.loose[i] <= 0 && this.looseActive < CORNER_MAX_DROPS
+            && this.vx[i] * this.vx[i] + this.vz[i] * this.vz[i] > CORNER_MIN_SPEED * CORNER_MIN_SPEED
+            && this.openAt(ci + edgeSx, cj, y) && this.openAt(ci, cj + edgeSz, y)) {
+            this.vx[i] *= 0.55;
+            this.vz[i] *= 0.55;
+            this.loose[i] = CORNER_LOOSE_T;
+            this.looseActive++;
+          }
         }
         if (ny > 0.5) {
           if (this.vy[i] <= 0.5) {
@@ -1218,6 +1248,7 @@ export class Slime {
     const pad = this.padFlags;
     pad.fill(0);
     let anyPad = false;
+    let looseNow = 0;
     for (let i = 0; i < this.n; i++) {
       if (!this.alive[i]) { this.flying[i] = 0; this.padFly[i] = 0; continue; }
       if (this.riding[i]) continue;
@@ -1278,10 +1309,11 @@ export class Slime {
         if (under.kind === 'crack') w.crumble(ci, cj);
         else if (under.kind === 'ice' && this.state === 'burning') w.melt(ci, cj);
       }
+      if (this.loose[i] > 0) { this.loose[i] = Math.max(0, this.loose[i] - dt); if (this.loose[i] > 0) looseNow++; }
       if (this.state === 'frozen') this.grip[i] = 1;
       else if (inWind) this.grip[i] = WIND_GRIP;
       else if (this.overHole(x, y, z)) this.grip[i] = OVERHANG_GRIP;
-      else this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : 1;
+      else this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : this.loose[i] > 0 ? CORNER_GRIP : 1;
 
       const chunk = this.gid[i] >= 0 ? this.groups[this.gid[i]].ids.length : 0;
       if (under && (under.kind === 'coin' || under.kind === 'gem' || under.kind === 'oil') && y < under.base + 1.3 && chunk >= pickMin) {
@@ -1347,6 +1379,7 @@ export class Slime {
       const dx = x - t.x, dz = z - t.z;
       if (dx * dx + dz * dz < 0.55 && y < t.y + 1.2 && chunk >= pickMin) this.touchedTreasure = true;
     }
+    this.looseActive = looseNow;
     this.stunT = Math.max(0, this.stunT - dt);
     if (this.landHits >= 6 && this.groups[0]) {
       const g = this.groups[0];

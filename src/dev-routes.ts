@@ -32,8 +32,8 @@ export const ROUTES: Record<string, Step[]> = {
     { to: [7.5, 6.0], radius: 0.2 }, { fire: [7, 4] }, { to: [7.5, 1.5], t: 8 },
   ],
   'c1-divide-y-venceras': [
-    { to: [5.5, 10.5], radius: 0.4 }, { dir: [0, -1], t: 4.5 }, { dir: [1, -0.3], t: 2 },
-    { dir: [0, -1], t: 1.5 }, { dir: [-1, 0.25], t: 4 }, { to: [1.5, 1.5], t: 6 },
+    { to: [5.5, 10.5], radius: 0.4 }, { dir: [0, -1], t: 4.5 }, { dir: [1, 0.15], t: 2 },
+    { dir: [0, -1], t: 1.5 }, { dir: [-1, 0.6], t: 4 }, { to: [1.5, 1.5], t: 6 },
   ],
   'c1-salto-al-abismo': [
     { to: [5.5, 13.5], radius: 0.4 }, { to: [6.5, 14.6], radius: 0.3 }, { dir: [0, -1], t: 1.8 }, { to: [6.5, 7.5], radius: 0.4 },
