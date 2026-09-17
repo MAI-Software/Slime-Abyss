@@ -56,6 +56,13 @@ export const fr: Dict = {
     language: 'Langue',
     practice: "Niveau d'entraînement",
     play: 'Jouer',
+    code: 'Code',
+    redeem: 'Valider',
+    codeInvalid: 'Code invalide. Vérifie l’orthographe.',
+    codeUnlockAll: 'Tout est débloqué !',
+  },
+  goals: {
+    title: 'Étoiles de l’étage',
   },
   pause: {
     title: 'Pause',
@@ -297,8 +304,10 @@ export const fr: Dict = {
     howPerfect: 'Termine le {chapter} à 100 %',
     howStars: 'Toutes les étoiles de {chapter}',
     howAchievement: 'Succès « {name} »',
+    howLegend: 'Trouve toutes les gemmes secrètes et termine l’aventure',
   },
   collectibles: {
+    col_abyss_heart: 'Cœur de l’Abîme',
     col_crystal_skull: 'Crâne de cristal',
     col_ancient_vase: 'Vase ancien',
     col_blue_orb: 'Orbe bleu',

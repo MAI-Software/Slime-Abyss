@@ -34,6 +34,10 @@
 
   <!-- ====================================================== HUD -->
   <div id="hud" hidden>
+    <div id="goals-card" class="goals-card" hidden>
+      <p class="goals-title" data-i18n="goals.title"></p>
+      <ul id="goals-start" class="goals"></ul>
+    </div>
     <div class="hud-top">
       <div class="hud-left">
         <div class="hud-chip life">
@@ -288,6 +292,14 @@
         <span data-i18n="options.practice"></span>
         <button id="btn-practice" class="small-btn" data-i18n="options.play"></button>
       </div>
+      <div class="setting-row code-row">
+        <label for="code-input" data-i18n="options.code"></label>
+        <form id="code-form" class="code-field" autocomplete="off">
+          <input id="code-input" class="code-input" maxlength="24" autocapitalize="characters" spellcheck="false" />
+          <button id="btn-code" class="small-btn" type="submit" data-i18n="options.redeem"></button>
+        </form>
+        <p id="code-msg" class="code-msg" role="status" aria-live="polite"></p>
+      </div>
     </div>
   </div>
 
@@ -353,6 +365,7 @@
   <!-- ====================================================== PAUSA -->
   <div id="screen-pause" class="screen" hidden>
     <h2 data-i18n="pause.title"></h2>
+    <ul id="pause-goals" class="goals pause-goals" data-i18n-aria="goals.title"></ul>
     <button id="btn-resume" class="big-btn" data-i18n="pause.resume"></button>
     <div class="control-pick" role="group">
       <button class="pick-btn" data-mode="joystick" data-i18n="options.joystick"></button>

@@ -40,6 +40,8 @@ export interface Save {
   bought: string[];
   /** niveles del creador: 10 huecos (null = libre) */
   creations: (LevelData | null)[];
+  /** código de pruebas: todo desbloqueado (también lo que aún no tiene condición) */
+  unlockAll?: boolean;
 }
 
 export const CREATOR_SLOTS = 10;
@@ -73,7 +75,7 @@ export function loadSave(): Save {
       const bought = Array.isArray(rest.bought) ? rest.bought : [];
       const coinsSpent = Number.isFinite(rest.coinsSpent) ? rest.coinsSpent : 0;
       const creations = Array.from({ length: CREATOR_SLOTS }, (_, k) => sanitizeCreation(Array.isArray(rest.creations) ? rest.creations[k] : null));
-      return { ...fresh, ...rest, achievements, bought, coinsSpent, creations, stats: { ...EMPTY_STATS, ...rest.stats }, look: sanitizeLook(rest.look, achievements, bought) };
+      return { ...fresh, ...rest, achievements, bought, coinsSpent, creations, stats: { ...EMPTY_STATS, ...rest.stats }, look: sanitizeLook(rest.look, achievements, bought, !!rest.unlockAll) };
     }
     // migración desde v2: se conserva el progreso
     if (s?.v === 2) return { ...fresh, control: s.control ?? 'joystick', sound: s.sound ?? true, floors: s.floors ?? {} };

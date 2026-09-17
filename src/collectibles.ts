@@ -14,7 +14,9 @@ export type Unlock =
   /** todas las estrellas del capítulo */
   | { kind: 'allStars' }
   /** un logro concreto */
-  | { kind: 'achievement'; id: string };
+  | { kind: 'achievement'; id: string }
+  /** el tesoro más valioso: todos los pisos con todas sus gemas secretas */
+  | { kind: 'legend' };
 
 /** Dónde se expone en la habitación: estanterías (caben 9 en cada una), vitrinas, colgado en la pared o en el suelo. */
 export type Place = 'shelf' | 'vitrina' | 'wall' | 'floor';
@@ -30,10 +32,11 @@ export interface Collectible {
 /**
   Mundo alternativo (por diseñar): se abrirá al completar todos los pisos del juego con todas sus gemas secretas.
 */
-export function altWorldUnlocked(chapters: { floors: { id: string; tiles: string[] }[] }[], floors: Record<string, { done: boolean; secret?: boolean } | undefined>) {
+export function altWorldUnlocked(chapters: { floors: { id: string; tiles: string[]; stories?: { tiles: string[] }[] }[] }[], floors: Record<string, { done: boolean; secret?: boolean } | undefined>) {
   return chapters.every((ch) => ch.floors.every((f) => {
     const s = floors[f.id];
-    return !!s?.done && (!f.tiles.some((r) => r.includes('G')) || !!s.secret);
+    const hasGem = [f.tiles, ...(f.stories ?? []).map((st) => st.tiles)].some((rows) => rows.some((r) => r.includes('G')));
+    return !!s?.done && (!hasGem || !!s.secret);
   }));
 }
 
@@ -77,4 +80,6 @@ export const COLLECTIBLES: Collectible[] = [
   { id: 'col_blueprint', place: 'wall', unlock: { kind: 'achievement', id: 'creator-10' } },
   { id: 'col_globe', place: 'floor', unlock: { kind: 'achievement', id: 'floors-40' } },
   { id: 'col_cannonballs', place: 'floor', unlock: { kind: 'achievement', id: 'cannon-25' } },
+  // cuelga donde estaba la ventana del salón
+  { id: 'col_abyss_heart', place: 'wall', unlock: { kind: 'legend' } },
 ];

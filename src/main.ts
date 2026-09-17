@@ -25,7 +25,7 @@ import { decorateLogo, drawLogo } from './logo';
 import { setMuted, sfx, unlockAudio } from './audio';
 import { LANGS, applyDom, detectLang, getLang, levelName, levelTip, setLang, t, type Lang } from './i18n';
 import { CREATOR_SLOTS, loadSave, writeSave } from './save';
-import { COLLECTIBLES, type Collectible } from './collectibles';
+import { COLLECTIBLES, altWorldUnlocked, type Collectible } from './collectibles';
 import { firebaseConfigured, signInWithGoogle, signOutPlayer, watchPlayer, type Player } from './firebase';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -236,12 +236,12 @@ function updateLights(dt: number) {
       const p = room.getObjectByName(name)?.position;
       // un poco separada de la pared para que no queme un punto blanco en el papel
       const f = flicker(lightT, k);
-      if (p) lightPool.add(o.x + p.x, o.y + p.y, o.z + p.z + 0.3, 0xffb25c, 4.6 * f, 7);
+      // sin ventana, las velas son toda la luz del salón
+      if (p) lightPool.add(o.x + p.x, o.y + p.y, o.z + p.z + 0.3, 0xffb25c, 5.6 * f, 8.5);
       const halo = candleHalos[k];
       if (halo) { halo.material.opacity = 0.55 * f; halo.scale.setScalar(0.62 * (0.92 + f * 0.08)); }
     }
-    const w = room.getObjectByName('light_window')?.position;
-    if (w) lightPool.add(o.x + w.x, o.y + w.y, o.z + w.z, 0x5b86ff, 2.4 + Math.sin(lightT * 0.7) * 0.35, 6.5);
+
   } else if (world && slime) {
     if (slime.state === 'burning' && slime.center(tmpLight)) {
       lightPool.add(tmpLight.x, tmpLight.y + 0.8, tmpLight.z, 0xff7a24, 5 * flicker(lightT, 9), 5.5);
@@ -290,8 +290,10 @@ const floorSave = (id: string) => save.floors[id];
 const floorStars = (id: string) => (save.floors[id] ? starsOf(save.floors[id]) : 0);
 const floorUnlocked = (ch: ChapterDef, k: number) => k === 0 || !!floorSave(ch.floors[k - 1].id)?.done;
 const chapterDone = (ch: ChapterDef) => ch.floors.every((f) => floorSave(f.id)?.done);
-const coinsTotalOf = (lv: LevelData) => lv.tiles.join('').split('C').length - 1;
-const gemsTotalOf = (lv: LevelData) => lv.tiles.join('').split('G').length - 1;
+// cuentan todas las plantas del piso
+const tilesOfAll = (lv: LevelData) => [lv.tiles, ...(lv.stories ?? []).map((s) => s.tiles)].map((rows) => rows.join('')).join('');
+const coinsTotalOf = (lv: LevelData) => tilesOfAll(lv).split('C').length - 1;
+const gemsTotalOf = (lv: LevelData) => tilesOfAll(lv).split('G').length - 1;
 /** 100 %: todas las estrellas y todos los secretos del capítulo. */
 const chapterPerfect = (ch: ChapterDef) => ch.floors.every((f) => floorStars(f.id) === 3 && (gemsTotalOf(f) === 0 || !!floorSave(f.id)?.secret));
 const coinsEarned = () => Object.values(save.floors).reduce((a, f) => a + f.bestCoins, 0);
@@ -561,6 +563,7 @@ const chapterAllStars = (ch: ChapterDef) => ch.floors.every((f) => floorStars(f.
 
 function isUnlocked(c: Collectible): boolean {
   if (c.unlock.kind === 'achievement') return save.achievements.includes(c.unlock.id);
+  if (c.unlock.kind === 'legend') return altWorldUnlocked(CHAPTERS, save.floors);
   if (c.unlock.kind === 'secret') return !!floorSave(c.unlock.floor)?.secret;
   const ch = CHAPTERS.find((x) => x.id === c.chapter);
   if (!ch) return false;
@@ -739,6 +742,7 @@ function refreshPatches() {
 }
 
 function howToGet(c: Collectible): string {
+  if (c.unlock.kind === 'legend') return t('collection.howLegend');
   if (c.unlock.kind === 'achievement') {
     const id = c.unlock.id;
     const a = ACHIEVEMENTS.find((x) => x.id === id);
@@ -777,6 +781,81 @@ function renderCollection() {
   }
 }
 
+/** Monedas por el suelo del salón (tantas como monedas conseguidas) y, con el limo de oro comprado, el cofre rebosante. */
+let roomCoins: THREE.InstancedMesh | null = null;
+let goldChest: THREE.Object3D | null = null;
+function refreshTreasure() {
+  if (!room || !assets) return;
+  const hasGold = save.bought.includes('color:gold');
+  const floorCount = Math.min(360, coinsEarned());
+  const chestCount = hasGold ? 120 : 0;
+  const total = floorCount + chestCount;
+  const spot = room.getObjectByName('room_gold_chest')?.position ?? new THREE.Vector3(1.95, 0, -1.9);
+  // de cara a la alfombra
+  const yaw = Math.atan2(-spot.x, -spot.z);
+  if (hasGold && !goldChest) {
+    goldChest = assets.clone('chest');
+    goldChest.position.copy(spot);
+    goldChest.rotation.y = yaw;
+    Assets.child(goldChest, 'chest_lid').rotation.x = -1.9;
+    room.add(goldChest);
+  } else if (!hasGold && goldChest) {
+    room.remove(goldChest);
+    goldChest = null;
+  }
+  if (roomCoins?.userData.total === total) return;
+  if (roomCoins) { room.remove(roomCoins); roomCoins.dispose(); roomCoins = null; }
+  if (!total) return;
+  const material = (assets.clone('coin') as THREE.Mesh).material;
+  const coins = new THREE.InstancedMesh(assets.geometry('coin'), material, total);
+  coins.userData.total = total;
+  coins.receiveShadow = true;
+  // posiciones siempre iguales: cada moneda nueva se suma a los montones sin mover las que ya había
+  let seed = 1234567;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), scale = new THREE.Vector3(0.6, 0.6, 0.6);
+  // en coordenadas del salón (x a la derecha, z hacia la cámara): lejos de la alfombra, las vitrinas, las estanterías y lo expuesto
+  const blocked = (x: number, z: number) =>
+    Math.hypot(x, z) < 1.8 || Math.abs(x) > 4.15 || Math.abs(z) > 3.3
+    || (Math.abs(x) < 1.2 && z < -2.5) || (Math.abs(x) > 3.2 && z > -2.2 && z < 0.4) || (Math.abs(x) > 1.3 && z < -2.75)
+    || [[-3.75, 1.9], [3.75, 1.9], [-3.75, -2.4], [3.75, -2.4]].some(([sx, sz]) => Math.hypot(x - sx, z - sz) < 0.55)
+    || (hasGold && Math.hypot(x - spot.x, z - spot.z) < 0.5);
+  // el primer montón, a los pies del cofre (como si se hubiera desbordado)
+  const piles: [number, number][] = [[spot.x - 0.55, spot.z + 0.5], [2.7, 2.7], [-1.4, 2.9], [3.3, 0.9], [-3.3, 0.9], [-2.2, -2.2], [2.9, -1.0], [0.9, 2.9]];
+  let k = 0;
+  for (; k < floorCount; k++) {
+    const [cx, cz] = piles[k % piles.length];
+    const spread = 0.2 + 0.06 * Math.sqrt(k / piles.length);
+    let x = cx, z = cz;
+    for (let tries = 0; tries < 10; tries++) {
+      const a = rnd() * Math.PI * 2, r = spread * Math.sqrt(rnd());
+      x = cx + Math.cos(a) * r;
+      z = cz + Math.sin(a) * r;
+      if (!blocked(x, z)) break;
+    }
+    // montón: más alto en el centro
+    const d = Math.hypot(x - cx, z - cz);
+    p.set(x, 0.02 + Math.max(0, spread - d) * 0.45, z);
+    e.set(-Math.PI / 2 + (rnd() - 0.5) * 0.35, 0, rnd() * Math.PI * 2, 'XZY');
+    m.compose(p, q.setFromEuler(e), scale);
+    coins.setMatrixAt(k, m);
+  }
+  // cofre: montaña de monedas que rebosa por encima del borde
+  const cos = Math.cos(yaw), sin = Math.sin(yaw);
+  scale.setScalar(0.45);
+  for (let c = 0; c < chestCount; c++, k++) {
+    const lx = (rnd() - 0.5) * 0.58, lz = (rnd() - 0.5) * 0.38;
+    const dome = 1 - (lx / 0.32) ** 2 - (lz / 0.22) ** 2;
+    p.set(spot.x + lx * cos + lz * sin, spot.y + 0.38 + Math.max(0, dome) * 0.14 + rnd() * 0.02, spot.z - lx * sin + lz * cos);
+    e.set(-Math.PI / 2 + (rnd() - 0.5) * 0.5, 0, rnd() * Math.PI * 2, 'XZY');
+    m.compose(p, q.setFromEuler(e), scale);
+    coins.setMatrixAt(k, m);
+  }
+  coins.instanceMatrix.needsUpdate = true;
+  roomCoins = coins;
+  room.add(coins);
+}
+
 /** Habitación del menú (se crea una vez) con los coleccionables conseguidos en su sitio. */
 function refreshRoom() {
   if (!assets) return;
@@ -807,6 +886,7 @@ function refreshRoom() {
     }
   }
   refreshPatches();
+  refreshTreasure();
   for (const o of showcase) room.remove(o);
   showcase.length = 0;
   for (const id of save.collectibles) {
@@ -860,7 +940,7 @@ function renderMySlime() {
       const b = document.createElement('button');
       const name = t(`myslime.${key}Opt.${opt}`);
       const id = `${key}:${opt}`;
-      const open = lookOptionUnlocked(key, opt, save.achievements, save.bought);
+      const open = lookOptionUnlocked(key, opt, save.achievements, save.bought, save.unlockAll);
       const needed = ACHIEVEMENTS.find((a) => a.id === LOOK_UNLOCKS[id]);
       const price = LOOK_PRICES[id];
       const gemPrice = LOOK_GEM_PRICES[id];
@@ -921,6 +1001,8 @@ function renderMySlime() {
           (save.look as unknown as Record<string, string>)[key] = opt;
           store();
           applyLook();
+          // el oro llena el salón: aparece el cofre rebosante
+          refreshRoom();
           sfx.coin();
           pendingRewards.push({ kind: 'look', id });
           afterReward(() => show('myslime'));
@@ -1071,13 +1153,96 @@ $('btn-calib').addEventListener('click', () => { input.calibrate(); sfx.click();
 $('btn-pause-calib').addEventListener('click', () => { input.calibrate(); sfx.click(); });
 $('btn-practice').addEventListener('click', () => { sfx.click(); startLevel(PRACTICE, null, 0); });
 
+// ------------------------------------------------------------------ códigos
+
+/** SHA-256 del código en mayúsculas → lo que da (así los códigos no se leen en el código del juego). */
+const CODES: Record<string, 'unlockAll'> = {
+  '3b2968a87902e57baf70b507398ea451c58eddf89f2f1165e3518db670159d2e': 'unlockAll',
+};
+
+async function sha256Hex(text: string) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Código de pruebas: todos los pisos con sus estrellas y gemas, logros, coleccionables y todo Mi limo. */
+function unlockEverything() {
+  for (const f of CHAPTERS.flatMap((c) => c.floors)) {
+    const prev = save.floors[f.id];
+    save.floors[f.id] = {
+      done: true, allCoins: true, kept: true,
+      bestCoins: coinsTotalOf(f), bestPct: Math.max(prev?.bestPct ?? 0, 1), bestTime: prev?.bestTime ?? 0,
+      secret: gemsTotalOf(f) > 0 || !!prev?.secret,
+    };
+  }
+  save.achievements = ACHIEVEMENTS.map((a) => a.id);
+  save.collectibles = COLLECTIBLES.map((c) => c.id);
+  save.bought = [...new Set([...save.bought, ...Object.keys(LOOK_PRICES), ...Object.keys(LOOK_GEM_PRICES)])];
+  save.unlockAll = true;
+  store();
+  applyLook();
+  refreshRoom();
+}
+
+$<HTMLFormElement>('code-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = $<HTMLInputElement>('code-input');
+  const msg = $('code-msg');
+  const code = input.value.trim().toUpperCase();
+  if (!code) { input.focus(); return; }
+  sfx.click();
+  const reward = CODES[await sha256Hex(code)];
+  msg.classList.toggle('ok', !!reward);
+  msg.classList.toggle('error', !reward);
+  if (!reward) {
+    msg.textContent = t('options.codeInvalid');
+    input.select();
+    return;
+  }
+  unlockEverything();
+  msg.textContent = t('options.codeUnlockAll');
+  input.value = '';
+  sfx.coin();
+});
+
 // ------------------------------------------------------------------ pausa
 
 function pause() {
   if (mode !== 'play') return;
   mode = 'pause';
   input.reset();
+  $('pause-goals').innerHTML = starGoalsHtml(true);
+  $('goals-card').hidden = true;
   show('pause');
+}
+
+/** Lo que da cada estrella del piso; live: con lo conseguido hasta ahora (en la pausa). */
+function starGoalsHtml(live: boolean): string {
+  if (!world || !slime) return '';
+  const keep = Math.round((world.def.keepPct ?? DEFAULT_KEEP_PCT) * 100);
+  const pct = Math.round((slime.aliveCount / slime.n) * 100);
+  const star = '<svg class="goal-star" viewBox="0 0 24 24" aria-hidden="true"><path d="' + STAR_PATH + '"/></svg>';
+  const goals = [
+    { ok: false, label: t('result.goalTreasure'), val: '' },
+    { ok: live && world.coinsCollected === world.coinsTotal, label: t('result.goalCoins'), val: world.coinsTotal ? `${live ? world.coinsCollected : 0}/${world.coinsTotal}` : '' },
+    { ok: live && pct >= keep, label: t('result.goalKeep', { pct: keep }), val: live ? `${pct}%` : '' },
+  ];
+  return goals.map((g, k) =>
+    `<li class="${g.ok ? 'ok' : ''}" style="animation-delay:${60 + k * 60}ms"><span class="goal-mark">${star}</span>${escapeHtml(g.label)}<span class="val">${g.val}</span></li>`).join('');
+}
+
+/** Al empezar un piso: tarjeta con sus estrellas que se va sola a los pocos segundos. */
+let goalsTimer = 0;
+function showGoalsCard() {
+  const card = $('goals-card');
+  $('goals-start').innerHTML = starGoalsHtml(false);
+  card.classList.remove('leaving');
+  card.hidden = false;
+  clearTimeout(goalsTimer);
+  goalsTimer = window.setTimeout(() => {
+    card.classList.add('leaving');
+    goalsTimer = window.setTimeout(() => { card.hidden = true; }, 200);
+  }, 4200);
 }
 $('btn-pause').addEventListener('click', () => { sfx.click(); pause(); });
 $('btn-resume').addEventListener('click', () => { sfx.click(); mode = 'play'; acc = 0; show(null); });
@@ -1167,6 +1332,7 @@ function startLevelNow(def: LevelData, ch: ChapterDef | null, k: number, biome: 
   mode = 'play';
   show(null);
   updateHud();
+  showGoalsCard();
 }
 
 function restart() {

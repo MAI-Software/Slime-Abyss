@@ -131,7 +131,8 @@ export const LOOK_SOON = new Set<string>([
 ]);
 
 /** bought: opciones compradas ("apartado:opción"). */
-export function lookOptionUnlocked(key: keyof SlimeLook, opt: string, achievements: readonly string[], bought: readonly string[] = []) {
+export function lookOptionUnlocked(key: keyof SlimeLook, opt: string, achievements: readonly string[], bought: readonly string[] = [], all = false) {
+  if (all) return true;
   const id = `${key}:${opt}`;
   if (LOOK_SOON.has(id)) return false;
   if (LOOK_PRICES[id] || LOOK_GEM_PRICES[id]) return bought.includes(id);
@@ -140,9 +141,9 @@ export function lookOptionUnlocked(key: keyof SlimeLook, opt: string, achievemen
 }
 
 /** Corrige un aspecto guardado (valores desconocidos o aún bloqueados → por defecto). */
-export function sanitizeLook(raw: Partial<SlimeLook> | undefined, achievements: readonly string[] = [], bought: readonly string[] = []): SlimeLook {
+export function sanitizeLook(raw: Partial<SlimeLook> | undefined, achievements: readonly string[] = [], bought: readonly string[] = [], all = false): SlimeLook {
   const pick = <K extends keyof SlimeLook>(key: K, list: readonly SlimeLook[K][], v: unknown): SlimeLook[K] =>
-    list.includes(v as SlimeLook[K]) && lookOptionUnlocked(key, String(v), achievements, bought) ? (v as SlimeLook[K]) : DEFAULT_LOOK[key];
+    list.includes(v as SlimeLook[K]) && lookOptionUnlocked(key, String(v), achievements, bought, all) ? (v as SlimeLook[K]) : DEFAULT_LOOK[key];
   return {
     // 'obsidian' se llamaba así antes de ser 'black'; 'red' se quitó (se confundía con las llamas)
     color: pick('color', Object.keys(BODY_COLORS) as BodyColorId[], (raw?.color as string) === 'obsidian' ? 'black' : raw?.color),

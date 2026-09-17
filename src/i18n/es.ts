@@ -55,6 +55,13 @@ export const es = {
     language: 'Idioma',
     practice: 'Nivel de pruebas',
     play: 'Jugar',
+    code: 'Código',
+    redeem: 'Canjear',
+    codeInvalid: 'Código no válido. Revisa que esté bien escrito.',
+    codeUnlockAll: '¡Todo desbloqueado!',
+  },
+  goals: {
+    title: 'Estrellas del piso',
   },
   pause: {
     title: 'Pausa',
@@ -296,8 +303,10 @@ export const es = {
     howPerfect: 'Completa el {chapter} al 100 %',
     howStars: 'Todas las estrellas del {chapter}',
     howAchievement: 'Logro «{name}»',
+    howLegend: 'Encuentra todas las gemas secretas y completa la aventura',
   },
   collectibles: {
+    col_abyss_heart: 'Corazón del Abismo',
     col_crystal_skull: 'Calavera de cristal',
     col_ancient_vase: 'Jarrón antiguo',
     col_blue_orb: 'Orbe azul',

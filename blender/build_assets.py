@@ -1528,6 +1528,31 @@ for layer, n in enumerate((3, 2, 1)):
 mesh_object("col_cannonballs_balls", bm, M["iron_col"], smooth=True, parent=col)
 
 
+
+col = empty("col_abyss_heart")
+M["abyss_heart"] = material("AbyssHeart", "d946ef", 0.08, 0.2, emit="a21caf", strength=1.4)
+M["velvet"] = material("Velvet", "1e1b4b", 0.95)
+RING_R, RING_Z = 0.56, 0.62
+flat_shape("col_abyss_heart_velvet", ellipse_pts(RING_R, RING_R, 0, RING_Z, 48), 0.02, M["velvet"], front=-0.03, parent=col)
+tube("col_abyss_heart_ring", [(RING_R * math.cos(a * math.tau / 48), RING_Z + RING_R * math.sin(a * math.tau / 48)) for a in range(48)], 0.06,
+     M["gold_col"], parent=col, loc=(0, -0.05, 0), poly=True, cyclic=True)
+bm = bmesh.new()
+bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=6, radius=1.0,
+                          matrix=Matrix.Translation((0, -0.14, RING_Z)) @ Matrix.Diagonal((0.26, 0.13, 0.32, 1)))
+mesh_object("col_abyss_heart_gem", bm, M["abyss_heart"], smooth=False, parent=col)
+bm = bmesh.new()
+for k in range(8):
+    a = k * math.tau / 8 + math.pi / 8
+    ellipsoid(bm, (0.035, 0.03, 0.035), (RING_R * math.cos(a), -0.09, RING_Z + RING_R * math.sin(a)), 8, 6)
+mesh_object("col_abyss_heart_studs", bm, M["ice_col"], smooth=False, parent=col)
+bm = bmesh.new()
+for k in range(8):
+    a = k * math.tau / 8
+    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=True, segments=4, radius1=0.04, radius2=0.0, depth=0.14,
+                          matrix=Matrix.Translation(((RING_R + 0.12) * math.cos(a), -0.05, RING_Z + (RING_R + 0.12) * math.sin(a)))
+                          @ Matrix.Rotation(-a + math.pi / 2, 4, "Y") @ Matrix.Rotation(math.pi / 2, 4, "Y"))
+mesh_object("col_abyss_heart_rays", bm, M["gold_col"], smooth=False, parent=col)
+
 # ================================================================== PARCHES DE LOGROS
 # Parches de tela con costura alrededor (el juego los tiñe y les pone el bordado del icono delante).
 # Miran a -Y y su cara trasera queda en Y = 0 (se cosen a una superficie).
@@ -1691,38 +1716,37 @@ def bookcase(name, x):
 bookcase("room_bookcase_left", -2.55)
 bookcase("room_bookcase_right", 2.55)
 
-# ventana redonda al abismo en la pared del fondo (brilla desde abajo)
-M["abyss_glass"] = material("AbyssGlass", "1e1b4b", 0.2, emit="3b82f6", strength=0.9)
-M["window_frame"] = material("WindowFrame", "4a2d18", 0.6)
-WIN_Z, WIN_R = 2.55, 0.62
-ring = [(WIN_R * math.cos(a * math.tau / 48), WIN_R * math.sin(a * math.tau / 48) + WIN_Z) for a in range(48)]
-tube("room_window_frame", ring, 0.07, M["window_frame"], parent=room, loc=(0, WALL_Y - 0.05, 0), poly=True, cyclic=True)
-bm = bmesh.new()
-box(bm, (0.05, 0.05, 2 * WIN_R), (0, WALL_Y - 0.045, WIN_Z))
-box(bm, (2 * WIN_R, 0.05, 0.05), (0, WALL_Y - 0.045, WIN_Z))
-mesh_object("room_window_bars", bm, M["window_frame"], parent=room)
-flat_shape("room_window_glass", ellipse_pts(WIN_R - 0.02, WIN_R - 0.02, 0, WIN_Z, 48), 0.015, M["abyss_glass"],
-           front=WALL_Y - 0.018, parent=room)
-empty("light_window", parent=room, loc=(0, WALL_Y - 0.7, WIN_Z - 0.2))
+VITRINA_LEN, VITRINA_GAP = 2.1, 0.65
 
 
-def vitrina(name, x, y, z_top):
+def vitrina(name, x, y, z_top, along):
+    """Vitrina alargada (a lo largo de X o de Y) con tres huecos dentro y uno más encima de la tapa."""
+    sx, sy = (VITRINA_LEN, 0.7) if along == "x" else (0.7, VITRINA_LEN)
     bm = bmesh.new()
-    box(bm, (0.7, 0.7, z_top), (x, y, z_top / 2))
+    box(bm, (sx, sy, z_top), (x, y, z_top / 2))
     bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.03, segments=2, affect="EDGES")
     mesh_object(name + "_pedestal", bm, M["pedestal"], parent=room)
     bm = bmesh.new()
-    box(bm, (0.62, 0.62, 0.6), (x, y, z_top + 0.3))
+    box(bm, (sx - 0.08, sy - 0.08, 0.6), (x, y, z_top + 0.3))
     mesh_object(name + "_glass", bm, M["glass"], parent=room)
     bm = bmesh.new()
-    box(bm, (0.66, 0.66, 0.04), (x, y, z_top + 0.62))
+    box(bm, (sx - 0.04, sy - 0.04, 0.04), (x, y, z_top + 0.62))
     bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.01, segments=1, affect="EDGES")
     mesh_object(name + "_lid", bm, M["shelf_wood"], parent=room)
+    # marcos de madera entre huecos para que se lean los tres compartimentos
+    bm = bmesh.new()
+    for k in (-0.5, 0.5):
+        off = k * VITRINA_GAP * 1.0
+        if along == "x":
+            box(bm, (0.03, sy - 0.06, 0.6), (x + off, y, z_top + 0.3))
+        else:
+            box(bm, (sx - 0.06, 0.03, 0.6), (x, y + off, z_top + 0.3))
+    mesh_object(name + "_mullions", bm, M["shelf_wood"], parent=room)
 
 
-vitrina("room_vitrina_center", 0.0, FURN_Y - 0.36, 0.95)
-vitrina("room_vitrina_left", -(WALL_X - 0.8), 0.9, 0.8)
-vitrina("room_vitrina_right", WALL_X - 0.8, 0.9, 0.8)
+vitrina("room_vitrina_center", 0.0, FURN_Y - 0.36, 0.95, "x")
+vitrina("room_vitrina_left", -(WALL_X - 0.8), 0.9, 0.8, "y")
+vitrina("room_vitrina_right", WALL_X - 0.8, 0.9, 0.8, "y")
 
 # velas en apliques de latón sobre la pared del fondo
 bm_brass, bm_wax, bm_flame = bmesh.new(), bmesh.new(), bmesh.new()
@@ -1771,9 +1795,15 @@ for side, sx in (("right", 1), ("left", -1)):
 # coleccionables: la escala del hueco es la escala con la que se expone la pieza
 SLOTS = []
 # vitrinas
-SLOTS += [("slot_col_trophy", (0.0, FURN_Y - 0.36, 0.95), 1.3),
-          ("slot_col_crystal_skull", (-(WALL_X - 0.8), 0.9, 0.8), 1.35),
-          ("slot_col_ancient_vase", (WALL_X - 0.8, 0.9, 0.8), 1.25)]
+# vitrinas: hueco del medio con su pieza; los de los lados y el de encima de la tapa quedan libres
+# (slot_vitrina_<vitrina>_<0|2|top>) para piezas futuras
+for vname, vx, vy, vz, along, middle in (("center", 0.0, FURN_Y - 0.36, 0.95, "x", "col_trophy"),
+                                          ("left", -(WALL_X - 0.8), 0.9, 0.8, "y", "col_crystal_skull"),
+                                          ("right", WALL_X - 0.8, 0.9, 0.8, "y", "col_ancient_vase")):
+    for k, off in enumerate((-VITRINA_GAP, 0.0, VITRINA_GAP)):
+        loc = (vx + off, vy, vz) if along == "x" else (vx, vy + off, vz)
+        SLOTS.append((f"slot_{middle}" if k == 1 else f"slot_vitrina_{vname}_{k}", loc, 1.3))
+    SLOTS.append((f"slot_vitrina_{vname}_top", (vx, vy, vz + 0.64), 1.3))
 # estanterías: 3 baldas x 3 huecos (caben 9 en cada una), de arriba abajo
 SHELF_ITEMS = {
     -2.55: (("col_blue_orb", "col_crypt_key", "col_coin_chest"),
@@ -1789,12 +1819,13 @@ for x, shelves in SHELF_ITEMS.items():
             SLOTS.append((f"slot_{item}", (x + dx, SHELF_Y, top), 1.35))
 # colgados en la pared del fondo (encima de las estanterías, de las velas y de la ventana)
 for item, x, z in (("col_station_sign", -3.2, 3.05), ("col_leaf_frame", -1.95, 2.95), ("col_pickaxes", -1.1, 2.75),
-                   ("col_star_banner", 0.0, 3.26), ("col_painting", 1.1, 2.8), ("col_desert_mask", 1.95, 2.95),
+                   ("col_abyss_heart", 0.0, 2.08), ("col_star_banner", 0.0, 3.42), ("col_painting", 1.1, 2.8), ("col_desert_mask", 1.95, 2.95),
                    ("col_blueprint", 3.2, 3.05)):
     SLOTS.append((f"slot_{item}", (x, WALL_Y - 0.03, z), 0.95))
 # en el suelo, junto a las paredes laterales
 for item, x, y in (("col_cactus_pot", -3.75, -1.9), ("col_sphinx", 3.75, -1.9), ("col_globe", -3.75, 2.4), ("col_cannonballs", 3.75, 2.4)):
     SLOTS.append((f"slot_{item}", (x, y, 0.0), 1.0))
+empty("room_gold_chest", parent=room, loc=(1.95, 1.9, 0.0))
 for slot, loc, size in SLOTS:
     empty(slot, parent=room, loc=loc).scale = (size, size, size)
 

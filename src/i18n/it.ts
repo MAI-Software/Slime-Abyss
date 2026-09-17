@@ -56,6 +56,13 @@ export const it: Dict = {
     language: 'Lingua',
     practice: 'Livello di prova',
     play: 'Gioca',
+    code: 'Codice',
+    redeem: 'Riscatta',
+    codeInvalid: 'Codice non valido. Controlla come è scritto.',
+    codeUnlockAll: 'Tutto sbloccato!',
+  },
+  goals: {
+    title: 'Stelle del piano',
   },
   pause: {
     title: 'Pausa',
@@ -297,8 +304,10 @@ export const it: Dict = {
     howPerfect: 'Completa il {chapter} al 100%',
     howStars: 'Tutte le stelle di {chapter}',
     howAchievement: 'Obiettivo «{name}»',
+    howLegend: 'Trova tutte le gemme segrete e completa l’avventura',
   },
   collectibles: {
+    col_abyss_heart: 'Cuore dell’Abisso',
     col_crystal_skull: 'Teschio di cristallo',
     col_ancient_vase: 'Vaso antico',
     col_blue_orb: 'Sfera blu',

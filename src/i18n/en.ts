@@ -56,6 +56,13 @@ export const en: Dict = {
     language: 'Language',
     practice: 'Practice level',
     play: 'Play',
+    code: 'Code',
+    redeem: 'Redeem',
+    codeInvalid: 'Invalid code. Check the spelling.',
+    codeUnlockAll: 'Everything unlocked!',
+  },
+  goals: {
+    title: 'Floor stars',
   },
   pause: {
     title: 'Paused',
@@ -297,8 +304,10 @@ export const en: Dict = {
     howPerfect: 'Complete {chapter} at 100%',
     howStars: 'All the stars in {chapter}',
     howAchievement: 'Achievement “{name}”',
+    howLegend: 'Find every secret gem and finish the adventure',
   },
   collectibles: {
+    col_abyss_heart: 'Heart of the Abyss',
     col_crystal_skull: 'Crystal skull',
     col_ancient_vase: 'Ancient vase',
     col_blue_orb: 'Blue orb',

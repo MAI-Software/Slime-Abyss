@@ -56,6 +56,13 @@ export const de: Dict = {
     language: 'Sprache',
     practice: 'Übungslevel',
     play: 'Spielen',
+    code: 'Code',
+    redeem: 'Einlösen',
+    codeInvalid: 'Ungültiger Code. Prüfe die Schreibweise.',
+    codeUnlockAll: 'Alles freigeschaltet!',
+  },
+  goals: {
+    title: 'Sterne der Etage',
   },
   pause: {
     title: 'Pause',
@@ -297,8 +304,10 @@ export const de: Dict = {
     howPerfect: 'Schließe {chapter} zu 100 % ab',
     howStars: 'Alle Sterne in {chapter}',
     howAchievement: 'Erfolg „{name}“',
+    howLegend: 'Finde alle geheimen Edelsteine und beende das Abenteuer',
   },
   collectibles: {
+    col_abyss_heart: 'Herz des Abgrunds',
     col_crystal_skull: 'Kristallschädel',
     col_ancient_vase: 'Antike Vase',
     col_blue_orb: 'Blaue Kugel',

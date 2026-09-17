@@ -335,6 +335,48 @@ body[data-joy="fixed"] #joy-base, body[data-joy="fixed"] #cam-base { opacity: 0.
 }
 .goals li.ok .goal-mark { background: var(--ok); color: #fff; }
 .goal-mark svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+/* estrellas de un piso: al empezar (tarjeta que se va sola, sin tapar el mando) y en la pausa (con el progreso) */
+.goal-mark .goal-star { width: 17px; height: 17px; fill: #fff; stroke: var(--ink); stroke-width: 1.6; }
+.goals li.ok .goal-mark:has(.goal-star) { background: #fff; }
+.goals li.ok .goal-mark .goal-star { fill: var(--gold); }
+.goals-card {
+  position: absolute;
+  top: calc(var(--safe-t) + 62px);
+  left: calc(var(--safe-l) + 10px);
+  z-index: 5;
+  width: min(300px, 48vw);
+  padding: 10px 10px 8px;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 4px 0 var(--ink);
+  pointer-events: none;
+  animation: goals-in 260ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.goals-card[hidden] { display: none; }
+.goals-card.leaving { animation: goals-out 200ms ease-in both; }
+.goals-title { margin: 0 0 6px 2px; color: var(--ink); font: 700 15px/1.2 'Fredoka', 'Nunito', sans-serif; }
+.goals-card .goals li { padding: 5px 8px; font-size: 14px; gap: 8px; }
+.goals-card .goal-mark { width: 24px; height: 24px; }
+.goals-card .goals li, .pause-goals li { color: var(--ink); }
+.pause-goals { width: min(380px, 100%); }
+/* móvil en horizontal: estrellas a la izquierda y botones a la derecha, sin scroll */
+@media (max-height: 520px) and (orientation: landscape) {
+  #screen-pause:not([hidden]) { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 300px); grid-auto-flow: row dense; column-gap: 32px; row-gap: 10px; align-content: center; justify-content: center; }
+  #screen-pause > h2 { grid-column: 1; grid-row: 1; margin: 0; }
+  #screen-pause > .pause-goals { grid-column: 1; grid-row: 2 / span 4; align-self: start; width: 100%; }
+  #screen-pause > :not(h2):not(.pause-goals) { grid-column: 2; justify-self: center; }
+}
+@keyframes goals-in { from { opacity: 0; transform: translateY(-8px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes goals-out { to { opacity: 0; transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .goals-card, .goals-card.leaving { animation: none; } }
+/* códigos */
+.code-row { flex-wrap: wrap; }
+.code-field { display: flex; gap: 8px; flex: 1 1 220px; justify-content: flex-end; }
+.code-input { flex: 1; min-width: 0; max-width: 220px; height: 44px; padding: 0 12px; border: 3px solid var(--ink); border-radius: 14px; background: #fff; color: var(--ink); font: 700 17px/1 'Fredoka', 'Nunito', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+.code-msg { flex-basis: 100%; margin: 0; min-height: 18px; font-size: 14px; font-weight: 800; text-align: right; }
+.code-msg.ok { color: var(--ok); }
+.code-msg.error { color: var(--danger); }
 
 /* ---------- desglose ---------- */
 .breakdown-card { width: min(760px, 100%); }
