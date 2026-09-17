@@ -8,7 +8,7 @@ import './style.css';
 import { Assets } from './assets';
 import { CHAPTERS, MENU_STAGE, PRACTICE, UPCOMING } from './level/campaign';
 import { DEFAULT_KEEP_PCT, createEmptyLevel, starsOf, traceRails, type ChapterDef, type FloorResult, type LevelData } from './level/format';
-import { EDITOR_LIMITS, LevelEditor, PALETTE, TILE_IDS, drawCell, type EditorTool } from './editor';
+import { BLOCK_GROUPS, EDITOR_LIMITS, LevelEditor, TILE_IDS, blockStage, type EditorTool } from './editor';
 import { World } from './world';
 import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
 import { BODY_COLORS, CHEEKS, EYES, GEMS_PER_KIND, IRIS_COLORS, IRIS_EYES, LOOK_GEM_PRICES, LOOK_PRICES, LOOK_SOON, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
@@ -419,7 +419,7 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', 
 
 // ------------------------------------------------------------------ pantallas
 
-const SCREENS = ['main', 'story', 'chapter', 'collection', 'achievements', 'myslime', 'profile', 'options', 'pause', 'result', 'breakdown', 'reward', 'creator', 'editor'] as const;
+const SCREENS = ['main', 'story', 'chapter', 'collection', 'achievements', 'myslime', 'profile', 'options', 'pause', 'result', 'breakdown', 'reward', 'creator', 'editor', 'blocks'] as const;
 type ScreenId = (typeof SCREENS)[number];
 let currentScreen: ScreenId | null = 'main';
 
@@ -1601,6 +1601,163 @@ function saveEditor() {
   store();
 }
 
+// ------------------------------------------------------------------ bloques del creador (en 3D)
+
+/** Últimos bloques usados, para cambiar rápido sin abrir el selector. */
+let recentBlocks: string[] = ['0', '#', '.', 'C', 'P', 'T', 'n', 'F'];
+const RECENT_MAX = 8;
+let blockSpinPause = 0;
+const blockCenter = new THREE.Vector3(2.5, 0.25, 2.5);
+let blockPanelW = 420;
+let previewBefore: typeof preview | null = null;
+const blockName = (ch: string) => t(`creator.tiles.${TILE_IDS[ch]}`);
+
+/** Miniatura 3D de un bloque (la salida se enseña con el propio limo). */
+function blockThumb(ch: string): string | null {
+  if (!thumbs) return null;
+  return ch === 'P' ? thumbs.slime(save.look.color, save.look) : thumbs.tile(ch, blockStage(ch, true));
+}
+
+/** Rellena las miniaturas poco a poco (unos milisegundos por fotograma) para no congelar la pantalla. */
+function fillBlockThumbs(queue: [HTMLImageElement, string][]) {
+  let k = 0;
+  const step = () => {
+    const end = performance.now() + 12;
+    while (k < queue.length && performance.now() < end) {
+      const [img, ch] = queue[k++];
+      const src = blockThumb(ch);
+      if (!src) continue;
+      img.src = src;
+      img.parentElement?.classList.remove('loading');
+    }
+    if (k < queue.length) setTimeout(step, 0);
+  };
+  setTimeout(step, 0);
+}
+
+function blockChip(ch: string, queue: [HTMLImageElement, string][], onPick: () => void) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'chip thumb-chip loading';
+  b.dataset.tile = ch;
+  b.setAttribute('aria-label', blockName(ch));
+  b.title = blockName(ch);
+  const img = document.createElement('img');
+  img.alt = '';
+  img.draggable = false;
+  b.appendChild(img);
+  queue.push([img, ch]);
+  b.addEventListener('click', onPick);
+  return b;
+}
+
+function addRecent(ch: string) {
+  recentBlocks = [ch, ...recentBlocks.filter((c) => c !== ch)].slice(0, RECENT_MAX);
+}
+
+/** Lado del editor: el bloque con el que se pinta y los recientes. */
+function renderEditorBlocks() {
+  const row = $('editor-recent');
+  row.innerHTML = '';
+  const queue: [HTMLImageElement, string][] = [];
+  for (const ch of recentBlocks) {
+    row.appendChild(blockChip(ch, queue, () => {
+      sfx.click();
+      editor!.brush = ch;
+      editor!.tool = 'paint';
+      syncEditorUi();
+    }));
+  }
+  fillBlockThumbs(queue);
+}
+
+function syncEditorBlocks() {
+  if (!editor) return;
+  if ($('editor-recent').childElementCount !== recentBlocks.length) renderEditorBlocks();
+  const img = $<HTMLImageElement>('editor-block-img');
+  if (img.dataset.tile !== editor.brush) {
+    const src = blockThumb(editor.brush);
+    if (src) { img.src = src; img.dataset.tile = editor.brush; }
+  }
+  $('btn-editor-blocks').setAttribute('aria-label', `${t('creator.blocks')}: ${blockName(editor.brush)}`);
+  $('editor-recent').querySelectorAll<HTMLButtonElement>('[data-tile]').forEach((b) =>
+    b.setAttribute('aria-pressed', String(editor!.tool === 'paint' && b.dataset.tile === editor!.brush)));
+}
+
+/** Selector de bloques por tipos, con el bloque elegido girando en 3D (como los rasgos de Mi limo). */
+function openBlockPicker() {
+  if (!editor || !assets) return;
+  saveEditor();
+  void assets.loadBiome('stone').then(() => {
+    if (currentScreen !== 'editor') return;
+    if (mode === 'preview') closePreview3d(false);
+    previewBefore = { ...preview };
+    renderBlockPicker();
+    show('blocks');
+    blockPanelW = document.querySelector('#screen-blocks .side-panel')!.getBoundingClientRect().width;
+    showBlock(editor!.brush);
+    $('blocks-options').querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'center' });
+  });
+}
+
+function renderBlockPicker() {
+  const root = $('blocks-options');
+  root.innerHTML = '';
+  const queue: [HTMLImageElement, string][] = [];
+  for (const g of BLOCK_GROUPS) {
+    const label = document.createElement('p');
+    label.className = 'panel-label';
+    label.textContent = t(`creator.groups.${g.id}`);
+    const row = document.createElement('div');
+    row.className = 'chip-row';
+    row.setAttribute('role', 'group');
+    row.setAttribute('aria-label', label.textContent);
+    for (const ch of g.tiles) {
+      const b = blockChip(ch, queue, () => {
+        sfx.click();
+        editor!.brush = ch;
+        editor!.tool = 'paint';
+        addRecent(ch);
+        root.querySelectorAll<HTMLButtonElement>('[data-tile]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.tile === ch)));
+        showBlock(ch);
+      });
+      b.setAttribute('aria-pressed', String(ch === editor!.brush));
+      row.appendChild(b);
+    }
+    root.append(label, row);
+  }
+  fillBlockThumbs(queue);
+}
+
+/** Pone el bloque en su escenario pequeño y la cámara a girar a su alrededor. */
+function showBlock(ch: string) {
+  loadLevel(blockStage(ch));
+  mode = 'preview';
+  if (room) room.visible = false;
+  world!.group.visible = true;
+  // solo la salida enseña el limo
+  slime!.group.visible = ch === 'P';
+  preview.dist = 6.5;
+  preview.zoom = 1;
+  preview.pitch = 0.55;
+  camPos.set(0, 0, 0);
+  const group = BLOCK_GROUPS.find((g) => g.tiles.includes(ch));
+  $('block-group').textContent = group ? t(`creator.groups.${group.id}`) : '';
+  $('block-name').textContent = blockName(ch);
+}
+
+function closeBlockPicker() {
+  if (currentScreen !== 'blocks') return;
+  if (previewBefore) Object.assign(preview, previewBefore);
+  previewBefore = null;
+  addRecent(editor!.brush);
+  toMenuScene();
+  show('editor');
+  renderEditorBlocks();
+  syncEditorUi();
+  requestAnimationFrame(() => editor!.fit());
+}
+
 /** Vista 3D del nivel que se está creando: el nivel de verdad, sin jugar, girando la cámara alrededor. */
 function openPreview3d() {
   if (!editor || !assets) return;
@@ -1638,9 +1795,7 @@ function syncEditorUi() {
   $('editor-story').textContent = `${editor.story + 1}/${editor.stories}`;
   $('btn-editor-remove-story').hidden = editor.story === 0;
   document.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === editor!.tool)));
-  document.querySelectorAll<HTMLButtonElement>('.palette-btn').forEach((b) => b.setAttribute('aria-pressed', String(editor!.tool === 'paint' && b.dataset.tile === editor!.brush)));
-  const toolText = editor.tool === 'paint' ? t(`creator.tiles.${TILE_IDS[editor.brush]}`) : t(`creator.${editor.tool}`);
-  $('editor-brush').textContent = toolText;
+  syncEditorBlocks();
   $('editor-w').textContent = String(editor.width);
   $('editor-d').textContent = String(editor.depth);
   ($('btn-editor-undo') as HTMLButtonElement).disabled = !editor.canUndo;
@@ -1649,21 +1804,29 @@ function syncEditorUi() {
 function setupEditor() {
   editor = new LevelEditor($('editor-canvas') as HTMLCanvasElement);
   editor.onChange = () => { saveEditor(); syncEditorUi(); };
-  const palette = $('editor-palette');
-  for (const ch of PALETTE) {
-    const b = document.createElement('button');
-    b.className = 'palette-btn';
-    b.dataset.tile = ch;
-    const label = t(`creator.tiles.${TILE_IDS[ch]}`);
-    b.setAttribute('aria-label', label);
-    b.title = label;
-    const c = document.createElement('canvas');
-    c.width = c.height = 64;
-    const g = c.getContext('2d')!;
-    drawCell(g, ch, 0, 0, 0, 64, ch === '=' ? 8 | 2 : 0);
-    b.appendChild(c);
-    b.addEventListener('click', () => { sfx.click(); editor!.brush = ch; editor!.tool = 'paint'; syncEditorUi(); });
-    palette.appendChild(b);
+  $('btn-editor-blocks').addEventListener('click', () => { sfx.click(); openBlockPicker(); });
+  $('btn-blocks-back').addEventListener('click', () => { sfx.click(); closeBlockPicker(); });
+  $('btn-block-use').addEventListener('click', () => { sfx.click(); closeBlockPicker(); });
+  // arrastrar sobre la escena gira el bloque
+  {
+    const scr = $('screen-blocks');
+    let drag: { id: number; x: number } | null = null;
+    scr.addEventListener('pointerdown', (e) => {
+      if (e.target !== scr) return;
+      drag = { id: e.pointerId, x: e.clientX };
+      scr.setPointerCapture(e.pointerId);
+      blockSpinPause = performance.now() + 2500;
+    });
+    scr.addEventListener('pointermove', (e) => {
+      if (!drag || drag.id !== e.pointerId) return;
+      preview.yaw -= (e.clientX - drag.x) * 0.012;
+      drag.x = e.clientX;
+      blockSpinPause = performance.now() + 2500;
+      markBusy();
+    });
+    const end = () => { drag = null; };
+    scr.addEventListener('pointerup', end);
+    scr.addEventListener('pointercancel', end);
   }
   document.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((b) => b.addEventListener('click', () => {
     sfx.click();
@@ -2223,6 +2386,14 @@ function updateCamera(dt: number) {
       }
     }
     if (mode === 'preview') {
+      if (currentScreen === 'blocks') {
+        if (performance.now() > blockSpinPause && !matchMedia('(prefers-reduced-motion: reduce)').matches) preview.yaw += dt * 0.35;
+        // el bloque queda en el hueco libre a la izquierda del panel (y algo alto, por encima de su ficha)
+        const half = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * preview.dist * camera.aspect;
+        const shift = (blockPanelW / Math.max(1, innerWidth)) * half;
+        camTarget.set(blockCenter.x + Math.cos(preview.yaw) * shift, blockCenter.y - 0.6, blockCenter.z - Math.sin(preview.yaw) * shift);
+        markBusy(250);
+      }
       camYaw = preview.yaw;
       camPitch = preview.pitch;
     }

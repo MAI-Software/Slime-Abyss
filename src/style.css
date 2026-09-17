@@ -1019,11 +1019,25 @@ body[data-control="gyro"] .squeeze-btn { bottom: calc(26px + var(--safe-b)); rig
 .tool-btn { width: 100%; min-width: 44px; height: 44px; display: grid; place-items: center; color: var(--ink); background: var(--paper); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); }
 .tool-btn[aria-pressed="true"] { background: var(--slime); color: #fff; }
 .tool-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
-.editor-brush { margin: 0; min-height: 20px; color: #fff; font-size: 14px; font-weight: 800; }
-.editor-palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 8px; }
-.palette-btn { width: 100%; aspect-ratio: 1; max-width: 100%; padding: 0; border: 3px solid var(--ink); border-radius: 10px; overflow: hidden; background: #140f2b; }
-.palette-btn canvas { display: block; width: 100%; height: 100%; }
-.palette-btn[aria-pressed="true"] { outline: 3px solid #fff; outline-offset: 2px; }
+/* bloque con el que se pinta (abre el selector) y los últimos usados, en 3D */
+.editor-block-btn { display: grid; grid-template-columns: 64px 1fr 24px; align-items: center; gap: 10px; width: 100%; min-height: 76px; padding: 4px 10px 4px 4px; color: var(--ink); background: var(--paper); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 var(--ink); font: 700 17px/1.1 'Fredoka', 'Nunito', sans-serif; text-align: left; cursor: pointer; }
+.editor-block-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.editor-block-btn img { width: 64px; height: 64px; border-radius: 12px; background: #e9e1f5; object-fit: contain; }
+.editor-block-btn img:not([src]) { visibility: hidden; }
+.editor-recent { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; }
+.editor-recent .chip.thumb-chip { width: 100%; height: auto; aspect-ratio: 1; border-radius: 14px; }
+.editor-recent .chip.thumb-chip img { width: 90%; height: 90%; }
+.thumb-chip.loading { background: linear-gradient(90deg, #efe7f5 25%, #fff 50%, #efe7f5 75%); background-size: 200% 100%; animation: thumb-shimmer 1.1s linear infinite; }
+@keyframes thumb-shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .thumb-chip.loading { animation: none; } }
+/* selector de bloques: el bloque gira a la izquierda del panel, con su nombre y el botón para pintar con él */
+.blocks-screen { cursor: grab; }
+.blocks-screen .chip.thumb-chip img:not([src]) { visibility: hidden; }
+.block-card { position: absolute; left: calc(var(--safe-l) + 14px); bottom: calc(var(--safe-b) + 14px); width: min(340px, calc(100vw - 420px - 44px - var(--safe-l))); min-width: 220px; display: grid; gap: 6px; padding: 12px 14px; background: var(--paper); color: var(--ink); text-align: left; border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); cursor: default; }
+.block-group { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--secondary); }
+.block-card h3 { margin: 0; font: 700 20px/1.2 'Fredoka', 'Nunito', sans-serif; }
+.block-use { justify-self: start; min-height: 44px; background: var(--primary); color: #fff; }
+@media (max-height: 420px) { .block-card { padding: 8px 12px; bottom: calc(var(--safe-b) + 8px); } .block-card h3 { font-size: 17px; } }
 .editor-size { display: grid; grid-template-columns: auto 44px 1fr 44px; align-items: center; gap: 6px 8px; color: #fff; font-weight: 800; font-size: 14px; }
 .editor-size b { text-align: center; font-variant-numeric: tabular-nums; }
 .editor-floor { display: grid; grid-template-columns: 1fr 44px 64px 44px; align-items: center; gap: 8px; color: #fff; font-weight: 800; font-size: 14px; }

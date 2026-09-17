@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { Assets } from './assets';
 import { BODY_COLORS, EYES_MIRRORED, EYES_PER_SIDE, IRIS_COLORS, IRIS_EYES, type BodyColorId, type IrisId, type SlimeLook } from './look';
+import type { LevelData } from './level/format';
+import { World } from './world';
 
 /**
   Miniaturas renderizadas con los modelos reales (para Mi limo y los avisos de premio):
@@ -140,6 +142,33 @@ export class Thumbs {
     this.persp.lookAt(0, 0, 0);
     // materiales compartidos con la habitación: no se liberan
     const url = this.shoot(obj, this.persp, false);
+    this.cache.set(cacheKey, url);
+    return url;
+  }
+
+  /** Un bloque del creador tal como se ve en el juego: su casilla en el centro de un escenario pequeño, en perspectiva. */
+  tile(ch: string, stage: LevelData): string {
+    const cacheKey = `tile:${ch}`;
+    const hit = this.cache.get(cacheKey);
+    if (hit) return hit;
+    const world = new World(stage, this.assets, 'stone');
+    // un momento de animación: llamas, aspas y brillos ya en marcha
+    for (let k = 0; k < 20; k++) world.update(1 / 30, { A: 0, B: 0 });
+    // encuadre por lo que se ve (mallas), siempre desde el mismo lado: arriba, delante y a la derecha
+    world.group.updateMatrixWorld(true);
+    const box = new THREE.Box3();
+    world.group.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh && m.visible) box.expandByObject(m);
+    });
+    const center = box.getCenter(new THREE.Vector3());
+    const radius = Math.max(0.45, box.getSize(new THREE.Vector3()).length() / 2);
+    const dir = new THREE.Vector3(2.1, 2.45, 3.3).normalize();
+    this.persp.position.copy(center).addScaledVector(dir, radius / Math.sin(THREE.MathUtils.degToRad(this.persp.fov / 2)) * 0.92);
+    this.persp.lookAt(center);
+    // las geometrías y materiales del nivel se comparten: los suyos los libera el propio mundo
+    const url = this.shoot(world.group, this.persp, false);
+    world.dispose();
     this.cache.set(cacheKey, url);
     return url;
   }

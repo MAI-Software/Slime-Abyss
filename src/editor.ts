@@ -22,8 +22,38 @@ export const TILE_IDS: Record<string, string> = {
 };
 
 /** Orden de la paleta: lo básico primero. */
-export const PALETTE: string[] = ['0', '.', '#', 'P', 'T', 'C', 'G', 'n', 'u', 'e', 'o', 'q', 'p', 'z', 'm', 'H', 'U',
-  'B', 'I', 'Z', 'W', 'O', 'F', 'X', 'Y', 'K', 'k', 'V', 'A', 'J', 'S', 'D', 's', 'd', 'R', '=', '@', '%', 'E', 'N', 'x', '^', 'v', '<', '>', 'Q'];
+/** Bloques del creador clasificados por tipo (en el orden en que se enseñan). */
+export const BLOCK_GROUPS: readonly { id: string; tiles: readonly string[] }[] = [
+  { id: 'terrain', tiles: ['0', '.', '#', 'n', 'u', 'e', 'o', 'q', 'p', 'z', 'm', 'I', 'B'] },
+  { id: 'goals', tiles: ['P', 'T', 'C', 'G'] },
+  { id: 'hazards', tiles: ['F', 'X', 'Y', 'K', 'k', 'V', 'A'] },
+  { id: 'obstacles', tiles: ['W', 'Z', 'O'] },
+  { id: 'mechanisms', tiles: ['S', 's', 'D', 'd', 'J', 'E', 'Q', '^', 'v', '<', '>'] },
+  { id: 'travel', tiles: ['R', '=', '@', '%', 'H', 'U', 'N', 'x'] },
+];
+
+export const PALETTE: string[] = BLOCK_GROUPS.flatMap((g) => g.tiles);
+
+/**
+  Escenario de 5x5 para enseñar un bloque suelto (miniaturas y vista previa): el bloque en el centro de un suelo,
+  con lo que necesita alrededor para verse como en el juego (vía para los raíles, lado alto de las rampas, diana del cañón).
+*/
+export function blockStage(ch: string, alone = false): LevelData {
+  const N = 5, C = 2;
+  // un anillo de suelo alrededor; alone (miniaturas): solo el bloque (el vacío sí lleva su anillo para que se vea el hueco)
+  const tiles: string[][] = Array.from({ length: N }, (_, j) => Array.from({ length: N }, (_, i): string =>
+    (!alone || ch === '.') && Math.abs(i - C) <= 1 && Math.abs(j - C) <= 1 ? '0' : '.'));
+  const heights = Array.from({ length: N }, () => Array<string>(N).fill('0'));
+  tiles[C][C] = ch;
+  const RAIL_ROWS: Record<string, string> = { '=': 'R===R', '@': 'R=@=R', '%': 'R=%=R', R: 'R=R00' };
+  if (RAIL_ROWS[ch]) tiles[C] = RAIL_ROWS[ch].split('').map((c) => (alone && c === '0' ? '.' : c));
+  if (ch === 'N' && !alone) tiles[0][C] = 'x';
+  if (ch === 'H' && !alone) tiles[0][C] = 'U';
+  const HIGH: Record<string, (i: number, j: number) => boolean> = { n: (_i, j) => j < C, u: (_i, j) => j > C, e: (i) => i > C, o: (i) => i < C };
+  const high = HIGH[ch];
+  if (high && !alone) for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) if (high(i, j)) heights[j][i] = '1';
+  return { format: 1, id: `block-${TILE_IDS[ch] ?? 'x'}`, name: '', count: 80, tiles: tiles.map((r) => r.join('')), heights: heights.map((r) => r.join('')) };
+}
 
 const UNDO_MAX = 60;
 
