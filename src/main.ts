@@ -307,7 +307,8 @@ const gauge = new LiquidGauge($<HTMLCanvasElement>('life-bar'));
 const abyss = new AbyssAmbience(lowQuality ? 70 : 140);
 scene.add(abyss.group);
 
-type Mode = 'menu' | 'play' | 'pause' | 'winning' | 'result';
+/** preview: vista 3D del nivel del creador (sin jugar, cámara girable) */
+type Mode = 'menu' | 'play' | 'pause' | 'winning' | 'result' | 'preview';
 let mode: Mode = 'menu';
 let assets: Assets | null = null;
 /** miniaturas de rasgos, limos y coleccionables (se crean al cargar los modelos) */
@@ -346,6 +347,8 @@ const lookAhead = new THREE.Vector2();
 let camZoom = 1;
 // cámara de juego: el joystick derecho la gira (yaw) y la inclina (pitch); en giroscopio vuelve sola a su sitio
 const CAM_DIST = Math.hypot(8.6, 4.6);
+/** vista 3D del creador: giro, inclinación (de lado a desde arriba) y acercamiento */
+const preview = { yaw: 0.7, pitch: 0.5, zoom: 1, dist: 12 };
 const CAM_YAW_SPEED = 2.3;
 const CAM_PITCH_SPEED = 1.1;
 const CAM_PITCH_MIN = 0.5;
@@ -1266,6 +1269,7 @@ function playCreation(k: number) {
   if (!level) return;
   const problems = creationProblems(level);
   if (problems.length) { toast(problems[0], 3200); return; }
+  closePreview3d(false);
   testingCreation = k;
   save.stats.tests++;
   store();
@@ -1281,7 +1285,8 @@ function openEditor(k: number, reload: boolean) {
   show('editor');
   if (!editor) setupEditor();
   if (reload || editor!.level?.id !== level.id) editor!.load(level);
-  else editor!.fit();
+  // al abrir la pantalla el lienzo aún no tiene tamaño: se encaja en el siguiente fotograma
+  requestAnimationFrame(() => editor!.fit());
   ($('editor-name') as HTMLInputElement).value = level.name;
   ($('editor-name') as HTMLInputElement).placeholder = t('creator.defaultName', { n: k + 1 });
   syncEditorUi();
@@ -1294,8 +1299,40 @@ function saveEditor() {
   store();
 }
 
+/** Vista 3D del nivel que se está creando: el nivel de verdad, sin jugar, girando la cámara alrededor. */
+function openPreview3d() {
+  if (!editor || !assets) return;
+  saveEditor();
+  const level = structuredClone(editor.level);
+  void assets.loadBiome('stone').then(() => {
+    if (currentScreen !== 'editor') return;
+    loadLevel(level);
+    mode = 'preview';
+    if (room) room.visible = false;
+    world!.group.visible = true;
+    let top = 0;
+    for (const c of world!.cells) if (c.top !== -Infinity && c.kind !== 'wall' && c.kind !== 'rail') top = Math.max(top, c.base);
+    camTarget.set(editor!.width / 2, top / 2, editor!.depth / 2);
+    preview.dist = Math.max(8, Math.max(editor!.width, editor!.depth) * 0.95);
+    camPos.set(0, 0, 0);
+    $('screen-editor').classList.add('view3d');
+    $('editor-3d').hidden = false;
+    $('btn-editor-3d').setAttribute('aria-pressed', 'true');
+  });
+}
+
+/** Vuelve al plano (restore: vuelve también la habitación del menú detrás del editor). */
+function closePreview3d(restore = true) {
+  if (mode !== 'preview') return;
+  $('screen-editor').classList.remove('view3d');
+  $('editor-3d').hidden = true;
+  $('btn-editor-3d').setAttribute('aria-pressed', 'false');
+  if (restore) toMenuScene();
+}
+
 function syncEditorUi() {
   if (!editor) return;
+  $('editor-floor').textContent = editor.floor === null ? t('creator.allFloors') : String(editor.floor);
   document.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === editor!.tool)));
   document.querySelectorAll<HTMLButtonElement>('.palette-btn').forEach((b) => b.setAttribute('aria-pressed', String(editor!.tool === 'paint' && b.dataset.tile === editor!.brush)));
   const toolText = editor.tool === 'paint' ? t(`creator.tiles.${TILE_IDS[editor.brush]}`) : t(`creator.${editor.tool}`);
@@ -1329,15 +1366,67 @@ function setupEditor() {
     editor!.tool = b.dataset.tool as EditorTool;
     syncEditorUi();
   }));
-  document.querySelectorAll<HTMLButtonElement>('[data-size]').forEach((b) => b.addEventListener('click', () => {
-    sfx.click();
+  // tamaño: un toque cambia 1; manteniendo pulsado sigue cambiando cada vez más deprisa
+  document.querySelectorAll<HTMLButtonElement>('[data-size]').forEach((b) => {
     const [axis, sign] = [b.dataset.size![0], b.dataset.size![1] === '+' ? 1 : -1];
-    editor!.resize(axis === 'w' ? sign : 0, axis === 'd' ? sign : 0);
+    const step = () => { editor!.resize(axis === 'w' ? sign : 0, axis === 'd' ? sign : 0); syncEditorUi(); };
+    let timer = 0;
+    const stop = () => { clearTimeout(timer); timer = 0; };
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      sfx.click();
+      step();
+      let delay = 380;
+      const again = () => { step(); delay = Math.max(50, delay * 0.8); timer = window.setTimeout(again, delay); };
+      timer = window.setTimeout(again, delay);
+    });
+    for (const ev of ['pointerup', 'pointerleave', 'pointercancel'] as const) b.addEventListener(ev, stop);
+    // teclado
+    b.addEventListener('click', (e) => { if (e.detail === 0) { sfx.click(); step(); } });
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-floor]').forEach((b) => b.addEventListener('click', () => {
+    sfx.click();
+    // orden: Todos, 0, 1 ... 9
+    const cur = editor!.floor === null ? -1 : editor!.floor;
+    const next = Math.max(-1, Math.min(9, cur + (b.dataset.floor === '+' ? 1 : -1)));
+    editor!.floor = next < 0 ? null : next;
+    editor!.draw();
+    syncEditorUi();
   }));
+  $('btn-editor-3d').addEventListener('click', () => {
+    sfx.click();
+    if (mode === 'preview') closePreview3d();
+    else openPreview3d();
+  });
+  // vista 3D: arrastrar gira e inclina; rueda o pellizco acerca
+  {
+    const layer = $('editor-3d');
+    const pts = new Map<number, { x: number; y: number }>();
+    let pinch = 0;
+    layer.addEventListener('pointerdown', (e) => { layer.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); pinch = 0; });
+    layer.addEventListener('pointermove', (e) => {
+      const p = pts.get(e.pointerId);
+      if (!p) return;
+      if (pts.size >= 2) {
+        const [a, b] = [...pts.values()];
+        pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        const [c, d] = [...pts.values()];
+        const before = Math.hypot(a.x - b.x, a.y - b.y), after = Math.hypot(c.x - d.x, c.y - d.y);
+        if (pinch && before > 10) preview.zoom = Math.max(0.3, Math.min(2.5, preview.zoom * (before / after)));
+        pinch = 1;
+        return;
+      }
+      preview.yaw -= (e.clientX - p.x) * 0.008;
+      preview.pitch = Math.max(0.1, Math.min(1.5, preview.pitch + (e.clientY - p.y) * 0.006));
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    });
+    for (const ev of ['pointerup', 'pointercancel'] as const) layer.addEventListener(ev, (e) => pts.delete(e.pointerId));
+    layer.addEventListener('wheel', (e) => { e.preventDefault(); preview.zoom = Math.max(0.3, Math.min(2.5, preview.zoom * (e.deltaY > 0 ? 1.12 : 1 / 1.12))); }, { passive: false });
+  }
   $('btn-editor-undo').addEventListener('click', () => { sfx.click(); editor!.undo(); syncEditorUi(); });
   $('btn-editor-fit').addEventListener('click', () => { sfx.click(); editor!.fit(); });
   $('editor-name').addEventListener('input', () => saveEditor());
-  $('btn-editor-back').addEventListener('click', () => { sfx.click(); saveEditor(); openScreen('creator'); rewardsNow('creator'); });
+  $('btn-editor-back').addEventListener('click', () => { sfx.click(); saveEditor(); closePreview3d(); openScreen('creator'); rewardsNow('creator'); });
   $('btn-editor-test').addEventListener('click', () => { sfx.click(); saveEditor(); playCreation(editingSlot); });
   addEventListener('keydown', (e) => {
     if (currentScreen !== 'editor' || document.activeElement === $('editor-name')) return;
@@ -1782,7 +1871,11 @@ function updateCamera(dt: number) {
         camPitch = Math.min(CAM_PITCH_MAX, Math.max(CAM_PITCH_MIN, camPitch + input.camY * CAM_PITCH_SPEED * dt));
       }
     }
-    const dist = (camera.aspect < 1 ? 1.5 : 1) * camZoom * CAM_DIST;
+    if (mode === 'preview') {
+      camYaw = preview.yaw;
+      camPitch = preview.pitch;
+    }
+    const dist = mode === 'preview' ? preview.dist * preview.zoom : (camera.aspect < 1 ? 1.5 : 1) * camZoom * CAM_DIST;
     const flat = Math.cos(camPitch) * dist;
     camWant.set(camTarget.x + Math.sin(camYaw) * flat, camTarget.y + Math.sin(camPitch) * dist, camTarget.z + Math.cos(camYaw) * flat);
   }
@@ -1861,6 +1954,8 @@ function frame(dt: number) {
     world.update(dt, slime.switchCounts);
     stepIdle(dt);
     if (winT > 1.5) finish(true);
+  } else if (mode === 'preview' && world) {
+    world.update(dt, { A: 0, B: 0 });
   } else if (mode === 'menu' && world && slime) {
     for (const item of showcase) if (item.userData.spin) item.rotation.y = menuT * 0.7 + item.userData.phase;
     world.update(dt, slime.switchCounts);
@@ -1897,7 +1992,8 @@ for (const ev of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'
 function targetFps(now: number) {
   // jugando nunca se baja (en algunos navegadores hasFocus falla dentro de apps o marcos)
   if (mode === 'play' || mode === 'winning') return softwareGpu ? 30 : 60;
-  // el editor tapa el 3D entero: basta con muy pocas imágenes
+  // el editor tapa el 3D entero: basta con muy pocas imágenes (salvo en su vista 3D)
+  if (mode === 'preview') return softwareGpu ? 30 : 60;
   if (currentScreen === 'editor') return 5;
   if (now < busyUntil) return softwareGpu ? 30 : 60;
   if (softwareGpu) return document.hasFocus() ? 20 : 10;

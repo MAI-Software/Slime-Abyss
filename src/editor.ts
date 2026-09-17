@@ -3,12 +3,14 @@ import { TILE_BY_CHAR, TILES, replaceAt, type LevelData, type TileDef } from './
 /*
   Creador de niveles: cuadrícula 2D vista desde arriba (fila 0 = fondo, como en el juego).
   Herramientas: pintar una casilla, subir o bajar su altura y mover la vista.
+  Pisos: con un piso elegido, lo que se pinta queda a esa altura y el resto se ve apagado (para montar salas
+  a distintas alturas unidas por rampas, agujeros o raíles). La vista 3D la pone el juego (main.ts).
   Ratón: clic pinta, rueda acerca, botón derecho o central mueve. Táctil: un dedo pinta, dos dedos mueven y acercan.
 */
 
 export type EditorTool = 'paint' | 'raise' | 'lower' | 'pan';
 
-export const EDITOR_LIMITS = { minW: 5, maxW: 25, minD: 5, maxD: 40 } as const;
+export const EDITOR_LIMITS = { minW: 5, maxW: 48, minD: 5, maxD: 64 } as const;
 
 /** Nombre estable de cada casilla (para traducir su etiqueta: creator.tiles.<id>). */
 export const TILE_IDS: Record<string, string> = {
@@ -29,6 +31,8 @@ export class LevelEditor {
   level!: LevelData;
   tool: EditorTool = 'paint';
   brush = '0';
+  /** piso en el que se pinta (altura 0-9) o null para respetar la altura de cada casilla */
+  floor: number | null = null;
   /** se llama tras cada cambio del nivel (para guardar) */
   onChange: (() => void) | null = null;
 
@@ -40,6 +44,8 @@ export class LevelEditor {
   private pointers = new Map<number, { x: number; y: number }>();
   private stroke: { mode: 'paint' | 'pan' | 'pinch'; last: string; dist: number; cx: number; cy: number } | null = null;
   private dirty = false;
+  /** casilla bajo el ratón (se resalta) */
+  private hover: [number, number] | null = null;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext('2d')!;
@@ -48,11 +54,18 @@ export class LevelEditor {
     canvas.addEventListener('pointerup', (e) => this.up(e));
     canvas.addEventListener('pointercancel', (e) => this.up(e));
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    canvas.addEventListener('pointerleave', () => { this.hover = null; this.draw(); });
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
       this.zoomAt(e.offsetX, e.offsetY, e.deltaY < 0 ? 1.15 : 1 / 1.15);
     }, { passive: false });
-    new ResizeObserver(() => this.draw()).observe(canvas);
+    // si se encajó con el lienzo aún sin tamaño (pantalla recién abierta), se vuelve a encajar al tenerlo
+    let sized = false;
+    new ResizeObserver(() => {
+      const r = canvas.getBoundingClientRect();
+      if (!sized && r.width > 0 && this.level) { sized = true; this.fit(); }
+      else this.draw();
+    }).observe(canvas);
   }
 
   get width() { return this.level.tiles[0].length; }
@@ -67,6 +80,7 @@ export class LevelEditor {
   /** Encaja la cuadrícula entera en el lienzo. */
   fit() {
     const r = this.canvas.getBoundingClientRect();
+    if (!r.width || !this.level) return;
     const pad = 16;
     this.cell = Math.max(8, Math.min(48, Math.floor(Math.min((r.width - pad * 2) / this.width, (r.height - pad * 2) / this.depth))));
     this.offX = (r.width - this.cell * this.width) / 2;
@@ -149,6 +163,11 @@ export class LevelEditor {
   }
 
   private move(e: PointerEvent) {
+    if (e.pointerType === 'mouse') {
+      const hp = this.local(e);
+      const c = this.cellAt(hp.x, hp.y);
+      if (c?.[0] !== this.hover?.[0] || c?.[1] !== this.hover?.[1]) { this.hover = c; if (!this.stroke) this.draw(); }
+    }
     if (!this.pointers.has(e.pointerId) || !this.stroke) return;
     const p = this.local(e);
     this.pointers.set(e.pointerId, p);
@@ -206,12 +225,15 @@ export class LevelEditor {
     const L = this.level;
     const cur = L.tiles[j][i];
     if (this.tool === 'paint') {
-      if (cur === this.brush) return false;
-      if (TILE_BY_CHAR.get(this.brush)?.unique) {
+      // con un piso elegido, lo pintado queda a su altura (el vacío no tiene altura)
+      const h = this.floor !== null && this.brush !== '.' ? String(this.floor) : L.heights[j][i];
+      if (cur === this.brush && h === L.heights[j][i]) return false;
+      if (cur !== this.brush && TILE_BY_CHAR.get(this.brush)?.unique) {
         // solo una salida y un tesoro: el anterior pasa a ser suelo
         L.tiles = L.tiles.map((row) => row.split(this.brush).join('0'));
       }
       L.tiles[j] = replaceAt(L.tiles[j], i, this.brush);
+      L.heights[j] = replaceAt(L.heights[j], i, h);
       return true;
     }
     if (cur === '.' || cur === '=') return false;
@@ -236,17 +258,54 @@ export class LevelEditor {
     g.fillStyle = '#0c0920';
     g.fillRect(0, 0, r.width, r.height);
     const s = this.cell;
-    for (let j = 0; j < this.depth; j++) {
-      for (let i = 0; i < this.width; i++) {
+    const i0 = Math.max(0, Math.floor(-this.offX / s)), i1 = Math.min(this.width - 1, Math.floor((r.width - this.offX) / s));
+    const j0 = Math.max(0, Math.floor(-this.offY / s)), j1 = Math.min(this.depth - 1, Math.floor((r.height - this.offY) / s));
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
         const x = this.offX + i * s, y = this.offY + j * s;
-        if (x > r.width || y > r.height || x + s < 0 || y + s < 0) continue;
-        drawCell(g, this.level.tiles[j][i], Number(this.level.heights[j][i]), x, y, s, this.neighbourRails(i, j));
+        const ch = this.level.tiles[j][i];
+        const h = Number(this.level.heights[j][i]);
+        drawCell(g, ch, h, x, y, s, this.neighbourRails(i, j));
+        // otro piso: apagado
+        if (this.floor !== null && ch !== '.' && h !== this.floor) {
+          g.fillStyle = 'rgba(12,9,32,0.62)';
+          g.fillRect(x, y, s, s);
+        }
       }
     }
+    // cuadrícula: línea fina en cada casilla y marcada cada 5
+    const LW = this.width * s, LD = this.depth * s;
+    g.lineWidth = 1;
+    for (let k = 0; k <= Math.max(this.width, this.depth); k++) {
+      const major = k % 5 === 0;
+      if (!major && s < 12) continue;
+      g.strokeStyle = major ? 'rgba(255,255,255,0.24)' : 'rgba(255,255,255,0.08)';
+      g.beginPath();
+      if (k <= this.width) { const x = Math.round(this.offX + k * s) + 0.5; g.moveTo(x, this.offY); g.lineTo(x, this.offY + LD); }
+      if (k <= this.depth) { const y = Math.round(this.offY + k * s) + 0.5; g.moveTo(this.offX, y); g.lineTo(this.offX + LW, y); }
+      g.stroke();
+    }
+    // numeración cada 5 casillas por fuera del borde
+    if (s >= 10) {
+      g.fillStyle = 'rgba(255,255,255,0.55)';
+      g.font = '700 11px Nunito, system-ui, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'bottom';
+      for (let i = 0; i <= this.width; i += 5) g.fillText(String(i), this.offX + i * s, this.offY - 3);
+      g.textAlign = 'right';
+      g.textBaseline = 'middle';
+      for (let j = 0; j <= this.depth; j += 5) g.fillText(String(j), this.offX - 5, this.offY + j * s);
+    }
     // borde del nivel
-    g.strokeStyle = 'rgba(255,255,255,0.35)';
+    g.strokeStyle = 'rgba(255,255,255,0.45)';
     g.lineWidth = 2;
-    g.strokeRect(this.offX, this.offY, this.width * s, this.depth * s);
+    g.strokeRect(this.offX, this.offY, LW, LD);
+    // casilla bajo el ratón
+    if (this.hover) {
+      g.strokeStyle = '#fde68a';
+      g.lineWidth = 2;
+      g.strokeRect(this.offX + this.hover[0] * s + 1, this.offY + this.hover[1] * s + 1, s - 2, s - 2);
+    }
   }
 
   /** Vías vecinas (para dibujar la vía unida): bits n=1, e=2, s=4, w=8. */
