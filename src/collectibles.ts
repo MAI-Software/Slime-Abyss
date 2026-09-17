@@ -56,7 +56,7 @@ export const COLLECTIBLES: Collectible[] = [
   { id: 'col_root_lantern', chapter: C2, place: 'shelf', unlock: { kind: 'secret', floor: 'c2-bifurcacion' } },
   { id: 'col_mini_train', chapter: C2, place: 'shelf', unlock: { kind: 'secret', floor: 'c2-sobre-railes' } },
   { id: 'col_spring_toy', chapter: C2, place: 'shelf', unlock: { kind: 'secret', floor: 'c2-salto-a-la-estacion' } },
-  { id: 'col_station_sign', chapter: C2, place: 'vitrina', flat: true, unlock: { kind: 'chapterDone' } },
+  { id: 'col_mine_cart', chapter: C2, place: 'vitrina', unlock: { kind: 'chapterDone' } },
   { id: 'col_acorn_jar', chapter: C2, place: 'shelf', unlock: { kind: 'allCoins' } },
   { id: 'col_leaf_frame', chapter: C2, place: 'vitrina', flat: true, unlock: { kind: 'allStars' } },
   // capítulo 3
@@ -77,11 +77,7 @@ export const COLLECTIBLES: Collectible[] = [
   { id: 'col_slime_plush', place: 'shelf', unlock: { kind: 'achievement', id: 'squeeze-100' } },
   { id: 'col_dizzy_top', place: 'shelf', unlock: { kind: 'achievement', id: 'dizzy-20' } },
   { id: 'col_snow_globe', place: 'shelf', unlock: { kind: 'achievement', id: 'frozen-10' } },
-  { id: 'col_star_banner', place: 'wall', unlock: { kind: 'achievement', id: 'stars-120' } },
-  { id: 'col_painting', place: 'wall', unlock: { kind: 'achievement', id: 'style-10' } },
-  { id: 'col_blueprint', place: 'wall', unlock: { kind: 'achievement', id: 'creator-10' } },
-  { id: 'col_globe', place: 'floor', unlock: { kind: 'achievement', id: 'floors-40' } },
   { id: 'col_cannonballs', place: 'floor', unlock: { kind: 'achievement', id: 'cannon-25' } },
-  // cuelga donde estaba la ventana del salón
+  // lo único colgado en la pared: donde estaba la ventana del salón
   { id: 'col_abyss_heart', place: 'wall', unlock: { kind: 'legend' } },
 ];

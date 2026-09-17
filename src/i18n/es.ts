@@ -208,7 +208,7 @@ export const es = {
       'creator-test': 'Probador',
       'style-10': 'Coqueto',
       'collector-10': 'Coleccionista',
-      'collector-30': 'Museo',
+      'collector-25': 'Museo',
     },
     descs: {
       'first-treasure': 'Completa tu primer piso',
@@ -269,7 +269,7 @@ export const es = {
       'creator-test': 'Prueba un nivel del creador',
       'style-10': 'Cambia tu aspecto 10 veces',
       'collector-10': 'Consigue 10 coleccionables',
-      'collector-30': 'Consigue 30 coleccionables',
+      'collector-25': 'Consigue 25 coleccionables',
     },
   },
   myslime: {
@@ -321,7 +321,7 @@ export const es = {
     col_root_lantern: 'Farolillo de las raíces',
     col_mini_train: 'Tren en miniatura',
     col_spring_toy: 'Muelle de juguete',
-    col_station_sign: 'Cartel de la estación',
+    col_mine_cart: 'Vagoneta de oro',
     col_acorn_jar: 'Tarro de bellotas',
     col_leaf_frame: 'Hoja dorada enmarcada',
     col_ice_crystal: 'Cristal de hielo',

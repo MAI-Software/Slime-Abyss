@@ -915,7 +915,7 @@ function refreshTreasure() {
   const blocked = (x: number, z: number) =>
     (Math.hypot(x, z) < 1.8 && !nearChest(x, z, 1.1)) || Math.abs(x) > 4.15 || z < -3.3 || z > 4.6
     || (Math.abs(x) < 1.2 && z < -2.5) || (Math.abs(x) > 3.2 && z > -2.2 && z < 0.4) || (Math.abs(x) > 1.3 && z < -2.75)
-    || [[-3.75, 1.9], [3.75, 1.9], [-3.75, -2.4], [3.75, -2.4]].some(([sx, sz]) => Math.hypot(x - sx, z - sz) < 0.55)
+    || [[-3.75, 1.9], [3.75, 1.9], [3.75, -2.4]].some(([sx, sz]) => Math.hypot(x - sx, z - sz) < 0.55)
     || nearChest(x, z, 0.56);
   // el primer montón, delante del cofre (como si se hubiera desbordado)
   const piles: [number, number][] = [[spot.x + Math.sin(yaw) * 0.72, spot.z + Math.cos(yaw) * 0.72], [2.7, 2.7], [-1.4, 2.9], [3.3, 0.9], [-3.3, 0.9], [-2.2, -2.2], [2.9, -1.0], [0.9, 2.9]];

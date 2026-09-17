@@ -209,7 +209,7 @@ export const fr: Dict = {
       'creator-test': 'Testeur',
       'style-10': 'Coquet',
       'collector-10': 'Collectionneur',
-      'collector-30': 'Musée',
+      'collector-25': 'Musée',
     },
     descs: {
       'first-treasure': 'Termine ton premier étage',
@@ -270,7 +270,7 @@ export const fr: Dict = {
       'creator-test': 'Teste un niveau du créateur',
       'style-10': 'Change ton apparence 10 fois',
       'collector-10': 'Obtiens 10 objets de collection',
-      'collector-30': 'Obtiens 30 objets de collection',
+      'collector-25': 'Obtiens 25 objets de collection',
     },
   },
   myslime: {
@@ -322,7 +322,7 @@ export const fr: Dict = {
     col_root_lantern: 'Lanterne des racines',
     col_mini_train: 'Train miniature',
     col_spring_toy: 'Ressort jouet',
-    col_station_sign: 'Panneau de gare',
+    col_mine_cart: 'Wagonnet doré',
     col_acorn_jar: 'Bocal de glands',
     col_leaf_frame: 'Feuille dorée encadrée',
     col_ice_crystal: 'Cristal de glace',

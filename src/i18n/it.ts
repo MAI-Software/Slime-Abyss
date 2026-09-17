@@ -209,7 +209,7 @@ export const it: Dict = {
       'creator-test': 'Collaudatore',
       'style-10': 'Vanitoso',
       'collector-10': 'Collezionista',
-      'collector-30': 'Museo',
+      'collector-25': 'Museo',
     },
     descs: {
       'first-treasure': 'Completa il tuo primo piano',
@@ -270,7 +270,7 @@ export const it: Dict = {
       'creator-test': 'Prova un livello del creatore',
       'style-10': 'Cambia aspetto 10 volte',
       'collector-10': 'Ottieni 10 oggetti da collezione',
-      'collector-30': 'Ottieni 30 oggetti da collezione',
+      'collector-25': 'Ottieni 25 oggetti da collezione',
     },
   },
   myslime: {
@@ -322,7 +322,7 @@ export const it: Dict = {
     col_root_lantern: 'Lanterna delle radici',
     col_mini_train: 'Trenino in miniatura',
     col_spring_toy: 'Molla giocattolo',
-    col_station_sign: 'Cartello della stazione',
+    col_mine_cart: 'Carrello d’oro',
     col_acorn_jar: 'Barattolo di ghiande',
     col_leaf_frame: 'Foglia dorata incorniciata',
     col_ice_crystal: 'Cristallo di ghiaccio',

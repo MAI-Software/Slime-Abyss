@@ -209,7 +209,7 @@ export const en: Dict = {
       'creator-test': 'Tester',
       'style-10': 'Fashionista',
       'collector-10': 'Collector',
-      'collector-30': 'Museum',
+      'collector-25': 'Museum',
     },
     descs: {
       'first-treasure': 'Complete your first floor',
@@ -270,7 +270,7 @@ export const en: Dict = {
       'creator-test': 'Test a creator level',
       'style-10': 'Change your look 10 times',
       'collector-10': 'Get 10 collectibles',
-      'collector-30': 'Get 30 collectibles',
+      'collector-25': 'Get 25 collectibles',
     },
   },
   myslime: {
@@ -322,7 +322,7 @@ export const en: Dict = {
     col_root_lantern: 'Root Lantern',
     col_mini_train: 'Miniature Train',
     col_spring_toy: 'Toy Spring',
-    col_station_sign: 'Station Sign',
+    col_mine_cart: 'Golden Mine Cart',
     col_acorn_jar: 'Acorn Jar',
     col_leaf_frame: 'Framed Golden Leaf',
     col_ice_crystal: 'Ice Crystal',

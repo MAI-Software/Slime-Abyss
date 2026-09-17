@@ -135,7 +135,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'creator-test', patch: 'shield', color: 0x16a34a, icon: 'play', progress: (c) => [c.stats.tests, 1] },
   { id: 'style-10', patch: 'round', color: 0xdb2777, icon: 'palette', progress: (c) => [c.stats.looks, 10] },
   { id: 'collector-10', patch: 'shield', color: 0x78350f, icon: 'box', progress: (c) => [c.collectibles, 10] },
-  { id: 'collector-30', patch: 'hex', color: 0x451a03, icon: 'box', progress: (c) => [c.collectibles, 30] },
+  { id: 'collector-25', patch: 'hex', color: 0x451a03, icon: 'box', progress: (c) => [c.collectibles, 25] },
 ];
 
 // ------------------------------------------------------------------ bordado del icono

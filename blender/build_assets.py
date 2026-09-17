@@ -1536,14 +1536,54 @@ cylinder(bm, 0.1, 0.02, (0, 0, 0.1), 20)
 mesh_object("col_snow_globe_snow", bm, M["snow"], smooth=True, parent=col)
 
 # --- pared ---
-col = empty("col_station_sign")
-flat_shape("col_station_sign_board", [(-0.3, 0.05), (0.3, 0.05), (0.3, 0.4), (-0.3, 0.4)], 0.04, M["green_col"], front=-0.05, parent=col)
-tube("col_station_sign_border", [(-0.27, 0.08), (0.27, 0.08), (0.27, 0.37), (-0.27, 0.37), (-0.27, 0.08)], 0.01, M["paper"], parent=col,
-     loc=(0, -0.055, 0), poly=True)
-for k, x in enumerate((-0.12, 0.12)):
-    tube(f"col_station_sign_rail{k}", [(x - 0.06, 0.14), (x + 0.06, 0.32)], 0.012, M["paper"], parent=col, loc=(0, -0.058, 0), poly=True)
-tube("col_station_sign_cord", [(-0.22, 0.4), (0.0, 0.55), (0.22, 0.4)], 0.008, M["iron_col"], parent=col, loc=(0, -0.03, 0), poly=True)
+# --- vitrina ---
+# vagoneta de mina cargada de oro sobre un tramo de vía (capítulo 2, el de los raíles)
+col = empty("col_mine_cart")
+bm = bmesh.new()
+for y in (-0.075, 0.075):
+    box(bm, (0.5, 0.018, 0.022), (0, y, 0.031))
+for k in range(5):
+    box(bm, (0.015, 0.2, 0.012), (-0.2 + k * 0.1, 0, 0.026))
+mesh_object("col_mine_cart_rails", bm, M["iron_col"], parent=col)
+bm = bmesh.new()
+for k in range(5):
+    box(bm, (0.045, 0.24, 0.02), (-0.2 + k * 0.1, 0, 0.01))
+mesh_object("col_mine_cart_sleepers", bm, M["wood_col"], parent=col)
+# caja que se abre hacia arriba, con flejes de hierro
+bm = bmesh.new()
+box(bm, (0.3, 0.2, 0.15), (0, 0, 0.165))
+for v in bm.verts:
+    if v.co.z > 0.165:
+        v.co.x *= 1.14
+        v.co.y *= 1.16
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.008, segments=1, affect="EDGES")
+mesh_object("col_mine_cart_body", bm, M["wood_col"], parent=col)
+bm = bmesh.new()
+for x in (-0.09, 0.09):
+    box(bm, (0.022, 0.224, 0.155), (x, 0, 0.165))
+box(bm, (0.35, 0.24, 0.018), (0, 0, 0.24))
+mesh_object("col_mine_cart_bands", bm, M["iron_col"], parent=col)
+bm = bmesh.new()
+for x in (-0.1, 0.1):
+    for y in (-0.075, 0.075):
+        cylinder(bm, 0.045, 0.02, (x, y + (0.012 if y > 0 else -0.012), 0.065), 20, rot=Matrix.Rotation(math.radians(90), 4, "X"))
+mesh_object("col_mine_cart_wheels", bm, M["black"], smooth=True, parent=col)
+# montón de oro con pepitas y dos gemas
+rng_cart = random.Random(12)
+bm = bmesh.new()
+ellipsoid(bm, (0.16, 0.1, 0.05), (0, 0, 0.245), 20, 12)
+for k in range(9):
+    bmesh.ops.create_icosphere(bm, subdivisions=1, radius=1.0, matrix=Matrix.Translation(
+        (rng_cart.uniform(-0.12, 0.12), rng_cart.uniform(-0.07, 0.07), 0.27 + rng_cart.uniform(0, 0.03))) @ Matrix.Diagonal((0.03, 0.026, 0.024, 1)))
+mesh_object("col_mine_cart_gold", bm, M["gold_col"], parent=col)
+bm = bmesh.new()
+bmesh.ops.create_uvsphere(bm, u_segments=6, v_segments=4, radius=1.0, matrix=Matrix.Translation((-0.05, -0.03, 0.3)) @ Matrix.Diagonal((0.028, 0.028, 0.024, 1)))
+mesh_object("col_mine_cart_ruby", bm, M["red_col"], parent=col)
+bm = bmesh.new()
+bmesh.ops.create_uvsphere(bm, u_segments=6, v_segments=4, radius=1.0, matrix=Matrix.Translation((0.07, 0.03, 0.295)) @ Matrix.Diagonal((0.026, 0.026, 0.022, 1)))
+mesh_object("col_mine_cart_gem", bm, M["ice_col"], parent=col)
 
+# --- pared ---
 col = empty("col_leaf_frame")
 flat_shape("col_leaf_frame_back", [(-0.26, 0.0), (0.26, 0.0), (0.26, 0.6), (-0.26, 0.6)], 0.02, M["purple_cloth"], front=-0.03, parent=col)
 bm = bmesh.new()
@@ -1986,7 +2026,7 @@ SLOTS = []
 # vitrinas: hueco del medio con su pieza; en los de los lados y encima de la tapa, piezas que antes colgaban de la pared;
 # los que quedan libres se llaman slot_vitrina_<vitrina>_<0|2|top> (el de encima de la central, libre: taparía el corazón)
 VITRINA_ITEMS = {("center", 0): "col_desert_mask", ("center", 2): "col_pickaxes",
-                 ("left", "top"): "col_station_sign", ("right", "top"): "col_leaf_frame"}
+                 ("left", 0): "col_mine_cart", ("right", "top"): "col_leaf_frame"}
 for vname, vx, vy, vz, along, middle in (("center", 0.0, FURN_Y - 0.36, 0.95, "x", "col_trophy"),
                                           ("left", -(WALL_X - 0.8), 0.9, 0.8, "y", "col_crystal_skull"),
                                           ("right", WALL_X - 0.8, 0.9, 0.8, "y", "col_ancient_vase")):
@@ -2010,10 +2050,11 @@ for x, shelves in SHELF_ITEMS.items():
         for dx, item in zip((-0.62, 0.0, 0.62), row):
             SLOTS.append((f"slot_{item}", (x + dx, SHELF_Y, top), 1.35))
 # colgados en la pared del fondo (encima de las estanterías y de las velas)
-for item, x, z in (("col_abyss_heart", 0.0, 2.08), ("col_star_banner", 0.0, 3.42), ("col_painting", -2.55, 2.9), ("col_blueprint", 2.55, 2.9)):
+# (estandarte, cuadro, plano y globo tienen modelo pero no están en el juego: se decidirá dónde van)
+for item, x, z in (("col_abyss_heart", 0.0, 2.08),):
     SLOTS.append((f"slot_{item}", (x, WALL_Y - 0.03, z), 0.95))
 # en el suelo, junto a las paredes laterales
-for item, x, y in (("col_cactus_pot", -3.75, -1.9), ("col_sphinx", 3.75, -1.9), ("col_globe", -3.75, 2.4), ("col_cannonballs", 3.75, 2.4)):
+for item, x, y in (("col_cactus_pot", -3.75, -1.9), ("col_sphinx", 3.75, -1.9), ("col_cannonballs", 3.75, 2.4)):
     SLOTS.append((f"slot_{item}", (x, y, 0.0), 1.0))
 # a la izquierda de la alfombra: se ve desde el menú y no tapa ninguna pieza (ni las vitrinas ni lo del suelo)
 empty("room_gold_chest", parent=room, loc=(-2.1, 0.6, 0.0))

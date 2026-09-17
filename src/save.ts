@@ -3,6 +3,7 @@ import type { Lang } from './i18n';
 import { DEFAULT_LOOK, sanitizeLook, type SlimeLook } from './look';
 import type { LevelData } from './level/format';
 import { EMPTY_STATS, type PlayStats } from './achievements';
+import { COLLECTIBLES } from './collectibles';
 
 /** Mejor resultado de un piso. */
 export interface FloorSave {
@@ -71,11 +72,14 @@ export function loadSave(): Save {
     if (s?.v === 3) {
       // los accesorios (owned/equipped/spent/rewards) se quitaron: no se arrastran
       const { owned: _o, equipped: _e, spent: _s, rewards: _r, ...rest } = s;
-      const achievements = Array.isArray(rest.achievements) ? rest.achievements : [];
+      // «Museo» pasó de 30 a 25 coleccionables al quitar algunos
+      const achievements = (Array.isArray(rest.achievements) ? rest.achievements : []).map((id: string) => (id === 'collector-30' ? 'collector-25' : id));
+      // coleccionables que ya no están en el juego (estandarte, cuadro, plano, globo, cartel de la estación)
+      const collectibles = (Array.isArray(rest.collectibles) ? rest.collectibles : []).filter((id: string) => COLLECTIBLES.some((c) => c.id === id));
       const bought = Array.isArray(rest.bought) ? rest.bought : [];
       const coinsSpent = Number.isFinite(rest.coinsSpent) ? rest.coinsSpent : 0;
       const creations = Array.from({ length: CREATOR_SLOTS }, (_, k) => sanitizeCreation(Array.isArray(rest.creations) ? rest.creations[k] : null));
-      return { ...fresh, ...rest, achievements, bought, coinsSpent, creations, stats: { ...EMPTY_STATS, ...rest.stats }, look: sanitizeLook(rest.look, achievements, bought, !!rest.unlockAll) };
+      return { ...fresh, ...rest, achievements, collectibles, bought, coinsSpent, creations, stats: { ...EMPTY_STATS, ...rest.stats }, look: sanitizeLook(rest.look, achievements, bought, !!rest.unlockAll) };
     }
     // migración desde v2: se conserva el progreso
     if (s?.v === 2) return { ...fresh, control: s.control ?? 'joystick', sound: s.sound ?? true, floors: s.floors ?? {} };

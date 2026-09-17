@@ -209,7 +209,7 @@ export const de: Dict = {
       'creator-test': 'Tester',
       'style-10': 'Modebewusst',
       'collector-10': 'Sammler',
-      'collector-30': 'Museum',
+      'collector-25': 'Museum',
     },
     descs: {
       'first-treasure': 'Schließe deine erste Ebene ab',
@@ -270,7 +270,7 @@ export const de: Dict = {
       'creator-test': 'Teste ein Level aus dem Editor',
       'style-10': 'Ändere dein Aussehen 10 Mal',
       'collector-10': 'Sammle 10 Sammelstücke',
-      'collector-30': 'Sammle 30 Sammelstücke',
+      'collector-25': 'Sammle 25 Sammelstücke',
     },
   },
   myslime: {
@@ -322,7 +322,7 @@ export const de: Dict = {
     col_root_lantern: 'Wurzellaterne',
     col_mini_train: 'Miniaturzug',
     col_spring_toy: 'Spielzeugfeder',
-    col_station_sign: 'Bahnhofsschild',
+    col_mine_cart: 'Goldene Lore',
     col_acorn_jar: 'Eichelglas',
     col_leaf_frame: 'Gerahmtes Goldblatt',
     col_ice_crystal: 'Eiskristall',
