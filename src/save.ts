@@ -50,7 +50,12 @@ function sanitizeCreation(raw: unknown): LevelData | null {
   if (!l || !Array.isArray(l.tiles) || !Array.isArray(l.heights) || !l.tiles.length || l.tiles.length !== l.heights.length) return null;
   const w = String(l.tiles[0]).length;
   if (!w || l.tiles.some((r, j) => typeof r !== 'string' || r.length !== w || String(l.heights![j]).length !== w)) return null;
-  return { format: 1, id: String(l.id ?? `custom-${Date.now().toString(36)}`), name: String(l.name ?? '').slice(0, 24), count: 80, tiles: l.tiles, heights: l.heights };
+  // plantas de encima: solo las que tienen el mismo tamaño
+  const stories = Array.isArray(l.stories)
+    ? l.stories.filter((st) => Array.isArray(st?.tiles) && Array.isArray(st?.heights) && st.tiles.length === l.tiles!.length
+      && st.tiles.every((r, j) => typeof r === 'string' && r.length === w && String(st.heights[j]).length === w))
+    : [];
+  return { format: 1, id: String(l.id ?? `custom-${Date.now().toString(36)}`), name: String(l.name ?? '').slice(0, 24), count: 80, tiles: l.tiles, heights: l.heights, ...(stories.length ? { stories } : {}) };
 }
 
 const KEY = 'slime-abyss-save';

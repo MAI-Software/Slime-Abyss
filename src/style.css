@@ -943,6 +943,8 @@ body[data-control="gyro"] .squeeze-btn { bottom: calc(26px + var(--safe-b)); rig
 .editor-size b { text-align: center; font-variant-numeric: tabular-nums; }
 .editor-floor { display: grid; grid-template-columns: 1fr 44px 64px 44px; align-items: center; gap: 8px; color: #fff; font-weight: 800; font-size: 14px; }
 .editor-floor b { text-align: center; font-variant-numeric: tabular-nums; }
+.editor-remove-story { min-height: 44px; }
+.editor-remove-story[hidden] { display: none; }
 .editor-3d-btn { min-width: 0; min-height: 44px; padding: 6px 12px; }
 .editor-3d-btn[aria-pressed="true"] { background: var(--slime); color: #fff; }
 /* vista 3D: se ve el juego detrás; la capa recoge el arrastre (girar) y la rueda o el pellizco (acercar) */

@@ -137,6 +137,11 @@ export interface LevelData {
   tiles: string[];
   heights: string[];
   /**
+    Plantas de encima (1, 2...), del mismo tamaño: cada una STORY_H más arriba, con suelos de losa por los que se
+    puede pasar por debajo. Se conectan con agujeros, ascensores (estaciones una encima de otra) y cañones.
+  */
+  stories?: StoryGrid[];
+  /**
     Peso necesario por canal de interruptor (por defecto 1: basta con tocarlo).
     Norma de diseño: las puertas del camino principal NO piden peso; solo las puertas secretas.
   */
@@ -176,34 +181,68 @@ export interface ChapterDef {
   floors: LevelData[];
 }
 
+/** Una planta del nivel: casillas y alturas (la planta 0 son tiles/heights del propio nivel). */
+export interface StoryGrid { tiles: string[]; heights: string[] }
+/** Separación en altura entre el suelo de una planta y el de la siguiente (unidades del mundo). */
+export const STORY_H = 4;
+export const MAX_STORIES = 3;
+
+/** Todas las plantas del nivel, de abajo arriba. */
+export function storyGrids(level: LevelData): StoryGrid[] {
+  return [{ tiles: level.tiles, heights: level.heights }, ...(level.stories ?? [])];
+}
+
+const DIR4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+
 /**
-  Recorre las vías de un nivel: para cada estación, la lista de casillas hasta la estación del otro extremo.
+  Recorre las vías de un nivel: para cada estación, la lista de casillas hasta la estación del otro extremo
+  (índices absolutos: planta * ancho * fondo + fila * ancho + columna).
+  Una estación sin vía al lado que tiene otra estación justo encima o debajo en otra planta es un ascensor:
+  la bola sube o baja en espiral entre las dos (lifts: [de abajo, de arriba]).
   Devuelve también los errores (estación sin vía, vía que no acaba en estación, vías con ramales).
 */
-export function traceRails(level: LevelData): { paths: Map<number, number[]>; errors: string[] } {
+export function traceRails(level: LevelData): { paths: Map<number, number[]>; lifts: [number, number][]; errors: string[] } {
   const { w, d } = levelSize(level);
-  const at = (i: number, j: number) => (i >= 0 && j >= 0 && i < w && j < d ? level.tiles[j][i] : '.');
+  const N = w * d;
+  const grids = storyGrids(level);
   const paths = new Map<number, number[]>();
+  const lifts: [number, number][] = [];
   const errors: string[] = [];
-  const N = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) {
-    if (at(i, j) !== 'R') continue;
-    const isRail = (c: string) => TILE_BY_CHAR.get(c)?.kind === 'rail';
-    const rails = N.filter(([di, dj]) => isRail(at(i + di, j + dj)));
-    if (rails.length !== 1) { errors.push(`La estación de (${i}, ${j}) debe tocar exactamente una vía.`); continue; }
-    const path = [j * w + i];
-    let [ci, cj] = [i + rails[0][0], j + rails[0][1]];
-    let [pi, pj] = [i, j];
-    for (let guard = 0; guard < w * d; guard++) {
-      path.push(cj * w + ci);
-      if (at(ci, cj) === 'R') break;
-      const next = N.map(([di, dj]) => [ci + di, cj + dj]).filter(([a, b]) => (a !== pi || b !== pj) && (isRail(at(a, b)) || at(a, b) === 'R'));
-      if (next.length !== 1) { errors.push(`La vía de (${ci}, ${cj}) ${next.length ? 'tiene ramales' : 'no acaba en una estación'}.`); path.length = 0; break; }
-      [pi, pj, ci, cj] = [ci, cj, next[0][0], next[0][1]];
+  const isRail = (c: string) => TILE_BY_CHAR.get(c)?.kind === 'rail';
+  const tileAt = (s: number, i: number, j: number) => (i >= 0 && j >= 0 && i < w && j < d ? grids[s].tiles[j]?.[i] ?? '.' : '.');
+  const railsAround = (s: number, i: number, j: number) => DIR4.filter(([di, dj]) => isRail(tileAt(s, i + di, j + dj)));
+  grids.forEach((_, s) => {
+    const at = (i: number, j: number) => tileAt(s, i, j);
+    const where = s ? ` de la planta ${s}` : '';
+    for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) {
+      if (at(i, j) !== 'R') continue;
+      const rails = railsAround(s, i, j);
+      if (rails.length === 0) {
+        // ascensor: la estación sin vía más cercana justo encima o debajo
+        let partner = -1;
+        for (let k = 0; k < grids.length; k++) {
+          if (k === s || tileAt(k, i, j) !== 'R' || railsAround(k, i, j).length) continue;
+          if (partner < 0 || Math.abs(k - s) < Math.abs(partner - s)) partner = k;
+        }
+        if (partner < 0) errors.push(`La estación de (${i}, ${j})${where} no toca ninguna vía ni tiene otra estación encima o debajo.`);
+        else if (s < partner) lifts.push([s * N + j * w + i, partner * N + j * w + i]);
+        continue;
+      }
+      if (rails.length !== 1) { errors.push(`La estación de (${i}, ${j})${where} debe tocar exactamente una vía.`); continue; }
+      const path = [s * N + j * w + i];
+      let [ci, cj] = [i + rails[0][0], j + rails[0][1]];
+      let [pi, pj] = [i, j];
+      for (let guard = 0; guard < w * d; guard++) {
+        path.push(s * N + cj * w + ci);
+        if (at(ci, cj) === 'R') break;
+        const next = DIR4.map(([di, dj]) => [ci + di, cj + dj]).filter(([a, b]) => (a !== pi || b !== pj) && (isRail(at(a, b)) || at(a, b) === 'R'));
+        if (next.length !== 1) { errors.push(`La vía de (${ci}, ${cj})${where} ${next.length ? 'tiene ramales' : 'no acaba en una estación'}.`); path.length = 0; break; }
+        [pi, pj, ci, cj] = [ci, cj, next[0][0], next[0][1]];
+      }
+      if (path.length) paths.set(s * N + j * w + i, path);
     }
-    if (path.length) paths.set(j * w + i, path);
-  }
-  return { paths, errors };
+  });
+  return { paths, lifts, errors };
 }
 
 /**
@@ -213,59 +252,68 @@ export function traceRails(level: LevelData): { paths: Map<number, number[]>; er
 */
 export function rampErrors(level: LevelData): string[] {
   const { w, d } = levelSize(level);
-  const at = (i: number, j: number) => (i >= 0 && j >= 0 && i < w && j < d ? level.tiles[j][i] : '.');
-  const hAt = (i: number, j: number) => Number(level.heights[j]?.[i] ?? 0);
+  const errors: string[] = [];
   const rise = (c: string) => {
     const r = TILE_BY_CHAR.get(c)?.rise;
     return r ? { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[r] : null;
   };
   const solid = (c: string) => { const k = TILE_BY_CHAR.get(c)?.kind; return !k || k === 'void' || k === 'wall' || k === 'rail'; };
-  const errors: string[] = [];
-  for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) {
-    const r = rise(at(i, j));
-    if (!r) continue;
-    const h = hAt(i, j);
-    const lo: [number, number] = [i - r[0], j - r[1]], hi: [number, number] = [i + r[0], j + r[1]];
-    const sideOk = [[i + r[1], j + r[0]], [i - r[1], j - r[0]]].every(([a, b]) => solid(at(a, b)) || (at(a, b) === at(i, j) && hAt(a, b) === h));
-    const loOk = solid(at(...lo)) || (rise(at(...lo)) ? at(...lo) === at(i, j) && hAt(...lo) === h - 1 : hAt(...lo) === h);
-    const hiOk = solid(at(...hi)) || (rise(at(...hi)) ? at(...hi) === at(i, j) && hAt(...hi) === h + 1 : hAt(...hi) === h + 1);
-    if (!sideOk || !loOk || !hiOk) errors.push(`La rampa de (${i}, ${j}) no está alineada: abajo tiene que quedar a su altura, arriba una altura más y a los lados muro u otra rampa igual.`);
-  }
+  storyGrids(level).forEach((g, s) => {
+    const at = (i: number, j: number) => (i >= 0 && j >= 0 && i < w && j < d ? g.tiles[j][i] : '.');
+    const hAt = (i: number, j: number) => Number(g.heights[j]?.[i] ?? 0);
+    for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) {
+      const r = rise(at(i, j));
+      if (!r) continue;
+      const h = hAt(i, j);
+      const lo: [number, number] = [i - r[0], j - r[1]], hi: [number, number] = [i + r[0], j + r[1]];
+      const sideOk = [[i + r[1], j + r[0]], [i - r[1], j - r[0]]].every(([a, b]) => solid(at(a, b)) || (at(a, b) === at(i, j) && hAt(a, b) === h));
+      const loOk = solid(at(...lo)) || (rise(at(...lo)) ? at(...lo) === at(i, j) && hAt(...lo) === h - 1 : hAt(...lo) === h);
+      const hiOk = solid(at(...hi)) || (rise(at(...hi)) ? at(...hi) === at(i, j) && hAt(...hi) === h + 1 : hAt(...hi) === h + 1);
+      if (!sideOk || !loOk || !hiOk) {
+        errors.push(`La rampa de (${i}, ${j})${s ? ` de la planta ${s}` : ''} no está alineada: abajo tiene que quedar a su altura, arriba una altura más y a los lados muro u otra rampa igual.`);
+      }
+    }
+  });
   return errors;
 }
 
 /**
-  Diana de cada cañón (índices de casilla; -1 si no tiene): la más cercana de las que no se alcanzan andando
-  desde el cañón. Así un cañón nunca apunta a la sala en la que ya está.
+  Diana de cada cañón (índices absolutos; -1 si no tiene): la más cercana de las que no se alcanzan andando
+  desde el cañón, en cualquier planta. Así un cañón nunca apunta a la sala en la que ya está.
 */
 export function cannonTargets(level: LevelData): Map<number, number> {
   const { w, d } = levelSize(level);
-  const at = (i: number, j: number) => (i >= 0 && j >= 0 && i < w && j < d ? level.tiles[j][i] : '.');
+  const N = w * d;
+  const grids = storyGrids(level);
   const out = new Map<number, number>();
   const targets: number[] = [];
-  for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) if (at(i, j) === 'x') targets.push(j * w + i);
-  for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) {
-    if (at(i, j) !== 'N') continue;
-    const seen = new Set([j * w + i]);
-    const queue = [j * w + i];
-    while (queue.length) {
-      const k = queue.shift()!;
-      const ci = k % w, cj = Math.floor(k / w);
-      for (const [a, b] of [[ci + 1, cj], [ci - 1, cj], [ci, cj + 1], [ci, cj - 1]]) {
-        const kind = TILE_BY_CHAR.get(at(a, b))?.kind;
-        if (!kind || kind === 'void' || kind === 'wall' || kind === 'rail' || seen.has(b * w + a)) continue;
-        seen.add(b * w + a);
-        queue.push(b * w + a);
+  grids.forEach((g, s) => { for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) if (g.tiles[j][i] === 'x') targets.push(s * N + j * w + i); });
+  grids.forEach((g, s) => {
+    const at = (i: number, j: number) => (i >= 0 && j >= 0 && i < w && j < d ? g.tiles[j][i] : '.');
+    for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) {
+      if (at(i, j) !== 'N') continue;
+      const seen = new Set([s * N + j * w + i]);
+      const queue: [number, number][] = [[i, j]];
+      while (queue.length) {
+        const [ci, cj] = queue.shift()!;
+        for (const [a, b] of [[ci + 1, cj], [ci - 1, cj], [ci, cj + 1], [ci, cj - 1]]) {
+          const kind = TILE_BY_CHAR.get(at(a, b))?.kind;
+          const k = s * N + b * w + a;
+          if (!kind || kind === 'void' || kind === 'wall' || kind === 'rail' || seen.has(k)) continue;
+          seen.add(k);
+          queue.push([a, b]);
+        }
       }
+      let best = -1, bestD = Infinity;
+      for (const t of targets) {
+        if (seen.has(t)) continue;
+        const ts = Math.floor(t / N), tl = t % N;
+        const dd = Math.hypot((tl % w) - i, Math.floor(tl / w) - j, (ts - s) * 2);
+        if (dd < bestD) { bestD = dd; best = t; }
+      }
+      out.set(s * N + j * w + i, best);
     }
-    let best = -1, bestD = Infinity;
-    for (const t of targets) {
-      if (seen.has(t)) continue;
-      const dd = Math.hypot((t % w) - i, Math.floor(t / w) - j);
-      if (dd < bestD) { bestD = dd; best = t; }
-    }
-    out.set(j * w + i, best);
-  }
+  });
   return out;
 }
 
@@ -281,22 +329,27 @@ export function validateLevel(level: LevelData): string[] {
   const { w, d } = levelSize(level);
   if (d < LIMITS.minSize || w < LIMITS.minSize) errors.push(`El nivel es demasiado pequeño (mínimo ${LIMITS.minSize}x${LIMITS.minSize}).`);
   if (d > LIMITS.maxSize || w > LIMITS.maxSize) errors.push(`El nivel es demasiado grande (máximo ${LIMITS.maxSize}x${LIMITS.maxSize}).`);
-  if (level.heights.length !== d) errors.push('La capa de alturas no tiene las mismas filas que la de casillas.');
+  const grids = storyGrids(level);
+  if (grids.length > MAX_STORIES) errors.push(`Como mucho ${MAX_STORIES} plantas.`);
 
   const counts = new Map<string, number>();
-  for (let j = 0; j < d; j++) {
-    const row = level.tiles[j];
-    const hrow = level.heights[j] ?? '';
-    if (row.length !== w) errors.push(`La fila ${j} no mide ${w} casillas.`);
-    if (hrow.length !== row.length) errors.push(`La fila ${j} de alturas no coincide con la de casillas.`);
-    for (let i = 0; i < row.length; i++) {
-      const ch = row[i];
-      if (!TILE_BY_CHAR.has(ch)) errors.push(`Casilla desconocida "${ch}" en (${i}, ${j}).`);
-      counts.set(ch, (counts.get(ch) ?? 0) + 1);
-      const h = hrow[i];
-      if (h !== undefined && !(h >= '0' && h <= '9')) errors.push(`Altura no válida "${h}" en (${i}, ${j}).`);
+  grids.forEach((g, s) => {
+    const where = s ? ` de la planta ${s}` : '';
+    if (g.tiles.length !== d || g.heights.length !== d) errors.push(`La planta ${s} no tiene ${d} filas en casillas y alturas.`);
+    for (let j = 0; j < g.tiles.length; j++) {
+      const row = g.tiles[j];
+      const hrow = g.heights[j] ?? '';
+      if (row.length !== w) errors.push(`La fila ${j}${where} no mide ${w} casillas.`);
+      if (hrow.length !== row.length) errors.push(`La fila ${j}${where} de alturas no coincide con la de casillas.`);
+      for (let i = 0; i < row.length; i++) {
+        const ch = row[i];
+        if (!TILE_BY_CHAR.has(ch)) errors.push(`Casilla desconocida "${ch}" en (${i}, ${j})${where}.`);
+        counts.set(ch, (counts.get(ch) ?? 0) + 1);
+        const h = hrow[i];
+        if (h !== undefined && !(h >= '0' && h <= '9')) errors.push(`Altura no válida "${h}" en (${i}, ${j})${where}.`);
+      }
     }
-  }
+  });
   for (const t of TILES) {
     if (t.unique && (counts.get(t.char) ?? 0) !== 1) errors.push(`Tiene que haber exactamente una casilla de "${t.label}".`);
   }
@@ -311,7 +364,8 @@ export function validateLevel(level: LevelData): string[] {
   errors.push(...rampErrors(level));
   const targets = cannonTargets(level);
   for (const [from, to] of targets) {
-    if (to < 0) errors.push(`El cañón de (${from % w}, ${Math.floor(from / w)}) no tiene ninguna diana a la que no se llegue andando.`);
+    const s = Math.floor(from / (w * d)), local = from % (w * d);
+    if (to < 0) errors.push(`El cañón de (${local % w}, ${Math.floor(local / w)})${s ? ` de la planta ${s}` : ''} no tiene ninguna diana a la que no se llegue andando.`);
   }
   if (level.count < LIMITS.minCount || level.count > LIMITS.maxCount) {
     errors.push(`El limo debe tener entre ${LIMITS.minCount} y ${LIMITS.maxCount} limitos.`);

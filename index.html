@@ -322,6 +322,13 @@
           <button class="tool-btn" data-tool="pan" data-i18n-aria="creator.pan"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></button>
         </div>
         <div class="editor-floor">
+          <span data-i18n="creator.story"></span>
+          <button class="tool-btn" data-story="-" data-i18n-aria="creator.storyDown"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+          <b id="editor-story"></b>
+          <button class="tool-btn" data-story="+" data-i18n-aria="creator.storyUp"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+        </div>
+        <button id="btn-editor-remove-story" class="small-btn editor-remove-story" data-i18n="creator.storyRemove" hidden></button>
+        <div class="editor-floor">
           <span data-i18n="creator.floor"></span>
           <button class="tool-btn" data-floor="-" data-i18n-aria="creator.floorDown"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
           <b id="editor-floor"></b>

@@ -1194,7 +1194,7 @@ const creationName = (l: LevelData, k: number) => l.name.trim() || t('creator.de
 
 /** Lo que impide jugar un nivel del creador (vacío si se puede). */
 function creationProblems(level: LevelData): string[] {
-  const all = level.tiles.join('');
+  const all = [level.tiles, ...(level.stories ?? []).map((s) => s.tiles)].map((rows) => rows.join('')).join('');
   const count = (ch: string) => all.split(ch).length - 1;
   const out: string[] = [];
   if (count('P') !== 1) out.push(t('creator.needStart'));
@@ -1333,6 +1333,8 @@ function closePreview3d(restore = true) {
 function syncEditorUi() {
   if (!editor) return;
   $('editor-floor').textContent = editor.floor === null ? t('creator.allFloors') : String(editor.floor);
+  $('editor-story').textContent = `${editor.story + 1}/${editor.stories}`;
+  $('btn-editor-remove-story').hidden = editor.story === 0;
   document.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === editor!.tool)));
   document.querySelectorAll<HTMLButtonElement>('.palette-btn').forEach((b) => b.setAttribute('aria-pressed', String(editor!.tool === 'paint' && b.dataset.tile === editor!.brush)));
   const toolText = editor.tool === 'paint' ? t(`creator.tiles.${TILE_IDS[editor.brush]}`) : t(`creator.${editor.tool}`);
@@ -1393,6 +1395,31 @@ function setupEditor() {
     editor!.draw();
     syncEditorUi();
   }));
+  // plantas: subir más allá de la última añade una nueva (hasta 3)
+  let removeArmed = 0;
+  document.querySelectorAll<HTMLButtonElement>('[data-story]').forEach((b) => b.addEventListener('click', () => {
+    sfx.click();
+    const up = b.dataset.story === '+';
+    if (up && editor!.story === editor!.stories - 1) {
+      if (editor!.addStory()) toast(t('creator.storyAdded', { n: editor!.story + 1 }), 2200);
+      else toast(t('creator.storyMax'), 2200);
+    } else {
+      editor!.story = Math.max(0, Math.min(editor!.stories - 1, editor!.story + (up ? 1 : -1)));
+      editor!.draw();
+    }
+    syncEditorUi();
+  }));
+  $('btn-editor-remove-story').addEventListener('click', () => {
+    sfx.click();
+    if (performance.now() > removeArmed) {
+      removeArmed = performance.now() + 3500;
+      toast(t('creator.storyRemoveConfirm', { n: editor!.story + 1 }), 3200);
+      return;
+    }
+    removeArmed = 0;
+    editor!.removeStory();
+    syncEditorUi();
+  });
   $('btn-editor-3d').addEventListener('click', () => {
     sfx.click();
     if (mode === 'preview') closePreview3d();
@@ -1746,7 +1773,10 @@ function tick(dt: number) {
       case 'burn':
         save.stats.burns++;
         sfx.sizzle();
-        for (let k = 0; k < 3; k++) fx.steam(e.x, world.cell(Math.floor(e.x), Math.floor(e.z))!.base + 0.4 + k * 0.3, e.z);
+        for (let k = 0; k < 3; k++) {
+          const ex = Math.floor(e.x), ez = Math.floor(e.z);
+          fx.steam(e.x, world.cell(ex, ez, world.storyAt(ex, ez, slime.groups[0]?.cy ?? 0))!.base + 0.4 + k * 0.3, e.z);
+        }
         buzz(25);
         break;
       case 'state': {
@@ -1967,6 +1997,11 @@ function frame(dt: number) {
   fx.update(dt);
   trail.update(mode === 'play' || mode === 'winning' ? dt : dt * 0.3);
   updateCamera(dt);
+  // varias plantas: jugando se ocultan las de encima de la del limo (en la vista 3D del creador se ven todas)
+  if (world && world.stories > 1) {
+    const playing = mode === 'play' || mode === 'winning' || mode === 'pause' || mode === 'result';
+    world.setViewStory(playing ? world.bandAt(camTarget.y + 0.5) : -1);
+  }
   updateLights(dt);
   abyss.group.visible = mode !== 'menu';
   if (abyss.group.visible) abyss.update(dt, camTarget);

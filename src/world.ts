@@ -3,7 +3,7 @@ import { Assets } from './assets';
 import { GEM_LOOK, GEM_OF_BIOME, type Biome } from './biomes';
 import { FireFx, type FireCell, type FireState } from './fire';
 import { AO_E, AO_N, AO_NE, AO_NW, AO_S, AO_SE, AO_SW, AO_W, createBlockMaterial, createGlowMaterial } from './materials';
-import { cannonTargets, HEIGHT_STEP, RAMP_RISE, TILE_BY_CHAR, TILES, traceRails, type CellKind, type Channel, type LevelData } from './level/format';
+import { cannonTargets, HEIGHT_STEP, RAMP_RISE, STORY_H, storyGrids, TILE_BY_CHAR, TILES, traceRails, type CellKind, type Channel, type LevelData, type StoryGrid } from './level/format';
 
 export type { CellKind };
 
@@ -11,6 +11,9 @@ export interface Cell {
   kind: CellKind;
   base: number;
   top: number;
+  /** cara de abajo del bloque: -Infinity en la planta 0 (columna hasta el abismo); en las de arriba, la losa */
+  bottom: number;
+  story: number;
   channel?: Channel;
   axis?: 'x' | 'z' | 'd1' | 'd2';
   dir?: 'n' | 's' | 'e' | 'w';
@@ -148,11 +151,14 @@ export const COLLAPSE_DELAY = 1.3;
 const FALL_TIME = 1.0;
 interface Collapse { set: BlockSet; k: number; t: number; fallen: boolean; done: boolean; overlay: THREE.Object3D | null }
 export type WorldEvent = { type: 'crack' | 'melt' | 'collapse'; x: number; y: number; z: number; melt: boolean };
-interface Solid { i: number; j: number; top: number; color: THREE.Color; set: BlockSet }
+/** foot: dónde acaba la columna por abajo (el fondo en la planta 0; en las de arriba, el grosor de la losa) */
+interface Solid { i: number; j: number; s: number; top: number; foot: number; color: THREE.Color; set: BlockSet }
 
 const DOOR_H = TILE_BY_CHAR.get('D')!.raise!;
 const SLAB_H = 0.5;   // alto de la losa biselada (block_top)
 const BOTTOM = -1.2;  // fondo de las columnas
+/** grosor de los suelos de las plantas de arriba (por debajo se puede pasar) */
+const UPPER_SLAB = SLAB_H;
 
 export const FRICTION: Partial<Record<CellKind, number>> = Object.fromEntries(
   TILES.filter((t) => t.friction !== undefined).map((t) => [t.kind, t.friction]),
@@ -191,6 +197,7 @@ interface DoorState {
   channel: Channel;
   i: number;
   j: number;
+  s: number;
   open: number;
   obj: THREE.Object3D;
 }
@@ -201,8 +208,16 @@ const CHANNEL_CSS: Record<Channel, string> = { A: '#b45309', B: '#15803d' };
 export class World {
   readonly w: number;
   readonly d: number;
+  /** plantas (1 si el nivel no tiene de encima) y casillas por planta */
+  readonly stories: number;
+  readonly layer: number;
   readonly cells: Cell[];
   readonly group = new THREE.Group();
+  /** lo de cada planta (se ocultan las de encima de la del limo para verlo) */
+  readonly storyGroups: THREE.Group[] = [];
+  private buildStory = 0;
+  /** índice absoluto de la salida del limo */
+  startIdx = 0;
   start = new THREE.Vector3();
   treasure = new THREE.Vector3();
   private switches = new Map<Channel, SwitchState>();
@@ -218,12 +233,12 @@ export class World {
   get coinsTotal() { return this.coins.filter((c) => c.type === 'coin').length; }
   get gemsTotal() { return this.coins.filter((c) => c.type === 'gem').length; }
   private breakables = new Map<number, Breakable>();
-  private batches = new Map<BlockSet, BlockBatch>();
+  private batches = new Map<string, BlockBatch>();
   private collapses = new Map<number, Collapse>();
   private crackOverlays = new Map<number, THREE.Object3D>();
   /** avisos para sonido y efectos (los consume main.ts) */
   readonly events: WorldEvent[] = [];
-  private fans: { blades: THREE.Object3D; i: number; j: number; dir: 'n' | 's' | 'e' | 'w'; base: number }[] = [];
+  private fans: { blades: THREE.Object3D; i: number; j: number; s: number; dir: 'n' | 's' | 'e' | 'w'; base: number }[] = [];
   private saws: THREE.Object3D[] = [];
   private shapes: { i: number; j: number; c: Cell }[] = [];
   private holeExits = new Map<number, THREE.Vector3>();
@@ -258,28 +273,73 @@ export class World {
   constructor(readonly def: LevelData, private assets: Assets, readonly biome: Biome = 'stone') {
     this.d = def.tiles.length;
     this.w = def.tiles[0].length;
+    this.layer = this.w * this.d;
+    const grids = storyGrids(def);
+    this.stories = grids.length;
     this.cells = [];
-    for (let j = 0; j < this.d; j++) {
-      for (let i = 0; i < this.w; i++) this.cells.push(this.parse(i, j));
-    }
-    this.obstacleAt = new Int32Array(this.w * this.d).fill(-1);
-    this.windX = new Float32Array(this.w * this.d);
-    this.windZ = new Float32Array(this.w * this.d);
-    this.windBase = new Float32Array(this.w * this.d);
+    grids.forEach((g, s) => {
+      for (let j = 0; j < this.d; j++) {
+        for (let i = 0; i < this.w; i++) this.cells.push(this.parse(i, j, s, g));
+      }
+      const sg = new THREE.Group();
+      this.storyGroups.push(sg);
+      this.group.add(sg);
+    });
+    const total = this.layer * this.stories;
+    this.obstacleAt = new Int32Array(total).fill(-1);
+    this.windX = new Float32Array(total);
+    this.windZ = new Float32Array(total);
+    this.windBase = new Float32Array(total);
     this.build();
   }
 
-  private parse(i: number, j: number): Cell {
-    const tile = TILE_BY_CHAR.get(this.def.tiles[j][i]) ?? TILE_BY_CHAR.get('.')!;
-    if (tile.kind === 'void') return { kind: 'void', base: 0, top: -Infinity };
-    const base = Number(this.def.heights[j][i]) * HEIGHT_STEP;
+  private parse(i: number, j: number, s: number, g: StoryGrid): Cell {
+    const tile = TILE_BY_CHAR.get(g.tiles[j]?.[i] ?? '.') ?? TILE_BY_CHAR.get('.')!;
+    const floor = s * STORY_H;
+    if (tile.kind === 'void') return { kind: 'void', base: floor, top: -Infinity, bottom: -Infinity, story: s };
+    const base = floor + Number(g.heights[j]?.[i] ?? 0) * HEIGHT_STEP;
     const top = base + (tile.kind === 'ramp' ? RAMP_RISE : tile.raise ?? 0);
-    return { kind: tile.kind, base, top, channel: tile.channel, axis: tile.axis, dir: tile.dir, rise: tile.rise, corner: tile.corner, shape: tile.shape };
+    return {
+      kind: tile.kind, base, top, bottom: s === 0 ? -Infinity : base - UPPER_SLAB, story: s,
+      channel: tile.channel, axis: tile.axis, dir: tile.dir, rise: tile.rise, corner: tile.corner, shape: tile.shape,
+    };
   }
 
-  cell(i: number, j: number): Cell | null {
-    if (i < 0 || j < 0 || i >= this.w || j >= this.d) return null;
-    return this.cells[j * this.w + i];
+  /** Índice absoluto de una casilla de una planta. */
+  index(i: number, j: number, s = 0) {
+    return s * this.layer + j * this.w + i;
+  }
+  /** Columna, fila y planta de un índice absoluto. */
+  colOf(idx: number) { return (idx % this.layer) % this.w; }
+  rowOf(idx: number) { return Math.floor((idx % this.layer) / this.w); }
+  storyOf(idx: number) { return Math.floor(idx / this.layer); }
+
+  cell(i: number, j: number, s = 0): Cell | null {
+    if (i < 0 || j < 0 || i >= this.w || j >= this.d || s < 0 || s >= this.stories) return null;
+    return this.cells[this.index(i, j, s)];
+  }
+
+  /**
+    Planta de lo que hay en (i, j) a la altura y: la más alta con suelo cuya losa no queda por encima.
+    Con una sola planta siempre es 0.
+  */
+  storyAt(i: number, j: number, y: number): number {
+    if (this.stories === 1 || i < 0 || j < 0 || i >= this.w || j >= this.d) return 0;
+    for (let s = this.stories - 1; s > 0; s--) {
+      const c = this.cells[this.index(i, j, s)];
+      if (c.kind !== 'void' && y >= c.bottom - 0.25) return s;
+    }
+    return 0;
+  }
+
+  /** Planta cuya franja de altura contiene y (aunque ahí no haya suelo). */
+  bandAt(y: number): number {
+    return Math.max(0, Math.min(this.stories - 1, Math.floor((y + UPPER_SLAB + 0.5) / STORY_H)));
+  }
+
+  /** Oculta las plantas de encima de s (para ver al limo dentro); -1 las muestra todas. */
+  setViewStory(s: number) {
+    this.storyGroups.forEach((g, k) => { g.visible = s < 0 || k <= s; });
   }
 
   /**
@@ -312,13 +372,13 @@ export class World {
   }
 
   /** Altura superior de la columna o -Infinity si es vacío. */
-  top(i: number, j: number): number {
-    const c = this.cell(i, j);
+  top(i: number, j: number, s = 0): number {
+    const c = this.cell(i, j, s);
     return c ? c.top : -Infinity;
   }
 
-  fireActive(i: number, j: number): boolean {
-    const c = this.cell(i, j);
+  fireActive(i: number, j: number, s = 0): boolean {
+    const c = this.cell(i, j, s);
     if (!c) return false;
     if (c.kind === 'fire') return true;
     return c.kind === 'firet' && this.timedPhase(i, j) < 1.7;
@@ -328,8 +388,8 @@ export class World {
     ¿Evapora el limo? El intermitente tarda 0.25 s en prender del todo: mientras sube solo empuja
     (ver respingo en slime.ts), así no se evapora de golpe un limo que estaba encima al encenderse.
   */
-  fireLethal(i: number, j: number): boolean {
-    const c = this.cell(i, j);
+  fireLethal(i: number, j: number, s = 0): boolean {
+    const c = this.cell(i, j, s);
     if (!c) return false;
     if (c.kind === 'fire') return true;
     if (c.kind !== 'firet') return false;
@@ -358,15 +418,15 @@ export class World {
     return p < 1.7 ? 2 : p > 2.75 ? 1 : 0;
   };
 
-  obstacle(i: number, j: number): Obstacle | null {
+  obstacle(i: number, j: number, s = 0): Obstacle | null {
     if (i < 0 || j < 0 || i >= this.w || j >= this.d) return null;
-    const k = this.obstacleAt[j * this.w + i];
+    const k = this.obstacleAt[this.index(i, j, s)];
     return k < 0 ? null : this.obstacles[k];
   }
 
   /** Recoge lo que haya en la casilla (moneda, gema o aceite). Devuelve qué era, o null. */
-  collectCoin(i: number, j: number): PickupType | null {
-    const c = this.coinAt.get(j * this.w + i);
+  collectCoin(i: number, j: number, s = 0): PickupType | null {
+    const c = this.coinAt.get(this.index(i, j, s));
     if (!c || c.collected) return null;
     c.collected = true;
     c.t = 0;
@@ -376,14 +436,13 @@ export class World {
   }
 
   /** ¿Hay plantas o hielo sin quemar en la casilla? */
-  burnable(i: number, j: number): boolean {
-    const b = this.breakables.get(j * this.w + i);
+  burnable(i: number, j: number, s = 0): boolean {
+    const b = this.breakables.get(this.index(i, j, s));
     return !!b && !b.broken;
   }
 
-  /** El limo en llamas elimina el obstáculo. Devuelve qué era. */
-  burn(i: number, j: number): 'plant' | 'iceblock' | null {
-    const idx = j * this.w + i;
+  /** El limo en llamas elimina el obstáculo (índice absoluto). Devuelve qué era. */
+  burn(idx: number): 'plant' | 'iceblock' | null {
     const b = this.breakables.get(idx);
     if (!b || b.broken) return null;
     b.broken = true;
@@ -395,21 +454,21 @@ export class World {
   }
 
   /** El limo pisa roca agrietada: empieza a romperse. */
-  crumble(i: number, j: number) {
-    const c = this.cell(i, j);
-    if (c?.kind === 'crack') this.startCollapse(i, j, 'crack');
+  crumble(i: number, j: number, s = 0) {
+    const c = this.cell(i, j, s);
+    if (c?.kind === 'crack') this.startCollapse(i, j, s, 'crack');
   }
 
   /** El limo en llamas pisa hielo: empieza a derretirse. */
-  melt(i: number, j: number) {
-    const c = this.cell(i, j);
-    if (c?.kind === 'ice') this.startCollapse(i, j, 'ice');
+  melt(i: number, j: number, s = 0) {
+    const c = this.cell(i, j, s);
+    if (c?.kind === 'ice') this.startCollapse(i, j, s, 'ice');
   }
 
-  private startCollapse(i: number, j: number, set: BlockSet) {
-    const idx = j * this.w + i;
+  private startCollapse(i: number, j: number, s: number, set: BlockSet) {
+    const idx = this.index(i, j, s);
     if (this.collapses.has(idx)) return;
-    const k = this.batches.get(set)?.index.get(idx);
+    const k = this.batches.get(`${set}:${s}`)?.index.get(idx);
     if (k === undefined) return;
     this.collapses.set(idx, { set, k, t: 0, fallen: false, done: false, overlay: this.crackOverlays.get(idx) ?? null });
     this.events.push({ type: set === 'ice' ? 'melt' : 'crack', x: i + 0.5, y: this.cells[idx].base, z: j + 0.5, melt: set === 'ice' });
@@ -427,9 +486,9 @@ export class World {
     for (const [idx, c] of this.collapses) {
       if (c.done) continue;
       c.t += dt;
-      const batch = this.batches.get(c.set)!;
-      const s = batch.list[c.k];
       const cell = this.cells[idx];
+      const batch = this.batches.get(`${c.set}:${cell.story}`)!;
+      const s = batch.list[c.k];
       let dx = 0, dy = 0, dz = 0, tilt = 0, shrink = 1;
       if (c.t < COLLAPSE_DELAY) {
         // temblor que va a más (el hielo además se hunde un poco al derretirse)
@@ -460,7 +519,7 @@ export class World {
       scl.set(hide ? 0 : shrink, hide ? 0 : 1, hide ? 0 : shrink);
       m.compose(pos, q, scl);
       batch.tops.setMatrixAt(c.k, m);
-      const h = Math.max(0.01, s.top - SLAB_H - BOTTOM);
+      const h = Math.max(0.01, s.top - SLAB_H - s.foot);
       pos.set(s.i + 0.5 + dx, s.top - SLAB_H + dy, s.j + 0.5 + dz);
       scl.set(hide ? 0 : shrink, hide ? 0 : h, hide ? 0 : shrink);
       m.compose(pos, q, scl);
@@ -478,13 +537,13 @@ export class World {
     }
   }
 
-  isCold(i: number, j: number): boolean {
-    return i >= 0 && j >= 0 && i < this.w && j < this.d && this.coldCells.includes(j * this.w + i);
+  isCold(i: number, j: number, s = 0): boolean {
+    return i >= 0 && j >= 0 && i < this.w && j < this.d && this.coldCells.includes(this.index(i, j, s));
   }
 
   /** Dispara la animación del muelle. Devuelve true si no se había disparado hace nada (para sonido). */
-  triggerPad(i: number, j: number): boolean {
-    const p = this.pads.get(j * this.w + i);
+  triggerPad(i: number, j: number, s = 0): boolean {
+    const p = this.pads.get(this.index(i, j, s));
     if (!p) return false;
     const fresh = p.cooldown <= 0;
     if (fresh) {
@@ -495,20 +554,21 @@ export class World {
     return fresh;
   }
 
-  coinPosition(i: number, j: number, out: THREE.Vector3): THREE.Vector3 {
-    const c = this.coinAt.get(j * this.w + i);
+  coinPosition(i: number, j: number, out: THREE.Vector3, s = 0): THREE.Vector3 {
+    const c = this.coinAt.get(this.index(i, j, s));
     return c ? out.copy(c.obj.position) : out.set(i + 0.5, 0, j + 0.5);
   }
 
+  /** Pone un modelo en la planta que se está construyendo. */
   private add(name: string, x: number, y: number, z: number, opts?: { cloneMaterials?: boolean }): THREE.Object3D {
     const o = this.assets.clone(name, opts);
     o.position.set(x, y, z);
-    this.group.add(o);
+    this.storyGroups[this.buildStory].add(o);
     return o;
   }
 
   private build() {
-    const solids: Solid[] = [];
+    const solidList: Solid[] = [];
     // las texturas ya llevan color: aquí solo tintes suaves
     const cFloorA = new THREE.Color(0xffffff);
     const cFloorB = new THREE.Color(0xf2ebe0);
@@ -522,12 +582,17 @@ export class World {
     const cCrackB = new THREE.Color(0xaa9e92);
     const fireCells: FireCell[] = [];
 
-    for (let j = 0; j < this.d; j++) {
+    for (let s = 0; s < this.stories; s++) for (let j = 0; j < this.d; j++) {
       for (let i = 0; i < this.w; i++) {
-        const c = this.cells[j * this.w + i];
+        this.buildStory = s;
+        const idx = this.index(i, j, s);
+        const c = this.cells[idx];
         if (c.kind === 'void') continue;
-        const checker = (i + j) % 2 === 0 ? cFloorA : cFloorB;
+        const checker = (i + j + s) % 2 === 0 ? cFloorA : cFloorB;
         const x = i + 0.5, z = j + 0.5;
+        const foot = s === 0 ? BOTTOM : c.bottom;
+        // casilla de suelo o muro de esta planta (con su columna hasta abajo o solo la losa)
+        const solids = { push: (o: { i: number; j: number; top: number; color: THREE.Color; set: BlockSet }) => solidList.push({ ...o, s, foot }) };
         switch (c.kind) {
           case 'wall':
             solids.push({ i, j, top: c.top, color: (i + j) % 2 === 0 ? cWall : cWallB, set: 'wall' });
@@ -563,14 +628,14 @@ export class World {
             solids.push({ i, j, top: c.base, color: (i + j) % 2 === 0 ? cCrackA : cCrackB, set: 'crack' });
             const lines = this.add('crack_lines', x, c.base, z);
             lines.rotation.y = ((i * 3 + j * 5) % 4) * (Math.PI / 2);
-            this.crackOverlays.set(j * this.w + i, lines);
+            this.crackOverlays.set(idx, lines);
             break;
           }
           case 'jump': {
             // suelo normal debajo; la tapa queda elevada sobre el muelle (la física usa c.top)
             solids.push({ i, j, top: c.base, color: cJump, set: 'floor' });
             const obj = this.add('jump_pad', x, c.top, z);
-            this.pads.set(j * this.w + i, {
+            this.pads.set(idx, {
               plate: Assets.child(obj, 'jump_pad_plate'),
               spring: Assets.child(obj, 'jump_pad_spring'),
               offset: 0, vel: 0, cooldown: 0,
@@ -583,11 +648,12 @@ export class World {
             break;
           case 'door':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
-            this.addDoor(i, j, c);
+            this.addDoor(i, j, s, c);
             break;
           case 'start':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.start.set(x, c.base, z);
+            this.startIdx = idx;
             break;
           case 'treasure':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
@@ -596,13 +662,13 @@ export class World {
             break;
           case 'coin': case 'gem': case 'oil':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
-            this.addCoin(i, j, c.base, c.kind);
+            this.addCoin(idx, i, j, c.base, c.kind);
             break;
           case 'plant': case 'iceblock': {
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             const obj = this.add(c.kind === 'plant' ? 'plant_block' : 'ice_block', x, c.base, z);
             obj.rotation.y = ((i * 7 + j * 3) % 4) * (Math.PI / 2);
-            this.breakables.set(j * this.w + i, { obj, kind: c.kind, broken: false, t: 0 });
+            this.breakables.set(idx, { obj, kind: c.kind, broken: false, t: 0 });
             break;
           }
           case 'fan': {
@@ -610,13 +676,13 @@ export class World {
             const obj = this.add('fan', x, c.base, z);
             // el modelo sopla hacia +Z (hacia la cámara)
             obj.rotation.y = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }[c.dir ?? 's'];
-            this.fans.push({ blades: Assets.child(obj, 'fan_blades'), i, j, dir: c.dir ?? 's', base: c.base });
+            this.fans.push({ blades: Assets.child(obj, 'fan_blades'), i, j, s, dir: c.dir ?? 's', base: c.base });
             break;
           }
           case 'coldjet':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.add('cold_vent', x, c.base, z);
-            this.coldCells.push(j * this.w + i);
+            this.coldCells.push(idx);
             break;
           case 'station':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
@@ -632,14 +698,15 @@ export class World {
           }
           case 'blade':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
-            this.addDivider(i, j, c);
+            this.addDivider(idx, i, j, c);
             break;
           default: solids.push({ i, j, top: c.top, color: checker, set: 'floor' });
         }
       }
     }
 
-    this.buildBlocks(solids);
+    this.buildStory = 0;
+    this.buildBlocks(solidList);
     this.buildShapes();
     this.linkHoles();
     this.buildRails();
@@ -650,7 +717,7 @@ export class World {
     if (fireCells.length) {
       const spots = new Map<string, { x: number; y: number; z: number; cells: FireCell[] }>();
       for (const c of fireCells) {
-        const key = `${Math.floor(c.i / 3)},${Math.floor(c.j / 3)}`;
+        const key = `${Math.floor(c.i / 3)},${Math.floor(c.j / 3)},${Math.floor(c.base / STORY_H)}`;
         let spot = spots.get(key);
         if (!spot) spots.set(key, (spot = { x: 0, y: 0, z: 0, cells: [] }));
         spot.cells.push(c);
@@ -691,8 +758,8 @@ export class World {
     this.ownedMaterials.push(floorTop, floorCol, iceTop, wallMat);
     const raised = solids.some((s) => s.set !== 'wall' && s.top > 0);
 
-    const make = (set: BlockSet, topMat: THREE.Material, colMat: THREE.Material) => {
-      const list = solids.filter((s) => s.set === set);
+    const make = (set: BlockSet, story: number, topMat: THREE.Material, colMat: THREE.Material) => {
+      const list = solids.filter((s) => s.set === set && s.s === story);
       if (!list.length) return;
       const topGeo = a.geometry('block_top').clone();
       const ao = new Float32Array(list.length);
@@ -704,31 +771,34 @@ export class World {
         m.makeTranslation(s.i + 0.5, s.top, s.j + 0.5);
         tops.setMatrixAt(k, m);
         tops.setColorAt(k, s.color);
-        const h = Math.max(0.01, s.top - SLAB_H - BOTTOM);
+        // en las plantas de arriba el suelo es solo la losa (la columna no llega a nada)
+        const h = Math.max(0.001, s.top - SLAB_H - s.foot);
         m.makeScale(1, h, 1);
         m.setPosition(s.i + 0.5, s.top - SLAB_H, s.j + 0.5);
         cols.setMatrixAt(k, m);
         cols.setColorAt(k, colColor.copy(s.color).multiplyScalar(0.9));
-        if (set !== 'wall') ao[k] = this.aoMask(s.i, s.j, s.top);
+        if (set !== 'wall') ao[k] = this.aoMask(s.i, s.j, s.top, story);
       });
       topGeo.setAttribute('aAO', new THREE.InstancedBufferAttribute(ao, 1));
       this.ownedGeometries.push(topGeo);
       const index = new Map<number, number>();
-      list.forEach((s, k) => index.set(s.j * this.w + s.i, k));
-      this.batches.set(set, { tops, cols, index, list });
+      list.forEach((s, k) => index.set(this.index(s.i, s.j, story), k));
+      this.batches.set(`${set}:${story}`, { tops, cols, index, list });
       for (const im of [tops, cols]) {
         im.receiveShadow = true;
-        im.castShadow = set === 'wall' || raised;
+        im.castShadow = set === 'wall' || raised || story > 0;
         // las losas que caen salen de la caja calculada al construir
         if (set === 'ice' || set === 'crack') im.frustumCulled = false;
-        this.group.add(im);
+        this.storyGroups[story].add(im);
       }
     };
     this.floorTopMat = floorTop;
-    make('floor', floorTop, floorCol);
-    make('ice', iceTop, floorCol);
-    make('crack', floorTop, floorCol);
-    make('wall', wallMat, wallMat);
+    for (let story = 0; story < this.stories; story++) {
+      make('floor', story, floorTop, floorCol);
+      make('ice', story, iceTop, floorCol);
+      make('crack', story, floorTop, floorCol);
+      make('wall', story, wallMat, wallMat);
+    }
   }
 
   /**
@@ -736,7 +806,13 @@ export class World {
     material que el suelo (texturas por posición: la cara de arriba usa la del suelo y los lados la de piedra).
   */
   private buildShapes() {
-    if (!this.shapes.length || !this.floorTopMat) return;
+    for (let story = 0; story < this.stories; story++) this.buildShapesOf(story);
+  }
+
+  private buildShapesOf(story: number) {
+    const shapes = this.shapes.filter((sh) => sh.c.story === story);
+    if (!shapes.length || !this.floorTopMat) return;
+    const BOTTOM = story === 0 ? -1.2 : 0;
     const pos: number[] = [];
     const nor: number[] = [];
     const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3(), e = new THREE.Vector3();
@@ -748,10 +824,13 @@ export class World {
       for (const v of [a, b, c]) { pos.push(v.x, v.y, v.z); nor.push(n.x, n.y, n.z); }
     };
     const quad = (p0: P, p1: P, p2: P, p3: P, hint: P) => { tri(p0, p1, p2, hint); tri(p0, p2, p3, hint); };
+    let foot = BOTTOM;
     const wall = (x0: number, z0: number, y0: number, x1: number, z1: number, y1: number, hint: P) =>
-      quad([x0, y0, z0], [x1, y1, z1], [x1, BOTTOM, z1], [x0, BOTTOM, z0], hint);
+      quad([x0, y0, z0], [x1, y1, z1], [x1, foot, z1], [x0, foot, z0], hint);
 
-    for (const { i, j, c: cell } of this.shapes) {
+    for (const { i, j, c: cell } of shapes) {
+      // planta 0: hasta el fondo; de arriba: solo el grosor de la losa
+      foot = story === 0 ? BOTTOM : cell.bottom;
       const x0 = i, x1 = i + 1, z0 = j, z1 = j + 1;
       if (cell.kind === 'ramp') {
         const h = (x: number, z: number) => this.topAt(cell, i, j, x, z);
@@ -779,7 +858,7 @@ export class World {
           const p0: P = [cx + Math.cos(t0) * HOLE_R, y, cz + Math.sin(t0) * HOLE_R];
           const p1: P = [cx + Math.cos(t1) * HOLE_R, y, cz + Math.sin(t1) * HOLE_R];
           quad(p0, p1, [cx + Math.cos(t1) * r1, y, cz + Math.sin(t1) * r1], [cx + Math.cos(t0) * r0, y, cz + Math.sin(t0) * r0], [0, 1, 0]);
-          quad(p0, p1, [p1[0], BOTTOM, p1[2]], [p0[0], BOTTOM, p0[2]], [cx - (p0[0] + p1[0]) / 2, 0, cz - (p0[2] + p1[2]) / 2]);
+          quad(p0, p1, [p1[0], foot, p1[2]], [p0[0], foot, p0[2]], [cx - (p0[0] + p1[0]) / 2, 0, cz - (p0[2] + p1[2]) / 2]);
         }
         wall(x0, z0, y, x1, z0, y, [0, 0, -1]);
         wall(x1, z1, y, x0, z1, y, [0, 0, 1]);
@@ -795,7 +874,7 @@ export class World {
     const mesh = new THREE.Mesh(geo, this.floorTopMat);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    this.group.add(mesh);
+    this.storyGroups[story].add(mesh);
   }
 
   /** Cada agujero lleva a la salida más cercana, prefiriendo las que están más abajo. */
@@ -804,14 +883,14 @@ export class World {
     this.cells.forEach((c, idx) => { if (c.kind === 'hole') holes.push(idx); else if (c.kind === 'exit') exits.push(idx); });
     if (!holes.length || !exits.length) return;
     for (const h of holes) {
-      const hx = h % this.w, hz = Math.floor(h / this.w), hb = this.cells[h].base;
+      const hx = this.colOf(h), hz = this.rowOf(h), hb = this.cells[h].base;
       let best = -1, bestScore = Infinity;
       for (const x of exits) {
-        const d = Math.hypot((x % this.w) - hx, Math.floor(x / this.w) - hz);
+        const d = Math.hypot(this.colOf(x) - hx, this.rowOf(x) - hz);
         const score = d + (this.cells[x].base < hb ? 0 : 1000);
         if (score < bestScore) { bestScore = score; best = x; }
       }
-      this.holeExits.set(h, new THREE.Vector3((best % this.w) + 0.5, this.cells[best].base, Math.floor(best / this.w) + 0.5));
+      this.holeExits.set(h, new THREE.Vector3(this.colOf(best) + 0.5, this.cells[best].base, this.rowOf(best) + 0.5));
     }
   }
 
@@ -839,8 +918,8 @@ export class World {
     pivot.add(tilt);
     root.add(pivot);
     root.traverse((o) => { o.castShadow = true; o.receiveShadow = true; });
-    this.group.add(root);
-    const cannon: Cannon = { idx: j * this.w + i, x, z, top: c.top, tx: NaN, ty: NaN, tz: NaN, pivot, barrel, kick: 0, loaded: false };
+    this.storyGroups[c.story].add(root);
+    const cannon: Cannon = { idx: this.index(i, j, c.story), x, z, top: c.top, tx: NaN, ty: NaN, tz: NaN, pivot, barrel, kick: 0, loaded: false };
     this.cannons.push(cannon);
     this.cannonByIdx.set(cannon.idx, cannon);
   }
@@ -851,17 +930,17 @@ export class World {
     for (const c of this.cannons) {
       const t = targets.get(c.idx) ?? -1;
       if (t < 0) continue;
-      c.tx = (t % this.w) + 0.5;
-      c.tz = Math.floor(t / this.w) + 0.5;
+      c.tx = this.colOf(t) + 0.5;
+      c.tz = this.rowOf(t) + 0.5;
       c.ty = this.cells[t].top;
       c.pivot.rotation.y = Math.atan2(c.tx - c.x, c.tz - c.z);
     }
   }
 
   /** Cañón de la casilla, si lo hay. */
-  cannonAt(i: number, j: number): Cannon | null {
+  cannonAt(i: number, j: number, s = 0): Cannon | null {
     if (i < 0 || j < 0 || i >= this.w || j >= this.d) return null;
-    return this.cannonByIdx.get(j * this.w + i) ?? null;
+    return this.cannonByIdx.get(this.index(i, j, s)) ?? null;
   }
 
   /** Boca del tubo: donde asoma el limo cargado y desde donde sale disparado. */
@@ -884,7 +963,7 @@ export class World {
     const m = new THREE.Mesh(this.gemMesh.geo, this.gemMesh.mat);
     m.castShadow = true;
     m.position.set(x, y, z);
-    this.group.add(m);
+    this.storyGroups[this.buildStory].add(m);
     return m;
   }
 
@@ -911,7 +990,7 @@ export class World {
     const disc = new THREE.Mesh(geo, [side, top, side]);
     disc.position.set(x, y + 0.03, z);
     disc.receiveShadow = true;
-    this.group.add(disc);
+    this.storyGroups[this.buildStory].add(disc);
     this.spinners.push({ x, z, y, disc });
   }
 
@@ -924,7 +1003,7 @@ export class World {
     return null;
   }
 
-  private addCoin(i: number, j: number, base: number, kind: string) {
+  private addCoin(idx: number, i: number, j: number, base: number, kind: string) {
     const type: PickupType = kind === 'gem' ? 'gem' : kind === 'oil' ? 'oil' : 'coin';
     const gem = type === 'gem';
     const y = base + (type === 'coin' ? 0.55 : type === 'oil' ? 0.12 : 0.62);
@@ -937,12 +1016,12 @@ export class World {
       glow.position.set(i + 0.5, base + 0.02, j + 0.5);
       glow.scale.set(gem ? 2.4 : 1.8, 1, gem ? 2.4 : 1.8);
       glow.renderOrder = 2;
-      this.group.add(glow);
+      this.storyGroups[this.buildStory].add(glow);
       obj.userData.glow = glow;
     }
     const coin: Coin = { type, i, j, obj, baseY: y, collected: false, t: 0 };
     this.coins.push(coin);
-    this.coinAt.set(j * this.w + i, coin);
+    this.coinAt.set(idx, coin);
   }
 
   /** Corriente de cada ventilador: avanza por casillas (también sobre el vacío) hasta chocar con algo alto. */
@@ -952,7 +1031,7 @@ export class World {
   */
   private railPoints(cellsPath: number[]) {
     const xs: number[] = [], zs: number[] = [], lift: number[] = [];
-    const center = (idx: number): [number, number] => [(idx % this.w) + 0.5, Math.floor(idx / this.w) + 0.5];
+    const center = (idx: number): [number, number] => [this.colOf(idx) + 0.5, this.rowOf(idx) + 0.5];
     cellsPath.forEach((idx, k) => {
       const [cx, cz] = center(idx);
       const shape = this.cells[idx].shape;
@@ -990,9 +1069,11 @@ export class World {
   }
 
   private buildRails() {
-    const { paths } = traceRails(this.def);
+    const { paths, lifts } = traceRails(this.def);
     const shapes = new Map<string, { xs: number[]; zs: number[]; lift: number[] }>();
+    this.buildLifts(lifts);
     for (const [from, cellsPath] of paths) {
+      this.buildStory = this.storyOf(from);
       const to0 = cellsPath[cellsPath.length - 1];
       // mismo recorrido en los dos sentidos: se calcula de la estación menor a la mayor y la otra lo usa al revés
       const key = `${Math.min(from, to0)}-${Math.max(from, to0)}`;
@@ -1018,22 +1099,63 @@ export class World {
       const st = this.add('rail_station', xs[0], y0, zs[0]);
       st.rotation.y = Math.atan2(-dx, -dz);
       if (from > to) continue; // cada vía se monta una sola vez
-      for (let k = 0; k < n - 1; k++) {
-        const ax = xs[k], az = zs[k], bx = xs[k + 1], bz = zs[k + 1];
-        const hx = bx - ax, hz = bz - az, hy = ys[k + 1] - ys[k];
-        const flat = Math.hypot(hx, hz);
-        const piece = this.add('rail_piece', (ax + bx) / 2, (ys[k] + ys[k + 1]) / 2, (az + bz) / 2);
-        piece.rotation.order = 'YZX';
-        piece.rotation.set(0, Math.atan2(-hz, hx), Math.atan2(hy, flat));
-        piece.scale.x = Math.hypot(flat, hy) + 0.02;
+      this.addTrack(xs, zs, ys);
+    }
+    this.buildStory = 0;
+  }
+
+  /** Tramos de vía a lo largo de un recorrido. */
+  private addTrack(xs: ArrayLike<number>, zs: ArrayLike<number>, ys: ArrayLike<number>) {
+    for (let k = 0; k < xs.length - 1; k++) {
+      const ax = xs[k], az = zs[k], bx = xs[k + 1], bz = zs[k + 1];
+      const hx = bx - ax, hz = bz - az, hy = ys[k + 1] - ys[k];
+      const flat = Math.hypot(hx, hz);
+      const piece = this.add('rail_piece', (ax + bx) / 2, (ys[k] + ys[k + 1]) / 2, (az + bz) / 2);
+      piece.rotation.order = 'YZX';
+      piece.rotation.set(0, Math.atan2(-hz, hx), Math.atan2(hy, flat));
+      piece.scale.x = Math.hypot(flat, hy) + 0.02;
+    }
+  }
+
+  /**
+    Ascensores entre plantas: dos estaciones una encima de otra. La bola sube (o baja) en espiral alrededor
+    de la casilla y sale por el lado por el que entró.
+  */
+  private buildLifts(lifts: [number, number][]) {
+    for (const [lo, hi] of lifts) {
+      const cx = this.colOf(lo) + 0.5, cz = this.rowOf(lo) + 0.5;
+      const y0 = this.cells[lo].base, y1 = this.cells[hi].base;
+      const turns = Math.max(1, Math.round((y1 - y0) / 1.6));
+      const RADIUS = 0.36, N = turns * 24;
+      const xs: number[] = [cx], zs: number[] = [cz], ys: number[] = [y0];
+      for (let q = 0; q <= N; q++) {
+        const a = (q / N) * turns * Math.PI * 2 - Math.PI / 2;
+        xs.push(cx + Math.cos(a) * RADIUS);
+        zs.push(cz + Math.sin(a) * RADIUS);
+        ys.push(y0 + (y1 - y0) * (q / N));
       }
+      xs.push(cx); zs.push(cz); ys.push(y1);
+      const make = (from: number, to: number, px: number[], pz: number[], py: number[]) => {
+        const n = px.length;
+        const dist = new Float32Array(n);
+        for (let k = 1; k < n; k++) dist[k] = dist[k - 1] + Math.hypot(px[k] - px[k - 1], pz[k] - pz[k - 1], py[k] - py[k - 1]);
+        // sale hacia la cámara (hacia +Z): el lado desde el que se suele llegar
+        this.rails.set(from, { from, to, xs: Float32Array.from(px), zs: Float32Array.from(pz), ys: Float32Array.from(py), dist, total: dist[n - 1], exitX: 0, exitZ: 1 });
+      };
+      make(lo, hi, xs, zs, ys);
+      make(hi, lo, [...xs].reverse(), [...zs].reverse(), [...ys].reverse());
+      this.buildStory = this.storyOf(lo);
+      this.add('rail_station', cx, y0, cz);
+      this.addTrack(xs.slice(1, -1), zs.slice(1, -1), ys.slice(1, -1));
+      this.buildStory = this.storyOf(hi);
+      this.add('rail_station', cx, y1, cz);
     }
   }
 
   /** Vía que sale de la estación de esta casilla, si la hay. */
-  railAt(i: number, j: number): RailPath | null {
+  railAt(i: number, j: number, s = 0): RailPath | null {
     if (i < 0 || j < 0 || i >= this.w || j >= this.d) return null;
-    return this.rails.get(j * this.w + i) ?? null;
+    return this.rails.get(this.index(i, j, s)) ?? null;
   }
 
   private buildWind() {
@@ -1041,10 +1163,10 @@ export class World {
       const [dx, dz] = DIRS[f.dir];
       for (let k = 1; k <= WIND_LEN; k++) {
         const ci = f.i + dx * k, cj = f.j + dz * k;
-        const cell = this.cell(ci, cj);
+        const cell = this.cell(ci, cj, f.s);
         if (!cell) break;
         if (cell.kind !== 'rail' && cell.top !== -Infinity && cell.top > f.base + 0.6) break;
-        const idx = cj * this.w + ci;
+        const idx = this.index(ci, cj, f.s);
         const pow = 1 - (k - 1) / (WIND_LEN + 1);
         this.windX[idx] += dx * pow;
         this.windZ[idx] += dz * pow;
@@ -1101,7 +1223,7 @@ export class World {
       const pos = (this.mistFx.geometry.getAttribute('position') as THREE.BufferAttribute).array as Float32Array;
       let w = 0;
       for (const idx of this.coldCells) {
-        const ci = idx % this.w, cj = Math.floor(idx / this.w);
+        const ci = this.colOf(idx), cj = this.rowOf(idx);
         const base = this.cells[idx].base;
         for (let p = 0; p < 8; p++) {
           const life = (this.time * 0.8 + p / 8) % 1;
@@ -1127,7 +1249,7 @@ export class World {
     }
   }
 
-  private addDivider(i: number, j: number, c: Cell) {
+  private addDivider(idx: number, i: number, j: number, c: Cell) {
     const x = i + 0.5, z = j + 0.5;
     const obj = this.add('saw', x, c.base, z);
     // el modelo corta a lo largo de Z: 'x' gira 90°, las diagonales 45° (y su disco es más grande: cruza la casilla de esquina a esquina)
@@ -1146,14 +1268,14 @@ export class World {
       kind: 'blade', cx: x, cz: z, tx, tz, nx: tz, nz: -tx,
       half: diag ? 0.68 : 0.47, thick: 0.05, minY: c.base, maxY: c.base + (diag ? 0.72 : 0.64), id: 0,
     };
-    o.id = j * this.w + i;
-    this.obstacleAt[o.id] = this.obstacles.length;
+    o.id = idx;
+    this.obstacleAt[idx] = this.obstacles.length;
     this.obstacles.push(o);
   }
 
   /** Bits de vecinos más altos que esta losa (oclusión ambiental). */
-  private aoMask(i: number, j: number, top: number): number {
-    const higher = (di: number, dj: number) => this.top(i + di, j + dj) > top + 0.2;
+  private aoMask(i: number, j: number, top: number, story = 0): number {
+    const higher = (di: number, dj: number) => this.top(i + di, j + dj, story) > top + 0.2;
     const w = higher(-1, 0), e = higher(1, 0), n = higher(0, -1), s = higher(0, 1);
     let m = 0;
     if (w) m |= AO_W;
@@ -1192,11 +1314,11 @@ export class World {
     sw.buttons.push(button);
   }
 
-  private addDoor(i: number, j: number, c: Cell) {
+  private addDoor(i: number, j: number, s: number, c: Cell) {
     const ch = c.channel!;
     const obj = this.add('door', i + 0.5, c.base + DOOR_H, j + 0.5, { cloneMaterials: true });
     this.tint(Assets.child(obj, 'door_core'), CHANNEL_COLOR[ch]);
-    this.doors.push({ channel: ch, i, j, open: 0, obj });
+    this.doors.push({ channel: ch, i, j, s, open: 0, obj });
   }
 
   private tint(o: THREE.Object3D, color: number) {
@@ -1216,7 +1338,7 @@ export class World {
     glow.position.set(x, y + 0.01, z);
     glow.scale.set(2.2, 1, 2.2);
     glow.renderOrder = 2;
-    this.group.add(glow);
+    this.storyGroups[this.buildStory].add(glow);
     this.chestLid = Assets.child(this.chest, 'chest_lid');
     const n = 24;
     const pos = new Float32Array(n * 3);
@@ -1231,7 +1353,7 @@ export class World {
     this.ownedMaterials.push(pm);
     this.sparkles = new THREE.Points(geo, pm);
     this.sparkles.position.set(x, y, z);
-    this.group.add(this.sparkles);
+    this.storyGroups[this.buildStory].add(this.sparkles);
   }
 
   private updateLabel(sw: SwitchState) {
@@ -1262,7 +1384,7 @@ export class World {
       const pressed = this.switches.get(door.channel)?.pressed ?? false;
       const target = pressed ? 1 : 0;
       door.open += Math.sign(target - door.open) * Math.min(Math.abs(target - door.open), dt * 2.5);
-      const c = this.cell(door.i, door.j)!;
+      const c = this.cell(door.i, door.j, door.s)!;
       c.top = c.base + DOOR_H * (1 - door.open);
       door.obj.position.y = c.top;
       door.obj.visible = door.open < 0.99;

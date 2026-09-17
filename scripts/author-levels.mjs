@@ -1050,22 +1050,37 @@ const CHAPTER4 = [
   {
     file: 'chapter4/04-c4-el-pozo.json',
     id: 'c4-el-pozo', name: 'El pozo', count: 80, keepPct: 0.85,
-    // Presenta los agujeros: desde la sala alta se cae a la sala del tesoro, mucho más abajo.
+    // Presenta las plantas: se empieza en la de arriba y el agujero deja caer justo a la sala de debajo.
     map: [
       '###########',
       '#0000T0000#',
       '#000000000#',
-      '#000U00000#',
+      '#0C00000C0#',
+      '#000000000#',
+      '#000000000#',
+      '#000000000#',
+      '#000000000#',
+      '#000000000#',
       '#000000000#',
       '###########',
-      '#888888888#',
-      '#88C8H8C88#',
-      '#888888888#',
-      '#8888P8888#',
-      '###########',
     ],
+    stories: [{
+      map: [
+        '...........',
+        '...........',
+        '...........',
+        '...........',
+        '###########',
+        '#000000000#',
+        '#00C0H0C00#',
+        '#000000000#',
+        '#0000P0000#',
+        '#000000000#',
+        '###########',
+      ],
+    }],
     tips: [
-      { z: 8.5, text: 'Métete por el agujero: caerás a la sala de abajo' },
+      { z: 7.5, text: 'Métete por el agujero: caerás a la sala de abajo' },
     ],
   },
   {
@@ -1199,90 +1214,130 @@ const CHAPTER4 = [
   {
     file: 'chapter4/09-c4-railes-y-pozos.json',
     id: 'c4-railes-y-pozos', name: 'Raíles y pozos', count: 80, keepPct: 0.8,
-    // La vía sube a una sala alta y el pozo baja a la del tesoro.
+    // Dos plantas: el ascensor (estaciones una encima de otra) sube dando vueltas y el pozo baja a la sala del tesoro.
     map: [
-      '###########',
-      '#T00000000#',
-      '#000000U00#',
-      '#000C00000#',
-      '###########',
-      '#888888888#',
-      '#8888H8888#',
-      '#888888888#',
-      '####8R8####',
-      '.....=.....',
-      '.....%.....',
-      '.....=.....',
-      '####2R2####',
-      '#222222222#',
-      '#22C2P2C22#',
-      '###########',
+      '#############',
+      '#000000T0000#',
+      '#00000000000#',
+      '#0C0000000C0#',
+      '#00000000000#',
+      '#############',
+      '#00000000000#',
+      '#00000000000#',
+      '#00C00R00C00#',
+      '#00000000000#',
+      '#00000P00000#',
+      '#############',
     ],
+    stories: [{
+      map: [
+        '.............',
+        '.............',
+        '#############',
+        '#000C0000000#',
+        '#00000000H00#',
+        '#00000000000#',
+        '#00000000000#',
+        '#00000000000#',
+        '#00000R00000#',
+        '#0C0000000C0#',
+        '#############',
+        '.............',
+      ],
+    }],
     tips: [
-      { z: 13, text: 'La vía sube a lo alto dando vueltas' },
-      { z: 6.5, text: 'Y el pozo te baja hasta el tesoro' },
+      { z: 9.5, text: 'La vía sube a lo alto dando vueltas' },
+      { z: 5, text: 'Y el pozo te baja hasta el tesoro' },
     ],
   },
   {
     file: 'chapter4/10-c4-corazon-de-arena.json',
     id: 'c4-corazon-de-arena', name: 'El corazón de arena', count: 80, keepPct: 0.55,
-    // Final: rampas abajo, sierra, sendero diagonal sin muros, roca agrietada y pozo hasta el tesoro.
+    // Final en tres plantas hacia abajo: puente de roca rota y pozo arriba; sierras, disco y pozo en medio;
+    // el tesoro abajo, con un ascensor para volver a la planta del medio a por lo que se haya quedado.
     map: [
-      '#############',
-      '#00C00T00C00#',
-      '#00000000U00#',
-      '#00000000000#',
-      '#############',
-      '#######33333#',
-      '#######3H333#',
-      '#######33333#',
-      '.......BBBBB.',
-      '.....m333q...',
-      '....m333q....',
-      '...m3C3q.....',
-      '..m333q......',
-      '.m333q.......',
-      '#33333#######',
-      '#3C3C3#......',
-      '#33333#......',
-      '##uuu##......',
-      '#44K44#......',
-      '##uuu##......',
-      '#55555#......',
-      '#55E55#......',
-      '#55555#......',
-      '#5C5C5#......',
-      '#55P55#......',
-      '#######......',
+      '###############',
+      '#000000T000000#',
+      '#0000000000000#',
+      '#0C000000000C0#',
+      '#0000000000000#',
+      '#0000000000000#',
+      '#0000000000000#',
+      '#0000000000000#',
+      '#0000000000000#',
+      '#0000000000000#',
+      '#00R0000000000#',
+      '#0000000000000#',
+      '###############',
+      '...............',
+    ],
+    stories: [
+      {
+        map: [
+          '###############',
+          '#0000000000000#',
+          '#0C000000000C0#',
+          '#0000000000000#',
+          '#0000000000000#',
+          '######0K0######',
+          '######000######',
+          '#0000000000000#',
+          '#0000000000000#',
+          '#000000E000000#',
+          '#0CR000000H0C0#',
+          '#0000000000000#',
+          '###############',
+          '...............',
+        ],
+      },
+      {
+        map: [
+          '...............',
+          '....#######....',
+          '....#00000#....',
+          '....#C0H0C#....',
+          '....#00000#....',
+          '....##BBB##....',
+          '......BBB......',
+          '......BBB......',
+          '....##BBB##....',
+          '....#00000#....',
+          '....#0C0C0#....',
+          '....#00P00#....',
+          '....#######....',
+          '...............',
+        ],
+      },
     ],
     tips: [
-      { z: 21, text: 'Última prueba del desierto' },
-      { z: 19.5, text: 'Espera a que se te pase el mareo antes del sendero' },
-      { z: 12, text: 'Sendero en diagonal hasta la roca rota' },
-      { z: 6.5, text: 'El pozo te deja junto al tesoro' },
+      { z: 11, text: 'Última prueba del desierto: tres plantas hacia abajo' },
+      { z: 8, text: 'La roca rota solo aguanta una pasada' },
+      { z: 5.5, text: 'Las sierras te parten: aprieta para juntarte' },
+      { z: 10, text: 'El ascensor te sube si te has dejado algo arriba' },
     ],
   },
 ];
 
-function build(def) {
-  const d = def.map.length;
-  const w = def.map[0].length;
-  def.map.forEach((r, j) => { if (r.length !== w) throw new Error(`${def.id}: fila ${j} mide ${r.length}, no ${w}`); });
+/** Casillas y alturas de un mapa ASCII (una planta). */
+function buildGrid(label, map, hLayer) {
+  const d = map.length;
+  const w = map[0].length;
+  map.forEach((r, j) => { if (r.length !== w) throw new Error(`${label}: fila ${j} mide ${r.length}, no ${w}`); });
   const isDigit = (c) => c >= '0' && c <= '9';
   const tiles = [], heights = [];
   for (let j = 0; j < d; j++) {
     let t = '', h = '';
     for (let i = 0; i < w; i++) {
-      const ch = def.map[j][i];
+      const ch = map[j][i];
       if (ch === '.') { t += '.'; h += '0'; continue; }
-      if (isDigit(ch)) { t += '0'; h += def.h ? def.h[j][i] : ch; continue; }
+      if (isDigit(ch)) { t += '0'; h += hLayer ? hLayer[j][i] : ch; continue; }
       t += ch;
-      if (def.h) { h += def.h[j][i]; continue; }
+      if (hLayer) { h += hLayer[j][i]; continue; }
       if (ch === '#') { h += '0'; continue; }
       const votes = {};
       for (let r = 1; r <= 2 && !Object.keys(votes).length; r++) {
         for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) {
-          const n = def.map[j + dj]?.[i + di];
+          const n = map[j + dj]?.[i + di];
           if (n && isDigit(n)) votes[n] = (votes[n] ?? 0) + 1;
         }
       }
@@ -1295,7 +1350,7 @@ function build(def) {
     }
     tiles.push(t); heights.push(h);
   }
-  if (!def.h) {
+  if (!hLayer) {
     for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) {
       if (tiles[j][i] !== '#') continue;
       let base = 0;
@@ -1307,107 +1362,147 @@ function build(def) {
       heights[j] = heights[j].slice(0, i) + base + heights[j].slice(i + 1);
     }
   }
-  checkRamps(def, tiles, heights);
-  checkNoDeadEnds(def, tiles, heights);
-  checkCoins(def, tiles);
-  const { map, h, file, ...meta } = def;
-  return { format: 1, ...meta, tiles, heights };
+  return { tiles, heights };
 }
 
 /**
-  Avisa de zonas sin vuelta: casillas a las que se puede llegar desde la salida pero desde las que ya no
-  se llega al tesoro (fosos, bajadas a callejones). El limo sube como mucho una losa de altura; las puertas
-  cuentan como abiertas, las plataformas de salto alcanzan 6 casillas y las corrientes de aire 10.
+  Plantas: `map` es la de abajo y `stories: [{ map, h? }]` las de encima (cada una 4 unidades = 8 alturas más arriba),
+  del mismo tamaño. Se unen con agujeros (caen a la de abajo), ascensores (estaciones una encima de otra) y cañones.
 */
-function checkNoDeadEnds(def, tiles, heights) {
-  const H = tiles.length, W = tiles[0].length;
+function build(def) {
+  const grids = [buildGrid(def.id, def.map, def.h), ...(def.stories ?? []).map((st, k) => buildGrid(`${def.id} planta ${k + 1}`, st.map, st.h))];
+  for (const g of grids.slice(1)) {
+    if (g.tiles.length !== grids[0].tiles.length || g.tiles[0].length !== grids[0].tiles[0].length) throw new Error(`${def.id}: las plantas no miden lo mismo`);
+  }
+  grids.forEach((g, s) => checkRamps(s ? { id: `${def.id} planta ${s}` } : def, g.tiles, g.heights));
+  checkNoDeadEnds(def, grids);
+  checkCoins(def, grids);
+  const { map, h, file, stories, ...meta } = def;
+  return { format: 1, ...meta, tiles: grids[0].tiles, heights: grids[0].heights, ...(grids.length > 1 ? { stories: grids.slice(1) } : {}) };
+}
+
+/** alturas (en pasos de 0.5) entre el suelo de una planta y el de la siguiente */
+const STORY_STEPS = 8;
+
+/**
+  Avisa de zonas sin vuelta: casillas a las que se puede llegar desde la salida pero desde las que ya no
+  se llega al tesoro (fosos, bajadas a callejones). El limo solo sube por rampas; las puertas cuentan como
+  abiertas, las plataformas de salto alcanzan 6 casillas y las corrientes de aire 10. Entre plantas: los agujeros
+  y los bordes de las losas caen a la de abajo, los ascensores suben y bajan y los cañones lanzan a su diana.
+*/
+function checkNoDeadEnds(def, grids) {
+  const S = grids.length, H = grids[0].tiles.length, W = grids[0].tiles[0].length;
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  const at = (i, j) => (j >= 0 && j < H && i >= 0 && i < W ? tiles[j][i] : '.');
-  const walk = (i, j) => at(i, j) !== '.' && at(i, j) !== '#' && !'=@%'.includes(at(i, j));
+  const at = (s, i, j) => (s >= 0 && s < S && j >= 0 && j < H && i >= 0 && i < W ? grids[s].tiles[j][i] : '.');
+  const hgt = (s, i, j) => s * STORY_STEPS + Number(grids[s].heights[j][i]);
+  const walk = (s, i, j) => at(s, i, j) !== '.' && at(s, i, j) !== '#' && !'=@%'.includes(at(s, i, j));
   // altura del borde de una casilla hacia (di, dj): la rampa está una altura más arriba por su lado alto
   const RISE = { n: [0, -1], u: [0, 1], e: [1, 0], o: [-1, 0] };
-  const edge = (i, j, di, dj) => {
-    const h = Number(heights[j][i]);
-    const r = RISE[at(i, j)];
+  const edge = (s, i, j, di, dj) => {
+    const h = hgt(s, i, j);
+    const r = RISE[at(s, i, j)];
     if (!r) return h;
     return r[0] === di && r[1] === dj ? h + 1 : r[0] === -di && r[1] === -dj ? h : h + 0.5;
   };
   // se pasa de una casilla a la vecina si su borde no está más alto (el limo no sube desniveles, solo rampas)
-  const passable = (i, j, a, b) => {
+  const passable = (s, i, j, a, b) => {
     const di = Math.sign(a - i), dj = Math.sign(b - j);
-    return edge(a, b, -di, -dj) <= edge(i, j, di, dj);
+    return edge(s, a, b, -di, -dj) <= edge(s, i, j, di, dj);
   };
-  // estación → estación del otro extremo de su vía
-  const partner = (i, j) => {
+  // caer en (i, j): la primera casilla con suelo de las plantas de abajo
+  const landing = (s, i, j) => { for (let k = s - 1; k >= 0; k--) if (walk(k, i, j)) return [k, i, j]; return null; };
+  const railsAround = (s, i, j) => DIRS.filter(([di, dj]) => '=@%'.includes(at(s, i + di, j + dj)));
+  // estación → estación del otro extremo de su vía, o la de encima o debajo (ascensor)
+  const partner = (s, i, j) => {
+    if (!railsAround(s, i, j).length) {
+      let best = null;
+      for (let k = 0; k < S; k++) {
+        if (k === s || at(k, i, j) !== 'R' || railsAround(k, i, j).length) continue;
+        if (!best || Math.abs(k - s) < Math.abs(best[0] - s)) best = [k, i, j];
+      }
+      return best;
+    }
     let prev = [i, j];
-    let cur = DIRS.map(([di, dj]) => [i + di, j + dj]).find(([a, b]) => '=@%'.includes(at(a, b)));
+    let cur = DIRS.map(([di, dj]) => [i + di, j + dj]).find(([a, b]) => '=@%'.includes(at(s, a, b)));
     for (let guard = 0; cur && guard < W * H; guard++) {
-      if (at(...cur) === 'R') return cur;
+      if (at(s, ...cur) === 'R') return [s, ...cur];
       const nxt = DIRS.map(([di, dj]) => [cur[0] + di, cur[1] + dj])
-        .find(([a, b]) => (a !== prev[0] || b !== prev[1]) && ('=@%R'.includes(at(a, b))));
+        .find(([a, b]) => (a !== prev[0] || b !== prev[1]) && ('=@%R'.includes(at(s, a, b))));
       prev = cur;
       cur = nxt;
     }
     return null;
   };
+  const holeExit = (s, i, j) => {
+    let best = null, score = Infinity;
+    for (let k = 0; k < S; k++) for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) {
+      if (at(k, a, b) !== 'U') continue;
+      const sc = Math.hypot(a - i, b - j) + (hgt(k, a, b) < hgt(s, i, j) ? 0 : 1000);
+      if (sc < score) { score = sc; best = [k, a, b]; }
+    }
+    return best ?? landing(s, i, j);
+  };
+  // cañón: diana más cercana (de cualquier planta) a la que no se llega andando desde él
+  const cannonTarget = (s, i, j) => {
+    const foot = new Set([String([i, j])]);
+    const q = [[i, j]];
+    while (q.length) {
+      const [a, b] = q.shift();
+      for (const [di, dj] of DIRS) {
+        const k = String([a + di, b + dj]);
+        if (!walk(s, a + di, b + dj) || foot.has(k)) continue;
+        foot.add(k);
+        q.push([a + di, b + dj]);
+      }
+    }
+    let best = null, score = Infinity;
+    for (let k = 0; k < S; k++) for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) {
+      if (at(k, a, b) !== 'x' || (k === s && foot.has(String([a, b])))) continue;
+      const sc = Math.hypot(a - i, b - j, (k - s) * 2);
+      if (sc < score) { score = sc; best = [k, a, b]; }
+    }
+    return best;
+  };
   const WIND = { '^': [0, -1], v: [0, 1], '<': [-1, 0], '>': [1, 0] };
-  const next = (i, j) => {
+  const next = (s, i, j) => {
     const out = [];
-    if (at(i, j) === 'R') { const other = partner(i, j); if (other) out.push(other); }
-    // agujero: se cae a la salida más cercana (preferida más abajo) y no se puede seguir andando por encima
-    if (at(i, j) === 'H') {
-      let best = null, score = Infinity;
-      for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) {
-        if (at(a, b) !== 'U') continue;
-        const sc = Math.hypot(a - i, b - j) + (Number(heights[b][a]) < Number(heights[j][i]) ? 0 : 1000);
-        if (sc < score) { score = sc; best = [a, b]; }
-      }
-      return best ? [best] : [];
-    }
-    // cañón: lanza a su diana (la más cercana a la que no se llega andando desde él)
-    if (at(i, j) === 'N') {
-      const foot = new Set([String([i, j])]);
-      const q = [[i, j]];
-      while (q.length) {
-        const [a, b] = q.shift();
-        for (const [di, dj] of DIRS) {
-          const k = String([a + di, b + dj]);
-          if (!walk(a + di, b + dj) || foot.has(k)) continue;
-          foot.add(k);
-          q.push([a + di, b + dj]);
-        }
-      }
-      let best = null, score = Infinity;
-      for (let b = 0; b < H; b++) for (let a = 0; a < W; a++) {
-        if (at(a, b) !== 'x' || foot.has(String([a, b]))) continue;
-        const sc = Math.hypot(a - i, b - j);
-        if (sc < score) { score = sc; best = [a, b]; }
-      }
-      return best ? [best] : [];
-    }
-    const reach = at(i, j) === 'J' ? 6 : WIND[at(i, j)] || at(i, j) === 'Q' ? 10 : 1;
-    const dirs = WIND[at(i, j)] ? [WIND[at(i, j)]] : DIRS;
+    const c = at(s, i, j);
+    if (c === 'R') { const other = partner(s, i, j); if (other) out.push(other); }
+    if (c === 'H') { const e = holeExit(s, i, j); return e ? [e] : []; }
+    if (c === 'N') { const t = cannonTarget(s, i, j); return t ? [t] : []; }
+    const reach = c === 'J' ? 6 : WIND[c] || c === 'Q' ? 10 : 1;
+    const dirs = WIND[c] ? [WIND[c]] : DIRS;
     for (const [di, dj] of reach > 1 ? [...dirs, ...(dirs === DIRS ? [] : DIRS)] : DIRS) {
       for (let k = 1; k <= reach; k++) {
         const a = i + di * k, b = j + dj * k;
-        // a más de una casilla (saltos y corrientes) se puede caer más abajo, no subir
-        if (walk(a, b) && (k === 1 ? passable(i, j, a, b) : Number(heights[b][a]) <= Number(heights[j][i]))) out.push([a, b]);
+        if (walk(s, a, b)) {
+          // a más de una casilla (saltos y corrientes) se puede caer más abajo, no subir
+          if (k === 1 ? passable(s, i, j, a, b) : hgt(s, a, b) <= hgt(s, i, j)) out.push([s, a, b]);
+        } else if (at(s, a, b) === '.' && s > 0) {
+          // fuera de la losa: se cae a la planta de abajo
+          const l = landing(s, a, b);
+          if (l) out.push(l);
+        }
       }
     }
     return out;
   };
+  const key = (n) => n.join(',');
   const reachable = (start) => {
-    const seen = new Set([String(start)]);
+    const seen = new Set([key(start)]);
     const queue = [start];
-    while (queue.length) for (const n of next(...queue.shift())) if (!seen.has(String(n))) { seen.add(String(n)); queue.push(n); }
+    while (queue.length) for (const n of next(...queue.shift())) if (!seen.has(key(n))) { seen.add(key(n)); queue.push(n); }
     return seen;
   };
   let P, T;
-  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { if (at(i, j) === 'P') P = [i, j]; if (at(i, j) === 'T') T = [i, j]; }
+  for (let s = 0; s < S; s++) for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    if (at(s, i, j) === 'P') P = [s, i, j];
+    if (at(s, i, j) === 'T') T = [s, i, j];
+  }
   if (!P || !T) return;
   const fromStart = reachable(P);
-  if (!fromStart.has(String(T))) console.warn(`  aviso ${def.id}: el tesoro no se alcanza desde la salida`);
-  const stuck = [...fromStart].filter((k) => !reachable(k.split(',').map(Number)).has(String(T)));
+  if (!fromStart.has(key(T))) console.warn(`  aviso ${def.id}: el tesoro no se alcanza desde la salida`);
+  const stuck = [...fromStart].filter((k) => !reachable(k.split(',').map(Number)).has(key(T)));
   if (stuck.length) console.warn(`  aviso ${def.id}: zona sin vuelta en ${stuck.map((k) => `(${k})`).join(' ')}`);
 }
 
@@ -1415,17 +1510,20 @@ function checkNoDeadEnds(def, tiles, heights) {
   Monedas que se pueden recoger: lejos del tesoro (si no, al ir a por ellas se toca el cofre y acaba el piso)
   y no encajadas en una esquina o un hueco de una casilla (el limo no llega a meterse lo bastante).
 */
-function checkCoins(def, tiles) {
-  const H = tiles.length, W = tiles[0].length;
-  const at = (i, j) => (j >= 0 && j < H && i >= 0 && i < W ? tiles[j][i] : '.');
+function checkCoins(def, grids) {
   let T;
-  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (at(i, j) === 'T') T = [i, j];
-  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
-    if (at(i, j) !== 'C' && at(i, j) !== 'G') continue;
-    if (T && Math.max(Math.abs(i - T[0]), Math.abs(j - T[1])) < 3) console.warn(`  aviso ${def.id}: moneda en (${i}, ${j}) demasiado cerca del tesoro`);
-    const blocked = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([di, dj]) => '#.'.includes(at(i + di, j + dj)) || '=@%R'.includes(at(i + di, j + dj))).length;
-    if (blocked >= 2 && at(i, j) === 'C') console.warn(`  aviso ${def.id}: moneda en (${i}, ${j}) encajada (${blocked} lados cerrados)`);
-  }
+  grids.forEach((g, s) => g.tiles.forEach((row, j) => { const i = row.indexOf('T'); if (i >= 0) T = [s, i, j]; }));
+  grids.forEach((g, s) => {
+    const H = g.tiles.length, W = g.tiles[0].length;
+    const at = (i, j) => (j >= 0 && j < H && i >= 0 && i < W ? g.tiles[j][i] : '.');
+    const where = s ? ` planta ${s}` : '';
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+      if (at(i, j) !== 'C' && at(i, j) !== 'G') continue;
+      if (T && T[0] === s && Math.max(Math.abs(i - T[1]), Math.abs(j - T[2])) < 3) console.warn(`  aviso ${def.id}: moneda en (${i}, ${j})${where} demasiado cerca del tesoro`);
+      const blocked = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([di, dj]) => '#.'.includes(at(i + di, j + dj)) || '=@%R'.includes(at(i + di, j + dj))).length;
+      if (blocked >= 2 && at(i, j) === 'C') console.warn(`  aviso ${def.id}: moneda en (${i}, ${j})${where} encajada (${blocked} lados cerrados)`);
+    }
+  });
 }
 
 /**

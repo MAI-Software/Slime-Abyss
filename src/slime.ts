@@ -303,14 +303,15 @@ export class Slime {
 
     // aparición: espiral compacta en 3 capas, sin salirse a casillas de otra altura (muros, vacío)
     const s = world.start;
-    const startTop = world.top(Math.floor(s.x), Math.floor(s.z));
+    const startStory = world.storyOf(world.startIdx);
+    const startTop = world.top(Math.floor(s.x), Math.floor(s.z), startStory);
     for (let k = 0; k < n; k++) {
       const a = k * 2.39996;
       const layer = k % 3;
       const rr = 0.13 * Math.sqrt(k / 3 + 0.5);
       let x = s.x + Math.cos(a) * rr;
       let z = s.z + Math.sin(a) * rr;
-      if (world.top(Math.floor(x), Math.floor(z)) !== startTop) {
+      if (world.top(Math.floor(x), Math.floor(z), startStory) !== startTop) {
         x = Math.min(Math.max(x, Math.floor(s.x) + R), Math.floor(s.x) + 1 - R);
         z = Math.min(Math.max(z, Math.floor(s.z) + R), Math.floor(s.z) + 1 - R);
       }
@@ -619,7 +620,7 @@ export class Slime {
       // corriente de un ventilador
       const ci = Math.floor(px[i]), cj = Math.floor(pz[i]);
       if (ci < 0 || cj < 0 || ci >= w.w || cj >= w.d) continue;
-      const idx = cj * w.w + ci;
+      const idx = w.index(ci, cj, w.storyAt(ci, cj, py[i]));
       // agujero: succiona como un desagüe (lo de encima se escurre hacia dentro, aunque el limo sea más ancho)
       if (w.cells[idx].kind === 'hole' && py[i] < w.cells[idx].base + 0.9) {
         const hx = px[i] - ci - 0.5, hz = pz[i] - cj - 0.5;
@@ -819,7 +820,8 @@ export class Slime {
       else this.cannonLock.set(idx, t + dt);
     }
     for (const g of this.groups) {
-      const c = w.cannonAt(Math.floor(g.cx), Math.floor(g.cz));
+      const gi = Math.floor(g.cx), gj = Math.floor(g.cz);
+      const c = w.cannonAt(gi, gj, w.storyAt(gi, gj, g.cy));
       if (!c || !Number.isFinite(c.tx) || c.loaded || this.cannonLock.has(c.idx)) continue;
       if (Math.hypot(g.cx - c.x, g.cz - c.z) > 0.42) continue;
       // una gota suelta no se dispara sola: el cañón espera al limo
@@ -903,7 +905,7 @@ export class Slime {
     const w = this.world;
     if (!w.rails.size) return;
     for (const [idx, t] of this.stationLock) {
-      const si = idx % w.w, sj = Math.floor(idx / w.w);
+      const si = w.colOf(idx), sj = w.rowOf(idx);
       let occupied = false;
       for (let i = 0; i < this.n && !occupied; i++) {
         occupied = !!this.alive[i] && !this.riding[i] && Math.floor(this.px[i]) === si && Math.floor(this.pz[i]) === sj;
@@ -914,7 +916,7 @@ export class Slime {
     }
     for (const g of this.groups) {
       const ci = Math.floor(g.cx), cj = Math.floor(g.cz);
-      const path = w.railAt(ci, cj);
+      const path = w.railAt(ci, cj, w.storyAt(ci, cj, g.cy));
       if (!path || this.stationLock.has(path.from)) continue;
       if (Math.hypot(g.cx - (ci + 0.5), g.cz - (cj + 0.5)) > 0.42) continue;
       let grounded = 0, onBoard = false;
@@ -990,7 +992,7 @@ export class Slime {
       if (ride.s < p.total) continue;
       // llegada: vuelve a ser limo sobre la estación y sale empujado hacia delante
       const w = this.world;
-      const sx = (p.to % w.w) + 0.5, sz = Math.floor(p.to / w.w) + 0.5, top = w.cells[p.to].base;
+      const sx = w.colOf(p.to) + 0.5, sz = w.rowOf(p.to) + 0.5, top = w.cells[p.to].base;
       ride.ids.forEach((i, n) => {
         this.riding[i] = 0;
         this.px[i] = sx + ride.off[n * 3] * 0.9;
@@ -1008,7 +1010,7 @@ export class Slime {
 
   /** ¿Se puede pasar por la casilla a la altura de este limito? (sin muro ni bloque más alto que un escalón) */
   private openAt(i: number, j: number, y: number) {
-    const c = this.world.cell(i, j);
+    const c = this.world.cell(i, j, this.world.storyAt(i, j, y));
     return !c || c.top <= y - R + STEP_UP;
   }
 
@@ -1018,9 +1020,10 @@ export class Slime {
     const i0 = Math.floor(x - R), i1 = Math.floor(x + R);
     const j0 = Math.floor(z - R), j1 = Math.floor(z + R);
     for (let cj = j0; cj <= j1; cj++) {
-      for (let ci = i0; ci <= i1; ci++) {
-        const cell = w.cell(ci, cj);
-        if (!cell || cell.top === -Infinity || y - R >= cell.top) continue;
+      for (let ci = i0; ci <= i1; ci++) for (let cs = 0; cs < w.stories; cs++) {
+        // cada planta: bloque de la losa (o columna en la planta 0) entre bottom y top
+        const cell = w.cell(ci, cj, cs);
+        if (!cell || cell.top === -Infinity || y - R >= cell.top || y + R <= cell.bottom) continue;
         let qx = Math.min(Math.max(x, ci), ci + 1);
         let qz = Math.min(Math.max(z, cj), cj + 1);
         if (cell.kind === 'hole') {
@@ -1036,26 +1039,28 @@ export class Slime {
         if (y - R >= top) continue;
         // en diagonal fuera de la casilla: roza su arista vertical
         const edgeSx = x < ci ? -1 : x > ci + 1 ? 1 : 0, edgeSz = z < cj ? -1 : z > cj + 1 ? 1 : 0;
-        const qy = Math.min(y, top);
+        const qy = Math.min(Math.max(y, cell.bottom), top);
         const dx = x - qx, dy = y - qy, dz = z - qz;
         const d2 = dx * dx + dy * dy + dz * dz;
         if (d2 >= R * R) continue;
         // escalón bajo: el limo lo trepa en vez de chocar
         const climb = top - (y - R);
-        if (climb > 0.02 && climb <= STEP_UP && dy <= 0 && top - this.world.top(Math.floor(x), Math.floor(z)) <= STEP_UP + 0.01) {
+        const fx = Math.floor(x), fz = Math.floor(z);
+        if (climb > 0.02 && climb <= STEP_UP && dy <= 0 && top - w.top(fx, fz, w.storyAt(fx, fz, y)) <= STEP_UP + 0.01) {
           y = top + R;
           if (this.vy[i] < 0) this.vy[i] = 0;
           this.air[i] = 0;
-          this.groundCell[i] = cj * w.w + ci;
+          this.groundCell[i] = w.index(ci, cj, cs);
           continue;
         }
         let nx: number, ny: number, nz: number, pen: number;
         if (d2 < 1e-9) {
-          // centro dentro del bloque: salir por la cara más cercana
-          const up = top - y;
+          // centro dentro del bloque: salir por la cara más cercana (en las losas de arriba, también por debajo)
+          const up = top - y, down = y - cell.bottom;
           const l = x - ci, r = ci + 1 - x, b = z - cj, f = cj + 1 - z;
-          const m = Math.min(up, l, r, b, f);
+          const m = Math.min(up, down, l, r, b, f);
           if (m === up) { nx = 0; ny = 1; nz = 0; }
+          else if (m === down) { nx = 0; ny = -1; nz = 0; }
           else if (m === l) { nx = -1; ny = 0; nz = 0; }
           else if (m === r) { nx = 1; ny = 0; nz = 0; }
           else if (m === b) { nx = 0; ny = 0; nz = -1; }
@@ -1073,7 +1078,7 @@ export class Slime {
           this.vy[i] -= ny * vn;
           this.vz[i] -= nz * vn;
         }
-        if (ny < 0.5 && this.state === 'burning' && w.burnable(ci, cj)) this.burnHits.push(cj * w.w + ci);
+        if (ny < 0.5 && ny > -0.5 && this.state === 'burning' && w.burnable(ci, cj, cs)) this.burnHits.push(w.index(ci, cj, cs));
         if (ny < 0.5 && vn < -2.5) { this.wallHits++; this.wallHitSpeed += -vn; }
         if (ny < 0.5 && this.state !== 'frozen') {
           // contra un muro: el líquido se pega un poco
@@ -1103,14 +1108,14 @@ export class Slime {
           }
           if (this.air[i] > 0.35) this.landHits++;
           this.air[i] = 0;
-          this.groundCell[i] = cj * w.w + ci;
+          this.groundCell[i] = w.index(ci, cj, cs);
         }
       }
     }
     // sierras: hojas finas en cualquier dirección (recta o diagonal) dentro de la casilla
     for (let cj = j0 - 1; cj <= j1 + 1; cj++) {
       for (let ci = i0 - 1; ci <= i1 + 1; ci++) {
-        const o = w.obstacle(ci, cj);
+        const o = w.obstacle(ci, cj, w.storyAt(ci, cj, y));
         if (!o || y - R >= o.maxY) continue;
         const rx = x - o.cx, rz = z - o.cz;
         const along = Math.max(-o.half, Math.min(o.half, rx * o.tx + rz * o.tz));
@@ -1155,7 +1160,7 @@ export class Slime {
     const ci = Math.floor(x), cj = Math.floor(z);
     for (let dj = -1; dj <= 1; dj++) {
       for (let di = -1; di <= 1; di++) {
-        const o = w.obstacle(ci + di, cj + dj);
+        const o = w.obstacle(ci + di, cj + dj, w.storyAt(ci + di, cj + dj, this.py[i]));
         if (!o || this.py[i] > o.maxY + 0.25) continue;
         let side: number;
         if (o.kind === 'blade') {
@@ -1189,7 +1194,7 @@ export class Slime {
   /** Sobre la boca de un agujero (se suelta del resto para escurrirse). */
   private overHole(x: number, y: number, z: number): boolean {
     const ci = Math.floor(x), cj = Math.floor(z);
-    const c = this.world.cell(ci, cj);
+    const c = this.world.cell(ci, cj, this.world.storyAt(ci, cj, y));
     if (c?.kind !== 'hole' || y > c.base + 0.9) return false;
     const hx = x - ci - 0.5, hz = z - cj - 0.5;
     return hx * hx + hz * hz < (HOLE_R + 0.08) * (HOLE_R + 0.08);
@@ -1198,9 +1203,10 @@ export class Slime {
   private overhanging(x: number, y: number, z: number): boolean {
     const w = this.world;
     const ci = Math.floor(x), cj = Math.floor(z);
-    if (w.top(ci, cj) !== -Infinity) return false;
+    const s = w.bandAt(y);
+    if (w.top(ci, cj, s) !== -Infinity) return false;
     let edge = -Infinity;
-    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) edge = Math.max(edge, w.top(ci + di, cj + dj));
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) edge = Math.max(edge, w.top(ci + di, cj + dj, s));
     return edge !== -Infinity && y < edge + R + 0.35;
   }
 
@@ -1235,8 +1241,8 @@ export class Slime {
       if (this.stateT <= 0) this.setState('normal');
     }
     for (const idx of this.burnHits) {
-      const ci = idx % w.w, cj = Math.floor(idx / w.w);
-      const what = w.burn(ci, cj);
+      const ci = w.colOf(idx), cj = w.rowOf(idx);
+      const what = w.burn(idx);
       if (what) this.events.push({ type: 'burn', x: ci + 0.5, z: cj + 0.5, what });
     }
     this.burnHits.length = 0;
@@ -1268,10 +1274,11 @@ export class Slime {
       // por un agujero: se recuerda por cuál entró (dentro del tubo puede desviarse) y sale por su salida, cayendo desde el aro
       {
         const cci = Math.floor(x), ccj = Math.floor(z);
-        const here = w.cell(cci, ccj);
+        const hs = w.storyAt(cci, ccj, y);
+        const here = w.cell(cci, ccj, hs);
         if (here?.kind === 'hole' && y < here.base) {
           const hx = x - cci - 0.5, hz = z - ccj - 0.5;
-          if (hx * hx + hz * hz < HOLE_R * HOLE_R) this.holeIn[i] = ccj * w.w + cci;
+          if (hx * hx + hz * hz < HOLE_R * HOLE_R) this.holeIn[i] = w.index(cci, ccj, hs);
         } else if (this.air[i] < 0.05) this.holeIn[i] = -1;
         const hIdx = this.holeIn[i];
         const hc = hIdx >= 0 ? w.cells[hIdx] : null;
@@ -1281,7 +1288,7 @@ export class Slime {
           if (exit) {
             // una sola vez por caída (van pasando limitos durante un rato)
             if (this.time - this.lastHoleEvent > 1.5) { this.lastHoleEvent = this.time; this.events.push({ type: 'hole', x: exit.x, y: exit.y, z: exit.z }); }
-            const hcx = (hIdx % w.w) + 0.5, hcz = Math.floor(hIdx / w.w) + 0.5;
+            const hcx = w.colOf(hIdx) + 0.5, hcz = w.rowOf(hIdx) + 0.5;
             const nx = exit.x + Math.max(-0.3, Math.min(0.3, x - hcx)), nz = exit.z + Math.max(-0.3, Math.min(0.3, z - hcz)), ny = exit.y + 2.5;
             this.px[i] = this.ox[i] = nx;
             this.py[i] = this.oy[i] = ny;
@@ -1302,15 +1309,16 @@ export class Slime {
 
       this.applyDividers(i);
       const ci = Math.floor(x), cj = Math.floor(z);
-      const under = w.cell(ci, cj);
-      const idx = under ? cj * w.w + ci : -1;
+      const st = w.storyAt(ci, cj, y);
+      const under = w.cell(ci, cj, st);
+      const idx = under ? w.index(ci, cj, st) : -1;
       const inWind = idx >= 0 && (w.windX[idx] !== 0 || w.windZ[idx] !== 0) && y < w.windBase[idx] + 2.2;
       // suelo que se hunde: la roca agrietada al pisarla, el hielo si el limo va en llamas.
       // Como con los objetos, las gotitas sueltas no pesan lo bastante (no rompen el camino por delante)
       if (under && this.air[i] < 0.1 && y < under.top + 0.5 && (under.kind === 'crack' || under.kind === 'ice')
         && this.gid[i] >= 0 && (this.groups[this.gid[i]]?.ids.length ?? 0) >= PICKUP_MIN) {
-        if (under.kind === 'crack') w.crumble(ci, cj);
-        else if (under.kind === 'ice' && this.state === 'burning') w.melt(ci, cj);
+        if (under.kind === 'crack') w.crumble(ci, cj, st);
+        else if (under.kind === 'ice' && this.state === 'burning') w.melt(ci, cj, st);
       }
       if (this.loose[i] > 0) { this.loose[i] = Math.max(0, this.loose[i] - dt); if (this.loose[i] > 0) looseNow++; }
       if (this.state === 'frozen') this.grip[i] = 1;
@@ -1320,25 +1328,25 @@ export class Slime {
 
       const chunk = this.gid[i] >= 0 ? this.groups[this.gid[i]].ids.length : 0;
       if (under && (under.kind === 'coin' || under.kind === 'gem' || under.kind === 'oil') && y < under.base + 1.3 && chunk >= pickMin) {
-        const got = w.collectCoin(ci, cj);
+        const got = w.collectCoin(ci, cj, st);
         if (got) {
-          const c = w.coinPosition(ci, cj, this.tmpCoin);
+          const c = w.coinPosition(ci, cj, this.tmpCoin, st);
           this.events.push({ type: got, x: c.x, y: c.y, z: c.z });
           if (got === 'oil') { if (this.state !== 'burning') this.setState('oiled'); }
           else for (const f of this.faces) f.cheer(got === 'gem' ? 1.2 : 0.5);
         }
       }
       // aire frío: congela (o apaga las llamas)
-      if (under && w.isCold(ci, cj) && y < under.base + 1.6) {
+      if (under && w.isCold(ci, cj, st) && y < under.base + 1.6) {
         if (this.state === 'burning') this.setState('normal');
         else if (this.state !== 'frozen' || this.stateT < FREEZE_TIME - 0.5) this.setState('frozen');
       }
-      if (under && w.fireActive(ci, cj) && y < under.base + 0.8) {
+      if (under && w.fireActive(ci, cj, st) && y < under.base + 0.8) {
         if (this.state === 'oiled') this.setState('burning');
         else if (this.state === 'frozen') this.setState('normal');
         else if (this.state !== 'burning') {
           if (this.fireHits.length < 6) this.fireHits.push(ci + 0.5, cj + 0.5);
-          if (w.fireLethal(ci, cj)) {
+          if (w.fireLethal(ci, cj, st)) {
             this.dying[i] = 1e-4;
             this.hurts.push({ x, z });
             if (this.fireKills.length < 3 * FIRE_SPREAD_MAX) this.fireKills.push(x, y, z);
@@ -1371,7 +1379,7 @@ export class Slime {
             this.padTop[g] = under.top;
           }
           anyPad = true;
-          if (w.triggerPad(ci, cj)) this.events.push({ type: 'pad', x, y, z });
+          if (w.triggerPad(ci, cj, st)) this.events.push({ type: 'pad', x, y, z });
         }
       }
       if (this.air[i] < 0.06 && this.groundCell[i] >= 0) {
@@ -1670,7 +1678,8 @@ export class Slime {
       const shadow = this.contactShadows[k];
       if (!g || g.ids.length < FACE_MIN_SIZE) { if (k === 0) face.hide(); shadow.visible = false; continue; }
       // sombra de contacto sobre la casilla de debajo (se desvanece al alejarse del suelo)
-      const floorY = this.world.top(Math.floor(g.cx), Math.floor(g.cz));
+      const gx = Math.floor(g.cx), gz = Math.floor(g.cz);
+      const floorY = this.world.top(gx, gz, this.world.storyAt(gx, gz, g.cy));
       const above = g.cy - floorY;
       shadow.visible = floorY !== -Infinity && above < 3 && above > -0.3;
       if (shadow.visible) {

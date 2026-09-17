@@ -1,4 +1,4 @@
-import { TILE_BY_CHAR, TILES, replaceAt, type LevelData, type TileDef } from './level/format';
+import { MAX_STORIES, TILE_BY_CHAR, TILES, replaceAt, type LevelData, type StoryGrid, type TileDef } from './level/format';
 
 /*
   Creador de niveles: cuadrícula 2D vista desde arriba (fila 0 = fondo, como en el juego).
@@ -31,8 +31,10 @@ export class LevelEditor {
   level!: LevelData;
   tool: EditorTool = 'paint';
   brush = '0';
-  /** piso en el que se pinta (altura 0-9) o null para respetar la altura de cada casilla */
+  /** altura a la que se pinta (0-9) o null para respetar la altura de cada casilla */
   floor: number | null = null;
+  /** planta que se edita (0 = la de abajo) */
+  story = 0;
   /** se llama tras cada cambio del nivel (para guardar) */
   onChange: (() => void) | null = null;
 
@@ -74,7 +76,38 @@ export class LevelEditor {
   load(level: LevelData) {
     this.level = structuredClone(level);
     this.undoStack = [];
+    this.story = 0;
     this.fit();
+  }
+
+  get stories() { return 1 + (this.level.stories?.length ?? 0); }
+
+  /** Casillas y alturas de una planta (por defecto, la que se edita). */
+  grid(s = this.story): StoryGrid {
+    return s === 0 ? this.level : this.level.stories![s - 1];
+  }
+
+  /** Añade una planta vacía encima de todas y pasa a ella. Devuelve false si ya hay el máximo. */
+  addStory(): boolean {
+    if (this.stories >= MAX_STORIES) return false;
+    this.snapshot();
+    const empty = { tiles: this.level.tiles.map((r) => '.'.repeat(r.length)), heights: this.level.heights.map((r) => '0'.repeat(r.length)) };
+    this.level.stories = [...(this.level.stories ?? []), empty];
+    this.story = this.stories - 1;
+    this.draw();
+    this.onChange?.();
+    return true;
+  }
+
+  /** Quita la planta que se edita (nunca la de abajo). */
+  removeStory() {
+    if (this.story === 0 || !this.level.stories) return;
+    this.snapshot();
+    this.level.stories.splice(this.story - 1, 1);
+    if (!this.level.stories.length) delete this.level.stories;
+    this.story = Math.min(this.story, this.stories - 1);
+    this.draw();
+    this.onChange?.();
   }
 
   /** Encaja la cuadrícula entera en el lienzo. */
@@ -91,9 +124,12 @@ export class LevelEditor {
   undo() {
     const snap = this.undoStack.pop();
     if (!snap) return false;
-    const { tiles, heights } = JSON.parse(snap) as Pick<LevelData, 'tiles' | 'heights'>;
+    const { tiles, heights, stories } = JSON.parse(snap) as Pick<LevelData, 'tiles' | 'heights' | 'stories'>;
     this.level.tiles = tiles;
     this.level.heights = heights;
+    if (stories) this.level.stories = stories;
+    else delete this.level.stories;
+    this.story = Math.min(this.story, this.stories - 1);
     this.draw();
     this.onChange?.();
     return true;
@@ -102,7 +138,7 @@ export class LevelEditor {
   get canUndo() { return this.undoStack.length > 0; }
 
   private snapshot() {
-    this.undoStack.push(JSON.stringify({ tiles: this.level.tiles, heights: this.level.heights }));
+    this.undoStack.push(JSON.stringify({ tiles: this.level.tiles, heights: this.level.heights, stories: this.level.stories }));
     if (this.undoStack.length > UNDO_MAX) this.undoStack.shift();
   }
 
@@ -113,13 +149,17 @@ export class LevelEditor {
     if (w === this.width && d === this.depth) return;
     this.snapshot();
     const fitRow = (row: string, fill: string) => (row.length >= w ? row.slice(0, w) : row + fill.repeat(w - row.length));
-    let tiles = this.level.tiles.map((r) => fitRow(r, '.'));
-    let heights = this.level.heights.map((r) => fitRow(r, '0'));
-    while (tiles.length < d) { tiles.push('.'.repeat(w)); heights.push('0'.repeat(w)); }
-    tiles = tiles.slice(0, d);
-    heights = heights.slice(0, d);
-    this.level.tiles = tiles;
-    this.level.heights = heights;
+    // todas las plantas miden lo mismo
+    for (let s = 0; s < this.stories; s++) {
+      const g = this.grid(s);
+      let tiles = g.tiles.map((r) => fitRow(r, '.'));
+      let heights = g.heights.map((r) => fitRow(r, '0'));
+      while (tiles.length < d) { tiles.push('.'.repeat(w)); heights.push('0'.repeat(w)); }
+      tiles = tiles.slice(0, d);
+      heights = heights.slice(0, d);
+      g.tiles = tiles;
+      g.heights = heights;
+    }
     this.fit();
     this.onChange?.();
   }
@@ -222,15 +262,18 @@ export class LevelEditor {
   }
 
   private edit(i: number, j: number): boolean {
-    const L = this.level;
+    const L = this.grid();
     const cur = L.tiles[j][i];
     if (this.tool === 'paint') {
       // con un piso elegido, lo pintado queda a su altura (el vacío no tiene altura)
       const h = this.floor !== null && this.brush !== '.' ? String(this.floor) : L.heights[j][i];
       if (cur === this.brush && h === L.heights[j][i]) return false;
       if (cur !== this.brush && TILE_BY_CHAR.get(this.brush)?.unique) {
-        // solo una salida y un tesoro: el anterior pasa a ser suelo
-        L.tiles = L.tiles.map((row) => row.split(this.brush).join('0'));
+        // solo una salida y un tesoro en todo el nivel: el anterior (de cualquier planta) pasa a ser suelo
+        for (let s = 0; s < this.stories; s++) {
+          const g = this.grid(s);
+          g.tiles = g.tiles.map((row) => row.split(this.brush).join('0'));
+        }
       }
       L.tiles[j] = replaceAt(L.tiles[j], i, this.brush);
       L.heights[j] = replaceAt(L.heights[j], i, h);
@@ -260,11 +303,20 @@ export class LevelEditor {
     const s = this.cell;
     const i0 = Math.max(0, Math.floor(-this.offX / s)), i1 = Math.min(this.width - 1, Math.floor((r.width - this.offX) / s));
     const j0 = Math.max(0, Math.floor(-this.offY / s)), j1 = Math.min(this.depth - 1, Math.floor((r.height - this.offY) / s));
+    const cur = this.grid();
+    const below = this.story > 0 ? this.grid(this.story - 1) : null;
     for (let j = j0; j <= j1; j++) {
       for (let i = i0; i <= i1; i++) {
         const x = this.offX + i * s, y = this.offY + j * s;
-        const ch = this.level.tiles[j][i];
-        const h = Number(this.level.heights[j][i]);
+        const ch = cur.tiles[j][i];
+        const h = Number(cur.heights[j][i]);
+        if (ch === '.' && below && below.tiles[j][i] !== '.') {
+          // hueco de esta planta: se ve la de abajo, apagada
+          drawCell(g, below.tiles[j][i], Number(below.heights[j][i]), x, y, s, this.neighbourRails(i, j, this.story - 1));
+          g.fillStyle = 'rgba(12,9,32,0.7)';
+          g.fillRect(x, y, s, s);
+          continue;
+        }
         drawCell(g, ch, h, x, y, s, this.neighbourRails(i, j));
         // otro piso: apagado
         if (this.floor !== null && ch !== '.' && h !== this.floor) {
@@ -309,8 +361,8 @@ export class LevelEditor {
   }
 
   /** Vías vecinas (para dibujar la vía unida): bits n=1, e=2, s=4, w=8. */
-  private neighbourRails(i: number, j: number) {
-    const t = this.level.tiles;
+  private neighbourRails(i: number, j: number, story = this.story) {
+    const t = this.grid(story).tiles;
     const rail = (a: number, b: number) => { const c = t[b]?.[a]; return c === '=' || c === '@' || c === '%' || c === 'R'; };
     return (rail(i, j - 1) ? 1 : 0) | (rail(i + 1, j) ? 2 : 0) | (rail(i, j + 1) ? 4 : 0) | (rail(i - 1, j) ? 8 : 0);
   }
