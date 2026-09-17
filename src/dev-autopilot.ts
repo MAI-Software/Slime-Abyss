@@ -21,7 +21,7 @@ interface DevApi {
   drive(fn: (() => [number, number]) | null): void;
   state(): { mode: string; groups?: number[]; coins?: string };
   slime(): DevSlime | null;
-  world(): { def: { id: string }; fireActive(i: number, j: number): boolean; coinsCollected: number; coinsTotal: number; gemsCollected: number; gemsTotal: number; relicsCollected: number; relicsTotal: number };
+  world(): { def: { id: string }; fireActive(i: number, j: number, s?: number): boolean; coinsCollected: number; coinsTotal: number; gemsCollected: number; gemsTotal: number; relicsCollected: number; relicsTotal: number };
   save(): { floors: Record<string, { done: boolean } | undefined> };
   chapters(): { floors: { id: string }[] }[];
 }
@@ -79,10 +79,12 @@ function shoot(tx: number, tz: number) {
 function waitFireOff(i: number, j: number, t = 8) {
   const S = api();
   S.drive(() => [0, 0]);
-  let was = S.world().fireActive(i, j);
+  // la llama puede estar en cualquier planta
+  const on = () => [0, 1, 2].some((st) => S.world().fireActive(i, j, st));
+  let was = on();
   for (let s = 0; s < t && playing(); s += 0.02) {
     S.run(0.02);
-    const now = S.world().fireActive(i, j);
+    const now = on();
     if (was && !now) return;
     was = now;
   }

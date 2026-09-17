@@ -682,6 +682,8 @@ function patchBadge(a: Achievement, got: boolean, big = false) {
 }
 
 const achName = (a: Achievement) => t(`achievements.names.${a.id}`);
+/** columnas del tablón de logros (6 filas x 8 columnas) */
+const BOARD_COLS = 8;
 
 function patchCanvas(a: Achievement, size: number, unlocked: boolean) {
   const c = document.createElement('canvas');
@@ -733,8 +735,7 @@ function renderAchDetail(ctx: AchievementContext) {
   const shown = got ? goal : Math.min(v, goal);
   const pct = Math.round((shown / goal) * 100);
   const reward = achievementRewardText(a.id);
-  const slot = k % 30;
-  const where = t(k >= 30 ? 'achievements.boardLeft' : 'achievements.boardRight', { row: Math.floor(slot / 6) + 1, col: (slot % 6) + 1 });
+  const where = t('achievements.board', { row: Math.floor(k / BOARD_COLS) + 1, col: (k % BOARD_COLS) + 1 });
   box.innerHTML = `
     <button class="icon-btn ach-detail-close" type="button" aria-label="${escapeHtml(t('common.close'))}"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     <div class="ach-detail-head">
@@ -2449,13 +2450,12 @@ function updateCamera(dt: number) {
       menuLook.x += viewDir.z * shift;
       menuLook.z -= viewDir.x * shift;
     } else if (currentScreen === 'achievements') {
-      // gira hacia un tablón (derecho: logros 0-29, izquierdo: 30-59); al elegir un logro se acerca a su parche
+      // gira hacia el tablón de los logros; al elegir uno se acerca a su parche
       const k = ACHIEVEMENTS.findIndex((a) => a.id === achFocus);
-      const left = k >= 30;
       const target = room.getObjectByName(k >= 0 ? `ach_slot_${k}` : 'board_view_right');
       const p = target ? target.position : menuLook.set(4.4, 2.4, 0.2);
       const near = k >= 0;
-      const side = left ? -1 : 1;
+      const side = 1;
       // de lejos, todo el tablón ocupa la mitad izquierda de la pantalla (mirada paralela, desplazada a la derecha)
       // de cerca, el parche arriba a la izquierda y su ficha debajo
       menuLook.set(o.x + p.x, o.y + p.y - (near ? 0.3 : 0), o.z + p.z + (near ? 0.5 * side : 2.35));

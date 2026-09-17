@@ -2009,13 +2009,13 @@ mesh_object("room_candles", bm_wax, M["pedestal"], smooth=True, parent=room)
 mesh_object("room_candle_flames", bm_flame, M["candle"], smooth=True, parent=room)
 
 
-# tablones de fieltro con marco en las paredes laterales: los logros se cosen en ellos
-# (huecos ach_slot_<n>: 0-29 en la pared derecha, 30-59 en la izquierda; 6 columnas x 5 filas cada uno)
+# un solo tablón de fieltro con marco en la pared derecha: los 48 logros se cosen en él
+# (huecos ach_slot_0-47: 8 columnas x 6 filas, sin huecos sueltos)
 M["board_felt"] = material("BoardFelt", "2f4f5f", 0.98)
-BOARD_Y0, BOARD_Y1, BOARD_Z0, BOARD_Z1 = -2.9, 2.6, 1.3, 3.95
-BOARD_COLS = (-2.45, -1.55, -0.65, 0.25, 1.15, 2.05)
-BOARD_ROWS = (3.66, 3.15, 2.64, 2.13, 1.62)
-for side, sx in (("right", 1), ("left", -1)):
+BOARD_Y0, BOARD_Y1, BOARD_Z0, BOARD_Z1 = -2.7, 2.4, 1.25, 4.05
+BOARD_COLS = tuple(-2.17 + 0.62 * k for k in range(8))
+BOARD_ROWS = tuple(3.82 - 0.45 * k for k in range(6))
+for side, sx in (("right", 1),):
     wx = sx * WALL_X
     bm = bmesh.new()
     box(bm, (0.04, BOARD_Y1 - BOARD_Y0, BOARD_Z1 - BOARD_Z0), (wx - sx * 0.02, (BOARD_Y0 + BOARD_Y1) / 2, (BOARD_Z0 + BOARD_Z1) / 2))
@@ -2028,14 +2028,11 @@ for side, sx in (("right", 1), ("left", -1)):
     box(bm, (0.08, FR, BOARD_Z1 - BOARD_Z0), (wx - sx * 0.04, BOARD_Y1 + FR / 2, (BOARD_Z0 + BOARD_Z1) / 2))
     bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.012, segments=1, affect="EDGES")
     mesh_object(f"room_board_frame_{side}", bm, M["shelf_wood"], parent=room)
-    base = 0 if sx > 0 else 30
     for r, z in enumerate(BOARD_ROWS):
-        # en la pared izquierda se lee de izquierda a derecha mirándola: del fondo hacia delante
-        cols = BOARD_COLS if sx > 0 else tuple(reversed(BOARD_COLS))
-        for c, y in enumerate(cols):
-            slot = empty(f"ach_slot_{base + r * 6 + c}", parent=room, loc=(wx - sx * 0.04, y, z))
+        for c, y in enumerate(BOARD_COLS):
+            slot = empty(f"ach_slot_{r * len(BOARD_COLS) + c}", parent=room, loc=(wx - sx * 0.04, y, z))
             slot.rotation_euler = (0, 0, -sx * math.pi / 2)
-            slot.scale = (0.78, 0.78, 0.78)
+            slot.scale = (0.62, 0.62, 0.62)
     empty(f"board_view_{side}", parent=room, loc=(wx - sx * 0.04, (BOARD_Y0 + BOARD_Y1) / 2, (BOARD_Z0 + BOARD_Z1) / 2))
 
 # coleccionables: la escala del hueco es la escala con la que se expone la pieza
@@ -2044,7 +2041,7 @@ SLOTS = []
 # vitrinas: hueco del medio con su pieza; en los de los lados y encima de la tapa, piezas que antes colgaban de la pared;
 # los que quedan libres se llaman slot_vitrina_<vitrina>_<0|2|top> (el de encima de la central, libre: taparía el corazón)
 VITRINA_ITEMS = {("center", 0): "col_desert_mask", ("center", 2): "col_pickaxes",
-                 ("left", 0): "col_mine_cart", ("right", "top"): "col_leaf_frame"}
+                 ("left", 0): "col_mine_cart", ("right", 0): "col_leaf_frame"}
 for vname, vx, vy, vz, along, middle in (("center", 0.0, FURN_Y - 0.36, 0.95, "x", "col_trophy"),
                                           ("left", -(WALL_X - 0.8), 0.9, 0.8, "y", "col_crystal_skull"),
                                           ("right", WALL_X - 0.8, 0.9, 0.8, "y", "col_ancient_vase")):

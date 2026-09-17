@@ -817,8 +817,8 @@ export class Slime {
       .sort((a, b) => a[1] - b[1])
       .map(([i]) => i);
     const m = ids.length;
-    // bola apretada: cabe en la vagoneta sin taparla ni pisar la vía
-    const radius = Math.max(0.12, 0.26 * REST * Math.cbrt(Math.max(1, m)));
+    // a su separación normal: apretada, la repulsión la haría estallar al salir del cañón
+    const radius = Math.max(0.2, 0.62 * REST * Math.cbrt(Math.max(1, m)));
     const off = new Float32Array(m * 3);
     // dirección (espiral de Fibonacci) y radio (otra secuencia) independientes: esfera llena y redonda
     for (let k = 0; k < m; k++) {

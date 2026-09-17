@@ -98,11 +98,11 @@ export const LOOK_UNLOCKS: Record<string, string> = {
 
   'mouth:smirk': 'chapter-2',
   'eyes:sleepy': 'floors-10',
-  'color:midnight': 'floors-20',
+  'color:midnight': 'floors-30',
   'color:rosegold': 'stars-50',
-  'mouth:vampire': 'coins-150',
+  'mouth:vampire': 'coins-c2',
   'cheeks:sparkles': 'secret-roots',
-  'eyes:glasses': 'rider-50',
+  'eyes:glasses': 'rider-100',
   'cheeks:swirls': 'squeeze-30',
 
 };

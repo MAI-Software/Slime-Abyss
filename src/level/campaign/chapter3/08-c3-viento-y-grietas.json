@@ -4,20 +4,27 @@
   "name": "Viento y grietas",
   "count": 80,
   "keepPct": 0.5,
+  "need": {
+    "A": 20
+  },
+  "latch": {
+    "A": true
+  },
   "tips": [
     {
-      "z": 10.5,
+      "z": 11.5,
       "text": "El viento te pega al muro mientras la roca se rompe"
     },
     {
-      "z": 6,
+      "z": 7,
       "text": "No te detengas: el muro no se cae"
     }
   ],
   "tiles": [
     "###########",
-    "#0000T0000#",
-    "#000000000#",
+    "#LD00T0000#",
+    "##00000000#",
+    "#0000000S0#",
     "###00000###",
     "..>BBB#....",
     "...BBB#....",
@@ -31,6 +38,7 @@
     "..#####...."
   ],
   "heights": [
+    "00000000000",
     "00000000000",
     "00000000000",
     "00000000000",

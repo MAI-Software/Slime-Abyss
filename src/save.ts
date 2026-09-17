@@ -2,7 +2,7 @@ import type { ControlMode } from './input';
 import type { Lang } from './i18n';
 import { DEFAULT_LOOK, sanitizeLook, type SlimeLook } from './look';
 import type { LevelData } from './level/format';
-import { EMPTY_STATS, type PlayStats } from './achievements';
+import { ACHIEVEMENTS, EMPTY_STATS, type PlayStats } from './achievements';
 import { COLLECTIBLES } from './collectibles';
 
 /** Mejor resultado de un piso. */
@@ -75,7 +75,9 @@ export function loadSave(): Save {
       // los accesorios (owned/equipped/spent/rewards) se quitaron: no se arrastran
       const { owned: _o, equipped: _e, spent: _s, rewards: _r, ...rest } = s;
       // «Museo» pasó de 30 a 25 coleccionables al quitar algunos
-      const achievements = (Array.isArray(rest.achievements) ? rest.achievements : []).map((id: string) => (id === 'collector-30' ? 'collector-25' : id));
+      const achievements = (Array.isArray(rest.achievements) ? rest.achievements : [])
+        .map((id: string) => (id === 'collector-30' ? 'collector-25' : id))
+        .filter((id: string) => ACHIEVEMENTS.some((a) => a.id === id));
       // coleccionables que ya no están en el juego (estandarte, cuadro, plano, globo, cartel de la estación)
       const collectibles = (Array.isArray(rest.collectibles) ? rest.collectibles : []).filter((id: string) => COLLECTIBLES.some((c) => c.id === id));
       const bought = Array.isArray(rest.bought) ? rest.bought : [];
