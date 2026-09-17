@@ -1084,16 +1084,34 @@ M["rail_wood"] = material("RailWood", "6b4226", 0.8)
 M["rail_glow"] = material("RailGlow", "7dd3fc", 0.3, emit="38bdf8", strength=2.5)
 M["station_stone"] = material("StationStone", "cfc6e6", 0.6)
 
+# vía ancha (entre carriles 0.6, traviesas de 0.84: no se sale de la casilla) para la vagoneta
+RAIL_GAUGE = 0.6
 rail = empty("rail_piece")
 bm = bmesh.new()
-for y in (-0.15, 0.15):
-    box(bm, (1.0, 0.05, 0.05), (0, y, 0.0))
+for y in (-RAIL_GAUGE / 2, RAIL_GAUGE / 2):
+    box(bm, (1.0, 0.06, 0.06), (0, y, 0.0))
 mesh_object("rail_piece_rails", bm, M["rail_metal"], parent=rail)
 bm = bmesh.new()
 for x in (-0.25, 0.25):
-    box(bm, (0.09, 0.44, 0.04), (x, 0, -0.045))
-box(bm, (1.0, 0.1, 0.07), (0, 0, -0.1))
+    box(bm, (0.1, 0.84, 0.04), (x, 0, -0.05))
+for y in (-0.16, 0.16):
+    box(bm, (1.0, 0.08, 0.06), (0, y, -0.1))
 mesh_object("rail_piece_wood", bm, M["rail_wood"], parent=rail)
+
+# rail_cart: vagoneta-cuenco que lleva al limo por la vía (X = avance, origen = altura de los carriles)
+M["cart_metal"] = material("CartMetal", "3f4a63", 0.35, 0.9)
+cart = empty("rail_cart")
+bm = bmesh.new()
+lathe(bm, [(0.0, 0.07), (0.16, 0.075), (0.3, 0.12), (0.37, 0.2), (0.39, 0.3), (0.35, 0.3), (0.33, 0.22), (0.26, 0.15), (0.14, 0.115), (0.0, 0.11)], 36)
+mesh_object("rail_cart_bowl", bm, M["station_stone"], smooth=True, parent=cart)
+tube("rail_cart_rim", [(0.372 * math.cos(a * math.tau / 36), 0.372 * math.sin(a * math.tau / 36)) for a in range(36)], 0.022,
+     M["rail_glow"], parent=cart, loc=(0, 0, 0.3), poly=True, cyclic=True, plane="XY")
+bm = bmesh.new()
+box(bm, (0.44, RAIL_GAUGE - 0.02, 0.04), (0, 0, 0.06))
+for x in (-0.16, 0.16):
+    for y in (-RAIL_GAUGE / 2, RAIL_GAUGE / 2):
+        cylinder(bm, 0.055, 0.035, (x, y, 0.045), 16, rot=Matrix.Rotation(math.radians(90), 4, "X"))
+mesh_object("rail_cart_chassis", bm, M["cart_metal"], smooth=True, parent=cart)
 
 station = empty("rail_station")
 bm = bmesh.new()

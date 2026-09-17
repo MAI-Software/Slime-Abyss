@@ -78,6 +78,12 @@ const FACE_MIN_SIZE = 8;
 const RIDE_SPEED = 4;
 const RIDE_ACCEL = 8;
 const RIDE_EXIT = 2.2;
+/** altura del fondo del cuenco de la vagoneta sobre los carriles */
+const CART_SEAT = 0.12;
+/** radio de la bola del limo entero en la vagoneta (cabe en el cuenco) */
+const RIDE_BALL_R = 0.3;
+/** tamaño de la cara sobre esa bola */
+const RIDE_FACE_SCALE = 1.15;
 /** segundos sin limo encima para que la estación de llegada vuelva a funcionar */
 const STATION_REARM = 0.5;
 // Apretar: los trozos sueltos se acercan poco a poco al principal y este se compacta.
@@ -162,6 +168,8 @@ export interface Group {
 }
 
 const tmpMatrix = new THREE.Matrix4();
+/** trozo "de mentira" con el centro y el tamaño de la bola de la vagoneta, para colocar la cara */
+const rideGroup: Group = { ids: [], cx: 0, cy: 0, cz: 0, maxY: 0, maxZ: 0, vx: 0, vz: 0 };
 
 /** Ondulación de la superficie (la comparten el cuerpo y su contorno): temblor suave y ondas que la recorren al moverse. */
 const SURFACE_WAVES = `
@@ -201,7 +209,15 @@ export class Slime {
   private riding: Uint8Array;
   /** agujero por el que está cayendo cada limito (-1 ninguno) */
   private holeIn: Int32Array;
-  private rides: { path: RailPath; s: number; speed: number; angle: number; radius: number; ids: number[]; off: Float32Array; seg: number; dirX: number; dirZ: number }[] = [];
+  private rides: {
+    path: RailPath; s: number; speed: number; radius: number; ids: number[]; off: Float32Array; seg: number;
+    /** "arriba" de la vía, llevado de tramo en tramo (en un bucle da la vuelta con ella) */
+    ux: number; uy: number; uz: number;
+    cart: THREE.Object3D;
+    /** centro de la bola que se ve sentada en el cuenco */
+    bx: number; by: number; bz: number;
+  }[] = [];
+  private readonly cartBasis = new THREE.Matrix4();
   /** trozos cargados en un cañón (van con riding = 1 hasta el disparo) */
   private shots: { cannon: Cannon; t: number; ids: number[]; off: Float32Array }[] = [];
   /** cañones recién disparados: no vuelven a cargar hasta que se aparta lo que salía */
@@ -789,6 +805,11 @@ export class Slime {
   // ---------------------------------------------------------------- cañones
 
   /** Bola compacta con los limitos del trozo: los de dentro en el centro y los de fuera en la superficie. */
+  /** Radio con el que se ve la bola en la vagoneta: el limo entero llena el cuenco, un trozo menos. */
+  private rideBallRadius(m: number) {
+    return RIDE_BALL_R * Math.max(0.45, Math.cbrt(m / this.n));
+  }
+
   private packBall(g: Group) {
     const ids = g.ids
       .filter((i) => this.dying[i] === 0)
@@ -796,7 +817,8 @@ export class Slime {
       .sort((a, b) => a[1] - b[1])
       .map(([i]) => i);
     const m = ids.length;
-    const radius = Math.max(0.2, 0.62 * REST * Math.cbrt(Math.max(1, m)));
+    // bola apretada: cabe en la vagoneta sin taparla ni pisar la vía
+    const radius = Math.max(0.12, 0.26 * REST * Math.cbrt(Math.max(1, m)));
     const off = new Float32Array(m * 3);
     // dirección (espiral de Fibonacci) y radio (otra secuencia) independientes: esfera llena y redonda
     for (let k = 0; k < m; k++) {
@@ -940,7 +962,10 @@ export class Slime {
       this.grip[i] = 1;
       this.groundCell[i] = -1;
     }
-    this.rides.push({ path, s: 0, speed: 0, angle: 0, radius, ids, off, seg: 0, dirX: path.xs[1] - path.xs[0], dirZ: path.zs[1] - path.zs[0] });
+    const cart = this.assets.clone('rail_cart');
+    cart.position.set(path.xs[0], path.ys[0], path.zs[0]);
+    this.group.add(cart);
+    this.rides.push({ path, s: 0, speed: 0, radius, ids, off, seg: 0, ux: 0, uy: 1, uz: 0, cart, bx: path.xs[0], by: path.ys[0], bz: path.zs[0] });
     this.events.push({ type: 'board', x: g.cx, y: g.cy, z: g.cz });
   }
 
@@ -955,9 +980,10 @@ export class Slime {
       while (k < p.dist.length - 2 && p.dist[k + 1] < ride.s) k++;
       const seg = p.dist[k + 1] - p.dist[k] || 1;
       const f = (ride.s - p.dist[k]) / seg;
+      // punto de la vía
       const cx = p.xs[k] + (p.xs[k + 1] - p.xs[k]) * f;
       const cz = p.zs[k] + (p.zs[k + 1] - p.zs[k]) * f;
-      const cy = p.ys[k] + (p.ys[k + 1] - p.ys[k]) * f + ride.radius + 0.06;
+      const cy = p.ys[k] + (p.ys[k + 1] - p.ys[k]) * f;
       // vueltas: el giro de la vía entre tramos (curvas, bucles, espirales) cuenta para el mareo
       if (k !== ride.seg) {
         const t0x = p.xs[ride.seg + 1] - p.xs[ride.seg], t0y = p.ys[ride.seg + 1] - p.ys[ride.seg], t0z = p.zs[ride.seg + 1] - p.zs[ride.seg];
@@ -967,26 +993,33 @@ export class Slime {
         this.addTurns(Math.acos(cos) / (Math.PI * 2));
         ride.seg = k;
       }
-      // dirección horizontal de avance (en lo alto de un bucle casi no hay: se mantiene la anterior)
-      const hx = p.xs[k + 1] - p.xs[k], hz = p.zs[k + 1] - p.zs[k], hl = Math.hypot(hx, hz);
-      if (hl > 0.02) { ride.dirX = hx / hl; ride.dirZ = hz / hl; }
-      const dx = ride.dirX * (hl / seg), dz = ride.dirZ * (hl / seg);
-      ride.angle += (ride.speed * h) / ride.radius;
-      // gira alrededor del eje horizontal perpendicular al avance (arriba × dirección)
-      const axX = ride.dirZ, axZ = -ride.dirX;
-      const c = Math.cos(ride.angle), sn = Math.sin(ride.angle);
+      // marco de la vagoneta: avance (t), arriba (u, se endereza sobre el avance) y lado (t × u)
+      const tl = seg;
+      const tx = (p.xs[k + 1] - p.xs[k]) / tl, ty = (p.ys[k + 1] - p.ys[k]) / tl, tz = (p.zs[k + 1] - p.zs[k]) / tl;
+      const along = ride.ux * tx + ride.uy * ty + ride.uz * tz;
+      let ux = ride.ux - tx * along, uy = ride.uy - ty * along, uz = ride.uz - tz * along;
+      let ul = Math.hypot(ux, uy, uz);
+      if (ul < 1e-3) { ux = -tx * ty; uy = 1 - ty * ty; uz = -tz * ty; ul = Math.hypot(ux, uy, uz) || 1; }
+      ux /= ul; uy /= ul; uz /= ul;
+      ride.ux = ux; ride.uy = uy; ride.uz = uz;
+      const lx = ty * uz - tz * uy, ly = tz * ux - tx * uz, lz = tx * uy - ty * ux;
+      ride.cart.position.set(cx, cy, cz);
+      ride.cart.quaternion.setFromRotationMatrix(this.cartBasis.makeBasis(
+        new THREE.Vector3(tx, ty, tz), new THREE.Vector3(ux, uy, uz), new THREE.Vector3(lx, ly, lz)));
+      // el limo va sentado en el cuenco: la parte de abajo de la bola queda dentro
+      const ballR = this.rideBallRadius(ride.ids.length);
+      const lift = CART_SEAT + ballR * 0.75;
+      const bx = cx + ux * lift, by = cy + uy * lift, bz = cz + uz * lift;
+      ride.bx = bx; ride.by = by; ride.bz = bz;
+      const squeeze = (ballR * 0.7) / ride.radius;
       ride.ids.forEach((i, n) => {
-        const vx0 = ride.off[n * 3], vy0 = ride.off[n * 3 + 1], vz0 = ride.off[n * 3 + 2];
-        const dot = axX * vx0 + axZ * vz0;
-        const rx = vx0 * c + -axZ * vy0 * sn + axX * dot * (1 - c);
-        const ry = vy0 * c + (axZ * vx0 - axX * vz0) * sn;
-        const rz = vz0 * c + axX * vy0 * sn + axZ * dot * (1 - c);
-        this.px[i] = cx + rx;
-        this.py[i] = cy + ry;
-        this.pz[i] = cz + rz;
-        this.vx[i] = dx * ride.speed;
+        const ox = ride.off[n * 3] * squeeze, oy = ride.off[n * 3 + 1] * squeeze, oz = ride.off[n * 3 + 2] * squeeze;
+        this.px[i] = bx + lx * ox + ux * oy + tx * oz;
+        this.py[i] = by + ly * ox + uy * oy + ty * oz;
+        this.pz[i] = bz + lz * ox + uz * oy + tz * oz;
+        this.vx[i] = tx * ride.speed;
         this.vy[i] = 0;
-        this.vz[i] = dz * ride.speed;
+        this.vz[i] = tz * ride.speed;
         this.air[i] = 0;
       });
       if (ride.s < p.total) continue;
@@ -1003,6 +1036,7 @@ export class Slime {
         this.vz[i] = p.exitZ * RIDE_EXIT;
       });
       this.stationLock.set(p.to, 0);
+      this.group.remove(ride.cart);
       this.rides.splice(r, 1);
       this.events.push({ type: 'unboard', x: sx, y: top + 0.3, z: sz });
     }
@@ -1657,6 +1691,8 @@ export class Slime {
           x = lead.cx + (x - lead.cx) * (1 + jelly.y * 0.5);
           z = lead.cz + (z - lead.cz) * (1 + jelly.y * 0.5);
         }
+        // en la vagoneta se dibuja una sola bola del tamaño del cuenco (abajo)
+        if (riding[i]) continue;
         const life = dying[i] > 0 ? Math.max(1 - dying[i] / DIE_TIME, 0.05) : 1;
         if (this.blob.addBall(x, y, z, life)) continue;
         // fuera de la rejilla (muy lejos o cayendo): esfera simple
@@ -1665,6 +1701,12 @@ export class Slime {
         spheres.setMatrixAt(used++, tmpMatrix);
       }
       this.blob.end();
+      for (const ride of this.rides) {
+        const k = this.rideBallRadius(ride.ids.length) / 0.25;
+        tmpMatrix.makeScale(k, k, k);
+        tmpMatrix.setPosition(ride.bx, ride.by, ride.bz);
+        spheres.setMatrixAt(used++, tmpMatrix);
+      }
     } else {
       this.blob.visible = false;
     }
@@ -1690,7 +1732,15 @@ export class Slime {
       if (k > 0) continue;
       let airborne = 0;
       for (const i of g.ids) if (this.air[i] > 0.15) airborne++;
-      face.update(g, dt, lookX, lookZ, airborne / g.ids.length, this.camYaw, this.camPitch, this.squeezing, this.jelly);
+      // en la vagoneta la cara va sobre la bola pequeña del cuenco, y a su tamaño
+      const ride = this.riding[g.ids[0]] ? this.rides.find((r) => r.ids.includes(g.ids[0])) : undefined;
+      if (ride) {
+        const r = this.rideBallRadius(ride.ids.length);
+        rideGroup.ids = g.ids; rideGroup.vx = g.vx; rideGroup.vz = g.vz;
+        rideGroup.cx = ride.bx; rideGroup.cy = ride.by; rideGroup.cz = ride.bz;
+        rideGroup.maxY = ride.by + r * 0.75; rideGroup.maxZ = ride.bz + r * 0.5;
+        face.update(rideGroup, dt, lookX, lookZ, 0, this.camYaw, this.camPitch, this.squeezing, undefined, RIDE_FACE_SCALE);
+      } else face.update(g, dt, lookX, lookZ, airborne / g.ids.length, this.camYaw, this.camPitch, this.squeezing, this.jelly);
     }
 
     // daño → cara de dolor (un único limo, una única cara)
@@ -1845,7 +1895,7 @@ class Face {
     this.happyT = Math.max(this.happyT, t);
   }
 
-  update(g: Group, dt: number, lookX: number, lookZ: number, airFrac: number, yaw: number, pitch: number, squeeze = false, sway?: { x: number; y: number; z: number }) {
+  update(g: Group, dt: number, lookX: number, lookZ: number, airFrac: number, yaw: number, pitch: number, squeeze = false, sway?: { x: number; y: number; z: number }, maxScale = Infinity) {
     this.t += dt;
     this.painT -= dt;
     this.happyT -= dt;
@@ -1904,7 +1954,7 @@ class Face {
     else if (airFrac > 0.6) expr = 'air';
     else if (speed > 4.4) expr = 'wee';
 
-    const want = Math.min(2.6, Math.max(1.0, 0.9 + g.ids.length / 32));
+    const want = Math.min(maxScale, 2.6, Math.max(1.0, 0.9 + g.ids.length / 32));
     this.scale += (want - this.scale) * k;
 
     this.blinkT -= dt;

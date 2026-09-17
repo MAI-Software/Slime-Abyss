@@ -1100,13 +1100,14 @@ export class World {
       const [px, pz] = center(cellsPath[k - 1]);
       const [nx, nz] = center(cellsPath[k + 1]);
       if (shape === 'loop') {
-        // bucle vertical en la dirección de avance, algo desplazado a un lado para no pisarse
+        // bucle vertical grande en la dirección de avance (cabe la vagoneta), desplazado a un lado lo justo
+        // para que la entrada y la salida no se pisen con la vía ancha
         const dx = nx - px, dz = nz - pz, dl = Math.hypot(dx, dz) || 1;
         const fx = dx / dl, fz = dz / dl, sx = -fz, sz = fx;
-        const LR = 0.85, N = 28;
+        const LR = 1.15, N = 40;
         for (let q = 0; q <= N; q++) {
           const t = (q / N) * Math.PI * 2;
-          const side = (q / N - 0.5) * 0.35;
+          const side = (q / N - 0.5) * 0.9;
           xs.push(cx + fx * LR * Math.sin(t) + sx * side);
           zs.push(cz + fz * LR * Math.sin(t) + sz * side);
           lift.push(LR * (1 - Math.cos(t)));
