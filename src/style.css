@@ -1020,10 +1020,17 @@ body[data-control="gyro"] .squeeze-btn { bottom: calc(26px + var(--safe-b)); rig
 .tool-btn[aria-pressed="true"] { background: var(--slime); color: #fff; }
 .tool-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
 /* bloque con el que se pinta (abre el selector) y los últimos usados, en 3D */
-.editor-block-btn { display: grid; grid-template-columns: 64px 1fr 24px; align-items: center; gap: 10px; width: 100%; min-height: 76px; padding: 4px 10px 4px 4px; color: var(--ink); background: var(--paper); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 var(--ink); font: 700 17px/1.1 'Fredoka', 'Nunito', sans-serif; text-align: left; cursor: pointer; }
+.editor-block-btn { min-width: 0; display: grid; grid-template-columns: 56px minmax(0, 1fr) 20px; align-items: center; gap: 6px; width: 100%; min-height: 76px; padding: 4px 6px 4px 4px; color: var(--ink); background: var(--paper); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 var(--ink); font: 700 17px/1.1 'Fredoka', 'Nunito', sans-serif; text-align: left; cursor: pointer; }
 .editor-block-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
-.editor-block-btn img { width: 64px; height: 64px; border-radius: 12px; background: #e9e1f5; object-fit: contain; }
+.editor-block-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.editor-block-btn img { width: 56px; height: 56px; border-radius: 12px; background: #e9e1f5; object-fit: contain; }
 .editor-block-btn img:not([src]) { visibility: hidden; }
+.editor-block-row { display: grid; grid-template-columns: minmax(0, 1fr) 52px; gap: 8px; }
+.editor-block-row:has(> .editor-variant[hidden]) { grid-template-columns: minmax(0, 1fr); }
+.editor-variant { height: auto; min-height: 76px; }
+.variant-btn[hidden] { display: none; }
+/* girar (4 variantes) o cambiar de tipo (2) */
+.variant-btn.turns .ico-swap, .variant-btn:not(.turns) .ico-rotate { display: none; }
 .editor-recent { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; }
 .editor-recent .chip.thumb-chip { width: 100%; height: auto; aspect-ratio: 1; border-radius: 14px; }
 .editor-recent .chip.thumb-chip img { width: 90%; height: 90%; }
@@ -1036,7 +1043,9 @@ body[data-control="gyro"] .squeeze-btn { bottom: calc(26px + var(--safe-b)); rig
 .block-card { position: absolute; left: calc(var(--safe-l) + 14px); bottom: calc(var(--safe-b) + 14px); width: min(340px, calc(100vw - 420px - 44px - var(--safe-l))); min-width: 220px; display: grid; gap: 6px; padding: 12px 14px; background: var(--paper); color: var(--ink); text-align: left; border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); cursor: default; }
 .block-group { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--secondary); }
 .block-card h3 { margin: 0; font: 700 20px/1.2 'Fredoka', 'Nunito', sans-serif; }
-.block-use { justify-self: start; min-height: 44px; background: var(--primary); color: #fff; }
+.block-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.block-use { min-height: 44px; background: var(--primary); color: #fff; }
+.block-actions .variant-btn { min-height: 44px; min-width: 0; }
 @media (max-height: 420px) { .block-card { padding: 8px 12px; bottom: calc(var(--safe-b) + 8px); } .block-card h3 { font-size: 17px; } }
 .editor-size { display: grid; grid-template-columns: auto 44px 1fr 44px; align-items: center; gap: 6px 8px; color: #fff; font-weight: 800; font-size: 14px; }
 .editor-size b { text-align: center; font-variant-numeric: tabular-nums; }

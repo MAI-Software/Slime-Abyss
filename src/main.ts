@@ -8,7 +8,7 @@ import './style.css';
 import { Assets } from './assets';
 import { CHAPTERS, MENU_STAGE, PRACTICE, UPCOMING } from './level/campaign';
 import { DEFAULT_KEEP_PCT, createEmptyLevel, starsOf, traceRails, type ChapterDef, type FloorResult, type LevelData } from './level/format';
-import { BLOCK_GROUPS, EDITOR_LIMITS, LevelEditor, TILE_IDS, blockStage, type EditorTool } from './editor';
+import { BLOCK_GROUPS, EDITOR_LIMITS, LevelEditor, TILE_IDS, blockStage, familyOf, nextVariant, variantTurns, variantsOf, type EditorTool } from './editor';
 import { World } from './world';
 import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
 import { BODY_COLORS, CHEEKS, EYES, GEMS_PER_KIND, IRIS_COLORS, IRIS_EYES, LOOK_GEM_PRICES, LOOK_PRICES, LOOK_SOON, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
@@ -1643,8 +1643,11 @@ function saveEditor() {
 
 // ------------------------------------------------------------------ bloques del creador (en 3D)
 
-/** Últimos bloques usados, para cambiar rápido sin abrir el selector. */
+/** Últimos bloques usados (uno por bloque, no por variante), para cambiar rápido sin abrir el selector. */
 let recentBlocks: string[] = ['0', '#', '.', 'C', 'P', 'T', 'n', 'F'];
+/** Última variante (giro o tipo) usada de cada bloque. */
+const variantPick = new Map<string, string>();
+const pickOf = (family: string) => variantPick.get(family) ?? family;
 const RECENT_MAX = 8;
 let blockSpinPause = 0;
 const blockCenter = new THREE.Vector3(2.5, 0.25, 2.5);
@@ -1679,12 +1682,13 @@ function blockChip(ch: string, queue: [HTMLImageElement, string][], onPick: () =
   const b = document.createElement('button');
   b.type = 'button';
   b.className = 'chip thumb-chip loading';
-  b.dataset.tile = ch;
+  b.dataset.family = familyOf(ch);
   b.setAttribute('aria-label', blockName(ch));
   b.title = blockName(ch);
   const img = document.createElement('img');
   img.alt = '';
   img.draggable = false;
+  img.dataset.tile = ch;
   b.appendChild(img);
   queue.push([img, ch]);
   b.addEventListener('click', onPick);
@@ -1692,7 +1696,40 @@ function blockChip(ch: string, queue: [HTMLImageElement, string][], onPick: () =
 }
 
 function addRecent(ch: string) {
-  recentBlocks = [ch, ...recentBlocks.filter((c) => c !== ch)].slice(0, RECENT_MAX);
+  const family = familyOf(ch);
+  recentBlocks = [family, ...recentBlocks.filter((c) => c !== family)].slice(0, RECENT_MAX);
+}
+
+/** Pinta con este bloque (y recuerda su variante). */
+function setBrush(ch: string) {
+  editor!.brush = ch;
+  editor!.tool = 'paint';
+  variantPick.set(familyOf(ch), ch);
+}
+
+/** Siguiente giro o tipo del bloque con el que se pinta; en el selector, se ve girar en 3D. */
+function cycleVariant() {
+  if (!editor || variantsOf(editor.brush).length < 2) return;
+  setBrush(nextVariant(editor.brush));
+  if (currentScreen === 'blocks') {
+    // la miniatura del bloque en el selector pasa a la variante nueva
+    const img = $('blocks-options').querySelector<HTMLImageElement>(`[data-family="${CSS.escape(familyOf(editor.brush))}"] img`);
+    const src = blockThumb(editor.brush);
+    if (img && src) { img.src = src; img.dataset.tile = editor.brush; }
+    showBlock(editor.brush);
+  } else syncEditorUi();
+}
+
+/** Botón de girar / cambiar de tipo: oculto si el bloque no tiene variantes. */
+function syncVariantButton(btn: HTMLElement, ch: string) {
+  const n = variantsOf(ch).length;
+  btn.hidden = n < 2;
+  btn.classList.toggle('turns', variantTurns(ch));
+  const label = t(variantTurns(ch) ? 'creator.rotate' : 'creator.variant');
+  btn.setAttribute('aria-label', `${label} (R)`);
+  btn.title = `${label} (R)`;
+  const text = btn.querySelector('.variant-label');
+  if (text) text.textContent = label;
 }
 
 /** Lado del editor: el bloque con el que se pinta y los recientes. */
@@ -1700,11 +1737,10 @@ function renderEditorBlocks() {
   const row = $('editor-recent');
   row.innerHTML = '';
   const queue: [HTMLImageElement, string][] = [];
-  for (const ch of recentBlocks) {
-    row.appendChild(blockChip(ch, queue, () => {
+  for (const family of recentBlocks) {
+    row.appendChild(blockChip(pickOf(family), queue, () => {
       sfx.click();
-      editor!.brush = ch;
-      editor!.tool = 'paint';
+      setBrush(pickOf(family));
       syncEditorUi();
     }));
   }
@@ -1720,8 +1756,18 @@ function syncEditorBlocks() {
     if (src) { img.src = src; img.dataset.tile = editor.brush; }
   }
   $('btn-editor-blocks').setAttribute('aria-label', `${t('creator.blocks')}: ${blockName(editor.brush)}`);
-  $('editor-recent').querySelectorAll<HTMLButtonElement>('[data-tile]').forEach((b) =>
-    b.setAttribute('aria-pressed', String(editor!.tool === 'paint' && b.dataset.tile === editor!.brush)));
+  syncVariantButton($('btn-editor-variant'), editor.brush);
+  const family = familyOf(editor.brush);
+  $('editor-recent').querySelectorAll<HTMLButtonElement>('[data-family]').forEach((b) => {
+    b.setAttribute('aria-pressed', String(editor!.tool === 'paint' && b.dataset.family === family));
+    // un bloque girado se ve girado también en los recientes
+    const img = b.querySelector('img');
+    const want = pickOf(b.dataset.family!);
+    if (img && img.dataset.tile !== want) {
+      const src = blockThumb(want);
+      if (src) { img.src = src; img.dataset.tile = want; }
+    }
+  });
 }
 
 /** Selector de bloques por tipos, con el bloque elegido girando en 3D (como los rasgos de Mi limo). */
@@ -1752,16 +1798,15 @@ function renderBlockPicker() {
     row.className = 'chip-row';
     row.setAttribute('role', 'group');
     row.setAttribute('aria-label', label.textContent);
-    for (const ch of g.tiles) {
-      const b = blockChip(ch, queue, () => {
+    for (const family of g.tiles) {
+      const b = blockChip(pickOf(family), queue, () => {
         sfx.click();
-        editor!.brush = ch;
-        editor!.tool = 'paint';
-        addRecent(ch);
-        root.querySelectorAll<HTMLButtonElement>('[data-tile]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.tile === ch)));
-        showBlock(ch);
+        setBrush(pickOf(family));
+        addRecent(family);
+        root.querySelectorAll<HTMLButtonElement>('[data-family]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.family === family)));
+        showBlock(editor!.brush);
       });
-      b.setAttribute('aria-pressed', String(ch === editor!.brush));
+      b.setAttribute('aria-pressed', String(family === familyOf(editor!.brush)));
       row.appendChild(b);
     }
     root.append(label, row);
@@ -1788,9 +1833,10 @@ function showBlock(ch: string) {
   preview.zoom = 1;
   preview.pitch = 0.55;
   camPos.set(0, 0, 0);
-  const group = BLOCK_GROUPS.find((g) => g.tiles.includes(ch));
+  const group = BLOCK_GROUPS.find((g) => g.tiles.includes(familyOf(ch)));
   $('block-group').textContent = group ? t(`creator.groups.${group.id}`) : '';
   $('block-name').textContent = blockName(ch);
+  syncVariantButton($('btn-block-variant'), ch);
 }
 
 function closeBlockPicker() {
@@ -1855,6 +1901,8 @@ function setupEditor() {
   $('btn-editor-blocks').addEventListener('click', () => { sfx.click(); openBlockPicker(); });
   $('btn-blocks-back').addEventListener('click', () => { sfx.click(); closeBlockPicker(); });
   $('btn-block-use').addEventListener('click', () => { sfx.click(); closeBlockPicker(); });
+  $('btn-editor-variant').addEventListener('click', () => { sfx.click(); cycleVariant(); });
+  $('btn-block-variant').addEventListener('click', () => { sfx.click(); cycleVariant(); });
   // arrastrar sobre la escena gira el bloque
   {
     const scr = $('screen-blocks');
@@ -1969,8 +2017,10 @@ function setupEditor() {
   $('btn-editor-back').addEventListener('click', () => { sfx.click(); saveEditor(); closePreview3d(); openScreen('creator'); rewardsNow('creator'); });
   $('btn-editor-test').addEventListener('click', () => { sfx.click(); saveEditor(); playCreation(editingSlot); });
   addEventListener('keydown', (e) => {
-    if (currentScreen !== 'editor' || document.activeElement === $('editor-name')) return;
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); editor!.undo(); syncEditorUi(); }
+    if ((currentScreen !== 'editor' && currentScreen !== 'blocks') || document.activeElement === $('editor-name')) return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && currentScreen === 'editor') { e.preventDefault(); editor!.undo(); syncEditorUi(); }
+    // R: gira el bloque (o cambia de tipo)
+    if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'r' && variantsOf(editor!.brush).length > 1) { e.preventDefault(); cycleVariant(); }
   });
   void EDITOR_LIMITS;
 }

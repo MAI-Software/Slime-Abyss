@@ -382,6 +382,8 @@ export const fr: Dict = {
     pan: 'Déplacer la vue',
     blocks: 'Blocs',
     useBlock: 'Utiliser le bloc',
+    rotate: 'Pivoter',
+    variant: 'Changer de type',
     recent: 'Récents',
     groups: {
       terrain: 'Terrain',

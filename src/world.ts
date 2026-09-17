@@ -293,6 +293,8 @@ export class World {
     this.windZ = new Float32Array(total);
     this.windBase = new Float32Array(total);
     this.build();
+    // bloque suelto: la rampa es una cuña que sube de la arista de abajo a la de arriba, del tamaño de un cubo
+    if (showcase && this.cells.some((c) => c.kind === 'ramp')) this.group.scale.y = 1 / RAMP_RISE;
   }
 
   private parse(i: number, j: number, s: number, g: StoryGrid): Cell {
@@ -610,8 +612,9 @@ export class World {
             this.shapes.push({ i, j, c });
             break;
           case 'exit':
-            // no se marca: el limo que cae por un agujero se ve caer desde arriba
+            // no se marca: el limo que cae por un agujero se ve caer desde arriba (en el creador sí, para distinguirla)
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            if (this.showcase) this.addMark(x, c.base, z, 'exit');
             break;
           case 'spinner':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
@@ -622,8 +625,9 @@ export class World {
             this.addCannon(i, j, c);
             break;
           case 'target':
-            // como las salidas de agujero, no se marca: se ve adónde apunta el cañón
+            // como las salidas de agujero, no se marca: se ve adónde apunta el cañón (en el creador sí)
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            if (this.showcase) this.addMark(x, c.base, z, 'target');
             break;
           case 'crack': {
             // losa de roca más gris con grietas oscuras encima
@@ -745,6 +749,33 @@ export class World {
     }
   }
 
+  /** Solo en el creador (bloque suelto): marca encima de la salida de agujero (anillo) y de la diana, que en el juego no se ven. */
+  private addMark(x: number, y: number, z: number, kind: 'exit' | 'target') {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d')!;
+    const rings: [number, string][] = kind === 'target'
+      ? [[56, '#dc2626'], [42, '#fff7ed'], [28, '#dc2626'], [14, '#fff7ed'], [6, '#dc2626']]
+      : [[54, '#7c3aed'], [42, '#1e1b4b'], [22, '#a78bfa']];
+    for (const [r, color] of rings) {
+      g.fillStyle = color;
+      g.beginPath();
+      g.arc(64, 64, r, 0, Math.PI * 2);
+      g.fill();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+    const geo = new THREE.PlaneGeometry(0.78, 0.78);
+    const mark = new THREE.Mesh(geo, mat);
+    mark.rotation.x = -Math.PI / 2;
+    mark.position.set(x, y + 0.01, z);
+    mark.renderOrder = 2;
+    this.ownedMaterials.push(mat);
+    this.ownedGeometries.push(geo);
+    this.group.add(mark);
+  }
+
   /**
     Bloques en pocos draw calls (losa + columna por grupo): suelo con losas y oclusión junto a paredes,
     hielo brillante y muros de ladrillo. Solo proyectan sombra los muros y los suelos elevados.
@@ -835,7 +866,7 @@ export class World {
 
     for (const { i, j, c: cell } of shapes) {
       // planta 0: hasta el fondo; de arriba: solo el grosor de la losa
-      foot = this.showcase ? cell.base - 1 : story === 0 ? BOTTOM : cell.bottom;
+      foot = this.showcase ? (cell.kind === 'ramp' ? cell.base : cell.base - 1) : story === 0 ? BOTTOM : cell.bottom;
       const x0 = i, x1 = i + 1, z0 = j, z1 = j + 1;
       if (cell.kind === 'ramp') {
         const h = (x: number, z: number) => this.topAt(cell, i, j, x, z);

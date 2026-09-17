@@ -23,16 +23,31 @@ export const TILE_IDS: Record<string, string> = {
 
 /** Orden de la paleta: lo básico primero. */
 /** Bloques del creador clasificados por tipo (en el orden en que se enseñan). */
+/** Bloques del creador clasificados por tipo (en el orden en que se enseñan); uno por bloque, sus variantes aparte. */
 export const BLOCK_GROUPS: readonly { id: string; tiles: readonly string[] }[] = [
-  { id: 'terrain', tiles: ['0', '.', '#', 'n', 'u', 'e', 'o', 'q', 'p', 'z', 'm', 'I', 'B'] },
+  { id: 'terrain', tiles: ['0', '.', '#', 'n', 'q', 'I', 'B'] },
   { id: 'goals', tiles: ['P', 'T', 'C', 'G'] },
-  { id: 'hazards', tiles: ['F', 'X', 'Y', 'K', 'k', 'V', 'A'] },
+  { id: 'hazards', tiles: ['F', 'Y', 'K'] },
   { id: 'obstacles', tiles: ['W', 'Z', 'O'] },
-  { id: 'mechanisms', tiles: ['S', 's', 'D', 'd', 'J', 'E', 'Q', '^', 'v', '<', '>'] },
+  { id: 'mechanisms', tiles: ['S', 'D', 'J', 'E', 'Q', '^'] },
   { id: 'travel', tiles: ['R', '=', '@', '%', 'H', 'U', 'N', 'x'] },
 ];
 
-export const PALETTE: string[] = BLOCK_GROUPS.flatMap((g) => g.tiles);
+/**
+  Variantes de un mismo bloque (la primera es la que sale en el selector). Las de 4 son giros en el sentido de las agujas
+  del reloj visto desde arriba (90°; las sierras, 45°); las de 2 son dos tipos: fuego fijo o intermitente, naranja o verde.
+*/
+export const BLOCK_VARIANTS: readonly (readonly string[])[] = [
+  ['n', 'e', 'u', 'o'], ['q', 'p', 'm', 'z'], ['K', 'A', 'k', 'V'], ['^', '>', 'v', '<'], ['F', 'X'], ['S', 's'], ['D', 'd'],
+];
+export const variantsOf = (ch: string): readonly string[] => BLOCK_VARIANTS.find((f) => f.includes(ch)) ?? [ch];
+export const familyOf = (ch: string) => variantsOf(ch)[0];
+export const nextVariant = (ch: string) => {
+  const f = variantsOf(ch);
+  return f[(f.indexOf(ch) + 1) % f.length];
+};
+/** Con 4 variantes el bloque se gira; con 2 se cambia de tipo. */
+export const variantTurns = (ch: string) => variantsOf(ch).length === 4;
 
 /** Casilla central de blockStage: lo que se enseña se recorta a este cubo. */
 export const BLOCK_CELL = 2;

@@ -381,6 +381,8 @@ export const es = {
     pan: 'Mover la vista',
     blocks: 'Bloques',
     useBlock: 'Usar bloque',
+    rotate: 'Girar',
+    variant: 'Cambiar tipo',
     recent: 'Recientes',
     groups: {
       terrain: 'Terreno',
