@@ -157,6 +157,7 @@ interface Solid { i: number; j: number; s: number; top: number; foot: number; co
 const DOOR_H = TILE_BY_CHAR.get('D')!.raise!;
 const SLAB_H = 0.5;   // alto de la losa biselada (block_top)
 const BOTTOM = -1.2;  // fondo de las columnas
+const SHOWCASE_STRETCH = new THREE.Vector3(1, 1 / SLAB_H, 1);
 /** grosor de los suelos de las plantas de arriba (por debajo se puede pasar) */
 const UPPER_SLAB = SLAB_H;
 
@@ -270,7 +271,8 @@ export class World {
   private time = 0;
   opening = 0; // animación de cofre abierto (0..1)
 
-  constructor(readonly def: LevelData, private assets: Assets, readonly biome: Biome = 'stone') {
+  /** showcase: un bloque suelto del creador, como un cubo de una pieza de 1 de alto (sin columna hasta el fondo) */
+  constructor(readonly def: LevelData, private assets: Assets, readonly biome: Biome = 'stone', readonly showcase = false) {
     this.d = def.tiles.length;
     this.w = def.tiles[0].length;
     this.layer = this.w * this.d;
@@ -592,7 +594,7 @@ export class World {
         const x = i + 0.5, z = j + 0.5;
         const foot = s === 0 ? BOTTOM : c.bottom;
         // casilla de suelo o muro de esta planta (con su columna hasta abajo o solo la losa)
-        const solids = { push: (o: { i: number; j: number; top: number; color: THREE.Color; set: BlockSet }) => solidList.push({ ...o, s, foot }) };
+        const solids = { push: (o: { i: number; j: number; top: number; color: THREE.Color; set: BlockSet }) => solidList.push({ ...o, s, foot: this.showcase ? o.top - SLAB_H : foot }) };
         switch (c.kind) {
           case 'wall':
             solids.push({ i, j, top: c.top, color: (i + j) % 2 === 0 ? cWall : cWallB, set: 'wall' });
@@ -647,7 +649,8 @@ export class World {
             this.addSwitch(i, j, c);
             break;
           case 'door':
-            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            // suelto, la puerta es el bloque (sin suelo debajo)
+            if (!this.showcase) solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.addDoor(i, j, s, c);
             break;
           case 'start':
@@ -665,7 +668,7 @@ export class World {
             this.addCoin(idx, i, j, c.base, c.kind);
             break;
           case 'plant': case 'iceblock': {
-            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            if (!this.showcase) solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             const obj = this.add(c.kind === 'plant' ? 'plant_block' : 'ice_block', x, c.base, z);
             obj.rotation.y = ((i * 7 + j * 3) % 4) * (Math.PI / 2);
             this.breakables.set(idx, { obj, kind: c.kind, broken: false, t: 0 });
@@ -769,6 +772,8 @@ export class World {
       const colColor = new THREE.Color();
       list.forEach((s, k) => {
         m.makeTranslation(s.i + 0.5, s.top, s.j + 0.5);
+        // bloque suelto: la losa estirada hace todo el cubo, sin la junta con la columna
+        if (this.showcase) m.scale(SHOWCASE_STRETCH);
         tops.setMatrixAt(k, m);
         tops.setColorAt(k, s.color);
         // en las plantas de arriba el suelo es solo la losa (la columna no llega a nada)
@@ -830,7 +835,7 @@ export class World {
 
     for (const { i, j, c: cell } of shapes) {
       // planta 0: hasta el fondo; de arriba: solo el grosor de la losa
-      foot = story === 0 ? BOTTOM : cell.bottom;
+      foot = this.showcase ? cell.base - 1 : story === 0 ? BOTTOM : cell.bottom;
       const x0 = i, x1 = i + 1, z0 = j, z1 = j + 1;
       if (cell.kind === 'ramp') {
         const h = (x: number, z: number) => this.topAt(cell, i, j, x, z);

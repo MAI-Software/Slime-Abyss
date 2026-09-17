@@ -34,25 +34,19 @@ export const BLOCK_GROUPS: readonly { id: string; tiles: readonly string[] }[] =
 
 export const PALETTE: string[] = BLOCK_GROUPS.flatMap((g) => g.tiles);
 
+/** Casilla central de blockStage: lo que se enseña se recorta a este cubo. */
+export const BLOCK_CELL = 2;
+
 /**
-  Escenario de 5x5 para enseñar un bloque suelto (miniaturas y vista previa): el bloque en el centro de un suelo,
-  con lo que necesita alrededor para verse como en el juego (vía para los raíles, lado alto de las rampas, diana del cañón).
+  Escenario para enseñar un bloque suelto (miniaturas y vista previa): la casilla sola en el centro de un 5x5 vacío.
+  Los raíles llevan sus estaciones al lado para que se monte la vía (luego se recorta a la casilla del centro).
 */
-export function blockStage(ch: string, alone = false): LevelData {
-  const N = 5, C = 2;
-  // un anillo de suelo alrededor; alone (miniaturas): solo el bloque (el vacío sí lleva su anillo para que se vea el hueco)
-  const tiles: string[][] = Array.from({ length: N }, (_, j) => Array.from({ length: N }, (_, i): string =>
-    (!alone || ch === '.') && Math.abs(i - C) <= 1 && Math.abs(j - C) <= 1 ? '0' : '.'));
-  const heights = Array.from({ length: N }, () => Array<string>(N).fill('0'));
-  tiles[C][C] = ch;
-  const RAIL_ROWS: Record<string, string> = { '=': 'R===R', '@': 'R=@=R', '%': 'R=%=R', R: 'R=R00' };
-  if (RAIL_ROWS[ch]) tiles[C] = RAIL_ROWS[ch].split('').map((c) => (alone && c === '0' ? '.' : c));
-  if (ch === 'N' && !alone) tiles[0][C] = 'x';
-  if (ch === 'H' && !alone) tiles[0][C] = 'U';
-  const HIGH: Record<string, (i: number, j: number) => boolean> = { n: (_i, j) => j < C, u: (_i, j) => j > C, e: (i) => i > C, o: (i) => i < C };
-  const high = HIGH[ch];
-  if (high && !alone) for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) if (high(i, j)) heights[j][i] = '1';
-  return { format: 1, id: `block-${TILE_IDS[ch] ?? 'x'}`, name: '', count: 80, tiles: tiles.map((r) => r.join('')), heights: heights.map((r) => r.join('')) };
+export function blockStage(ch: string): LevelData {
+  const N = 5, C = BLOCK_CELL;
+  const RAIL_ROWS: Record<string, string> = { '=': '.R=R.', '@': 'R=@=R', '%': 'R=%=R', R: '..R=R' };
+  const row = RAIL_ROWS[ch] ?? '.'.repeat(C) + ch + '.'.repeat(N - C - 1);
+  const tiles = Array.from({ length: N }, (_, j) => (j === C ? row : '.'.repeat(N)));
+  return { format: 1, id: `block-${TILE_IDS[ch] ?? 'x'}`, name: '', count: 80, tiles, heights: Array(N).fill('0'.repeat(N)) };
 }
 
 const UNDO_MAX = 60;

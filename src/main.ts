@@ -13,7 +13,7 @@ import { World } from './world';
 import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
 import { BODY_COLORS, CHEEKS, EYES, GEMS_PER_KIND, IRIS_COLORS, IRIS_EYES, LOOK_GEM_PRICES, LOOK_PRICES, LOOK_SOON, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
 import { ACHIEVEMENTS, drawPatchIcon, type Achievement, type AchievementContext } from './achievements';
-import { Thumbs } from './thumbs';
+import { BLOCK_CLIP, Thumbs, blockBounds, voidCube } from './thumbs';
 import { Input, fullscreenActive, fullscreenSupported, installedApp, type ControlMode } from './input';
 import { Fx } from './fx';
 import { LiquidGauge } from './hud-liquid';
@@ -1415,10 +1415,10 @@ function applyBiome(biome: Biome) {
   abyss.setLook(look);
 }
 
-function loadLevel(def: LevelData, biome: Biome = 'stone') {
+function loadLevel(def: LevelData, biome: Biome = 'stone', showcase = false) {
   clearLevel();
   applyBiome(biome);
-  world = new World(def, assets!, biome);
+  world = new World(def, assets!, biome, showcase);
   slime = new Slime(world, def.count, lowQuality, assets!, save.look);
   content.add(world.group, slime.group);
   camTarget.copy(world.start);
@@ -1615,7 +1615,7 @@ const blockName = (ch: string) => t(`creator.tiles.${TILE_IDS[ch]}`);
 /** Miniatura 3D de un bloque (la salida se enseña con el propio limo). */
 function blockThumb(ch: string): string | null {
   if (!thumbs) return null;
-  return ch === 'P' ? thumbs.slime(save.look.color, save.look) : thumbs.tile(ch, blockStage(ch, true));
+  return ch === 'P' ? thumbs.slime(save.look.color, save.look) : thumbs.tile(ch, blockStage(ch));
 }
 
 /** Rellena las miniaturas poco a poco (unos milisegundos por fotograma) para no congelar la pantalla. */
@@ -1731,13 +1731,20 @@ function renderBlockPicker() {
 
 /** Pone el bloque en su escenario pequeño y la cámara a girar a su alrededor. */
 function showBlock(ch: string) {
-  loadLevel(blockStage(ch));
+  // un solo cubo, como en su miniatura
+  loadLevel(blockStage(ch), 'stone', true);
   mode = 'preview';
   if (room) room.visible = false;
   world!.group.visible = true;
+  if (ch === '.') world!.group.add(voidCube());
   // solo la salida enseña el limo
   slime!.group.visible = ch === 'P';
-  preview.dist = 6.5;
+  renderer.clippingPlanes = BLOCK_CLIP;
+  const box = blockBounds(world!.group);
+  if (ch === 'P') box.max.y += 0.7;
+  box.getCenter(blockCenter);
+  const radius = box.getSize(new THREE.Vector3()).length() / 2;
+  preview.dist = THREE.MathUtils.clamp(radius * 3.6, 3, 8);
   preview.zoom = 1;
   preview.pitch = 0.55;
   camPos.set(0, 0, 0);
@@ -1750,6 +1757,7 @@ function closeBlockPicker() {
   if (currentScreen !== 'blocks') return;
   if (previewBefore) Object.assign(preview, previewBefore);
   previewBefore = null;
+  renderer.clippingPlanes = [];
   addRecent(editor!.brush);
   toMenuScene();
   show('editor');
@@ -2391,7 +2399,7 @@ function updateCamera(dt: number) {
         // el bloque queda en el hueco libre a la izquierda del panel (y algo alto, por encima de su ficha)
         const half = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * preview.dist * camera.aspect;
         const shift = (blockPanelW / Math.max(1, innerWidth)) * half;
-        camTarget.set(blockCenter.x + Math.cos(preview.yaw) * shift, blockCenter.y - 0.6, blockCenter.z - Math.sin(preview.yaw) * shift);
+        camTarget.set(blockCenter.x + Math.cos(preview.yaw) * shift, blockCenter.y - preview.dist * 0.1, blockCenter.z - Math.sin(preview.yaw) * shift);
         markBusy(250);
       }
       camYaw = preview.yaw;

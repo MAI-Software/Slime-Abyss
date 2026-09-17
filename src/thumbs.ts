@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Assets } from './assets';
 import { BODY_COLORS, EYES_MIRRORED, EYES_PER_SIDE, IRIS_COLORS, IRIS_EYES, type BodyColorId, type IrisId, type SlimeLook } from './look';
 import type { LevelData } from './level/format';
+import { BLOCK_CELL } from './editor';
 import { World } from './world';
 
 /**
@@ -21,6 +22,47 @@ export function tintIris(o: THREE.Object3D, iris: IrisId) {
 }
 
 const FRAME: Record<FaceKind, number> = { eyes: 0.36, mouth: 0.15, cheeks: 0.1 };
+
+/** Recorte a la casilla central del escenario de un bloque (con un pelín de margen): todo queda dentro de su cubo. */
+export const BLOCK_CLIP = [
+  new THREE.Plane(new THREE.Vector3(1, 0, 0), -(BLOCK_CELL - 0.02)),
+  new THREE.Plane(new THREE.Vector3(-1, 0, 0), BLOCK_CELL + 1.02),
+  new THREE.Plane(new THREE.Vector3(0, 0, 1), -(BLOCK_CELL - 0.02)),
+  new THREE.Plane(new THREE.Vector3(0, 0, -1), BLOCK_CELL + 1.02),
+];
+
+/** Lo que se ve de un bloque suelto: sus mallas visibles, recortadas a su casilla. */
+export function blockBounds(root: THREE.Object3D): THREE.Box3 {
+  const box = meshBounds(root);
+  box.min.x = Math.max(box.min.x, BLOCK_CELL);
+  box.min.z = Math.max(box.min.z, BLOCK_CELL);
+  box.max.x = Math.min(box.max.x, BLOCK_CELL + 1);
+  box.max.z = Math.min(box.max.z, BLOCK_CELL + 1);
+  return box;
+}
+
+/** Lo que se ve de un objeto (mallas y líneas visibles), en coordenadas del mundo. */
+export function meshBounds(root: THREE.Object3D): THREE.Box3 {
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3();
+  root.traverse((o) => {
+    if (((o as THREE.Mesh).isMesh || (o as THREE.LineSegments).isLineSegments) && o.visible) box.expandByObject(o, false);
+  });
+  return box;
+}
+
+let ghost: THREE.Group | null = null;
+/** El bloque "vacío": un cubo fantasma (caras oscuras transparentes y aristas claras) en la casilla central del escenario. */
+export function voidCube(): THREE.Group {
+  if (ghost) return ghost;
+  const geo = new THREE.BoxGeometry(1, 1, 1);
+  const faces = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x1e1b4b, transparent: true, opacity: 0.4, depthWrite: false }));
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0xc4b5fd }));
+  ghost = new THREE.Group();
+  ghost.add(faces, edges);
+  ghost.position.set(2.5, -0.5, 2.5);
+  return ghost;
+}
 
 export class Thumbs {
   private readonly scene = new THREE.Scene();
@@ -151,23 +193,22 @@ export class Thumbs {
     const cacheKey = `tile:${ch}`;
     const hit = this.cache.get(cacheKey);
     if (hit) return hit;
-    const world = new World(stage, this.assets, 'stone');
+    const world = new World(stage, this.assets, 'stone', true);
+    if (ch === '.') world.group.add(voidCube());
     // un momento de animación: llamas, aspas y brillos ya en marcha
     for (let k = 0; k < 20; k++) world.update(1 / 30, { A: 0, B: 0 });
     // encuadre por lo que se ve (mallas), siempre desde el mismo lado: arriba, delante y a la derecha
-    world.group.updateMatrixWorld(true);
-    const box = new THREE.Box3();
-    world.group.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (m.isMesh && m.visible) box.expandByObject(m);
-    });
+    const box = blockBounds(world.group);
     const center = box.getCenter(new THREE.Vector3());
     const radius = Math.max(0.45, box.getSize(new THREE.Vector3()).length() / 2);
     const dir = new THREE.Vector3(2.1, 2.45, 3.3).normalize();
     this.persp.position.copy(center).addScaledVector(dir, radius / Math.sin(THREE.MathUtils.degToRad(this.persp.fov / 2)) * 0.92);
     this.persp.lookAt(center);
     // las geometrías y materiales del nivel se comparten: los suyos los libera el propio mundo
+    this.renderer.clippingPlanes = BLOCK_CLIP;
     const url = this.shoot(world.group, this.persp, false);
+    this.renderer.clippingPlanes = [];
+    if (ch === '.') world.group.remove(voidCube());
     world.dispose();
     this.cache.set(cacheKey, url);
     return url;
