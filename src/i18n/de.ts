@@ -37,6 +37,7 @@ export const de: Dict = {
     'raices-colgantes': 'Die hängenden Wurzeln',
     'grietas-heladas': 'Die gefrorenen Spalten',
     'arenas-hundidas': 'Der versunkene Sand',
+    'dunas-profundas': 'Die Tiefen Dünen',
   },
   options: {
     title: 'Optionen',
@@ -325,6 +326,11 @@ export const de: Dict = {
     col_blueprint: 'Bauplan',
     col_globe: 'Globus',
     col_cannonballs: 'Kanonenkugeln',
+    col_bronze_scale: 'Bronzewaage',
+    col_toy_cannon: 'Spielzeugkanone',
+    col_oil_flask: 'Ölflasche',
+    col_sun_disc: 'Sonnenscheibe',
+    col_temple_bell: 'Tempelglocke',
   },
   creator: {
     title: 'Editor',
@@ -598,6 +604,46 @@ export const de: Dict = {
     'c4-corazon-de-arena': {
       name: 'Das Herz aus Sand',
       tips: ['Die letzte Prüfung der Wüste: drei Stockwerke nach unten', 'Brüchiger Fels hält nur ein einziges Mal', 'Die Sägen teilen dich: drück, um dich wieder zu sammeln', 'Der Aufzug bringt dich hoch, falls du oben etwas vergessen hast'],
+    },
+    'c5-balancines': {
+      name: 'Wippen',
+      tips: ['Wippen kippen dorthin, wo dein Gewicht liegt', 'Geh ohne Pause hinüber: wer stehen bleibt, rutscht ab'],
+    },
+    'c5-tablas-y-sierra': {
+      name: 'Planken und Säge',
+      tips: ['Die Säge teilt dich genau zwischen zwei Planken', 'Drück dich zusammen, bevor die nächste Planke kommt'],
+    },
+    'c5-viento-en-la-tabla': {
+      name: 'Wind auf der Planke',
+      tips: ['Der Wind drückt, während die Planke kippt', 'Geh auf der Seite, von der es bläst'],
+    },
+    'c5-espiral-mareante': {
+      name: 'Schwindelspirale',
+      tips: ['Die Spiralbahn macht schwindelig: warte, bis es vorbei ist', 'Schwindelig läuft man krumm: geh ruhig über die Planke'],
+    },
+    'c5-canon-y-tabla': {
+      name: 'Kanone und Planke',
+      tips: ['Die Kanone schießt dich auf das Ziel oben', 'Oben führen die Planken zum Schatz'],
+    },
+    'c5-templo-hundido': {
+      name: 'Versunkener Tempel',
+      tips: ['Drei Stockwerke: runter durch den Schacht', 'Der Aufzug bringt dich zum Schatz hinunter'],
+    },
+    'c5-aceite-en-la-balanza': {
+      name: 'Öl auf der Waage',
+      tips: ['Nimm das Öl und entzünde dich zwischen den Feuerschalen', 'Brennend verbrennst du den Efeu am Ende'],
+    },
+    'c5-disco-y-tablas': {
+      name: 'Scheibe und Planken',
+      tips: ['Die Säge teilt und die Scheibe macht schwindelig', 'Verlass die Scheibe, bevor dir ganz schwindelig wird'],
+    },
+    'c5-pozo-doble': {
+      name: 'Doppelter Schacht',
+      tips: ['Über die Wippe und rein in den Schacht', 'Unten steigt die Bahn zum Schatz'],
+    },
+    'c5-corazon-del-desierto': {
+      name: 'Das Herz der Wüste',
+      tips: ['Letzte Wüstenprüfung: drei Stockwerke', 'Lange Planken über dem Abgrund und eine drehende Scheibe', 'Der Schalter öffnet den Edelstein-Raum'],
     },
   },
 };

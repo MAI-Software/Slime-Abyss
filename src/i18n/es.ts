@@ -36,6 +36,7 @@ export const es = {
     'raices-colgantes': 'Las Raíces Colgantes',
     'grietas-heladas': 'Las Grietas Heladas',
     'arenas-hundidas': 'Las Arenas Hundidas',
+    'dunas-profundas': 'Las Dunas Profundas',
   },
   options: {
     title: 'Opciones',
@@ -324,6 +325,11 @@ export const es = {
     col_blueprint: 'Plano del constructor',
     col_globe: 'Globo terráqueo',
     col_cannonballs: 'Balas de cañón',
+    col_bronze_scale: 'Balanza de bronce',
+    col_toy_cannon: 'Cañón de juguete',
+    col_oil_flask: 'Frasco de aceite',
+    col_sun_disc: 'Disco solar',
+    col_temple_bell: 'Campana del templo',
   },
   creator: {
     title: 'Creador',
@@ -597,6 +603,46 @@ export const es = {
     'c4-corazon-de-arena': {
       name: 'El corazón de arena',
       tips: ['Última prueba del desierto: tres plantas hacia abajo', 'La roca rota solo aguanta una pasada', 'Las sierras te parten: aprieta para juntarte', 'El ascensor te sube si te has dejado algo arriba'],
+    },
+    'c5-balancines': {
+      name: 'Balancines',
+      tips: ['Los balancines se inclinan hacia donde pesas', 'Cruza sin pararte: si te quedas, la tabla te tira'],
+    },
+    'c5-tablas-y-sierra': {
+      name: 'Tablas y sierra',
+      tips: ['La sierra te parte justo entre dos tablas', 'Aprieta para juntarte antes de la siguiente tabla'],
+    },
+    'c5-viento-en-la-tabla': {
+      name: 'Viento en la tabla',
+      tips: ['El viento empuja mientras la tabla se inclina', 'Cruza por el lado del que sopla'],
+    },
+    'c5-espiral-mareante': {
+      name: 'Espiral mareante',
+      tips: ['La vía en espiral marea: espera a que se te pase', 'Mareado cuesta ir recto: cruza la tabla con calma'],
+    },
+    'c5-canon-y-tabla': {
+      name: 'Cañón y tabla',
+      tips: ['El cañón te lanza a la diana de arriba', 'Arriba, las tablas llevan al tesoro'],
+    },
+    'c5-templo-hundido': {
+      name: 'Templo hundido',
+      tips: ['Tres plantas: se baja por el pozo', 'El ascensor baja hasta el tesoro'],
+    },
+    'c5-aceite-en-la-balanza': {
+      name: 'Aceite en la balanza',
+      tips: ['Coge el aceite y préndete entre los braseros', 'Ardiendo, quema la hiedra del final'],
+    },
+    'c5-disco-y-tablas': {
+      name: 'Disco y tablas',
+      tips: ['La sierra parte y el disco marea', 'Sal del disco antes de marearte del todo'],
+    },
+    'c5-pozo-doble': {
+      name: 'Pozo doble',
+      tips: ['Cruza el balancín y métete por el pozo', 'Abajo, la vía sube hasta el tesoro'],
+    },
+    'c5-corazon-del-desierto': {
+      name: 'El corazón del desierto',
+      tips: ['Última prueba del desierto: tres plantas', 'Tablas largas sobre el vacío y disco que marea', 'El interruptor abre la sala de la gema'],
     },
   } as Record<string, { name: string; tips: string[] }>,
 };

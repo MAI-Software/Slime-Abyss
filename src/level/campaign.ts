@@ -41,6 +41,16 @@ import c4f7 from './campaign/chapter4/07-c4-canonazo.json';
 import c4f8 from './campaign/chapter4/08-c4-fuego-del-desierto.json';
 import c4f9 from './campaign/chapter4/09-c4-railes-y-pozos.json';
 import c4f10 from './campaign/chapter4/10-c4-corazon-de-arena.json';
+import c5f1 from './campaign/chapter5/01-c5-balancines.json';
+import c5f2 from './campaign/chapter5/02-c5-tablas-y-sierra.json';
+import c5f3 from './campaign/chapter5/03-c5-viento-en-la-tabla.json';
+import c5f4 from './campaign/chapter5/04-c5-espiral-mareante.json';
+import c5f5 from './campaign/chapter5/05-c5-canon-y-tabla.json';
+import c5f6 from './campaign/chapter5/06-c5-templo-hundido.json';
+import c5f7 from './campaign/chapter5/07-c5-aceite-en-la-balanza.json';
+import c5f8 from './campaign/chapter5/08-c5-disco-y-tablas.json';
+import c5f9 from './campaign/chapter5/09-c5-pozo-doble.json';
+import c5f10 from './campaign/chapter5/10-c5-corazon-del-desierto.json';
 
 /** Modo historia: capítulos de 10 pisos. Sus coleccionables están en collectibles.ts. */
 export const CHAPTERS: ChapterDef[] = [
@@ -75,10 +85,18 @@ export const CHAPTERS: ChapterDef[] = [
     biome: 'desert',
     floors: [c4f1, c4f2, c4f3, c4f4, c4f5, c4f6, c4f7, c4f8, c4f9, c4f10] as LevelData[],
   },
+  {
+    // balancines: tablas que se inclinan con el peso del limo (segundo capítulo del desierto)
+    id: 'dunas-profundas',
+    name: 'Capítulo 5',
+    subtitle: 'Las Dunas Profundas',
+    biome: 'desert',
+    floors: [c5f1, c5f2, c5f3, c5f4, c5f5, c5f6, c5f7, c5f8, c5f9, c5f10] as LevelData[],
+  },
 ];
 
 /** Capítulos anunciados que aún no se pueden jugar. */
-export const UPCOMING = [{ name: 'Capítulo 5', subtitle: 'Próximamente' }];
+export const UPCOMING = [{ name: 'Capítulo 6', subtitle: 'Próximamente' }];
 
 /** Suelo del menú: 9x7 casillas bajo la habitación (solo sostiene al limo; el mundo no se dibuja). */
 export const MENU_STAGE: LevelData = {

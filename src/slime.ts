@@ -87,6 +87,12 @@ const RIDE_PACK = 0.12;
 const RIDE_FACE_SCALE = 1.45;
 /** segundos sin limo encima para que la estación de llegada vuelva a funcionar */
 const STATION_REARM = 0.5;
+/** Recién bajado de una bola, ese limo no vuelve a montarse en esa estación hasta apartarse de ella. */
+const STATION_CLEAR = 1.4;
+/** ...y nunca antes de estos segundos (el empujón de salida rebota en el muro y lo devolvería a la estación). */
+const STATION_OFF_TIME = 3;
+/** Hay que pararse en la estación para que te haga bola: de paso y a toda velocidad no engancha. */
+const BOARD_SPEED = 1.8;
 // Apretar: los trozos sueltos se acercan poco a poco al principal y este se compacta.
 const SQUEEZE_PULL = 20;
 const SQUEEZE_TIGHT = 6;
@@ -250,6 +256,9 @@ export class Slime {
   dizzyPower = 0;
   /** estaciones de llegada bloqueadas hasta que el limo se aparta (tiempo despejadas) */
   private stationLock = new Map<number, number>();
+  /** Estación de la que acaba de bajarse cada limito (-1 si ninguna): no vuelve a subirse hasta apartarse. */
+  private justOff: Int32Array;
+  private justOffT: Float32Array;
   /** el jugador mantiene pulsado "apretar" */
   squeezing = false;
   /** tiempo sin empuje del mando tras quemarse */
@@ -306,6 +315,8 @@ export class Slime {
     this.dying = f(); this.air = f(); this.noAttr = f();
     this.alive = new Uint8Array(n).fill(1);
     this.riding = new Uint8Array(n);
+    this.justOff = new Int32Array(n).fill(-1);
+    this.justOffT = new Float32Array(n);
     this.flying = new Uint8Array(n);
     this.padFly = new Uint8Array(n);
     this.padS = f();
@@ -964,6 +975,7 @@ export class Slime {
   private updateStations(dt: number) {
     const w = this.world;
     if (!w.rails.size) return;
+    this.clearJustOff(dt);
     for (const [idx, t] of this.stationLock) {
       const si = w.colOf(idx), sj = w.rowOf(idx);
       let occupied = false;
@@ -979,6 +991,7 @@ export class Slime {
       const path = w.railAt(ci, cj, w.storyAt(ci, cj, g.cy));
       if (!path || this.stationLock.has(path.from)) continue;
       if (Math.hypot(g.cx - (ci + 0.5), g.cz - (cj + 0.5)) > 0.42) continue;
+      if (Math.hypot(g.vx, g.vz) > BOARD_SPEED) continue;
       let grounded = 0, onBoard = false;
       for (const i of g.ids) {
         if (this.riding[i]) onBoard = true;
@@ -986,7 +999,24 @@ export class Slime {
       }
       // basta con que se apoye (en un montón apilado solo la capa de abajo toca el suelo)
       if (onBoard || grounded < Math.min(3, g.ids.length)) continue;
+      // el trozo que acaba de bajarse aquí no se vuelve a montar hasta apartarse (si no, el rebote lo devuelve por donde vino)
+      let justOff = 0;
+      for (const i of g.ids) if (this.justOff[i] === path.from) justOff++;
+      if (justOff * 2 >= g.ids.length) continue;
       this.board(g, path);
+    }
+  }
+
+  /** Suelta la marca de "recién bajado" del limo que ya se ha apartado de su estación. */
+  private clearJustOff(dt: number) {
+    const w = this.world;
+    for (let i = 0; i < this.n; i++) {
+      const b = this.justOff[i];
+      if (b < 0) continue;
+      this.justOffT[i] -= dt;
+      if (this.justOffT[i] > 0) continue;
+      const sx = w.colOf(b) + 0.5, sz = w.rowOf(b) + 0.5;
+      if (Math.hypot(this.px[i] - sx, this.pz[i] - sz) > STATION_CLEAR) this.justOff[i] = -1;
     }
   }
 
@@ -1088,6 +1118,8 @@ export class Slime {
         this.vx[i] = p.exitX * RIDE_EXIT;
         this.vy[i] = 0;
         this.vz[i] = p.exitZ * RIDE_EXIT;
+        this.justOff[i] = p.to;
+        this.justOffT[i] = STATION_OFF_TIME;
       });
       this.stationLock.set(p.to, 0);
       // la bola se queda abierta un momento en la estación antes de desaparecer

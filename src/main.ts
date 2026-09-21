@@ -1062,8 +1062,9 @@ function refreshRoom() {
       // cada pieza llena su hueco igual que las demás, centrada sobre él
       scale = Math.min(fit.h / size.y, fit.w / Math.max(size.x, 1e-3));
       item.position.set(-mid.x * scale, -box.min.y * scale, -mid.z * scale);
-      holder.rotation.y = Math.atan2(slotView(slot.position, viewDir).x, viewDir.z);
     }
+    // todas miran hacia donde se las ve (las del suelo también: si no, se ven de canto)
+    holder.rotation.y = Math.atan2(slotView(slot.position, viewDir).x, viewDir.z);
     item.scale.setScalar(scale);
     holder.add(item);
     holder.userData.colId = id;
@@ -2676,6 +2677,7 @@ if (import.meta.env.DEV) {
       open: (id: ScreenId) => openScreen(id),
       collect: (ids: string[] = COLLECTIBLES.map((c) => c.id)) => { save.collectibles = ids; store(); if (mode === 'menu') refreshRoom(); },
       focus: (id: string | null) => { menuFocus = id; },
+      dbgCam: () => ({ menuFocus, menuShot, shotT, shotDur, camWant: camWant.toArray().map((v) => +v.toFixed(2)), camPos: camPos.toArray().map((v) => +v.toFixed(2)), mode, screen: currentScreen, room: room?.name ?? null }),
       cam: (yaw: number, pitch = DEFAULT_PITCH) => { camYaw = yaw; camPitch = pitch; },
       drive: (fn: (() => [number, number]) | null) => { devDrive = fn; },
       /** imagen para compartir el enlace (1200x630): el limo en su habitación y el título */

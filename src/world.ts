@@ -1042,36 +1042,55 @@ export class World {
     La tabla se inclina hacia donde pesa el limo y, cuanto más inclinada, más resbala hacia el lado bajo.
   */
   private buildSeesaws() {
-    for (let s = 0; s < this.stories; s++) {
+    for (let st = 0; st < this.stories; st++) {
       const seen = new Set<number>();
       for (let j = 0; j < this.d; j++) {
         for (let i = 0; i < this.w; i++) {
-          const idx = this.index(i, j, s);
+          const idx = this.index(i, j, st);
           const c = this.cells[idx];
           if (c.kind !== 'seesaw' || seen.has(idx)) continue;
-          const ax = c.axis === 'z' ? 0 : 1, az = c.axis === 'z' ? 1 : 0;
-          const cells = [idx];
+          // todas las casillas de balancín pegadas entre sí (con el mismo eje y altura) son una sola tabla
+          const axis: 'x' | 'z' = c.axis === 'z' ? 'z' : 'x';
+          const cells: number[] = [];
+          const queue = [[i, j]];
           seen.add(idx);
-          for (let k = 1; ; k++) {
-            const n = this.cell(i + ax * k, j + az * k, s);
-            if (!n || n.kind !== 'seesaw' || n.axis !== c.axis || n.base !== c.base) break;
-            const nIdx = this.index(i + ax * k, j + az * k, s);
-            cells.push(nIdx);
-            seen.add(nIdx);
+          let i0 = i, i1 = i, j0 = j, j1 = j;
+          while (queue.length) {
+            const [qi, qj] = queue.shift()!;
+            cells.push(this.index(qi, qj, st));
+            i0 = Math.min(i0, qi); i1 = Math.max(i1, qi);
+            j0 = Math.min(j0, qj); j1 = Math.max(j1, qj);
+            for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+              const ni = qi + di, nj = qj + dj;
+              const n = this.cell(ni, nj, st);
+              if (!n || n.kind !== 'seesaw' || n.base !== c.base) continue;
+              const nAxis = n.axis === 'z' ? 'z' : 'x';
+              if (nAxis !== axis) continue;
+              const nIdx = this.index(ni, nj, st);
+              if (seen.has(nIdx)) continue;
+              seen.add(nIdx);
+              queue.push([ni, nj]);
+            }
           }
-          const len = cells.length;
-          const px = i + (ax * (len - 1)) / 2 + 0.5, pz = j + (az * (len - 1)) / 2 + 0.5;
-          const see: Seesaw = { cells, axis: c.axis === 'z' ? 'z' : 'x', base: c.base, px, pz, len, tilt: 0, vel: 0, load: 0, torque: 0, obj: null };
+          const len = (axis === 'x' ? i1 - i0 : j1 - j0) + 1;
+          const wide = (axis === 'x' ? j1 - j0 : i1 - i0) + 1;
+          const px = (i0 + i1) / 2 + 0.5, pz = (j0 + j1) / 2 + 0.5;
+          const see: Seesaw = { cells, axis, base: c.base, px, pz, len, tilt: 0, vel: 0, load: 0, torque: 0, obj: null };
           const plank = this.add('seesaw_plank', px, c.base, pz);
           plank.rotation.order = 'YZX';
-          plank.rotation.y = see.axis === 'z' ? Math.PI / 2 : 0;
-          plank.scale.x = len;
+          plank.rotation.y = axis === 'z' ? Math.PI / 2 : 0;
+          plank.scale.set(len, 1, wide);
           see.obj = plank;
-          this.add('seesaw_pivot', px, c.base, pz).rotation.y = plank.rotation.y;
+          // un caballete por cada casilla de ancho, bajo el eje
+          for (let k = 0; k < wide; k++) {
+            const ox = axis === 'x' ? 0 : k - (wide - 1) / 2;
+            const oz = axis === 'x' ? k - (wide - 1) / 2 : 0;
+            this.add('seesaw_pivot', px + ox, c.base, pz + oz).rotation.y = plank.rotation.y;
+          }
           for (const k of cells) {
             this.seesawAt.set(k, see);
             // la casilla llega como mucho a lo alto de la tabla: así el limo choca con ella y no la atraviesa
-            this.cells[k].top = c.base + SEESAW_MAX * ((len - 1) / 2 + 0.5);
+            this.cells[k].top = c.base + SEESAW_MAX * (len / 2);
           }
           this.seesaws.push(see);
         }
@@ -1103,7 +1122,7 @@ export class World {
   private updateSeesaws(dt: number) {
     for (const see of this.seesaws) {
       // el peso del limo la empuja; sin nadie encima vuelve despacio a su sitio
-      const arm = (see.len - 1) / 2 + 0.5;
+      const arm = see.len / 2;
       // el lado donde pesa el limo baja
       const want = see.load > 0 ? -Math.max(-1, Math.min(1, see.torque / (arm * Math.max(1, see.load)))) * SEESAW_MAX : 0;
       const k = see.load > 0 ? SEESAW_SPRING : SEESAW_SPRING * 0.45;

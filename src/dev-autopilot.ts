@@ -9,7 +9,7 @@
 import { ROUTES, type Step } from './dev-routes';
 
 interface DevSlime {
-  groups: { cx: number; cz: number; ids: number[] }[];
+  groups: { cx: number; cy: number; cz: number; ids: number[] }[];
   riding: Uint8Array;
   flying: Uint8Array;
   aliveCount: number;
@@ -114,7 +114,7 @@ async function run(c: number, k: number, steps: Step[], trace?: string[]): Promi
     if (st.fire) waitFireOff(st.fire[0], st.fire[1]);
     if (trace) {
       const w = S.world(), sl = S.slime();
-      const groups = (sl?.groups ?? []).slice(0, 4).map((g) => `${(g as unknown as { ids: number[] }).ids.length}@${g.cx.toFixed(1)},${g.cz.toFixed(1)}`).join(' ');
+      const groups = (sl?.groups ?? []).slice(0, 4).map((g) => `${(g as unknown as { ids: number[] }).ids.length}@${g.cx.toFixed(1)},${g.cz.toFixed(1)}y${g.cy.toFixed(1)}`).join(' ');
       trace.push(`${trace.length} ${JSON.stringify(st)} → vivos ${sl?.aliveCount} monedas ${w.coinsCollected}/${w.coinsTotal} trozos ${groups} ${S.state().mode}`);
     }
   }

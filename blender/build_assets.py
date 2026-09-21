@@ -1162,20 +1162,6 @@ def half_shell(name, up):
 half_shell("rail_shell_lower", False)
 half_shell("rail_shell_upper", True)
 
-station = empty("rail_station")
-bm = bmesh.new()
-cylinder(bm, 0.44, 0.06, (0, 0, 0.03), 40)
-mesh_object("rail_station_base", bm, M["station_stone"], smooth=True, parent=station)
-ring = [(0.36 * math.cos(a * math.tau / 40), 0.36 * math.sin(a * math.tau / 40)) for a in range(40)]
-tube("rail_station_ring", ring, 0.025, M["rail_glow"], parent=station, loc=(0, 0, 0.075), poly=True, cyclic=True, plane="XY")
-bm = bmesh.new()
-for a in (0.25, 0.75):
-    cylinder(bm, 0.035, 0.5, (0.42 * math.cos(a * math.tau + math.pi / 2), 0.42 * math.sin(a * math.tau + math.pi / 2), 0.28), 12)
-mesh_object("rail_station_posts", bm, M["rail_metal"], smooth=True, parent=station)
-arch = [(0.42 * math.cos(math.pi * t / 16), 0.0, 0.53 + 0.12 * math.sin(math.pi * t / 16)) for t in range(17)]
-cu_pts = [(x, z) for x, _, z in arch]
-tube("rail_station_arch", cu_pts, 0.03, M["rail_metal"], parent=station)
-
 # ================================================================== COLECCIONABLES
 # Piezas pequeñas (~0.4 de alto, origen en la base) que se exponen en la habitación del menú.
 M["crystal"] = material("Crystal", "b9f0ff", 0.05, 0.1, emit="4cc9f0", strength=0.6)
@@ -1760,6 +1746,118 @@ for x in (-0.05, 0.05):
     box(bm, (0.04, 0.01, 0.02), (x, -0.275, 0.52))
 mesh_object("col_sphinx_eyes", bm, M["black"], parent=col)
 
+# ---- capítulo 5: dunas profundas (balancines, cañón, aceite, disco y el templo hundido)
+
+col = empty("col_bronze_scale")
+bm = bmesh.new()
+cylinder(bm, 0.15, 0.045, (0, 0, 0.022), 24)
+cylinder(bm, 0.024, 0.44, (0, 0, 0.245), 14)
+mesh_object("col_bronze_scale_stand", bm, M["wood_col"], smooth=True, parent=col)
+# el brazo queda inclinado, como un balancín con peso en un lado
+SCALE_TILT = 0.22
+scale_ex, scale_ez = 0.24 * math.cos(SCALE_TILT), 0.24 * math.sin(SCALE_TILT)
+bm = bmesh.new()
+cylinder(bm, 0.014, 0.48, (0, 0, 0.465), 12, rot=Matrix.Rotation(math.pi / 2 - SCALE_TILT, 4, "Y"))
+ellipsoid(bm, (0.038, 0.038, 0.038), (0, 0, 0.465), 14, 10)
+for sx, dz in ((-1, scale_ez), (1, -scale_ez)):
+    cylinder(bm, 0.082, 0.016, (sx * scale_ex, 0, 0.465 + dz - 0.17), 20)
+mesh_object("col_bronze_scale_beam", bm, M["bronze"], smooth=True, parent=col)
+for name, sx, dz in (("l", -1, scale_ez), ("r", 1, -scale_ez)):
+    tube("col_bronze_scale_chain_" + name, [(sx * scale_ex, 0.465 + dz), (sx * scale_ex, 0.465 + dz - 0.17)], 0.005,
+         M["bronze"], parent=col)
+
+col = empty("col_toy_cannon")
+# de perfil (el cañón apunta a la derecha): en el salón las piezas miran a la cámara y de frente no se reconocería
+bm = bmesh.new()
+box(bm, (0.36, 0.17, 0.07), (-0.02, 0, 0.1))
+box(bm, (0.07, 0.26, 0.05), (0.13, 0, 0.07))
+mesh_object("col_toy_cannon_carriage", bm, M["wood_col"], parent=col)
+bm = bmesh.new()
+for sy in (-1, 1):
+    cylinder(bm, 0.09, 0.022, (0.13, sy * 0.13, 0.095), 18, rot=Matrix.Rotation(math.pi / 2, 4, "X"))
+    for k in range(4):
+        a = k * math.pi / 4
+        box(bm, (0.17 * math.cos(a) + 0.02, 0.026, 0.17 * math.sin(a) + 0.02),
+            (0.13 + 0.0, sy * 0.13, 0.095))
+mesh_object("col_toy_cannon_wheels", bm, M["wood_col"], parent=col)
+bm = bmesh.new()
+for sy in (-1, 1):
+    rim = [(0.095 * math.cos(k * math.tau / 20), 0.095 * math.sin(k * math.tau / 20)) for k in range(20)]
+    cylinder(bm, 0.03, 0.03, (0.13, sy * 0.135, 0.095), 12, rot=Matrix.Rotation(math.pi / 2, 4, "X"))
+mesh_object("col_toy_cannon_hubs", bm, M["iron_col"], smooth=True, parent=col)
+for sy in (-1, 1):
+    rim = [(0.095 * math.cos(k * math.tau / 24), 0.095 * math.sin(k * math.tau / 24)) for k in range(24)]
+    tube(f"col_toy_cannon_rim_{'l' if sy < 0 else 'r'}", rim, 0.012, M["iron_col"], parent=col,
+         loc=(0.13, sy * 0.13, 0.095), poly=True, cyclic=True, plane="XZ")
+bm = bmesh.new()
+CANNON_A = 0.42
+cannon_dir = Vector((math.cos(CANNON_A), 0.0, math.sin(CANNON_A)))
+cannon_c = Vector((0.0, 0, 0.25))
+cannon_rot = Matrix.Rotation(math.pi / 2 - CANNON_A, 4, "Y")
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=20, radius1=0.065, radius2=0.046, depth=0.38,
+                      matrix=Matrix.Translation(cannon_c) @ cannon_rot)
+muzzle = cannon_c + cannon_dir * 0.19
+breech = cannon_c - cannon_dir * 0.19
+bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=20, radius1=0.072, radius2=0.072, depth=0.03,
+                      matrix=Matrix.Translation(muzzle) @ cannon_rot)
+ellipsoid(bm, (0.048, 0.048, 0.048), tuple(breech), 14, 10)
+# muñones: los ejes por los que el cañón bascula sobre la cureña
+for sy in (-1, 1):
+    cylinder(bm, 0.016, 0.06, (0.0, sy * 0.07, 0.22), 10, rot=Matrix.Rotation(math.pi / 2, 4, "X"))
+mesh_object("col_toy_cannon_barrel", bm, M["bronze"], smooth=True, parent=col)
+
+col = empty("col_oil_flask")
+bm = bmesh.new()
+lathe(bm, [(0.0, 0.0), (0.12, 0.0), (0.14, 0.07), (0.13, 0.22), (0.055, 0.33), (0.05, 0.43), (0.062, 0.46), (0.0, 0.46)], 28)
+mesh_object("col_oil_flask_glass", bm, M["glass_col"], smooth=True, parent=col)
+bm = bmesh.new()
+lathe(bm, [(0.0, 0.012), (0.115, 0.012), (0.128, 0.07), (0.118, 0.2), (0.07, 0.27), (0.0, 0.28)], 24)
+mesh_object("col_oil_flask_oil", bm, M["glass_oil"], smooth=True, parent=col)
+bm = bmesh.new()
+cylinder(bm, 0.055, 0.09, (0, 0, 0.49), 16)
+mesh_object("col_oil_flask_cork", bm, M["cork"], smooth=True, parent=col)
+flat_shape("col_oil_flask_label", [(-0.07, 0.12), (0.07, 0.12), (0.07, 0.25), (-0.07, 0.25)], 0.006, M["label"],
+           front=-0.145, parent=col)
+
+col = empty("col_sun_disc")
+bm = bmesh.new()
+box(bm, (0.28, 0.11, 0.05), (0, 0, 0.025))
+box(bm, (0.06, 0.06, 0.14), (0, 0, 0.09))
+mesh_object("col_sun_disc_stand", bm, M["rock"], parent=col)
+bm = bmesh.new()
+cylinder(bm, 0.17, 0.035, (0, 0, 0.34), 32, rot=Matrix.Rotation(math.pi / 2, 4, "X"))
+for k in range(12):
+    a = k * math.tau / 12
+    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=True, segments=4, radius1=0.03, radius2=0.0, depth=0.11,
+                          matrix=Matrix.Translation((0.21 * math.cos(a), 0, 0.34 + 0.21 * math.sin(a)))
+                          @ Matrix.Rotation(math.pi / 2 - a, 4, "Y"))
+mesh_object("col_sun_disc_gold", bm, M["gold_col"], smooth=True, parent=col)
+bm = bmesh.new()
+ellipsoid(bm, (0.05, 0.03, 0.05), (0, -0.02, 0.34), 16, 12)
+mesh_object("col_sun_disc_gem", bm, M["lamp_gem"], smooth=True, parent=col)
+
+col = empty("col_temple_bell")
+bm = bmesh.new()
+for sx in (-1, 1):
+    box(bm, (0.05, 0.11, 0.46), (sx * 0.2, 0, 0.23))
+box(bm, (0.46, 0.07, 0.055), (0, 0, 0.46))
+mesh_object("col_temple_bell_frame", bm, M["wood_col"], parent=col)
+bm = bmesh.new()
+lathe(bm, [(0.0, 0.06), (0.175, 0.06), (0.178, 0.085), (0.152, 0.125), (0.125, 0.2), (0.103, 0.28),
+           (0.088, 0.34), (0.076, 0.375), (0.045, 0.39), (0.03, 0.405), (0.0, 0.41)], 28)
+mesh_object("col_temple_bell_body", bm, M["gold_col"], smooth=True, parent=col)
+band = [(0.128 * math.cos(a * math.tau / 28), 0.128 * math.sin(a * math.tau / 28)) for a in range(28)]
+tube("col_temple_bell_band", band, 0.012, M["bronze"], parent=col, loc=(0, 0, 0.195), poly=True, cyclic=True, plane="XY")
+bm = bmesh.new()
+torus_r = 0.035
+for k in range(14):
+    a = k * math.tau / 14
+    ellipsoid(bm, (0.012, 0.012, 0.012), (torus_r * math.cos(a), 0, 0.445 + torus_r * math.sin(a)), 8, 6)
+mesh_object("col_temple_bell_ring", bm, M["gold_col"], smooth=True, parent=col)
+bm = bmesh.new()
+ellipsoid(bm, (0.042, 0.042, 0.05), (0, 0, 0.045), 14, 10)
+mesh_object("col_temple_bell_clapper", bm, M["iron_col"], smooth=True, parent=col)
+
 col = empty("col_globe")
 bm = bmesh.new()
 bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=24, radius1=0.2, radius2=0.08, depth=0.1, matrix=Matrix.Translation((0, 0, 0.05)))
@@ -2104,7 +2202,9 @@ SLOTS = []
 # vitrinas: hueco del medio con su pieza; en los de los lados y encima de la tapa, piezas que antes colgaban de la pared;
 # los que quedan libres se llaman slot_vitrina_<vitrina>_<0|2|top> (el de encima de la central, libre: taparía el corazón)
 VITRINA_ITEMS = {("center", 0): "col_desert_mask", ("center", 2): "col_pickaxes",
-                 ("left", 0): "col_mine_cart", ("right", 0): "col_leaf_frame"}
+                 ("left", 0): "col_mine_cart", ("right", 0): "col_leaf_frame",
+                 ("left", 2): "col_bronze_scale", ("left", "top"): "col_oil_flask",
+                 ("right", 2): "col_temple_bell"}
 for vname, vx, vy, vz, along, middle in (("center", 0.0, FURN_Y - 0.36, 0.95, "x", "col_trophy"),
                                           ("left", -(WALL_X - 0.8), 0.9, 0.8, "y", "col_crystal_skull"),
                                           ("right", WALL_X - 0.8, 0.9, 0.8, "y", "col_ancient_vase")):
@@ -2132,7 +2232,8 @@ for x, shelves in SHELF_ITEMS.items():
 for item, x, z in (("col_abyss_heart", 0.0, 2.08),):
     SLOTS.append((f"slot_{item}", (x, WALL_Y - 0.03, z), 0.95))
 # en el suelo, junto a las paredes laterales
-for item, x, y in (("col_cactus_pot", -3.75, -1.9), ("col_sphinx", 3.75, -1.9), ("col_cannonballs", 3.75, 2.4)):
+for item, x, y in (("col_cactus_pot", -3.75, -1.9), ("col_sphinx", 3.75, -1.9), ("col_cannonballs", 3.75, 2.4),
+                   ("col_toy_cannon", -3.75, 2.4), ("col_sun_disc", 3.75, -0.55)):
     SLOTS.append((f"slot_{item}", (x, y, 0.0), 1.0))
 # a la izquierda de la alfombra: se ve desde el menú y no tapa ninguna pieza (ni las vitrinas ni lo del suelo)
 empty("room_gold_chest", parent=room, loc=(-2.1, 0.6, 0.0))

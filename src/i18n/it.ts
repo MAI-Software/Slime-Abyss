@@ -37,6 +37,7 @@ export const it: Dict = {
     'raices-colgantes': 'Le Radici Sospese',
     'grietas-heladas': 'Le Crepe Gelate',
     'arenas-hundidas': 'Le Sabbie Sommerse',
+    'dunas-profundas': 'Le Dune Profonde',
   },
   options: {
     title: 'Opzioni',
@@ -325,6 +326,11 @@ export const it: Dict = {
     col_blueprint: 'Progetto del costruttore',
     col_globe: 'Mappamondo',
     col_cannonballs: 'Palle di cannone',
+    col_bronze_scale: 'Bilancia di bronzo',
+    col_toy_cannon: 'Cannone giocattolo',
+    col_oil_flask: 'Fiaschetta d\'olio',
+    col_sun_disc: 'Disco solare',
+    col_temple_bell: 'Campana del tempio',
   },
   creator: {
     title: 'Creatore',
@@ -598,6 +604,46 @@ export const it: Dict = {
     'c4-corazon-de-arena': {
       name: 'Il cuore di sabbia',
       tips: ['L’ultima prova del deserto: tre piani verso il basso', 'La roccia rotta regge un solo passaggio', 'Le seghe ti dividono: stringi per riunirti', 'L’ascensore ti riporta su se hai dimenticato qualcosa'],
+    },
+    'c5-balancines': {
+      name: 'Bilancieri',
+      tips: ['I bilancieri si inclinano dove pesi', 'Attraversa senza fermarti: se resti, la tavola ti butta'],
+    },
+    'c5-tablas-y-sierra': {
+      name: 'Tavole e sega',
+      tips: ['La sega ti divide proprio tra due tavole', 'Stringi per riunirti prima della tavola seguente'],
+    },
+    'c5-viento-en-la-tabla': {
+      name: 'Vento sulla tavola',
+      tips: ['Il vento spinge mentre la tavola si inclina', 'Attraversa dal lato da cui soffia'],
+    },
+    'c5-espiral-mareante': {
+      name: 'Spirale stordente',
+      tips: ['La spirale ti fa girare la testa: aspetta che passi', 'Stordito è dura andare dritto: attraversa con calma'],
+    },
+    'c5-canon-y-tabla': {
+      name: 'Cannone e tavola',
+      tips: ['Il cannone ti lancia sul bersaglio sopra', 'Sopra, le tavole portano al tesoro'],
+    },
+    'c5-templo-hundido': {
+      name: 'Tempio sommerso',
+      tips: ['Tre piani: si scende dal pozzo', 'L’ascensore scende fino al tesoro'],
+    },
+    'c5-aceite-en-la-balanza': {
+      name: 'Olio sulla bilancia',
+      tips: ['Prendi l’olio e prendi fuoco tra i bracieri', 'In fiamme, brucia l’edera alla fine'],
+    },
+    'c5-disco-y-tablas': {
+      name: 'Disco e tavole',
+      tips: ['La sega divide e il disco fa girare la testa', 'Esci dal disco prima di stordirti del tutto'],
+    },
+    'c5-pozo-doble': {
+      name: 'Doppio pozzo',
+      tips: ['Attraversa il bilanciere e infilati nel pozzo', 'Sotto, il binario sale fino al tesoro'],
+    },
+    'c5-corazon-del-desierto': {
+      name: 'Il cuore del deserto',
+      tips: ['Ultima prova del deserto: tre piani', 'Tavole lunghe sul vuoto e disco che stordisce', 'L’interruttore apre la sala della gemma'],
     },
   },
 };

@@ -44,7 +44,7 @@ export function altWorldUnlocked(chapters: { floors: { id: string; tiles: string
   }));
 }
 
-const C1 = 'cripta-azul', C2 = 'raices-colgantes', C3 = 'grietas-heladas', C4 = 'arenas-hundidas';
+const C1 = 'cripta-azul', C2 = 'raices-colgantes', C3 = 'grietas-heladas', C4 = 'arenas-hundidas', C5 = 'dunas-profundas';
 
 export const COLLECTIBLES: Collectible[] = [
   // capítulo 1
@@ -75,6 +75,12 @@ export const COLLECTIBLES: Collectible[] = [
   { id: 'col_desert_mask', chapter: C4, place: 'vitrina', flat: true, unlock: { kind: 'found', floor: 'c4-fuego-del-desierto' } },
   { id: 'col_cactus_pot', chapter: C4, place: 'floor', unlock: { kind: 'found', floor: 'c4-corazon-de-arena' } },
   { id: 'col_sphinx', chapter: C4, place: 'floor', unlock: { kind: 'allStars' } },
+  // capítulo 5
+  { id: 'col_bronze_scale', chapter: C5, place: 'vitrina', unlock: { kind: 'found', floor: 'c5-tablas-y-sierra' } },
+  { id: 'col_toy_cannon', chapter: C5, place: 'floor', unlock: { kind: 'found', floor: 'c5-canon-y-tabla' } },
+  { id: 'col_oil_flask', chapter: C5, place: 'vitrina', unlock: { kind: 'found', floor: 'c5-aceite-en-la-balanza' } },
+  { id: 'col_sun_disc', chapter: C5, place: 'floor', unlock: { kind: 'found', floor: 'c5-disco-y-tablas' } },
+  { id: 'col_temple_bell', chapter: C5, place: 'vitrina', unlock: { kind: 'allStars' } },
   // logros
   { id: 'col_slime_plush', place: 'shelf', unlock: { kind: 'achievement', id: 'squeeze-100' } },
   { id: 'col_dizzy_top', place: 'shelf', unlock: { kind: 'achievement', id: 'dizzy-20' } },

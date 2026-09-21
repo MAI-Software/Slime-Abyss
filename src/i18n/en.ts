@@ -37,6 +37,7 @@ export const en: Dict = {
     'raices-colgantes': 'The Hanging Roots',
     'grietas-heladas': 'The Frozen Rifts',
     'arenas-hundidas': 'The Sunken Sands',
+    'dunas-profundas': 'The Deep Dunes',
   },
   options: {
     title: 'Options',
@@ -325,6 +326,11 @@ export const en: Dict = {
     col_blueprint: 'Builder\'s Blueprint',
     col_globe: 'Globe',
     col_cannonballs: 'Cannonballs',
+    col_bronze_scale: 'Bronze Scales',
+    col_toy_cannon: 'Toy Cannon',
+    col_oil_flask: 'Oil Flask',
+    col_sun_disc: 'Sun Disc',
+    col_temple_bell: 'Temple Bell',
   },
   creator: {
     title: 'Creator',
@@ -598,6 +604,46 @@ export const en: Dict = {
     'c4-corazon-de-arena': {
       name: 'The Heart of Sand',
       tips: ['The final trial of the desert: three storeys down', 'Broken rock only holds for one crossing', 'The saws split you: squeeze to come back together', 'The lift takes you up if you left something behind'],
+    },
+    'c5-balancines': {
+      name: 'Seesaws',
+      tips: ['Seesaws tip toward your weight', 'Cross without stopping: if you stay, the plank drops you'],
+    },
+    'c5-tablas-y-sierra': {
+      name: 'Planks and saw',
+      tips: ['The saw splits you right between two planks', 'Squeeze back together before the next plank'],
+    },
+    'c5-viento-en-la-tabla': {
+      name: 'Wind on the plank',
+      tips: ['The wind pushes while the plank tips', 'Cross on the side the wind blows from'],
+    },
+    'c5-espiral-mareante': {
+      name: 'Dizzy spiral',
+      tips: ['The spiral track makes you dizzy: wait until it passes', 'Dizzy it is hard to go straight: cross the plank calmly'],
+    },
+    'c5-canon-y-tabla': {
+      name: 'Cannon and plank',
+      tips: ['The cannon shoots you to the target above', 'Up there the planks lead to the treasure'],
+    },
+    'c5-templo-hundido': {
+      name: 'Sunken temple',
+      tips: ['Three storeys: down through the well', 'The lift takes you down to the treasure'],
+    },
+    'c5-aceite-en-la-balanza': {
+      name: 'Oil on the scales',
+      tips: ['Grab the oil and catch fire between the braziers', 'While burning, torch the ivy at the end'],
+    },
+    'c5-disco-y-tablas': {
+      name: 'Disc and planks',
+      tips: ['The saw splits you and the disc makes you dizzy', 'Step off the disc before you are fully dizzy'],
+    },
+    'c5-pozo-doble': {
+      name: 'Double well',
+      tips: ['Cross the seesaw and drop down the well', 'Below, the track climbs to the treasure'],
+    },
+    'c5-corazon-del-desierto': {
+      name: 'The heart of the desert',
+      tips: ['Final desert trial: three storeys', 'Long planks over the void and a dizzying disc', 'The switch opens the gem room'],
     },
   },
 };

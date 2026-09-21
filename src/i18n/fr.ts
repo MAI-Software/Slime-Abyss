@@ -37,6 +37,7 @@ export const fr: Dict = {
     'raices-colgantes': 'Les Racines Suspendues',
     'grietas-heladas': 'Les Failles Gelées',
     'arenas-hundidas': 'Les Sables Engloutis',
+    'dunas-profundas': 'Les Dunes Profondes',
   },
   options: {
     title: 'Options',
@@ -325,6 +326,11 @@ export const fr: Dict = {
     col_blueprint: 'Plan du bâtisseur',
     col_globe: 'Globe terrestre',
     col_cannonballs: 'Boulets de canon',
+    col_bronze_scale: 'Balance de bronze',
+    col_toy_cannon: 'Canon miniature',
+    col_oil_flask: 'Fiole d\'huile',
+    col_sun_disc: 'Disque solaire',
+    col_temple_bell: 'Cloche du temple',
   },
   creator: {
     title: 'Créateur',
@@ -598,6 +604,46 @@ export const fr: Dict = {
     'c4-corazon-de-arena': {
       name: 'Le cœur de sable',
       tips: ['L’ultime épreuve du désert : trois étages vers le bas', 'La roche brisée ne tient qu’un passage', 'Les scies te coupent : serre pour te rassembler', 'L’ascenseur te remonte si tu as oublié quelque chose'],
+    },
+    'c5-balancines': {
+      name: 'Bascules',
+      tips: ['Les bascules penchent du côté où tu pèses', 'Traverse sans t’arrêter : si tu restes, la planche te lâche'],
+    },
+    'c5-tablas-y-sierra': {
+      name: 'Planches et scie',
+      tips: ['La scie te coupe entre deux planches', 'Serre pour te rassembler avant la planche suivante'],
+    },
+    'c5-viento-en-la-tabla': {
+      name: 'Vent sur la planche',
+      tips: ['Le vent pousse pendant que la planche penche', 'Traverse du côté d’où souffle le vent'],
+    },
+    'c5-espiral-mareante': {
+      name: 'Spirale étourdissante',
+      tips: ['La voie en spirale donne le tournis : attends que ça passe', 'Étourdi, difficile d’aller droit : traverse doucement'],
+    },
+    'c5-canon-y-tabla': {
+      name: 'Canon et planche',
+      tips: ['Le canon t’envoie sur la cible du dessus', 'En haut, les planches mènent au trésor'],
+    },
+    'c5-templo-hundido': {
+      name: 'Temple englouti',
+      tips: ['Trois étages : on descend par le puits', 'L’ascenseur descend jusqu’au trésor'],
+    },
+    'c5-aceite-en-la-balanza': {
+      name: 'Huile sur la balance',
+      tips: ['Prends l’huile et enflamme-toi entre les braseros', 'En flammes, brûle le lierre du bout'],
+    },
+    'c5-disco-y-tablas': {
+      name: 'Disque et planches',
+      tips: ['La scie coupe et le disque donne le tournis', 'Quitte le disque avant d’être complètement étourdi'],
+    },
+    'c5-pozo-doble': {
+      name: 'Double puits',
+      tips: ['Traverse la bascule et plonge dans le puits', 'En bas, la voie monte jusqu’au trésor'],
+    },
+    'c5-corazon-del-desierto': {
+      name: 'Le cœur du désert',
+      tips: ['Dernière épreuve du désert : trois étages', 'Longues planches au-dessus du vide et disque étourdissant', 'L’interrupteur ouvre la salle de la gemme'],
     },
   },
 };
