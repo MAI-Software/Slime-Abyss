@@ -173,6 +173,8 @@ interface Solid { i: number; j: number; s: number; top: number; foot: number; co
 const DOOR_H = TILE_BY_CHAR.get('D')!.raise!;
 const SLAB_H = 0.5;   // alto de la losa biselada (block_top)
 /** balancín: pendiente máxima (altura por casilla), fuerza del muelle y frenado */
+/** Separación entre traviesas de la vía. */
+const TIE_STEP = 0.42;
 const SEESAW_MAX = 0.32;
 const SEESAW_SPRING = 14;
 const SEESAW_DAMP = 3.2;
@@ -1226,7 +1228,30 @@ export class World {
     cellsPath.forEach((idx, k) => {
       const [cx, cz] = center(idx);
       const shape = this.cells[idx].shape;
-      if (!shape || k === 0 || k === cellsPath.length - 1) { xs.push(cx); zs.push(cz); lift.push(0); return; }
+      const ends = k === 0 || k === cellsPath.length - 1;
+      if (!shape && !ends) {
+        const [px, pz] = center(cellsPath[k - 1]);
+        const [nx, nz] = center(cellsPath[k + 1]);
+        const inx = Math.sign(cx - px), inz = Math.sign(cz - pz);
+        const outx = Math.sign(nx - cx), outz = Math.sign(nz - cz);
+        if (inx !== outx || inz !== outz) {
+          // codo: en vez de una esquina en pico, un cuarto de vuelta de media casilla que entra y sale por el medio de la arista
+          const ax = cx - inx * 0.5 + outx * 0.5, az = cz - inz * 0.5 + outz * 0.5;
+          const a0 = Math.atan2((cz - inz * 0.5) - az, (cx - inx * 0.5) - ax);
+          let a1 = Math.atan2((cz + outz * 0.5) - az, (cx + outx * 0.5) - ax);
+          while (a1 - a0 > Math.PI) a1 -= Math.PI * 2;
+          while (a1 - a0 < -Math.PI) a1 += Math.PI * 2;
+          const N = 6;
+          for (let q = 0; q <= N; q++) {
+            const a = a0 + (a1 - a0) * (q / N);
+            xs.push(ax + Math.cos(a) * 0.5);
+            zs.push(az + Math.sin(a) * 0.5);
+            lift.push(0);
+          }
+          return;
+        }
+      }
+      if (!shape || ends) { xs.push(cx); zs.push(cz); lift.push(0); return; }
       const [px, pz] = center(cellsPath[k - 1]);
       const [nx, nz] = center(cellsPath[k + 1]);
       if (shape === 'loop') {
@@ -1298,14 +1323,25 @@ export class World {
 
   /** Tramos de vía a lo largo de un recorrido. */
   private addTrack(xs: ArrayLike<number>, zs: ArrayLike<number>, ys: ArrayLike<number>) {
+    // las traviesas van repartidas por la longitud de la vía, no por tramo: en las curvas los tramos son cortos
+    let toTie = TIE_STEP / 2;
     for (let k = 0; k < xs.length - 1; k++) {
       const ax = xs[k], az = zs[k], bx = xs[k + 1], bz = zs[k + 1];
       const hx = bx - ax, hz = bz - az, hy = ys[k + 1] - ys[k];
       const flat = Math.hypot(hx, hz);
+      const len = Math.hypot(flat, hy);
+      const yaw = Math.atan2(-hz, hx), pitch = Math.atan2(hy, flat);
       const piece = this.add('rail_piece', (ax + bx) / 2, (ys[k] + ys[k + 1]) / 2, (az + bz) / 2);
       piece.rotation.order = 'YZX';
-      piece.rotation.set(0, Math.atan2(-hz, hx), Math.atan2(hy, flat));
-      piece.scale.x = Math.hypot(flat, hy) + 0.02;
+      piece.rotation.set(0, yaw, pitch);
+      piece.scale.x = len + 0.02;
+      for (let t = toTie; t < len; t += TIE_STEP) {
+        const f = t / len;
+        const tie = this.add('rail_tie', ax + hx * f, ys[k] + hy * f, az + hz * f);
+        tie.rotation.order = 'YZX';
+        tie.rotation.set(0, yaw, pitch);
+      }
+      toTie = len > 0 ? ((toTie - len) % TIE_STEP + TIE_STEP) % TIE_STEP : toTie;
     }
   }
 

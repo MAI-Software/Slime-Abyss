@@ -1120,11 +1120,17 @@ for y in (-RAIL_GAUGE / 2, RAIL_GAUGE / 2):
     box(bm, (1.0, 0.06, 0.06), (0, y, 0.0))
 mesh_object("rail_piece_rails", bm, M["rail_metal"], parent=rail)
 bm = bmesh.new()
-for x in (-0.25, 0.25):
-    box(bm, (0.1, 0.84, 0.04), (x, 0, -0.05))
 for y in (-0.16, 0.16):
     box(bm, (1.0, 0.08, 0.06), (0, y, -0.1))
 mesh_object("rail_piece_wood", bm, M["rail_wood"], parent=rail)
+
+# rail_tie: traviesa suelta; el juego las reparte cada pocos palmos de vía (en las curvas los tramos son cortos
+# y, si fueran parte del tramo, se amontonarían)
+tie = empty("rail_tie")
+bm = bmesh.new()
+box(bm, (0.1, 0.84, 0.05), (0, 0, -0.05))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.008, segments=1, affect="EDGES")
+mesh_object("rail_tie_wood", bm, M["rail_wood"], parent=tie)
 
 # rail_shell: dos semiesferas con nervios que se cierran alrededor del limo al subirse al raíl
 # (X = avance, origen = altura de los carriles; el juego las separa para abrir y cerrar)
