@@ -415,6 +415,8 @@ export const fr: Dict = {
       crack: 'Roche fissurée',
       sawD1: 'Scie diagonale (\\)',
       sawD2: 'Scie diagonale (/)',
+      seesawX: 'Bascule (gauche-droite)',
+      seesawZ: 'Bascule (avant-arrière)',
       rampN: 'Rampe : monte vers le fond',
       rampS: 'Rampe : monte vers la caméra',
       rampE: 'Rampe : monte à droite',

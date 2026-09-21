@@ -18,6 +18,7 @@ export const TILE_IDS: Record<string, string> = {
   S: 'switchA', s: 'switchB', D: 'doorA', d: 'doorB', C: 'coin', K: 'bladeZ', k: 'bladeX', Y: 'spike', G: 'gem',
   O: 'oil', W: 'plant', Z: 'iceblock', '^': 'fanN', v: 'fanS', '>': 'fanE', '<': 'fanW', Q: 'coldjet',
   R: 'station', '=': 'rail', B: 'crack', V: 'sawD1', A: 'sawD2',
+  '-': 'seesawX', '|': 'seesawZ',
   n: 'rampN', u: 'rampS', e: 'rampE', o: 'rampW', q: 'slabNW', p: 'slabNE', z: 'slabSW', m: 'slabSE', H: 'hole', U: 'exit', '@': 'railLoop', '%': 'railSpiral', E: 'spinner', N: 'cannon', x: 'target',
 };
 
@@ -29,7 +30,7 @@ export const BLOCK_GROUPS: readonly { id: string; tiles: readonly string[] }[] =
   { id: 'goals', tiles: ['P', 'T', 'C', 'G'] },
   { id: 'hazards', tiles: ['F', 'Y', 'K'] },
   { id: 'obstacles', tiles: ['W', 'Z', 'O'] },
-  { id: 'mechanisms', tiles: ['S', 'D', 'J', 'E', 'Q', '^'] },
+  { id: 'mechanisms', tiles: ['S', 'D', 'J', 'E', 'Q', '^', '-'] },
   { id: 'travel', tiles: ['R', '=', '@', '%', 'H', 'U', 'N', 'x'] },
 ];
 
@@ -39,6 +40,7 @@ export const BLOCK_GROUPS: readonly { id: string; tiles: readonly string[] }[] =
 */
 export const BLOCK_VARIANTS: readonly (readonly string[])[] = [
   ['n', 'e', 'u', 'o'], ['q', 'p', 'm', 'z'], ['K', 'A', 'k', 'V'], ['^', '>', 'v', '<'], ['F', 'X'], ['S', 's'], ['D', 'd'],
+  ['-', '|'],
 ];
 export const variantsOf = (ch: string): readonly string[] => BLOCK_VARIANTS.find((f) => f.includes(ch)) ?? [ch];
 export const familyOf = (ch: string) => variantsOf(ch)[0];

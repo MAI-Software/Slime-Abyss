@@ -415,6 +415,8 @@ export const it: Dict = {
       crack: 'Roccia crepata',
       sawD1: 'Sega diagonale (\\)',
       sawD2: 'Sega diagonale (/)',
+      seesawX: 'Bilanciere (destra-sinistra)',
+      seesawZ: 'Bilanciere (avanti-indietro)',
       rampN: 'Rampa: sale verso il fondo',
       rampS: 'Rampa: sale verso la telecamera',
       rampE: 'Rampa: sale a destra',

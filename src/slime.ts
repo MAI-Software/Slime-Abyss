@@ -78,12 +78,13 @@ const FACE_MIN_SIZE = 8;
 const RIDE_SPEED = 4;
 const RIDE_ACCEL = 8;
 const RIDE_EXIT = 2.2;
-/** altura del fondo del cuenco de la vagoneta sobre los carriles */
-const CART_SEAT = 0.12;
-/** radio de la bola del limo entero en la vagoneta (cabe en el cuenco) */
-const RIDE_BALL_R = 0.3;
-/** tamaño de la cara sobre esa bola */
-const RIDE_FACE_SCALE = 1.15;
+/** centro de la bola del raíl sobre los carriles y cuánto recorrido tarda en cerrarse */
+const SHELL_Y = 0.52;
+const SHELL_SHUT = 0.9;
+/** lo apretado que va el limo dentro de la bola del raíl (su superficie queda en ~0.42) */
+const RIDE_PACK = 0.12;
+/** tamaño de la cara sobre la bola del raíl */
+const RIDE_FACE_SCALE = 1.45;
 /** segundos sin limo encima para que la estación de llegada vuelva a funcionar */
 const STATION_REARM = 0.5;
 // Apretar: los trozos sueltos se acercan poco a poco al principal y este se compacta.
@@ -125,9 +126,11 @@ const WIND_SINK = 20;
 const WIND_FROZEN_ACC = 9;
 // Mareo: al acumular vueltas (plataformas giratorias, curvas, bucles y espirales de las vías) el limo se marea
 // y durante unos segundos el mando responde torcido y flojo. Las vueltas se olvidan poco a poco.
-const DIZZY_TURNS = 2.5;
+const DIZZY_TURNS = 1.4;
 const DIZZY_TIME = 3.2;
 const DIZZY_FORGET = 0.3;     // vueltas por segundo que se olvidan
+const DIZZY_CALM = 0.35;      // mareo acumulado que se pasa por segundo una vez se calma
+const SEESAW_SLIDE = 9;       // cuánto resbala el limo por la tabla inclinada
 const SPINNER_GRIP = 7;       // lo que arrastra el disco al limo que lo pisa
 // Agujero: tira hacia abajo y hacia el centro de lo que está encima.
 const HOLE_PULL = 30;
@@ -214,10 +217,13 @@ export class Slime {
     /** "arriba" de la vía, llevado de tramo en tramo (en un bucle da la vuelta con ella) */
     ux: number; uy: number; uz: number;
     cart: THREE.Object3D;
+    /** 0 abierta, 1 cerrada: las dos semiesferas se cierran al subir y se abren al llegar */
+    shut: number;
     /** centro de la bola que se ve sentada en el cuenco */
     bx: number; by: number; bz: number;
   }[] = [];
   private readonly cartBasis = new THREE.Matrix4();
+  private shellFades: { obj: THREE.Object3D; t: number }[] = [];
   /** trozos cargados en un cañón (van con riding = 1 hasta el disparo) */
   private shots: { cannon: Cannon; t: number; ids: number[]; off: Float32Array }[] = [];
   /** cañones recién disparados: no vuelven a cargar hasta que se aparta lo que salía */
@@ -240,6 +246,8 @@ export class Slime {
   /** vueltas acumuladas y tiempo de mareo restante */
   private turns = 0;
   dizzyT = 0;
+  /** cuánto mareo se ha acumulado (0..1): con muchas vueltas seguidas el limo va errático */
+  dizzyPower = 0;
   /** estaciones de llegada bloqueadas hasta que el limo se aparta (tiempo despejadas) */
   private stationLock = new Map<number, number>();
   /** el jugador mantiene pulsado "apretar" */
@@ -592,11 +600,21 @@ export class Slime {
   step(dt: number, tiltX: number, tiltZ: number, squeeze = false) {
     this.squeezing = squeeze;
     if (this.dizzyT > 0) {
-      // mareado: el mando gira de un lado a otro y empuja menos
-      const a = Math.sin(this.time * 2.3) * 1.1 + Math.sin(this.time * 5.1 + 1) * 0.45;
-      const k = 0.65 + Math.sin(this.time * 3.7) * 0.15;
+      // mareado: el mando gira de un lado a otro y empuja menos; con mucho mareo (muchas vueltas de raíl
+      // o de disco seguidas) el giro es más amplio, la fuerza más irregular y a ratos se va solo
+      const pw = this.dizzyPower;
+      const a = (Math.sin(this.time * 2.3) * 1.1 + Math.sin(this.time * 5.1 + 1) * 0.45) * (1 + pw * 1.5);
+      const k = (0.65 + Math.sin(this.time * 3.7) * 0.15) * (1 - pw * 0.25);
       const c = Math.cos(a), s = Math.sin(a);
-      [tiltX, tiltZ] = [(tiltX * c - tiltZ * s) * k, (tiltX * s + tiltZ * c) * k];
+      let dx = (tiltX * c - tiltZ * s) * k, dz = (tiltX * s + tiltZ * c) * k;
+      if (pw > 0.25) {
+        // tambaleo propio: empuja aunque no se toque el mando
+        const w = pw * 0.55;
+        dx += Math.sin(this.time * 1.7 + 0.5) * w;
+        dz += Math.sin(this.time * 2.1 + 2.3) * w;
+      }
+      tiltX = Math.max(-1, Math.min(1, dx));
+      tiltZ = Math.max(-1, Math.min(1, dz));
     }
     this.ox.set(this.px);
     this.oy.set(this.py);
@@ -799,15 +817,35 @@ export class Slime {
       }
     }
     if (this.rides.length) this.updateRides(h);
+    if (this.shellFades.length) this.updateShellFades(h);
     if (this.shots.length) this.updateShots(h);
   }
 
   // ---------------------------------------------------------------- cañones
 
   /** Bola compacta con los limitos del trozo: los de dentro en el centro y los de fuera en la superficie. */
-  /** Radio con el que se ve la bola en la vagoneta: el limo entero llena el cuenco, un trozo menos. */
-  private rideBallRadius(m: number) {
-    return RIDE_BALL_R * Math.max(0.45, Math.cbrt(m / this.n));
+  /** Abre (0) o cierra (1) las dos semiesferas de la bola del raíl. */
+  private setShell(cart: THREE.Object3D, shut: number) {
+    const open = 1 - shut;
+    const lower = Assets.child(cart, 'rail_shell_lower');
+    const upper = Assets.child(cart, 'rail_shell_upper');
+    lower.position.y = SHELL_Y - open * 0.12;
+    upper.position.y = SHELL_Y + open * 0.5;
+    upper.rotation.z = open * 0.9;
+    lower.rotation.z = -open * 0.25;
+  }
+
+  /** Las bolas que se quedan abiertas en la estación se encogen y desaparecen. */
+  private updateShellFades(dt: number) {
+    for (let k = this.shellFades.length - 1; k >= 0; k--) {
+      const f = this.shellFades[k];
+      f.t += dt;
+      const s = Math.max(0, 1 - f.t / 0.5);
+      f.obj.scale.setScalar(s);
+      if (s > 0) continue;
+      this.group.remove(f.obj);
+      this.shellFades.splice(k, 1);
+    }
   }
 
   private packBall(g: Group) {
@@ -962,10 +1000,22 @@ export class Slime {
       this.grip[i] = 1;
       this.groundCell[i] = -1;
     }
-    const cart = this.assets.clone('rail_cart');
+    const cart = this.assets.clone('rail_shell');
+    // el cristal deja ver al limo dentro de la bola
+    cart.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      const mat = m.material as THREE.MeshStandardMaterial;
+      if (mat.name !== 'ShellGlass') return;
+      mat.transparent = true;
+      mat.opacity = 0.22;
+      mat.depthWrite = false;
+      mat.side = THREE.DoubleSide;
+      m.renderOrder = 4;
+    });
     cart.position.set(path.xs[0], path.ys[0], path.zs[0]);
     this.group.add(cart);
-    this.rides.push({ path, s: 0, speed: 0, radius, ids, off, seg: 0, ux: 0, uy: 1, uz: 0, cart, bx: path.xs[0], by: path.ys[0], bz: path.zs[0] });
+    this.rides.push({ path, s: 0, speed: 0, radius, ids, off, seg: 0, ux: 0, uy: 1, uz: 0, cart, shut: 0, bx: path.xs[0], by: path.ys[0], bz: path.zs[0] });
     this.events.push({ type: 'board', x: g.cx, y: g.cy, z: g.cz });
   }
 
@@ -1003,15 +1053,19 @@ export class Slime {
       ux /= ul; uy /= ul; uz /= ul;
       ride.ux = ux; ride.uy = uy; ride.uz = uz;
       const lx = ty * uz - tz * uy, ly = tz * ux - tx * uz, lz = tx * uy - ty * ux;
+      // las semiesferas se cierran nada más subir y se abren al final del recorrido
+      const closing = Math.min(1, ride.s / SHELL_SHUT);
+      const opening = Math.min(1, Math.max(0, (p.total - ride.s) / SHELL_SHUT));
+      ride.shut = Math.min(closing, opening);
+      this.setShell(ride.cart, ride.shut);
       ride.cart.position.set(cx, cy, cz);
       ride.cart.quaternion.setFromRotationMatrix(this.cartBasis.makeBasis(
         new THREE.Vector3(tx, ty, tz), new THREE.Vector3(ux, uy, uz), new THREE.Vector3(lx, ly, lz)));
       // el limo va sentado en el cuenco: la parte de abajo de la bola queda dentro
-      const ballR = this.rideBallRadius(ride.ids.length);
-      const lift = CART_SEAT + ballR * 0.75;
+      const lift = SHELL_Y;
       const bx = cx + ux * lift, by = cy + uy * lift, bz = cz + uz * lift;
       ride.bx = bx; ride.by = by; ride.bz = bz;
-      const squeeze = (ballR * 0.7) / ride.radius;
+      const squeeze = (RIDE_PACK * Math.max(0.6, Math.cbrt(ride.ids.length / this.n))) / ride.radius;
       ride.ids.forEach((i, n) => {
         const ox = ride.off[n * 3] * squeeze, oy = ride.off[n * 3 + 1] * squeeze, oz = ride.off[n * 3 + 2] * squeeze;
         this.px[i] = bx + lx * ox + ux * oy + tx * oz;
@@ -1036,7 +1090,9 @@ export class Slime {
         this.vz[i] = p.exitZ * RIDE_EXIT;
       });
       this.stationLock.set(p.to, 0);
-      this.group.remove(ride.cart);
+      // la bola se queda abierta un momento en la estación antes de desaparecer
+      this.setShell(ride.cart, 0);
+      this.shellFades.push({ obj: ride.cart, t: 0 });
       this.rides.splice(r, 1);
       this.events.push({ type: 'unboard', x: sx, y: top + 0.3, z: sz });
     }
@@ -1248,11 +1304,15 @@ export class Slime {
   private addTurns(t: number) {
     if (this.state === 'frozen') return;
     this.turns += t;
+    // dando vueltas ya pone cara de mareo antes de perder el control
+    if (this.turns > DIZZY_TURNS * 0.5 && this.dizzyT <= 0) for (const f of this.faces) f.makeDizzy(0.9);
     if (this.turns < DIZZY_TURNS) return;
     this.turns = 0;
     const fresh = this.dizzyT <= 0;
-    this.dizzyT = DIZZY_TIME;
-    for (const f of this.faces) f.makeDizzy(DIZZY_TIME);
+    // cada mareo encima del anterior marea más y dura más
+    this.dizzyPower = Math.min(1, this.dizzyPower + (fresh ? 0.25 : 0.4));
+    this.dizzyT = DIZZY_TIME * (1 + this.dizzyPower);
+    for (const f of this.faces) f.makeDizzy(this.dizzyT);
     const g = this.groups[0];
     if (fresh && g) this.events.push({ type: 'dizzy', x: g.cx, y: g.cy, z: g.cz });
   }
@@ -1260,7 +1320,9 @@ export class Slime {
   private postStep(dt: number) {
     const w = this.world;
     this.dizzyT = Math.max(0, this.dizzyT - dt);
-    this.turns = Math.max(0, this.turns - DIZZY_FORGET * dt);
+    // dando vueltas en el raíl o en el disco no se olvida nada: el mareo se acumula
+    if (!this.rides.length) this.turns = Math.max(0, this.turns - DIZZY_FORGET * dt);
+    if (this.dizzyT <= 0) this.dizzyPower = Math.max(0, this.dizzyPower - DIZZY_CALM * dt);
     // vueltas en la plataforma giratoria: según la parte del limo principal que va encima
     const lead = this.groups[0];
     if (lead && w.spinners.length) {
@@ -1368,6 +1430,15 @@ export class Slime {
           this.events.push({ type: got, x: c.x, y: c.y, z: c.z });
           if (got === 'oil') { if (this.state !== 'burning') this.setState('oiled'); }
           else for (const f of this.faces) f.cheer(got === 'gem' || got === 'relic' ? 1.2 : 0.5);
+        }
+      }
+      // balancín: el limo pesa donde se apoya y resbala hacia el lado que baja
+      if (under && under.kind === 'seesaw' && this.air[i] < 0.1 && y < under.base + 1.2) {
+        w.pressSeesaw(idx, x, z);
+        const slope = w.seesawSlope(idx);
+        if (slope) {
+          this.vx[i] -= slope[0] * SEESAW_SLIDE * dt;
+          this.vz[i] -= slope[1] * SEESAW_SLIDE * dt;
         }
       }
       // aire frío: congela (o apaga las llamas)
@@ -1691,8 +1762,6 @@ export class Slime {
           x = lead.cx + (x - lead.cx) * (1 + jelly.y * 0.5);
           z = lead.cz + (z - lead.cz) * (1 + jelly.y * 0.5);
         }
-        // en la vagoneta se dibuja una sola bola del tamaño del cuenco (abajo)
-        if (riding[i]) continue;
         const life = dying[i] > 0 ? Math.max(1 - dying[i] / DIE_TIME, 0.05) : 1;
         if (this.blob.addBall(x, y, z, life)) continue;
         // fuera de la rejilla (muy lejos o cayendo): esfera simple
@@ -1701,12 +1770,6 @@ export class Slime {
         spheres.setMatrixAt(used++, tmpMatrix);
       }
       this.blob.end();
-      for (const ride of this.rides) {
-        const k = this.rideBallRadius(ride.ids.length) / 0.25;
-        tmpMatrix.makeScale(k, k, k);
-        tmpMatrix.setPosition(ride.bx, ride.by, ride.bz);
-        spheres.setMatrixAt(used++, tmpMatrix);
-      }
     } else {
       this.blob.visible = false;
     }
@@ -1735,7 +1798,7 @@ export class Slime {
       // en la vagoneta la cara va sobre la bola pequeña del cuenco, y a su tamaño
       const ride = this.riding[g.ids[0]] ? this.rides.find((r) => r.ids.includes(g.ids[0])) : undefined;
       if (ride) {
-        const r = this.rideBallRadius(ride.ids.length);
+        const r = 0.42;
         rideGroup.ids = g.ids; rideGroup.vx = g.vx; rideGroup.vz = g.vz;
         rideGroup.cx = ride.bx; rideGroup.cy = ride.by; rideGroup.cz = ride.bz;
         rideGroup.maxY = ride.by + r * 0.75; rideGroup.maxZ = ride.bz + r * 0.5;

@@ -1076,6 +1076,34 @@ bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=24, radius=0
 bmesh.ops.translate(bm, vec=(0, 0, 0.012), verts=bm.verts)
 mesh_object("cold_vent_glow", bm, M["cold"], parent=vent)
 
+# ================================================================== BALANCÍN
+# seesaw_plank: tabla de 1 de largo a lo largo de X (el juego la estira a lo que mida y la inclina); origen = cara de arriba.
+# seesaw_pivot: el caballete con su eje, debajo de la tabla.
+M["seesaw_wood"] = material("SeesawWood", "b07b45", 0.75)
+M["seesaw_iron"] = material("SeesawIron", "4a5568", 0.5, 0.7)
+M["seesaw_stone"] = material("SeesawStone", "6b6470", 0.8)
+
+plank = empty("seesaw_plank")
+bm = bmesh.new()
+box(bm, (1.0, 0.86, 0.12), (0, 0, -0.06))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.012, segments=1, affect="EDGES")
+mesh_object("seesaw_plank_wood", bm, M["seesaw_wood"], parent=plank)
+bm = bmesh.new()
+for y in (-0.45, 0.45):
+    box(bm, (1.0, 0.04, 0.06), (0, y, -0.03))
+for x in (-0.3, 0.0, 0.3):
+    box(bm, (0.05, 0.8, 0.02), (x, 0, -0.005))
+mesh_object("seesaw_plank_iron", bm, M["seesaw_iron"], parent=plank)
+
+pivot = empty("seesaw_pivot")
+bm = bmesh.new()
+box(bm, (0.42, 0.7, 0.3), (0, 0, -0.27))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.03, segments=2, affect="EDGES")
+mesh_object("seesaw_pivot_stone", bm, M["seesaw_stone"], smooth=True, parent=pivot)
+bm = bmesh.new()
+cylinder(bm, 0.055, 0.92, (0, 0, -0.13), 14, rot=Matrix.Rotation(math.radians(90), 4, "X"))
+mesh_object("seesaw_pivot_axle", bm, M["seesaw_iron"], smooth=True, parent=pivot)
+
 # ================================================================== RAÍLES
 # rail_piece: tramo de 1 de largo a lo largo de X (el juego lo estira y lo inclina entre casillas); origen = altura del raíl.
 # rail_station: estación redonda con aro brillante donde el limo se hace bola.
@@ -1098,20 +1126,41 @@ for y in (-0.16, 0.16):
     box(bm, (1.0, 0.08, 0.06), (0, y, -0.1))
 mesh_object("rail_piece_wood", bm, M["rail_wood"], parent=rail)
 
-# rail_cart: vagoneta-cuenco que lleva al limo por la vía (X = avance, origen = altura de los carriles)
+# rail_shell: dos semiesferas con nervios que se cierran alrededor del limo al subirse al raíl
+# (X = avance, origen = altura de los carriles; el juego las separa para abrir y cerrar)
 M["cart_metal"] = material("CartMetal", "3f4a63", 0.35, 0.9)
-cart = empty("rail_cart")
-bm = bmesh.new()
-lathe(bm, [(0.0, 0.07), (0.16, 0.075), (0.3, 0.12), (0.37, 0.2), (0.39, 0.3), (0.35, 0.3), (0.33, 0.22), (0.26, 0.15), (0.14, 0.115), (0.0, 0.11)], 36)
-mesh_object("rail_cart_bowl", bm, M["station_stone"], smooth=True, parent=cart)
-tube("rail_cart_rim", [(0.372 * math.cos(a * math.tau / 36), 0.372 * math.sin(a * math.tau / 36)) for a in range(36)], 0.022,
-     M["rail_glow"], parent=cart, loc=(0, 0, 0.3), poly=True, cyclic=True, plane="XY")
+M["shell_glass"] = material("ShellGlass", "cfe9ff", 0.08, 0.0)
+SHELL_R, SHELL_Y = 0.46, 0.52
+shell = empty("rail_shell")
 bm = bmesh.new()
 box(bm, (0.44, RAIL_GAUGE - 0.02, 0.04), (0, 0, 0.06))
 for x in (-0.16, 0.16):
     for y in (-RAIL_GAUGE / 2, RAIL_GAUGE / 2):
         cylinder(bm, 0.055, 0.035, (x, y, 0.045), 16, rot=Matrix.Rotation(math.radians(90), 4, "X"))
-mesh_object("rail_cart_chassis", bm, M["cart_metal"], smooth=True, parent=cart)
+box(bm, (0.1, 0.1, 0.16), (0, 0, 0.14))
+mesh_object("rail_shell_chassis", bm, M["cart_metal"], smooth=True, parent=shell)
+
+
+def half_shell(name, up):
+    """Media esfera hueca (con su aro y tres nervios) mirando hacia arriba o hacia abajo."""
+    holder = empty(name, parent=shell, loc=(0, 0, SHELL_Y))
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=28, v_segments=18, radius=SHELL_R)
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if (v.co.z < 0) == up], context="VERTS")
+    mesh_object(name + "_glass", bm, M["shell_glass"], smooth=True, parent=holder)
+    bm = bmesh.new()
+    for k in range(3):
+        ang = k * math.pi / 3
+        for t in range(11):
+            f = (t / 10) * math.pi / 2 * (1 if up else -1)
+            ellipsoid(bm, (0.014, 0.014, 0.014), (SHELL_R * math.cos(f) * math.cos(ang), SHELL_R * math.cos(f) * math.sin(ang), SHELL_R * math.sin(f)), 8, 6)
+    ring = [(SHELL_R * math.cos(k * math.tau / 32), SHELL_R * math.sin(k * math.tau / 32)) for k in range(32)]
+    mesh_object(name + "_ribs", bm, M["cart_metal"], smooth=True, parent=holder)
+    tube(name + "_rim", ring, 0.024, M["rail_glow"], parent=holder, loc=(0, 0, 0.004 * (1 if up else -1)), poly=True, cyclic=True, plane="XY")
+
+
+half_shell("rail_shell_lower", False)
+half_shell("rail_shell_upper", True)
 
 station = empty("rail_station")
 bm = bmesh.new()
@@ -1286,6 +1335,20 @@ for p in range(5):
 flat_shape("face_blush_flowers_center", ellipse_pts(0.007, 0.007, 0, 0, 12), 0.004, M["petal_center"], front=-0.002, parent=flowers)
 flat_shape("face_blush_mole", ellipse_pts(0.007, 0.007, 0.018, -0.012, 14), 0.004, M["mole"])
 
+
+station = empty("rail_station")
+bm = bmesh.new()
+cylinder(bm, 0.44, 0.06, (0, 0, 0.03), 40)
+mesh_object("rail_station_base", bm, M["station_stone"], smooth=True, parent=station)
+ring = [(0.36 * math.cos(a * math.tau / 40), 0.36 * math.sin(a * math.tau / 40)) for a in range(40)]
+tube("rail_station_ring", ring, 0.025, M["rail_glow"], parent=station, loc=(0, 0, 0.075), poly=True, cyclic=True, plane="XY")
+bm = bmesh.new()
+for a in (0.25, 0.75):
+    cylinder(bm, 0.035, 0.5, (0.42 * math.cos(a * math.tau + math.pi / 2), 0.42 * math.sin(a * math.tau + math.pi / 2), 0.28), 12)
+mesh_object("rail_station_posts", bm, M["rail_metal"], smooth=True, parent=station)
+arch = [(0.42 * math.cos(math.pi * t / 16), 0.0, 0.53 + 0.12 * math.sin(math.pi * t / 16)) for t in range(17)]
+cu_pts = [(x, z) for x, _, z in arch]
+tube("rail_station_arch", cu_pts, 0.03, M["rail_metal"], parent=station)
 
 # ================================================================== COLECCIONABLES NUEVOS
 # Estantería (~0.4 de alto), pared (se cuelgan: parte trasera en Y = 0, miran a -Y) y suelo (~1 de alto).

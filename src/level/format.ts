@@ -18,7 +18,7 @@ export type CellKind =
   | 'coin' | 'blade' | 'spike' | 'gem' | 'relic'
   | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet'
   | 'station' | 'rail' | 'crack'
-  | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner' | 'cannon' | 'target';
+  | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner' | 'cannon' | 'target' | 'seesaw';
 
 export interface TileDef {
   char: string;
@@ -93,6 +93,9 @@ export const TILES: readonly TileDef[] = [
   { char: '%', kind: 'rail', label: 'Raíl en espiral', raise: 1.2, shape: 'spiral', color: '#a5b4fc' },
   // se agrieta al pisarla y cae al vacío poco después (mismo tiempo que el hielo derretido): solo se cruza una vez
   { char: 'B', kind: 'crack', label: 'Roca agrietada (se rompe al pasar)', color: '#a08c74' },
+  // balancín: tabla sobre un eje que se inclina hacia donde pesa el limo (una fila o columna seguida = una tabla)
+  { char: '-', kind: 'seesaw', label: 'Balancín (de lado a lado)', axis: 'x', color: '#c08a4a' },
+  { char: '|', kind: 'seesaw', label: 'Balancín (de frente al fondo)', axis: 'z', color: '#b8813f' },
   // rampas: suben media altura en una casilla, hacia arriba o hacia abajo según se recorran
   { char: 'n', kind: 'ramp', label: 'Rampa (sube hacia el fondo)', rise: 'n', color: '#d8c49a' },
   { char: 'u', kind: 'ramp', label: 'Rampa (sube hacia la cámara)', rise: 's', color: '#d8c49a' },

@@ -152,11 +152,30 @@ export const COLLAPSE_DELAY = 1.3;
 const FALL_TIME = 1.0;
 interface Collapse { set: BlockSet; k: number; t: number; fallen: boolean; done: boolean; overlay: THREE.Object3D | null }
 export type WorldEvent = { type: 'crack' | 'melt' | 'collapse'; x: number; y: number; z: number; melt: boolean };
+/** balancín: tabla sobre un eje; se inclina hacia donde pesa el limo */
+export interface Seesaw {
+  cells: number[];
+  axis: 'x' | 'z';
+  base: number;
+  /** centro (eje) de la tabla */
+  px: number; pz: number;
+  len: number;
+  /** pendiente actual (altura por casilla) y su velocidad */
+  tilt: number; vel: number;
+  /** peso y momento acumulados en el paso de física */
+  load: number; torque: number;
+  obj: THREE.Object3D | null;
+}
+
 /** foot: dónde acaba la columna por abajo (el fondo en la planta 0; en las de arriba, el grosor de la losa) */
 interface Solid { i: number; j: number; s: number; top: number; foot: number; color: THREE.Color; set: BlockSet }
 
 const DOOR_H = TILE_BY_CHAR.get('D')!.raise!;
 const SLAB_H = 0.5;   // alto de la losa biselada (block_top)
+/** balancín: pendiente máxima (altura por casilla), fuerza del muelle y frenado */
+const SEESAW_MAX = 0.32;
+const SEESAW_SPRING = 14;
+const SEESAW_DAMP = 3.2;
 const BOTTOM = -1.2;  // fondo de las columnas
 const SHOWCASE_STRETCH = new THREE.Vector3(1, 1 / SLAB_H, 1);
 /** grosor de los suelos de las plantas de arriba (por debajo se puede pasar) */
@@ -252,6 +271,9 @@ export class World {
   private floorTopMat: THREE.Material | null = null;
   /** plataformas giratorias: centro, altura y disco dibujado */
   readonly spinners: { x: number; z: number; y: number; disc: THREE.Object3D }[] = [];
+  /** balancines: tablas que se inclinan hacia donde pesa el limo (idx de sus casillas -> tabla) */
+  readonly seesaws: Seesaw[] = [];
+  private seesawAt = new Map<number, Seesaw>();
   private coldCells: number[] = [];
   /** corriente de aire por casilla: dirección × fuerza y altura del ventilador */
   readonly windX: Float32Array;
@@ -354,6 +376,10 @@ export class World {
     que suben de base a base + RAMP_RISE.
   */
   topAt(c: Cell, ci: number, cj: number, x: number, z: number): number {
+    if (c.kind === 'seesaw') {
+      const see = this.seesawAt.get(this.index(ci, cj, c.story));
+      return see ? this.seesawTop(see, x, z) : c.base;
+    }
     if (c.kind !== 'ramp') return c.top;
     const fx = Math.min(1, Math.max(0, x - ci)), fz = Math.min(1, Math.max(0, z - cj));
     const f = c.rise === 'n' ? 1 - fz : c.rise === 's' ? fz : c.rise === 'e' ? fx : 1 - fx;
@@ -620,6 +646,9 @@ export class World {
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             if (this.showcase) this.addMark(x, c.base, z, 'exit');
             break;
+          case 'seesaw':
+            // la tabla se monta aparte (buildSeesaws); la casilla no lleva bloque
+            break;
           case 'spinner':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.addSpinner(x, c.base, z);
@@ -719,6 +748,7 @@ export class World {
     this.buildStory = 0;
     this.buildBlocks(solidList);
     this.buildShapes();
+    this.buildSeesaws();
     this.linkHoles();
     this.buildRails();
     this.linkCannons();
@@ -1005,6 +1035,87 @@ export class World {
     m.position.set(x, y, z);
     this.storyGroups[this.buildStory].add(m);
     return m;
+  }
+
+  /**
+    Balancines: cada fila (o columna) seguida de casillas de balancín es una tabla sobre su eje central.
+    La tabla se inclina hacia donde pesa el limo y, cuanto más inclinada, más resbala hacia el lado bajo.
+  */
+  private buildSeesaws() {
+    for (let s = 0; s < this.stories; s++) {
+      const seen = new Set<number>();
+      for (let j = 0; j < this.d; j++) {
+        for (let i = 0; i < this.w; i++) {
+          const idx = this.index(i, j, s);
+          const c = this.cells[idx];
+          if (c.kind !== 'seesaw' || seen.has(idx)) continue;
+          const ax = c.axis === 'z' ? 0 : 1, az = c.axis === 'z' ? 1 : 0;
+          const cells = [idx];
+          seen.add(idx);
+          for (let k = 1; ; k++) {
+            const n = this.cell(i + ax * k, j + az * k, s);
+            if (!n || n.kind !== 'seesaw' || n.axis !== c.axis || n.base !== c.base) break;
+            const nIdx = this.index(i + ax * k, j + az * k, s);
+            cells.push(nIdx);
+            seen.add(nIdx);
+          }
+          const len = cells.length;
+          const px = i + (ax * (len - 1)) / 2 + 0.5, pz = j + (az * (len - 1)) / 2 + 0.5;
+          const see: Seesaw = { cells, axis: c.axis === 'z' ? 'z' : 'x', base: c.base, px, pz, len, tilt: 0, vel: 0, load: 0, torque: 0, obj: null };
+          const plank = this.add('seesaw_plank', px, c.base, pz);
+          plank.rotation.order = 'YZX';
+          plank.rotation.y = see.axis === 'z' ? Math.PI / 2 : 0;
+          plank.scale.x = len;
+          see.obj = plank;
+          this.add('seesaw_pivot', px, c.base, pz).rotation.y = plank.rotation.y;
+          for (const k of cells) {
+            this.seesawAt.set(k, see);
+            // la casilla llega como mucho a lo alto de la tabla: así el limo choca con ella y no la atraviesa
+            this.cells[k].top = c.base + SEESAW_MAX * ((len - 1) / 2 + 0.5);
+          }
+          this.seesaws.push(see);
+        }
+      }
+    }
+  }
+
+  /** Altura de la tabla en un punto (y su pendiente): sube o baja según lo inclinada que esté. */
+  private seesawTop(see: Seesaw, x: number, z: number) {
+    const off = see.axis === 'x' ? x - see.px : z - see.pz;
+    return see.base + see.tilt * off;
+  }
+
+  /** El limo se apoya en un balancín: pesa en ese punto (y luego resbala hacia el lado bajo). */
+  pressSeesaw(idx: number, x: number, z: number, w = 1) {
+    const see = this.seesawAt.get(idx);
+    if (!see) return;
+    see.load += w;
+    see.torque += w * (see.axis === 'x' ? x - see.px : z - see.pz);
+  }
+
+  /** Pendiente del balancín de esta casilla (hacia dónde resbala el limo), o null. */
+  seesawSlope(idx: number): [number, number] | null {
+    const see = this.seesawAt.get(idx);
+    if (!see) return null;
+    return see.axis === 'x' ? [see.tilt, 0] : [0, see.tilt];
+  }
+
+  private updateSeesaws(dt: number) {
+    for (const see of this.seesaws) {
+      // el peso del limo la empuja; sin nadie encima vuelve despacio a su sitio
+      const arm = (see.len - 1) / 2 + 0.5;
+      // el lado donde pesa el limo baja
+      const want = see.load > 0 ? -Math.max(-1, Math.min(1, see.torque / (arm * Math.max(1, see.load)))) * SEESAW_MAX : 0;
+      const k = see.load > 0 ? SEESAW_SPRING : SEESAW_SPRING * 0.45;
+      see.vel += (want - see.tilt) * k * dt;
+      see.vel *= Math.exp(-SEESAW_DAMP * dt);
+      see.tilt = Math.max(-SEESAW_MAX, Math.min(SEESAW_MAX, see.tilt + see.vel * dt));
+      see.load = 0;
+      see.torque = 0;
+      if (!see.obj) continue;
+      // la tabla se dibuja inclinada: el lado con más peso baja
+      see.obj.rotation.z = (see.axis === 'x' ? 1 : -1) * Math.atan(see.tilt);
+    }
   }
 
   private addSpinner(x: number, y: number, z: number) {
@@ -1430,6 +1541,7 @@ export class World {
   update(dt: number, counts: Record<Channel, number>) {
     this.time += dt;
     this.timeUniform.value = this.time;
+    if (this.seesaws.length) this.updateSeesaws(dt);
 
     for (const sw of this.switches.values()) {
       sw.count = counts[sw.channel];

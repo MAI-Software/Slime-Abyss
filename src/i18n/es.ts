@@ -414,6 +414,8 @@ export const es = {
       crack: 'Roca agrietada',
       sawD1: 'Sierra diagonal (\\)',
       sawD2: 'Sierra diagonal (/)',
+      seesawX: 'Balancín (de lado a lado)',
+      seesawZ: 'Balancín (de frente al fondo)',
       rampN: 'Rampa: sube hacia el fondo',
       rampS: 'Rampa: sube hacia la cámara',
       rampE: 'Rampa: sube a la derecha',

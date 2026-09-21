@@ -415,6 +415,8 @@ export const de: Dict = {
       crack: 'Rissiger Fels',
       sawD1: 'Diagonale Säge (\\)',
       sawD2: 'Diagonale Säge (/)',
+      seesawX: 'Wippe (links-rechts)',
+      seesawZ: 'Wippe (vorn-hinten)',
       rampN: 'Rampe: steigt nach hinten',
       rampS: 'Rampe: steigt zur Kamera',
       rampE: 'Rampe: steigt nach rechts',

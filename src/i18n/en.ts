@@ -415,6 +415,8 @@ export const en: Dict = {
       crack: 'Cracked rock',
       sawD1: 'Diagonal saw (\\)',
       sawD2: 'Diagonal saw (/)',
+      seesawX: 'Seesaw (side to side)',
+      seesawZ: 'Seesaw (front to back)',
       rampN: 'Ramp: rises away',
       rampS: 'Ramp: rises toward camera',
       rampE: 'Ramp: rises right',
