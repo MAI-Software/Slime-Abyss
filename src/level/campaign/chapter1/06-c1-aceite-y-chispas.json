@@ -7,6 +7,8 @@
   "name": "Aceite y chispas",
   "count": 80,
   "keepPct": 0.75,
+  "mood": "dusk",
+  "camYaw": -18,
   "tips": [
     {
       "z": 15,

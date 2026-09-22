@@ -7,6 +7,8 @@
   "name": "Grietas entre llamas",
   "count": 80,
   "keepPct": 0.65,
+  "mood": "dungeon",
+  "camYaw": 18,
   "tips": [
     {
       "z": 12.5,

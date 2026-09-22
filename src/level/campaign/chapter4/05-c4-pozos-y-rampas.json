@@ -7,6 +7,8 @@
   "name": "Pozos y rampas",
   "count": 80,
   "keepPct": 0.8,
+  "mood": "bright",
+  "camYaw": 18,
   "tips": [
     {
       "z": 12.5,

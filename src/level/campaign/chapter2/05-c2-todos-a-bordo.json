@@ -7,6 +7,8 @@
   "name": "Todos a bordo",
   "count": 80,
   "keepPct": 0.75,
+  "mood": "cave",
+  "camYaw": 18,
   "tips": [
     {
       "z": 10,

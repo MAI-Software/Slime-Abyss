@@ -586,8 +586,8 @@ export const en: Dict = {
       tips: ['Go down the well', 'The ramps lead up to the treasure'],
     },
     'c4-remolino': {
-      name: 'Whirlpool',
-      tips: ['The sand whirlpool spins you around', 'Dizzy, it’s hard to move: wait until it passes'],
+      name: 'Sand Dungeon',
+      tips: ['The torches light the way, but they burn', 'That hole is not the abyss: look what is under it', 'Cracked rock breaks on the second pass'],
     },
     'c4-canonazo': {
       name: 'Cannon Shot',

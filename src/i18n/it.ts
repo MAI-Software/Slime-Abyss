@@ -586,8 +586,8 @@ export const it: Dict = {
       tips: ['Scendi dal pozzo', 'Le rampe salgono fino al tesoro'],
     },
     'c4-remolino': {
-      name: 'Vortice',
-      tips: ['Il vortice di sabbia ti fa girare', 'Con il capogiro è difficile muoversi: aspetta che passi'],
+      name: 'Sotterraneo di sabbia',
+      tips: ['Le torce illuminano, ma bruciano', 'Quel buco non porta nel vuoto: guarda sotto', 'La roccia crepata cede al secondo passaggio'],
     },
     'c4-canonazo': {
       name: 'Cannonata',

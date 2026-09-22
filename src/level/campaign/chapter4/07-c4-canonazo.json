@@ -7,6 +7,8 @@
   "name": "Cañonazo",
   "count": 80,
   "keepPct": 0.75,
+  "mood": "dusk",
+  "camYaw": -15,
   "tips": [
     {
       "z": 20,

@@ -7,6 +7,8 @@
   "name": "Saltos frágiles",
   "count": 80,
   "keepPct": 0.6,
+  "mood": "dusk",
+  "camYaw": 0,
   "tips": [
     {
       "z": 14.5,

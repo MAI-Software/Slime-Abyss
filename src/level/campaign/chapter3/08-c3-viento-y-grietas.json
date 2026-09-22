@@ -4,6 +4,8 @@
   "name": "Viento y grietas",
   "count": 80,
   "keepPct": 0.5,
+  "mood": "cave",
+  "camYaw": 15,
   "need": {
     "A": 20
   },

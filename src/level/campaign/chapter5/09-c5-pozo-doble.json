@@ -7,6 +7,8 @@
   "name": "Pozo doble",
   "count": 80,
   "keepPct": 0.6,
+  "mood": "dungeon",
+  "camYaw": -18,
   "tips": [
     {
       "z": 22,

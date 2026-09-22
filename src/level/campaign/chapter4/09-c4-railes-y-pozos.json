@@ -7,6 +7,8 @@
   "name": "Raíles y pozos",
   "count": 80,
   "keepPct": 0.8,
+  "mood": "cave",
+  "camYaw": 16,
   "tips": [
     {
       "z": 9.5,

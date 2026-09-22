@@ -7,6 +7,8 @@
   "name": "Fuego del desierto",
   "count": 80,
   "keepPct": 0.65,
+  "mood": "dungeon",
+  "camYaw": 0,
   "tips": [
     {
       "z": 12.5,

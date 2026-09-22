@@ -7,6 +7,8 @@
   "name": "Tablas y sierra",
   "count": 80,
   "keepPct": 0.7,
+  "mood": "cave",
+  "camYaw": -16,
   "tips": [
     {
       "z": 22,

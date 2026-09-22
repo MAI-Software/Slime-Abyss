@@ -7,6 +7,8 @@
   "name": "Dientes de arena",
   "count": 80,
   "keepPct": 0.8,
+  "mood": "dusk",
+  "camYaw": -16,
   "tips": [
     {
       "z": 11,

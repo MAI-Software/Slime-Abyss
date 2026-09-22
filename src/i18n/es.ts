@@ -585,8 +585,8 @@ export const es = {
       tips: ['Baja por el pozo', 'Las rampas suben hasta el tesoro'],
     },
     'c4-remolino': {
-      name: 'Remolino',
-      tips: ['El remolino de arena te hace dar vueltas', 'Mareado cuesta moverse: espera a que se te pase'],
+      name: 'Mazmorra de arena',
+      tips: ['Las antorchas alumbran, pero queman', 'Ese agujero no da al abismo: mira lo que hay debajo', 'La roca agrietada se rompe al segundo paso'],
     },
     'c4-canonazo': {
       name: 'Cañonazo',

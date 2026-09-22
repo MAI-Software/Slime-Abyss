@@ -4,6 +4,8 @@
   "name": "Bifurcación",
   "count": 80,
   "keepPct": 0.75,
+  "mood": "cave",
+  "camYaw": 20,
   "need": {
     "B": 14
   },

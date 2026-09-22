@@ -7,6 +7,8 @@
   "name": "Dunas",
   "count": 80,
   "keepPct": 0.85,
+  "mood": "bright",
+  "camYaw": 0,
   "tips": [
     {
       "z": 10,

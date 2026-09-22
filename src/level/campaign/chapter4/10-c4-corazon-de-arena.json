@@ -7,6 +7,8 @@
   "name": "El corazón de arena",
   "count": 80,
   "keepPct": 0.55,
+  "mood": "dungeon",
+  "camYaw": -20,
   "tips": [
     {
       "z": 11,

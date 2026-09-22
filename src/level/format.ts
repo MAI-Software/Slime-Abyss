@@ -141,6 +141,10 @@ export interface LevelData {
   minPct?: number;
   tiles: string[];
   heights: string[];
+  /** Ambiente del piso: 'bright' (por defecto), 'cave', 'dungeon' (oscuro, mandan las antorchas) o 'dusk'. */
+  mood?: 'bright' | 'cave' | 'dungeon' | 'dusk';
+  /** Giro de la cámara del piso, en grados (por defecto 0: de frente). El mando siempre va relativo a la cámara. */
+  camYaw?: number;
   /**
     Plantas de encima (1, 2...), del mismo tamaño: cada una STORY_H más arriba, con suelos de losa por los que se
     puede pasar por debajo. Se conectan con agujeros, ascensores (estaciones una encima de otra) y cañones.

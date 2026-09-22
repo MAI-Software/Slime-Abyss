@@ -7,6 +7,8 @@
   "name": "Viento en la tabla",
   "count": 80,
   "keepPct": 0.65,
+  "mood": "bright",
+  "camYaw": 15,
   "tips": [
     {
       "z": 23,

@@ -7,6 +7,8 @@
   "name": "Corriente helada",
   "count": 80,
   "keepPct": 0.75,
+  "mood": "cave",
+  "camYaw": 0,
   "tips": [
     {
       "z": 12,

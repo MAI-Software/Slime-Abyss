@@ -4,6 +4,8 @@
   "name": "Salto al abismo",
   "count": 80,
   "keepPct": 0.65,
+  "mood": "cave",
+  "camYaw": 0,
   "need": {
     "B": 12
   },

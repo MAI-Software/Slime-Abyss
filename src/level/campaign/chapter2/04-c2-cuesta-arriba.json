@@ -7,6 +7,8 @@
   "name": "Cuesta arriba",
   "count": 80,
   "keepPct": 0.8,
+  "mood": "dusk",
+  "camYaw": -14,
   "tips": [
     {
       "z": 17,

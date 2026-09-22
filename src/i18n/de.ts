@@ -586,8 +586,8 @@ export const de: Dict = {
       tips: ['Geh durch den Brunnen hinab', 'Die Rampen führen hinauf zum Schatz'],
     },
     'c4-remolino': {
-      name: 'Strudel',
-      tips: ['Der Sandstrudel dreht dich im Kreis', 'Schwindlig kommt man schwer voran: warte, bis es vorbei ist'],
+      name: 'Sandverlies',
+      tips: ['Die Fackeln leuchten, aber sie brennen', 'Das Loch führt nicht in den Abgrund: schau darunter', 'Rissiger Fels bricht beim zweiten Mal'],
     },
     'c4-canonazo': {
       name: 'Kanonenschuss',

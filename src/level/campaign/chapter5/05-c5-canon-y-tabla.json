@@ -7,6 +7,8 @@
   "name": "Cañón y tabla",
   "count": 80,
   "keepPct": 0.7,
+  "mood": "dusk",
+  "camYaw": 18,
   "tips": [
     {
       "z": 24,

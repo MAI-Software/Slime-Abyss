@@ -7,6 +7,8 @@
   "name": "Disco y tablas",
   "count": 80,
   "keepPct": 0.65,
+  "mood": "dusk",
+  "camYaw": 16,
   "tips": [
     {
       "z": 21,

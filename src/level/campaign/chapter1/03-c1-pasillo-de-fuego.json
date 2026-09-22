@@ -7,6 +7,8 @@
   "name": "Pasillo de fuego",
   "count": 80,
   "keepPct": 0.7,
+  "mood": "dusk",
+  "camYaw": 0,
   "tips": [
     {
       "z": 17.5,

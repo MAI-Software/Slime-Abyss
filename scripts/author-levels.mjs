@@ -62,6 +62,7 @@ const CHAPTER1 = [
     file: 'chapter1/01-c1-primeros-pasos.json',
     latch: { B: true },
     id: 'c1-primeros-pasos', name: 'Primeros pasos', count: 80, keepPct: 0.8,
+    mood: 'cave', camYaw: 0,
     map: [
 '###############',
 '#000000T000000#',
@@ -124,6 +125,7 @@ const CHAPTER1 = [
   {
     file: 'chapter1/02-c1-filo-de-cuchilla.json',
     id: 'c1-filo-de-cuchilla', name: 'Pico de piedra', count: 80, keepPct: 0.7,
+    mood: 'cave', camYaw: -12,
     // secreto: el interruptor verde pide 14 limitos juntos y abre el rincón de la gema
     need: { B: 14 }, latch: { B: true },
     map: [
@@ -171,6 +173,7 @@ const CHAPTER1 = [
     file: 'chapter1/03-c1-pasillo-de-fuego.json',
     latch: { B: true },
     id: 'c1-pasillo-de-fuego', name: 'Pasillo de fuego', count: 80, keepPct: 0.7,
+    mood: 'dusk', camYaw: 0,
     // Solo fuego, de menos a más y siempre entre muros:
     // 1) sala con braseros fijos apartados del centro (el camino de 3 casillas queda libre)
     // 2) pasillo con dos filas de llamas intermitentes y tres filas seguras entre ellas
@@ -215,6 +218,7 @@ const CHAPTER1 = [
   {
     file: 'chapter1/04-c1-divide-y-venceras.json',
     id: 'c1-divide-y-venceras', name: 'Divide y vencerás', count: 80, keepPct: 0.75,
+    mood: 'cave', camYaw: 14,
     // Todo llano y sin callejones: la cuchilla parte al limo en dos carriles.
     // Izquierda: S (A, mientras se pisa) justo delante de la puerta d, así esa mitad lo sigue pisando al avanzar.
     // Derecha: cruza D y pisa s (B, se queda abierto) al fondo de la sala, que abre d y reúne a las dos mitades.
@@ -252,6 +256,7 @@ const CHAPTER1 = [
   {
     file: 'chapter1/05-c1-salto-al-abismo.json',
     id: 'c1-salto-al-abismo', name: 'Salto al abismo', count: 80, keepPct: 0.65,
+    mood: 'cave', camYaw: 0,
     // S abre la salida con solo tocarlo; s (secreto) pide 12 limitos juntos y abre la sala de la gema
     need: { B: 12 }, latch: { A: true, B: true },
     map: [
@@ -291,6 +296,7 @@ const CHAPTER1 = [
     file: 'chapter1/06-c1-aceite-y-chispas.json',
     latch: { B: true },
     id: 'c1-aceite-y-chispas', name: 'Aceite y chispas', count: 80, keepPct: 0.75,
+    mood: 'dusk', camYaw: -18,
     map: [
 '#############',
 '#00000T00000#',
@@ -329,6 +335,7 @@ const CHAPTER1 = [
     file: 'chapter1/07-c1-hielo-que-arde.json',
     latch: { B: true },
     id: 'c1-hielo-que-arde', name: 'Hielo que arde', count: 80, keepPct: 0.75,
+    mood: 'cave', camYaw: 0,
     // Primero el suelo helado solo, en una pista cerrada y sin peligros; después el aceite y el fuego
     // (ya vistos en el piso 6) con una sola idea nueva: ardiendo se derriten los bloques de hielo.
     map: [
@@ -374,6 +381,7 @@ const CHAPTER1 = [
     file: 'chapter1/08-c1-ventiladores.json',
     latch: { B: true },
     id: 'c1-ventiladores', name: '0entiladores', count: 80, keepPct: 0.6,
+    mood: 'dusk', camYaw: 16,
     // Tres ráfagas de menos a más. Las monedas marcan la mejor línea (capítulo 1: guiar, no castigar):
     // 1) viento contra un muro: no se puede caer; la moneda está justo donde te deja el viento
     // 2) viento hacia el vacío: monedas antes y después en el lado del ventilador, lejos del borde
@@ -422,6 +430,7 @@ const CHAPTER1 = [
     file: 'chapter1/09-c1-corriente-helada.json',
     latch: { B: true },
     id: 'c1-corriente-helada', name: 'Corriente helada', count: 80, keepPct: 0.75,
+    mood: 'cave', camYaw: 0,
     map: [
 '..#######..',
 '..#00T00#..',
@@ -457,6 +466,7 @@ const CHAPTER1 = [
     file: 'chapter1/10-c1-gran-cripta.json',
     latch: { B: true },
     id: 'c1-gran-cripta', name: 'La gran cripta', count: 80, keepPct: 0.7,
+    mood: 'dungeon', camYaw: -20,
     map: [
 '###############',
 '#0T0000000#00G#',
@@ -508,6 +518,7 @@ const CHAPTER2 = [
     file: 'chapter2/01-c2-todos-a-una.json',
     latch: { B: true },
     id: 'c2-todos-a-una', name: 'Todos a una', count: 80, keepPct: 0.75,
+    mood: 'dusk', camYaw: 0,
     // Botón de apretar: la cuchilla y los pinchos desperdigan el limo en una sala sin peligros.
     map: [
 '#############',
@@ -559,6 +570,7 @@ const CHAPTER2 = [
     file: 'chapter2/02-c2-sobre-railes.json',
     latch: { B: true },
     id: 'c2-sobre-railes', name: 'Sobre raíles', count: 80, keepPct: 0.8,
+    mood: 'dusk', camYaw: 15,
     // Raíles: una vía recta y corta entre dos estaciones; no hay forma de caerse.
     map: [
 '...#######.......',
@@ -604,6 +616,7 @@ const CHAPTER2 = [
     file: 'chapter2/03-c2-curvas.json',
     latch: { B: true },
     id: 'c2-curvas', name: 'Curvas', count: 80, keepPct: 0.8,
+    mood: 'cave', camYaw: 0,
     // Vías con curvas y dos trayectos seguidos con una isla en medio.
     // Escondido: un agujero en una esquina de la isla baja a un sótano con el coleccionable; el ascensor devuelve a la isla.
     map: [
@@ -704,6 +717,7 @@ const CHAPTER2 = [
     file: 'chapter2/04-c2-cuesta-arriba.json',
     latch: { B: true },
     id: 'c2-cuesta-arriba', name: 'Cuesta arriba', count: 80, keepPct: 0.8,
+    mood: 'dusk', camYaw: -14,
     // Las vías suben: a pie solo se baja, en bola se sube.
     // Escondido: una estación en el muro de la sala del medio baja a un saliente con el coleccionable.
     map: [
@@ -757,6 +771,7 @@ const CHAPTER2 = [
     file: 'chapter2/05-c2-todos-a-bordo.json',
     latch: { B: true },
     id: 'c2-todos-a-bordo', name: 'Todos a bordo', count: 80, keepPct: 0.75,
+    mood: 'cave', camYaw: 18,
     // Dos plantas: se empieza arriba. Apretar + ascensor: solo viaja el trozo que pisa la estación.
     // Escondido: el ascensor de la esquina baja a un cuartito con el coleccionable (y vuelve a subir).
     map: [
@@ -838,6 +853,7 @@ const CHAPTER2 = [
     file: 'chapter2/06-c2-plantas-en-la-via.json',
     latch: { B: true },
     id: 'c2-plantas-en-la-via', name: 'Plantas en la vía', count: 80, keepPct: 0.75,
+    mood: 'dusk', camYaw: 0,
     // Dos plantas: arriba aceite y fuego (capítulo 1) para quemar las plantas que tapan el agujero; abajo, la vía al tesoro.
     // Escondido: otra planta tapa un rincón con el coleccionable.
     map: [
@@ -927,6 +943,7 @@ const CHAPTER2 = [
     file: 'chapter2/07-c2-salto-a-la-estacion.json',
     latch: { B: true },
     id: 'c2-salto-a-la-estacion', name: 'Salto a la estación', count: 80, keepPct: 0.5,
+    mood: 'cave', camYaw: -16,
     // Plataformas de salto hasta una isla con estación que sube.
     map: [
 '...#######....',
@@ -975,6 +992,7 @@ const CHAPTER2 = [
     file: 'chapter2/08-c2-puente-de-viento.json',
     latch: { B: true },
     id: 'c2-puente-de-viento', name: 'Puente de viento', count: 80, keepPct: 0.7,
+    mood: 'dusk', camYaw: 0,
     // Dos caminos: puente con ventiladores o vía; las monedas llevan a la vía. Presenta la casilla de pinchos (flanquea el puente).
     map: [
 '#############',
@@ -1020,6 +1038,7 @@ const CHAPTER2 = [
   {
     file: 'chapter2/09-c2-bifurcacion.json',
     id: 'c2-bifurcacion', name: 'Bifurcación', count: 80, keepPct: 0.75,
+    mood: 'cave', camYaw: 20,
     // Secreto: la vía de la izquierda lleva a un interruptor que pide peso (apretar) y a la gema; se vuelve en bola.
     need: { B: 14 }, latch: { B: true },
     map: [
@@ -1064,6 +1083,7 @@ const CHAPTER2 = [
     file: 'chapter2/10-c2-gran-raiz.json',
     latch: { B: true },
     id: 'c2-gran-raiz', name: 'La gran raíz', count: 80, keepPct: 0.5,
+    mood: 'dungeon', camYaw: -22,
     // Final en dos plantas: arriba apretar tras la cuchilla, aceite, saltar, prenderse lejos del borde y quemar las plantas
     // que tapan el agujero; abajo, la vía sube con un bucle hasta el tesoro.
     // Escondido: una planta tapa el rincón del coleccionable junto al brasero de la izquierda.
@@ -1181,6 +1201,7 @@ const CHAPTER3 = [
     file: 'chapter3/01-c3-suelo-fragil.json',
     latch: { B: true },
     id: 'c3-suelo-fragil', name: 'Suelo frágil', count: 80, keepPct: 0.8,
+    mood: 'cave', camYaw: 0,
     // Presenta la roca agrietada: dos franjas cortas dentro de salas con muros.
     map: [
 '#############',
@@ -1232,6 +1253,7 @@ const CHAPTER3 = [
     file: 'chapter3/02-c3-puente-quebradizo.json',
     latch: { B: true },
     id: 'c3-puente-quebradizo', name: 'Puente quebradizo', count: 80, keepPct: 0.6,
+    mood: 'cave', camYaw: 16,
     // Puente agrietado sobre el vacío con dos giros.
     map: [
 '###########....',
@@ -1286,6 +1308,7 @@ const CHAPTER3 = [
     file: 'chapter3/03-c3-hielo-fundido.json',
     latch: { B: true },
     id: 'c3-hielo-fundido', name: 'Hielo fundido', count: 80, keepPct: 0.75,
+    mood: 'dusk', camYaw: -15,
     // Presenta el hielo que se derrite, en dos plantas: arriba aceite, fuego y plantas llevan a una mazmorra cerrada
     // cuyo único hueco es una baldosa de hielo; ardiendo se derrite y se cae a la sala del tesoro.
     // Escondido: abajo, un bloque de hielo tapa el rincón del coleccionable (hay que llegar aún ardiendo).
@@ -1390,6 +1413,7 @@ const CHAPTER3 = [
     file: 'chapter3/04-c3-pista-ardiente.json',
     latch: { B: true },
     id: 'c3-pista-ardiente', name: 'Pista ardiente', count: 80, keepPct: 0.7,
+    mood: 'cave', camYaw: 0,
     // Puente de hielo sobre el vacío que se funde bajo el limo en llamas: resbala, así que se cruza de un tirón.
     map: [
 '###########..',
@@ -1447,6 +1471,7 @@ const CHAPTER3 = [
     file: 'chapter3/05-c3-grietas-entre-llamas.json',
     latch: { B: true },
     id: 'c3-grietas-entre-llamas', name: 'Grietas entre llamas', count: 80, keepPct: 0.65,
+    mood: 'dungeon', camYaw: 18,
     // Dos plantas. Arriba: llamas intermitentes y, justo detrás de las segundas, roca agrietada; al final, un pozo.
     // Abajo, el tesoro. Escondido: tras una llama intermitente de la sala de abajo, el hueco del coleccionable.
     map: [
@@ -1554,6 +1579,7 @@ const CHAPTER3 = [
     file: 'chapter3/06-c3-dos-puentes.json',
     latch: { B: true },
     id: 'c3-dos-puentes', name: 'Dos puentes', count: 80, keepPct: 0.6,
+    mood: 'cave', camYaw: -20,
     // La cuchilla parte al limo y cada mitad cruza su puente agrietado; se reúnen arriba.
     // Escondido: un hueco en el muro derecho lleva a un tercer puente agrietado con el coleccionable al final.
     map: [
@@ -1608,6 +1634,7 @@ const CHAPTER3 = [
     file: 'chapter3/07-c3-saltos-fragiles.json',
     latch: { B: true },
     id: 'c3-saltos-fragiles', name: 'Saltos frágiles', count: 80, keepPct: 0.6,
+    mood: 'dusk', camYaw: 0,
     // Plataformas de salto que aterrizan sobre roca agrietada; la siguiente plataforma está justo después.
     map: [
 '###########',
@@ -1664,6 +1691,7 @@ const CHAPTER3 = [
   {
     file: 'chapter3/08-c3-viento-y-grietas.json',
     id: 'c3-viento-y-grietas', name: 'Viento y grietas', count: 80, keepPct: 0.5,
+    mood: 'cave', camYaw: 15,
     // Los ventiladores empujan contra el muro mientras la roca se rompe: el muro impide caer, la prisa evita hundirse.
     // Escondido: el interruptor pide peso (apretar) y abre la puerta del rincón del coleccionable.
     need: { A: 20 }, latch: { A: true, B: true },
@@ -1720,6 +1748,7 @@ const CHAPTER3 = [
     file: 'chapter3/09-c3-plaza-rota.json',
     latch: { B: true },
     id: 'c3-plaza-rota', name: 'Plaza rota', count: 80, keepPct: 0.55,
+    mood: 'dungeon', camYaw: -18,
     // La cuchilla parte al limo justo antes de una plaza agrietada: hay que apretar mientras se avanza.
     // Arriba la plaza acaba en una mazmorra: aceite y fuego dentro, y una sola baldosa de hielo que derretir para bajar.
     // Escondido: en la mazmorra, un bloque de hielo tapa el rincón del coleccionable.
@@ -1828,6 +1857,7 @@ const CHAPTER3 = [
     file: 'chapter3/10-c3-gran-grieta.json',
     latch: { B: true },
     id: 'c3-gran-grieta', name: 'La gran grieta', count: 80, keepPct: 0.5,
+    mood: 'dungeon', camYaw: 0,
     // Final en tres plantas hacia abajo. Arriba: aceite y fuego, hiedra, puente de hielo que se funde y la gema tras la hiedra;
     // la sala del final solo tiene salida por una baldosa de hielo. En medio: llamas, roca agrietada y un pozo.
     // Abajo: la vía hasta el tesoro.
@@ -2023,6 +2053,7 @@ const CHAPTER4 = [
     file: 'chapter4/01-c4-dunas.json',
     latch: { B: true },
     id: 'c4-dunas', name: 'Dunas', count: 80, keepPct: 0.85,
+    mood: 'bright', camYaw: 0,
     // Rampas: bajar y volver a subir, con muros a los lados.
     map: [
 '###########',
@@ -2083,6 +2114,7 @@ const CHAPTER4 = [
     file: 'chapter4/02-c4-sendero-diagonal.json',
     latch: { B: true },
     id: 'c4-sendero-diagonal', name: 'Sendero diagonal', count: 80, keepPct: 0.75,
+    mood: 'bright', camYaw: 14,
     // Un camino en diagonal sin muros: las medias casillas lo dejan liso.
     map: [
 '#############',
@@ -2143,6 +2175,7 @@ const CHAPTER4 = [
     file: 'chapter4/03-c4-sierras.json',
     latch: { B: true },
     id: 'c4-sierras', name: 'Dientes de arena', count: 80, keepPct: 0.8,
+    mood: 'dusk', camYaw: -16,
     // Dos plantas de sierras: arriba las diagonales y el pozo, abajo las demás y el tesoro.
     // Escondido: en la sala de abajo, una rampa sube al saliente del coleccionable.
     map: [
@@ -2276,6 +2309,7 @@ const CHAPTER4 = [
     file: 'chapter4/04-c4-el-pozo.json',
     latch: { B: true },
     id: 'c4-el-pozo', name: 'El pozo', count: 80, keepPct: 0.85,
+    mood: 'cave', camYaw: 0,
     // Presenta las plantas: se empieza en la de arriba y el agujero deja caer justo a la sala de debajo.
     map: [
 '###########',
@@ -2383,6 +2417,7 @@ const CHAPTER4 = [
     file: 'chapter4/05-c4-pozos-y-rampas.json',
     latch: { B: true },
     id: 'c4-pozos-y-rampas', name: 'Pozos y rampas', count: 80, keepPct: 0.8,
+    mood: 'bright', camYaw: 18,
     // Se empieza en la planta de arriba: por el pozo se baja a la sala del medio y las rampas suben hasta el tesoro.
     // Escondido: un segundo pozo en la esquina cae al rincón del coleccionable, que sale a la sala del medio.
     map: [
@@ -2517,67 +2552,103 @@ const CHAPTER4 = [
   },
   {
     file: 'chapter4/06-c4-remolino.json',
-    latch: { B: true },
-    id: 'c4-remolino', name: 'Remolino', count: 80, keepPct: 0.8,
-    // Presenta la plataforma giratoria: un remolino de arena en una sala cerrada. Marea, pero aquí no hay peligro.
+    id: 'c4-remolino', name: 'Mazmorra de arena', count: 80, keepPct: 0.7,
+    mood: 'dungeon', camYaw: 22,
+    // Mazmorra: se sube en zigzag entre antorchas, hielo, grietas, disco y pinchos. El hueco del centro
+    // no da al abismo: justo debajo hay una repisa con la gema y de vuelta se sube por el ascensor.
     map: [
-'###########',
-'#0000T0000#',
-'#000000000#',
-'###00000###',
-'..#00000###',
-'..#000000G#',
-'..#00E00###',
-'..#00C00#..',
-'..#00000#..',
-'..#C000C#..',
-'..#00000#..',
-'..##000##..',
-'.#0000000#.',
-'.#0C000C0#.',
-'.#0000000#.',
-'.#Y00000Y#.',
-'.###000###.',
-'.#0000000#.',
-'.#0C000C0#.',
-'.#0000000#.',
-'.#Y00000Y#.',
-'.###000###.',
-'.#0000000#.',
-'.#0C000C0#.',
-'.#0000000#.',
-'.#Y00000Y#.',
-'.###000###.',
-'.#0000000#.',
-'.#0C000C0#.',
-'.#0000000#.',
-'.#Y00000Y#.',
-'.###000###.',
-'.###000###.',
-'.#0000000#.',
-'.#0C000C0#.',
-'.#0000000#.',
-'.#Y00000Y#.',
-'.###000###.',
-'.#0000000#.',
-'.#0C000C0#.',
-'.#0000000#.',
-'.#Y00000Y#.',
-'.###ddd###.',
-'.#0000000..',
-'.#sC000C0#.',
-'.#000P000#.',
-'.#########.',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '..########.....',
+      '..#000000#.....',
+      '..#0U0G00#.....',
+      '..#000000#.....',
+      '..#0R0000#.....',
+      '..########.....',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+      '...............',
+    ],
+    stories: [
+      {
+        map: [
+          '###############',
+          '#000000000000T#',
+          '#0C00000C00000#',
+          '#####0000######',
+          '.....#0000#....',
+          '.....#0II0#....',
+          '.....#0II0#....',
+          '..####0000####.',
+          '..#0000000000#.',
+          '..#0F00000F00#.',
+          '..#0000000000#.',
+          '..#0B0B0B0B00#.',
+          '..#0000000000#.',
+          '..#######00000#',
+          '.........#0E00#',
+          '.........#0000#',
+          '..########0000#',
+          '..#00000000000#',
+          '..#0C000000C00#',
+          '..#00000000000#',
+          '..#00000000000#',
+          '..#00000000000#',
+          '..####00000####',
+          '..#00000000000#',
+          '..#0H000000000#',
+          '..#00000000000#',
+          '..#0R000000000#',
+          '..#0C0000C0000#',
+          '..#00000000000#',
+          '..####0000000##',
+          '..#00000000000#',
+          '..#0000000000>#',
+          '..#00000000000#',
+          '..#######000###',
+          '........#000#..',
+          '........#0P0#..',
+          '........#####..',
+        ],
+      },
     ],
     tips: [
-      { z: 9, text: 'El remolino de arena te hace dar vueltas' },
-      { z: 4.5, text: 'Mareado cuesta moverse: espera a que se te pase' },
+      { z: 34, text: 'Las antorchas alumbran, pero queman' },
+      { z: 25, text: 'Ese hueco no da al abismo: mira lo que hay debajo' },
+      { z: 11, text: 'La roca agrietada se rompe al segundo paso' },
     ],
   },
   {
     file: 'chapter4/07-c4-canonazo.json',
     latch: { B: true },
     id: 'c4-canonazo', name: 'Cañonazo', count: 80, keepPct: 0.75,
+    mood: 'dusk', camYaw: -15,
     // Escondido: un rincón tapiado en la sala del tesoro guarda el coleccionable.
     // Presenta el cañón: primero un disparo corto a una sala cerrada (líquido, se esparce poco) y después
     // uno largo sobre el vacío que solo sale bien congelado (el aire frío está al lado del cañón).
@@ -2651,6 +2722,7 @@ const CHAPTER4 = [
     file: 'chapter4/08-c4-fuego-del-desierto.json',
     latch: { B: true },
     id: 'c4-fuego-del-desierto', name: 'Fuego del desierto', count: 80, keepPct: 0.65,
+    mood: 'dungeon', camYaw: 0,
     // Dos plantas: arriba aceite, fuego, rampas y sierra hasta una mazmorra cerrada; su única salida es la baldosa de hielo.
     // Escondido: dentro de la mazmorra, un bloque de hielo tapa el rincón del coleccionable.
     map: [
@@ -2770,6 +2842,7 @@ const CHAPTER4 = [
     file: 'chapter4/09-c4-railes-y-pozos.json',
     latch: { B: true },
     id: 'c4-railes-y-pozos', name: 'Raíles y pozos', count: 80, keepPct: 0.8,
+    mood: 'cave', camYaw: 16,
     // Dos plantas: el ascensor (estaciones una encima de otra) sube dando vueltas y el pozo baja a la sala del tesoro.
     map: [
 '#############',
@@ -2880,6 +2953,7 @@ const CHAPTER4 = [
     file: 'chapter4/10-c4-corazon-de-arena.json',
     latch: { B: true },
     id: 'c4-corazon-de-arena', name: 'El corazón de arena', count: 80, keepPct: 0.55,
+    mood: 'dungeon', camYaw: -20,
     // Final en tres plantas hacia abajo: puente de roca rota y pozo arriba; sierras, disco y pozo en medio;
     // el tesoro abajo, con un ascensor para volver a la planta del medio a por lo que se haya quedado.
     // Escondido: una alcoba junto al pasillo de la sierra guarda el coleccionable.
@@ -3321,6 +3395,7 @@ const CHAPTER5 = [
     file: 'chapter5/01-c5-balancines.json',
     latch: { B: true },
     id: 'c5-balancines', name: 'Balancines', count: 80, keepPct: 0.75,
+    mood: 'dusk', camYaw: 0,
     map: [
 '###############',
 '#00000T0000000#',
@@ -3388,6 +3463,7 @@ const CHAPTER5 = [
     file: 'chapter5/02-c5-tablas-y-sierra.json',
     latch: { B: true },
     id: 'c5-tablas-y-sierra', name: 'Tablas y sierra', count: 80, keepPct: 0.7,
+    mood: 'cave', camYaw: -16,
     map: [
 '###############',
 '#00000T0000000#',
@@ -3456,6 +3532,7 @@ const CHAPTER5 = [
     file: 'chapter5/03-c5-viento-en-la-tabla.json',
     latch: { B: true },
     id: 'c5-viento-en-la-tabla', name: 'Viento en la tabla', count: 80, keepPct: 0.65,
+    mood: 'bright', camYaw: 15,
     map: [
 '###############',
 '#00000T0000000#',
@@ -3523,6 +3600,7 @@ const CHAPTER5 = [
     file: 'chapter5/04-c5-espiral-mareante.json',
     latch: { B: true },
     id: 'c5-espiral-mareante', name: 'Espiral mareante', count: 80, keepPct: 0.7,
+    mood: 'cave', camYaw: 0,
     map: [
 '###############',
 '#0C0000000000T#',
@@ -3592,6 +3670,7 @@ const CHAPTER5 = [
     file: 'chapter5/05-c5-canon-y-tabla.json',
     latch: { B: true },
     id: 'c5-canon-y-tabla', name: 'Cañón y tabla', count: 80, keepPct: 0.7,
+    mood: 'dusk', camYaw: 18,
     map: [
 '###############',
 '#00000T0000000#',
@@ -3660,6 +3739,7 @@ const CHAPTER5 = [
     file: 'chapter5/06-c5-templo-hundido.json',
     latch: { B: true },
     id: 'c5-templo-hundido', name: 'Templo hundido', count: 80, keepPct: 0.6,
+    mood: 'dungeon', camYaw: -14,
     map: [
 '...............',
 '...............',
@@ -3829,6 +3909,7 @@ const CHAPTER5 = [
     file: 'chapter5/07-c5-aceite-en-la-balanza.json',
     latch: { B: true },
     id: 'c5-aceite-en-la-balanza', name: 'Aceite en la balanza', count: 80, keepPct: 0.65,
+    mood: 'cave', camYaw: 0,
     map: [
 '###############',
 '#0C0000T000000#',
@@ -3896,6 +3977,7 @@ const CHAPTER5 = [
     file: 'chapter5/08-c5-disco-y-tablas.json',
     latch: { B: true },
     id: 'c5-disco-y-tablas', name: 'Disco y tablas', count: 80, keepPct: 0.65,
+    mood: 'dusk', camYaw: 16,
     map: [
 '###############',
 '#00000T0000000#',
@@ -3963,6 +4045,7 @@ const CHAPTER5 = [
     file: 'chapter5/09-c5-pozo-doble.json',
     latch: { B: true },
     id: 'c5-pozo-doble', name: 'Pozo doble', count: 80, keepPct: 0.6,
+    mood: 'dungeon', camYaw: -18,
     map: [
 '###############',
 '#000000T000000#',
@@ -4082,6 +4165,7 @@ const CHAPTER5 = [
     file: 'chapter5/10-c5-corazon-del-desierto.json',
     latch: { B: true },
     id: 'c5-corazon-del-desierto', name: 'Corazón del desierto', count: 80, keepPct: 0.6,
+    mood: 'dungeon', camYaw: 20,
     map: [
 '###############',
 '#0C0000000000T#',

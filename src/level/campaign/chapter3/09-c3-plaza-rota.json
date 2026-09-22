@@ -7,6 +7,8 @@
   "name": "Plaza rota",
   "count": 80,
   "keepPct": 0.55,
+  "mood": "dungeon",
+  "camYaw": -18,
   "tips": [
     {
       "z": 12.5,

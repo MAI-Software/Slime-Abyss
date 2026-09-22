@@ -586,8 +586,8 @@ export const fr: Dict = {
       tips: ['Descends par le puits', 'Les rampes montent jusqu’au trésor'],
     },
     'c4-remolino': {
-      name: 'Tourbillon',
-      tips: ['Le tourbillon de sable te fait tourner', 'Avec le tournis, c’est dur de bouger : attends que ça passe'],
+      name: 'Donjon de sable',
+      tips: ['Les torches éclairent, mais elles brûlent', 'Ce trou ne donne pas sur le vide : regarde dessous', 'La roche fissurée cède au deuxième passage'],
     },
     'c4-canonazo': {
       name: 'Coup de canon',

@@ -7,6 +7,8 @@
   "name": "La gran raíz",
   "count": 80,
   "keepPct": 0.5,
+  "mood": "dungeon",
+  "camYaw": -22,
   "tips": [
     {
       "z": 23,

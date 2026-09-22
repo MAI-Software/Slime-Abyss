@@ -7,6 +7,8 @@
   "name": "Sendero diagonal",
   "count": 80,
   "keepPct": 0.75,
+  "mood": "bright",
+  "camYaw": 14,
   "tips": [
     {
       "z": 10,

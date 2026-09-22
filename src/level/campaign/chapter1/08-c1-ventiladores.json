@@ -7,6 +7,8 @@
   "name": "0entiladores",
   "count": 80,
   "keepPct": 0.6,
+  "mood": "dusk",
+  "camYaw": 16,
   "tips": [
     {
       "z": 19.5,

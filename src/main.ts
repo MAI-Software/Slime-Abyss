@@ -131,6 +131,16 @@ const LIGHTING = {
   menu: { hemi: 0.5, sun: 1.25, rim: 0.3, env: 0.3, sunOffset: new THREE.Vector3(-4, 10, 7) },
   play: { hemi: 0.95, sun: 2.4, rim: 0.85, env: 0.5, sunOffset: new THREE.Vector3(5, 12, 4) },
 };
+/**
+  Ambiente de cada piso (el que diga LevelData.mood): en las mazmorras la luz general baja y mandan las antorchas.
+*/
+const MOODS = {
+  bright: { hemi: 1.1, sun: 2.6, rim: 0.95, env: 0.55, sunOffset: new THREE.Vector3(5, 12, 4) },
+  dusk: { hemi: 0.7, sun: 1.7, rim: 0.7, env: 0.4, sunOffset: new THREE.Vector3(-7, 9, 6) },
+  cave: { hemi: 0.5, sun: 1.15, rim: 0.45, env: 0.28, sunOffset: new THREE.Vector3(3, 11, 6) },
+  dungeon: { hemi: 0.3, sun: 0.7, rim: 0.3, env: 0.16, sunOffset: new THREE.Vector3(-3, 10, 5) },
+} as const;
+let playLook: { hemi: number; sun: number; rim: number; env: number; sunOffset: THREE.Vector3 } = LIGHTING.play;
 const sunOffset = LIGHTING.play.sunOffset.clone();
 const sunRight = new THREE.Vector3();
 const sunUp = new THREE.Vector3();
@@ -1499,7 +1509,9 @@ function startLevelNow(def: LevelData, ch: ChapterDef | null, k: number, biome: 
   $('hud-coins').hidden = world!.coinsTotal === 0;
   input.reset();
   if (input.mode === 'gyro') input.calibrate();
-  camYaw = 0;
+  // cada piso puede mirarse desde otro ángulo y tener su propia luz
+  camYaw = ((def.camYaw ?? 0) * Math.PI) / 180;
+  playLook = MOODS[def.mood ?? 'bright'] ?? LIGHTING.play;
   camPitch = DEFAULT_PITCH;
   moveX = moveZ = 0;
   if (input.mode === 'joystick' && !save.cameraHint) {
@@ -2303,11 +2315,16 @@ const STATE_TOASTS: Partial<Record<SlimeState, string>> = { oiled: 'toast.oil', 
 function tick(dt: number) {
   if (!world || !slime) return;
   input.update();
-  if (import.meta.env.DEV && devDrive) [input.tiltX, input.tiltZ] = devDrive();
   // el mando va en ejes de pantalla: se gira con la cámara para que "arriba" sea siempre "hacia el fondo"
-  const cs = Math.cos(camYaw), sn = Math.sin(camYaw);
-  moveX = input.tiltX * cs + input.tiltZ * sn;
-  moveZ = -input.tiltX * sn + input.tiltZ * cs;
+  // (el piloto automático manda en ejes del mapa: así sus rutas valen aunque el piso mire hacia otro lado)
+  const bot = import.meta.env.DEV && devDrive ? devDrive() : null;
+  if (bot) {
+    [moveX, moveZ] = bot;
+  } else {
+    const cs = Math.cos(camYaw), sn = Math.sin(camYaw);
+    moveX = input.tiltX * cs + input.tiltZ * sn;
+    moveZ = -input.tiltX * sn + input.tiltZ * cs;
+  }
   slime.step(dt, moveX, moveZ, input.squeeze);
   world.update(dt, slime.switchCounts);
   for (const e of world.events) {
@@ -2543,7 +2560,7 @@ function updateCamera(dt: number) {
   tiltRoot.rotation.z += (-moveX * sway - tiltRoot.rotation.z) * tk;
 
   // ambiente del modo (transición suave al entrar o salir del menú)
-  const look = mode === 'menu' ? LIGHTING.menu : LIGHTING.play;
+  const look = mode === 'menu' ? LIGHTING.menu : playLook;
   const lk = 1 - Math.exp(-dt * 3);
   hemi.intensity += (look.hemi - hemi.intensity) * lk;
   sun.intensity += (look.sun - sun.intensity) * lk;

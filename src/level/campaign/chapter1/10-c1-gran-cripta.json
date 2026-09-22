@@ -7,6 +7,8 @@
   "name": "La gran cripta",
   "count": 80,
   "keepPct": 0.7,
+  "mood": "dungeon",
+  "camYaw": -20,
   "tips": [
     {
       "z": 21,

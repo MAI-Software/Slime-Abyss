@@ -7,6 +7,8 @@
   "name": "Dos puentes",
   "count": 80,
   "keepPct": 0.6,
+  "mood": "cave",
+  "camYaw": -20,
   "tips": [
     {
       "z": 11,

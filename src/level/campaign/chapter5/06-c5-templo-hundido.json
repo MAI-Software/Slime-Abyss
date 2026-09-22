@@ -7,6 +7,8 @@
   "name": "Templo hundido",
   "count": 80,
   "keepPct": 0.6,
+  "mood": "dungeon",
+  "camYaw": -14,
   "tips": [
     {
       "z": 16,
