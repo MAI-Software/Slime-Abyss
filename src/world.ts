@@ -106,7 +106,7 @@ const WIND_LEN = 9;
 
 /** Obstáculo que no ocupa toda la casilla (sierras): hoja fina con dirección, para colisión y zona de corte. */
 export interface Obstacle {
-  kind: 'blade';
+  kind: 'blade' | 'wedge';
   cx: number;
   cz: number;
   /** dirección de la hoja (unitaria) y normal (hacia el "lado 1") */
@@ -378,6 +378,12 @@ export class World {
     que suben de base a base + RAMP_RISE.
   */
   topAt(c: Cell, ci: number, cj: number, x: number, z: number): number {
+    if (c.kind === 'wedge') {
+      // el pico ocupa media casilla: por fuera de la diagonal se pisa el suelo normal
+      const fx = Math.min(1, Math.max(0, x - ci)), fz = Math.min(1, Math.max(0, z - cj));
+      const [sx, sz] = World.slabClamp(c.corner, fx, fz);
+      return Math.abs(sx - fx) < 1e-6 && Math.abs(sz - fz) < 1e-6 ? c.top : c.base;
+    }
     if (c.kind === 'seesaw') {
       const see = this.seesawAt.get(this.index(ci, cj, c.story));
       return see ? this.seesawTop(see, x, z) : c.base;
@@ -639,6 +645,11 @@ export class World {
             this.add('fire_grate', x, c.base, z);
             break;
           case 'ice': solids.push({ i, j, top: c.base, color: cIce, set: 'ice' }); break;
+          case 'wedge':
+            // muro en diagonal: parte al limo que lo embiste de frente (ver buildShapes y addWedge)
+            this.shapes.push({ i, j, c });
+            this.addWedge(idx, i, j, c);
+            break;
           case 'ramp': case 'slab': case 'hole':
             // geometría propia (rampa, media casilla, losa con agujero): ver buildShapes
             this.shapes.push({ i, j, c });
@@ -738,10 +749,6 @@ export class World {
             bed.rotation.y = ((i * 5 + j * 3) % 4) * (Math.PI / 2);
             break;
           }
-          case 'blade':
-            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
-            this.addDivider(idx, i, j, c);
-            break;
           default: solids.push({ i, j, top: c.top, color: checker, set: 'floor' });
         }
       }
@@ -912,6 +919,19 @@ export class World {
         wall(x1, z1, C[1], x0, z1, D[1], [0, 0, 1]);
         wall(x0, z1, D[1], x0, z0, A[1], [-1, 0, 0]);
         wall(x1, z0, B[1], x1, z1, C[1], [1, 0, 0]);
+      } else if (cell.kind === 'wedge') {
+        // suelo de la casilla y, encima, media casilla de muro cortada por la diagonal
+        const y = cell.base, h = cell.top;
+        quad([x0, y, z0], [x1, y, z0], [x1, y, z1], [x0, y, z1], [0, 1, 0]);
+        const A: P = [x0, h, z0], B: P = [x1, h, z0], C: P = [x1, h, z1], D: P = [x0, h, z1];
+        const keep = cell.corner;
+        const face = (px0: number, pz0: number, px1: number, pz1: number, hint: P) => {
+          quad([px0, h, pz0], [px1, h, pz1], [px1, y, pz1], [px0, y, pz0], hint);
+        };
+        if (keep === 'nw') { tri(A, B, D, [0, 1, 0]); face(x0, z0, x1, z0, [0, 0, -1]); face(x0, z1, x0, z0, [-1, 0, 0]); face(x1, z0, x0, z1, [1, 0, 1]); }
+        if (keep === 'ne') { tri(A, B, C, [0, 1, 0]); face(x0, z0, x1, z0, [0, 0, -1]); face(x1, z0, x1, z1, [1, 0, 0]); face(x0, z0, x1, z1, [-1, 0, 1]); }
+        if (keep === 'sw') { tri(A, C, D, [0, 1, 0]); face(x0, z1, x0, z0, [-1, 0, 0]); face(x1, z1, x0, z1, [0, 0, 1]); face(x0, z0, x1, z1, [1, 0, -1]); }
+        if (keep === 'se') { tri(B, C, D, [0, 1, 0]); face(x1, z0, x1, z1, [1, 0, 0]); face(x1, z1, x0, z1, [0, 0, 1]); face(x1, z0, x0, z1, [-1, 0, -1]); }
       } else if (cell.kind === 'slab') {
         const y = cell.base;
         const A: P = [x0, y, z0], B: P = [x1, y, z0], C: P = [x1, y, z1], D: P = [x0, y, z1];
@@ -1475,6 +1495,18 @@ export class World {
       }
       if (k >= 1) b.obj.visible = false;
     }
+  }
+
+  /** Esquina en pico: el vértice parte en dos al limo que lo embiste. */
+  private addWedge(idx: number, i: number, j: number, c: Cell) {
+    const nx = c.corner === 'nw' || c.corner === 'sw' ? 0 : 1;
+    const nz = c.corner === 'nw' || c.corner === 'ne' ? 0 : 1;
+    const o: Obstacle = {
+      kind: 'wedge', cx: i + nx, cz: j + nz, tx: 1, tz: 0, nx: 0, nz: 1,
+      half: 0.5, thick: 0.5, minY: c.base, maxY: c.top, id: idx,
+    };
+    this.obstacleAt[idx] = this.obstacles.length;
+    this.obstacles.push(o);
   }
 
   private addDivider(idx: number, i: number, j: number, c: Cell) {

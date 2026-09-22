@@ -10,7 +10,7 @@
   "tips": [
     {
       "z": 11.5,
-      "text": "Deja una parte sobre el interruptor mientras la otra cruza la puerta"
+      "text": "El interruptor verde se queda puesto: pisalo y las puertas se abren"
     },
     {
       "z": 3,
@@ -21,12 +21,12 @@
     "###########",
     "#T0000000s#",
     "#000C000C0#",
-    "###dd#DD###",
-    "###SS#00###",
+    "###dd#dd###",
+    "###ss#00###",
     "###00#00###",
     "###00#C0###",
     "###00#00###",
-    "###00K00###",
+    "###00000###",
     "###00000###",
     "###00C00###",
     "###00000###",

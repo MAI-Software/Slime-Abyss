@@ -1152,6 +1152,11 @@ export class Slime {
           // por el agujero no hay suelo: se cae
           const hx = x - ci - 0.5, hz = z - cj - 0.5;
           if (hx * hx + hz * hz < HOLE_R * HOLE_R) continue;
+        } else if (cell.kind === 'wedge') {
+          // el pico solo estorba en su media casilla: el punto de choque va sobre la diagonal
+          const [wx, wz] = World.slabClamp(cell.corner, qx - ci, qz - cj);
+          qx = ci + wx;
+          qz = cj + wz;
         } else if (cell.kind === 'slab') {
           const [fx, fz] = World.slabClamp(cell.corner, qx - ci, qz - cj);
           qx = ci + fx;

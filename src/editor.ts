@@ -15,9 +15,10 @@ export const EDITOR_LIMITS = { minW: 5, maxW: 48, minD: 5, maxD: 64 } as const;
 /** Nombre estable de cada casilla (para traducir su etiqueta: creator.tiles.<id>). */
 export const TILE_IDS: Record<string, string> = {
   '.': 'void', '0': 'floor', '#': 'wall', P: 'start', T: 'treasure', F: 'fire', X: 'firet', I: 'ice', J: 'jump',
-  S: 'switchA', s: 'switchB', D: 'doorA', d: 'doorB', C: 'coin', K: 'bladeZ', k: 'bladeX', Y: 'spike', G: 'gem',
+  S: 'switchA', s: 'switchB', D: 'doorA', d: 'doorB', C: 'coin', Y: 'spike', G: 'gem',
   O: 'oil', W: 'plant', Z: 'iceblock', '^': 'fanN', v: 'fanS', '>': 'fanE', '<': 'fanW', Q: 'coldjet',
-  R: 'station', '=': 'rail', B: 'crack', V: 'sawD1', A: 'sawD2',
+  R: 'station', '=': 'rail', B: 'crack',
+  g: 'wedgeNW', h: 'wedgeNE', i: 'wedgeSE', j: 'wedgeSW',
   '-': 'seesawX', '|': 'seesawZ',
   n: 'rampN', u: 'rampS', e: 'rampE', o: 'rampW', q: 'slabNW', p: 'slabNE', z: 'slabSW', m: 'slabSE', H: 'hole', U: 'exit', '@': 'railLoop', '%': 'railSpiral', E: 'spinner', N: 'cannon', x: 'target',
 };
@@ -26,9 +27,9 @@ export const TILE_IDS: Record<string, string> = {
 /** Bloques del creador clasificados por tipo (en el orden en que se enseñan). */
 /** Bloques del creador clasificados por tipo (en el orden en que se enseñan); uno por bloque, sus variantes aparte. */
 export const BLOCK_GROUPS: readonly { id: string; tiles: readonly string[] }[] = [
-  { id: 'terrain', tiles: ['0', '.', '#', 'n', 'q', 'I', 'B'] },
+  { id: 'terrain', tiles: ['0', '.', '#', 'g', 'n', 'q', 'I', 'B'] },
   { id: 'goals', tiles: ['P', 'T', 'C', 'G'] },
-  { id: 'hazards', tiles: ['F', 'Y', 'K'] },
+  { id: 'hazards', tiles: ['F', 'Y'] },
   { id: 'obstacles', tiles: ['W', 'Z', 'O'] },
   { id: 'mechanisms', tiles: ['S', 'D', 'J', 'E', 'Q', '^', '-'] },
   { id: 'travel', tiles: ['R', '=', '@', '%', 'H', 'U', 'N', 'x'] },
@@ -39,7 +40,7 @@ export const BLOCK_GROUPS: readonly { id: string; tiles: readonly string[] }[] =
   del reloj visto desde arriba (90°; las sierras, 45°); las de 2 son dos tipos: fuego fijo o intermitente, naranja o verde.
 */
 export const BLOCK_VARIANTS: readonly (readonly string[])[] = [
-  ['n', 'e', 'u', 'o'], ['q', 'p', 'm', 'z'], ['K', 'A', 'k', 'V'], ['^', '>', 'v', '<'], ['F', 'X'], ['S', 's'], ['D', 'd'],
+  ['n', 'e', 'u', 'o'], ['q', 'p', 'm', 'z'], ['g', 'h', 'i', 'j'], ['^', '>', 'v', '<'], ['F', 'X'], ['S', 's'], ['D', 'd'],
   ['-', '|'],
 ];
 export const variantsOf = (ch: string): readonly string[] => BLOCK_VARIANTS.find((f) => f.includes(ch)) ?? [ch];
@@ -483,17 +484,20 @@ export function drawCell(g: CanvasRenderingContext2D, ch: string, height: number
     case 'oil':
       g.fillStyle = '#e0a526'; g.fillRect(cx - 6 * u, cy - 6 * u, 12 * u, 15 * u); g.fillRect(cx - 3 * u, cy - 11 * u, 6 * u, 6 * u);
       break;
-    case 'blade':
-      g.strokeStyle = '#e2e8f0'; g.lineWidth = Math.max(2, 4 * u);
-      g.beginPath();
-      if (tile.axis === 'z') { g.moveTo(cx, y + 3 * u); g.lineTo(cx, y + s - 3 * u); }
-      else if (tile.axis === 'x') { g.moveTo(x + 3 * u, cy); g.lineTo(x + s - 3 * u, cy); }
-      else if (tile.axis === 'd1') { g.moveTo(x + 3 * u, y + 3 * u); g.lineTo(x + s - 3 * u, y + s - 3 * u); }
-      else { g.moveTo(x + s - 3 * u, y + 3 * u); g.lineTo(x + 3 * u, y + s - 3 * u); }
-      g.stroke();
-      g.beginPath(); g.arc(cx, cy, 6 * u, 0, Math.PI * 2); g.fillStyle = '#94a3b8'; g.fill();
-      g.stroke();
+    case 'wedge': {
+      // media casilla de muro: el triángulo que se queda con su esquina
+      const pts: Record<string, [number, number][]> = {
+        nw: [[x, y], [x + s, y], [x, y + s]],
+        ne: [[x, y], [x + s, y], [x + s, y + s]],
+        se: [[x + s, y], [x + s, y + s], [x, y + s]],
+        sw: [[x, y], [x + s, y + s], [x, y + s]],
+      };
+      const tri = pts[tile.corner ?? 'nw'];
+      g.beginPath(); g.moveTo(...tri[0]); g.lineTo(...tri[1]); g.lineTo(...tri[2]); g.closePath();
+      g.fillStyle = tile.color; g.fill();
+      g.strokeStyle = '#0f172a'; g.lineWidth = Math.max(1, 2 * u); g.stroke();
       break;
+    }
     case 'spike':
       g.fillStyle = '#64748b';
       for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) {

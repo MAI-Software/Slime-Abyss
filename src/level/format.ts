@@ -15,7 +15,7 @@ export type Channel = 'A' | 'B';
 
 export type CellKind =
   | 'void' | 'floor' | 'wall' | 'fire' | 'firet' | 'ice' | 'jump' | 'switch' | 'door' | 'start' | 'treasure'
-  | 'coin' | 'blade' | 'spike' | 'gem' | 'relic'
+  | 'coin' | 'wedge' | 'spike' | 'gem' | 'relic'
   | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet'
   | 'station' | 'rail' | 'crack'
   | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner' | 'cannon' | 'target' | 'seesaw';
@@ -67,10 +67,10 @@ export const TILES: readonly TileDef[] = [
   { char: 'd', kind: 'door', label: 'Puerta B', channel: 'B', raise: 1.5, color: '#15803d' },
   { char: 'C', kind: 'coin', label: 'Moneda', color: '#ffc53d' },
   // sierras circulares que giran: dividen al limo sin dañarlo; las diagonales sirven para esquinas y pasillos en diagonal
-  { char: 'K', kind: 'blade', label: 'Sierra (divide izquierda / derecha)', axis: 'z', divider: true, color: '#d7dfea' },
-  { char: 'k', kind: 'blade', label: 'Sierra (divide delante / detrás)', axis: 'x', divider: true, color: '#c3ccd8' },
-  { char: 'V', kind: 'blade', label: 'Sierra diagonal (\\)', axis: 'd1', divider: true, color: '#cfd6e2' },
-  { char: 'A', kind: 'blade', label: 'Sierra diagonal (/)', axis: 'd2', divider: true, color: '#cfd6e2' },
+  { char: 'g', kind: 'wedge', label: 'Esquina en pico (fondo izquierda)', corner: 'nw', raise: 1.5, divider: true, color: '#8b84b8' },
+  { char: 'h', kind: 'wedge', label: 'Esquina en pico (fondo derecha)', corner: 'ne', raise: 1.5, divider: true, color: '#8b84b8' },
+  { char: 'i', kind: 'wedge', label: 'Esquina en pico (delante derecha)', corner: 'se', raise: 1.5, divider: true, color: '#8b84b8' },
+  { char: 'j', kind: 'wedge', label: 'Esquina en pico (delante izquierda)', corner: 'sw', raise: 1.5, divider: true, color: '#8b84b8' },
   // pinchan el limo que los pisa (el congelado no se pincha); dan un respingo como el fuego
   { char: 'Y', kind: 'spike', label: 'Casilla de pinchos', hazard: true, color: '#9aa4b4' },
   { char: 'G', kind: 'gem', label: 'Tesoro secreto (gema)', color: '#8b5cf6' },
