@@ -1132,6 +1132,29 @@ box(bm, (0.1, 0.84, 0.05), (0, 0, -0.05))
 bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.008, segments=1, affect="EDGES")
 mesh_object("rail_tie_wood", bm, M["rail_wood"], parent=tie)
 
+# ----- ascensor de raíl: el hueco por el que el limo baja dando vueltas
+# lift_mast: columna central; el juego la estira a lo alto que tenga la bajada (origen abajo).
+# lift_ring: aro de radio 1 con cuatro brazos al centro; el juego pone uno por vuelta y lo escala al radio.
+M["lift_glow"] = material("LiftGlow", "bae6fd", 0.25, emit="38bdf8", strength=3.0)
+
+mast = empty("lift_mast")
+bm = bmesh.new()
+cylinder(bm, 0.075, 1.0, (0, 0, 0.5), 12)
+mesh_object("lift_mast_metal", bm, M["rail_metal"], smooth=True, parent=mast)
+bm = bmesh.new()
+for z in (0.02, 0.98):
+    cylinder(bm, 0.13, 0.05, (0, 0, z), 12)
+mesh_object("lift_mast_caps", bm, M["station_stone"], smooth=True, parent=mast)
+
+ring = empty("lift_ring")
+tube("lift_ring_hoop", ellipse_pts(1.0, 1.0, n=40), 0.04, M["lift_glow"], parent=ring, cyclic=True, plane="XY")
+bm = bmesh.new()
+for x in (-0.55, 0.55):
+    box(bm, (0.9, 0.05, 0.05), (x, 0, 0))
+for y in (-0.55, 0.55):
+    box(bm, (0.05, 0.9, 0.05), (0, y, 0))
+mesh_object("lift_ring_arms", bm, M["rail_metal"], parent=ring)
+
 # rail_shell: dos semiesferas con nervios que se cierran alrededor del limo al subirse al raíl
 # (X = avance, origen = altura de los carriles; el juego las separa para abrir y cerrar)
 M["cart_metal"] = material("CartMetal", "3f4a63", 0.35, 0.9)

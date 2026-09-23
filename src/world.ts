@@ -1374,20 +1374,23 @@ export class World {
       const li = this.colOf(lo), lj = this.rowOf(lo);
       const cx = li + 0.5, cz = lj + 0.5;
       const y0 = this.cells[lo].base, y1 = this.cells[hi].base;
-      const turns = Math.max(1, Math.round((y1 - y0) / 2.2));
-      // la vía sale de la estación hacia el lado que da al vacío y baja dando vueltas a la vista;
-      // si la estación está encajada entre suelos, la espiral se queda pegada a la casilla
-      const hs = this.storyOf(hi);
-      const sides: [number, number][] = [[0, 1], [1, 0], [0, -1], [-1, 0]];
-      const free = sides.find(([dx, dz]) => {
-        const c = this.cell(li + dx, lj + dz, hs);
-        return !c || c.top === -Infinity;
-      });
-      const RADIUS = free ? 1.15 : 0.36;
-      const ox = free ? free[0] * RADIUS : 0, oz = free ? free[1] * RADIUS : 0;
-      const ax = cx + ox, az = cz + oz;            // centro de la espiral, ya fuera del suelo
-      const a0 = Math.atan2(-oz, -ox);             // arranca mirando a la estación
-      const N = turns * 28;
+      // el hueco se abre todo lo que deje la sala de abajo: la bajada tiene que verse bien de lejos
+      const ls = this.storyOf(lo);
+      const clear = (dx: number, dz: number) => {
+        const c = this.cell(li + dx, lj + dz, ls);
+        return !c || c.top <= y0 + 0.6;            // suelo o vacío: la espiral pasa por encima
+      };
+      const ring = (r: number) => {
+        for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) {
+          if (Math.max(Math.abs(dx), Math.abs(dz)) === r && !clear(dx, dz)) return false;
+        }
+        return true;
+      };
+      const RADIUS = ring(1) ? (ring(2) ? 1.85 : 1.35) : 0.75;
+      const ax = cx, az = cz;                      // la espiral rodea la estación
+      const a0 = Math.PI / 2;                      // arranca de cara a la cámara
+      const turns = Math.max(2, Math.round((y1 - y0) / 1.15));
+      const N = turns * 30;
       const xs: number[] = [cx], zs: number[] = [cz], ys: number[] = [y0];
       for (let q = 0; q <= N; q++) {
         const a = a0 + (q / N) * turns * Math.PI * 2;
@@ -1408,6 +1411,14 @@ export class World {
       this.buildStory = this.storyOf(lo);
       this.add('rail_station', cx, y0, cz);
       this.addTrack(xs.slice(1, -1), zs.slice(1, -1), ys.slice(1, -1));
+      // armazón del hueco: columna en el centro y un aro por vuelta, para que se vea dónde baja el limo
+      const foot = y0 + 0.5;                     // por encima del limo parado en la estación
+      const mast = this.add('lift_mast', cx, foot, cz);
+      mast.scale.y = y1 - foot;
+      for (let q = 0; q <= turns; q++) {
+        const hoop = this.add('lift_ring', cx, foot + ((y1 - foot) * q) / turns, cz);
+        hoop.scale.setScalar(RADIUS);
+      }
       this.buildStory = this.storyOf(hi);
       this.add('rail_station', cx, y1, cz);
     }
