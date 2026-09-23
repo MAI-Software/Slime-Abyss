@@ -1557,7 +1557,8 @@ export class Slime {
       }
 
       const dx = x - t.x, dz = z - t.z;
-      if (dx * dx + dz * dz < 0.55 && y < t.y + 1.2 && chunk >= pickMin) this.touchedTreasure = true;
+      // el cofre solo lo abre el limo principal: un trozo suelto que lo roce no cuenta
+      if (this.gid[i] === 0 && dx * dx + dz * dz < 0.55 && y < t.y + 1.2 && chunk >= pickMin) this.touchedTreasure = true;
     }
     this.looseActive = looseNow;
     this.stunT = Math.max(0, this.stunT - dt);

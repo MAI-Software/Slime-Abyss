@@ -2399,13 +2399,19 @@ function tick(dt: number) {
   if (slime.state === 'burning') {
     for (let k = 0; k < 2; k++) if (Math.random() < 0.8 && slime.randomParticle(tmpFx)) fx.flame(tmpFx.x, tmpFx.y, tmpFx.z);
   }
-  // rastro: el aceite lo pringa todo; en llamas deja quemaduras con ascuas
-  if (slime.state === 'oiled' || slime.state === 'burning') {
+  // rastro: el aceite lo pringa todo, en llamas deja quemaduras con ascuas y de burbuja va dejando espuma
+  if (slime.state === 'oiled' || slime.state === 'burning' || slime.state === 'bubble') {
     trailT += dt;
     for (; trailT > 0.045; trailT -= 0.045) {
-      if (slime.randomGrounded(tmpFx)) trail.stamp(slime.state === 'oiled' ? 'oil' : 'fire', tmpFx.x, tmpFx.y, tmpFx.z);
+      if (slime.randomGrounded(tmpFx)) {
+        trail.stamp(slime.state === 'oiled' ? 'oil' : slime.state === 'bubble' ? 'soap' : 'fire', tmpFx.x, tmpFx.y, tmpFx.z);
+      }
     }
   } else trailT = 0;
+  // y del rastro de jabón van saliendo pompas
+  if (slime.state === 'bubble' && Math.random() < dt * 22 && slime.randomParticle(tmpFx)) {
+    fx.bubble(tmpFx.x, tmpFx.y + 0.1, tmpFx.z);
+  }
   if (Math.random() < dt * 7 && trail.randomEmber(tmpFx)) fx.spark(tmpFx.x, tmpFx.y, tmpFx.z);
   if (slime.state === 'frozen' && Math.random() < 0.15 && slime.randomParticle(tmpFx)) fx.frost(tmpFx.x, tmpFx.y + 0.1, tmpFx.z);
 

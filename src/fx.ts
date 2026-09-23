@@ -60,6 +60,12 @@ export class Fx {
     this.spawn(x, y + 0.05, z, Math.random() < 0.5 ? 0xff7a1a : 0xffc34d, 0.07 + Math.random() * 0.05, 0.5 + Math.random() * 0.4, 0.8 + Math.random() * 1.2, 0.5, true);
   }
 
+  /** Burbujitas del rastro de jabón: suben flojas y se hacen grandes antes de reventar. */
+  bubble(x: number, y: number, z: number) {
+    this.spawn(x, y + 0.06, z, 0xdff3ff, 0.07 + Math.random() * 0.07, 0.7 + Math.random() * 0.5,
+      0.5 + Math.random() * 0.7, 0.35);
+  }
+
   /** Escarcha sobre el limo congelado. */
   frost(x: number, y: number, z: number) {
     this.spawn(x, y + 0.05, z, 0xe8f8ff, 0.12, 0.6, 0.4 + Math.random() * 0.4, 0.4);

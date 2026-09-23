@@ -77,6 +77,28 @@ const EMBER: LayerDef = {
     gl_FragColor = vec4(col * glow * 1.7, 1.0);`,
 };
 
+const FOAM: LayerDef = {
+  capacity: 100,
+  life: 3,
+  size: [0.5, 0.85],
+  blending: THREE.NormalBlending,
+  fragment: `${SHAPE}
+    float body = smoothstep(edge, edge - 0.35, r);
+    if (body < 0.01) discard;
+    // espuma: manchita clara con pompas dentro
+    vec2 g = vUv * 4.0;
+    vec2 id = floor(g);
+    vec2 f = fract(g);
+    float h = trailHash(id + vSeed * 9.0);
+    vec2 c = vec2(trailHash(id + 2.7 + vSeed), trailHash(id + 5.3 + vSeed)) * 0.6 + 0.2;
+    float d = length(f - c);
+    float pompa = smoothstep(0.26, 0.2, d) * step(0.45, h);
+    float brillo = smoothstep(0.2, 0.14, d) * step(0.45, h);
+    vec3 col = mix(vec3(0.72, 0.9, 1.0), vec3(0.98, 1.0, 1.0), pompa);
+    col += vec3(1.0) * brillo * 0.45;
+    gl_FragColor = vec4(col, body * (0.34 + pompa * 0.3) * vFade);`,
+};
+
 class Layer {
   readonly mesh: THREE.InstancedMesh;
   private readonly birth: THREE.InstancedBufferAttribute;
@@ -205,19 +227,21 @@ export class Trail {
   readonly group = new THREE.Group();
   private readonly time = { value: 0 };
   private readonly oil = new Layer(OIL, this.time, 2);
+  private readonly foam = new Layer(FOAM, this.time, 2);
   private readonly scorch = new Layer(SCORCH, this.time, 2);
   private readonly ember = new Layer(EMBER, this.time, 3);
   private lastFire = -1e6;
 
   constructor() {
-    this.group.add(this.oil.mesh, this.scorch.mesh, this.ember.mesh);
+    this.group.add(this.oil.mesh, this.foam.mesh, this.scorch.mesh, this.ember.mesh);
   }
 
   /** Mancha de aceite o quemadura con ascuas en (x, z) sobre un suelo a altura y. */
-  stamp(kind: 'oil' | 'fire', x: number, y: number, z: number) {
+  stamp(kind: 'oil' | 'fire' | 'soap', x: number, y: number, z: number) {
     const ix = Math.round(x / GRID), iy = Math.round(y * 2), iz = Math.round(z / GRID);
     const key = (ix * 73856093) ^ (iy * 83492791) ^ (iz * 19349663);
     if (kind === 'oil') this.oil.stamp(x, y, z, key);
+    else if (kind === 'soap') this.foam.stamp(x, y, z, key);
     else {
       this.scorch.stamp(x, y, z, key);
       this.ember.stamp(x, y + 0.004, z, key);
@@ -236,6 +260,7 @@ export class Trail {
 
   reset() {
     this.oil.reset();
+    this.foam.reset();
     this.scorch.reset();
     this.ember.reset();
     this.lastFire = -1e6;
