@@ -104,8 +104,8 @@ export const ROUTES: Record<string, Step[]> = {
   'c2-sobre-railes': [
     { to: [3.5, 28.5], radius: 0.3, t: 6 }, { wait: 1.2 },
     { to: [4.5, 26.5], radius: 0.4 }, { to: [8.5, 26.5], radius: 0.4 }, { to: [6.5, 25.4], radius: 0.4, t: 6 }, { to: [6.5, 24.5], radius: 0.4, t: 6 },
-    { to: [4.5, 24.5], radius: 0.4 }, { to: [8.5, 24.5], radius: 0.4 }, { to: [6.5, 23.4], radius: 0.4, t: 6 }, { to: [4.5, 19.5], radius: 0.4 }, { to: [8.5, 19.5], radius: 0.4 }, { to: [6.5, 18.4], radius: 0.4, t: 6 }, { to: [4.5, 14.5], radius: 0.4 }, { to: [8.5, 14.5], radius: 0.4 }, { to: [6.5, 13.4], radius: 0.4, t: 6 }, { to: [6.5, 12.5], radius: 0.4, t: 6 },
-    { to: [5.5, 10.5], radius: 0.4 }, { to: [7.5, 10.5], radius: 0.4 }, { to: [9.5, 10.5], radius: 0.2 }, { wait: 6 }, { to: [13.5, 4.5], radius: 0.4 },
+    { to: [4.5, 24.5], radius: 0.4 }, { to: [8.5, 24.5], radius: 0.4 }, { to: [6.5, 23.4], radius: 0.4, t: 6 }, { to: [4.5, 19.5], radius: 0.4 }, { to: [8.5, 19.5], radius: 0.4 }, { to: [6.5, 18.4], radius: 0.4, t: 6 }, { to: [4.5, 14.5], radius: 0.4 }, { to: [8.5, 14.5], radius: 0.4 }, 
+    { squeeze: true, to: [6.5, 13.7], radius: 0.35, t: 6 }, { to: [6.5, 11.5], radius: 0.4, t: 6 }, { squeeze: false }, { to: [5.5, 10.5], radius: 0.4 }, { to: [7.5, 10.5], radius: 0.4 }, { to: [9.5, 10.5], radius: 0.2 }, { wait: 6 }, { to: [13.5, 4.5], radius: 0.4 },
     { to: [13.5, 6.5], radius: 0.2 }, { wait: 6 }, { to: [6.5, 8.5], radius: 0.2 }, { wait: 4 }, { to: [7.5, 1.5], t: 6 },
   ],
   'c2-curvas': [
@@ -164,7 +164,7 @@ export const ROUTES: Record<string, Step[]> = {
   ],
   'c2-bifurcacion': [
     { to: [5.5, 24.5], radius: 0.4 }, { to: [9.5, 24.5], radius: 0.4 }, { to: [7.5, 23.4], radius: 0.4, t: 6 }, { to: [7.5, 22.5], radius: 0.4, t: 6 },
-    { to: [5.5, 22.5], radius: 0.4 }, { to: [9.5, 22.5], radius: 0.4 }, { to: [7.5, 21.4], radius: 0.4, t: 6 }, { to: [5.5, 17.5], radius: 0.4 }, { to: [9.5, 17.5], radius: 0.4 }, { to: [7.5, 16.4], radius: 0.4, t: 6 }, { to: [5.5, 12.5], radius: 0.4 }, { to: [9.5, 12.5], radius: 0.4 }, { to: [7.5, 11.4], radius: 0.4, t: 6 }, { to: [7.5, 10.5], radius: 0.4, t: 6 },
+    { to: [5.5, 22.5], radius: 0.4 }, { to: [9.5, 22.5], radius: 0.4 }, { squeeze: true, to: [7.5, 21.7], radius: 0.35, t: 6 }, { to: [7.5, 19.5], radius: 0.4, t: 6 }, { squeeze: false }, { to: [5.5, 17.5], radius: 0.4 }, { to: [9.5, 17.5], radius: 0.4 }, { to: [7.5, 16.4], radius: 0.4, t: 6 }, { to: [5.5, 12.5], radius: 0.4 }, { to: [9.5, 12.5], radius: 0.4 }, { to: [7.5, 11.4], radius: 0.4, t: 6 }, { to: [7.5, 10.5], radius: 0.4, t: 6 },
     { to: [3.5, 9.5], radius: 0.4 }, { to: [3.5, 7.5], radius: 0.2 }, { wait: 5 }, { to: [3.5, 1.6], radius: 0.3 },
     { squeeze: true, wait: 3 }, { squeeze: false, to: [1.5, 2.5], radius: 0.4 }, { to: [1.5, 1.5], radius: 0.4 },
     { to: [3.5, 3.5], radius: 0.2 }, { wait: 5 }, { to: [11.5, 9.5], radius: 0.4, t: 8 }, { to: [11.5, 7.5], radius: 0.2 },
@@ -211,8 +211,8 @@ export const ROUTES: Record<string, Step[]> = {
   'c3-pista-ardiente': [
     { to: [2.5, 42.5], radius: 0.3, t: 6 }, { wait: 1.2 },
     { to: [3.5, 41.5], radius: 0.4 }, { to: [7.5, 41.5], radius: 0.4 }, { to: [5.5, 40.4], radius: 0.4, t: 6 }, { to: [3.5, 36.5], radius: 0.4 }, { to: [7.5, 36.5], radius: 0.4 }, { to: [5.5, 35.4], radius: 0.4, t: 6 }, { to: [5.5, 34.5], radius: 0.4, t: 6 },
-    { to: [3.5, 29.5], radius: 0.4 }, { to: [7.5, 29.5], radius: 0.4 }, { to: [5.5, 28.4], radius: 0.4, t: 6 }, { to: [3.5, 24.5], radius: 0.4 }, { to: [7.5, 24.5], radius: 0.4 }, { to: [5.5, 23.4], radius: 0.4, t: 6 }, { to: [3.5, 19.5], radius: 0.4 }, { to: [7.5, 19.5], radius: 0.4 }, { to: [5.5, 18.4], radius: 0.4, t: 6 }, { to: [5.5, 17.5], radius: 0.4, t: 6 },
-    { to: [5.5, 14.5], radius: 0.4 }, { to: [5.5, 12.3], radius: 0.4 }, { to: [9.3, 12.5], radius: 0.3 }, { to: [11.5, 12.5], radius: 0.4 },
+    { to: [3.5, 29.5], radius: 0.4 }, { to: [7.5, 29.5], radius: 0.4 }, { to: [5.5, 28.4], radius: 0.4, t: 6 }, { to: [3.5, 24.5], radius: 0.4 }, { to: [7.5, 24.5], radius: 0.4 }, { to: [5.5, 23.4], radius: 0.4, t: 6 }, { to: [3.5, 19.5], radius: 0.4 }, { to: [7.5, 19.5], radius: 0.4 }, 
+    { squeeze: true, to: [5.5, 18.7], radius: 0.35, t: 6 }, { to: [5.5, 16.5], radius: 0.4, t: 6 }, { squeeze: false }, { to: [5.5, 14.5], radius: 0.4 }, { to: [5.5, 12.3], radius: 0.4 }, { to: [9.3, 12.5], radius: 0.3 }, { to: [11.5, 12.5], radius: 0.4 },
     { to: [11.5, 11.5], radius: 0.4 }, { to: [8.5, 12.5], radius: 0.5 }, { to: [5.5, 10.3], radius: 0.3, t: 4 },
     { to: [5.5, 9.5], radius: 0.4 }, { to: [5.5, 2.5], radius: 0.5, t: 6 }, { to: [5.5, 1.5], t: 4 },
   ],
@@ -337,8 +337,8 @@ export const ROUTES: Record<string, Step[]> = {
   'c4-canonazo': [
     { to: [3.5, 55.5], radius: 0.3, t: 6 }, { wait: 1.2 },
     { to: [4.5, 55.5], radius: 0.4 }, { to: [8.5, 55.5], radius: 0.4 }, { to: [6.5, 54.4], radius: 0.4, t: 6 }, { to: [4.5, 50.5], radius: 0.4 }, { to: [8.5, 50.5], radius: 0.4 }, { to: [6.5, 49.4], radius: 0.4, t: 6 }, { to: [4.5, 45.5], radius: 0.4 }, { to: [8.5, 45.5], radius: 0.4 }, { to: [6.5, 44.4], radius: 0.4, t: 6 }, { to: [6.5, 43.5], radius: 0.4, t: 6 },
-    { to: [4.5, 39.5], radius: 0.4 }, { to: [8.5, 39.5], radius: 0.4 }, { to: [6.5, 38.4], radius: 0.4, t: 6 }, { to: [4.5, 34.5], radius: 0.4 }, { to: [8.5, 34.5], radius: 0.4 }, { to: [6.5, 33.4], radius: 0.4, t: 6 }, { to: [4.5, 29.5], radius: 0.4 }, { to: [8.5, 29.5], radius: 0.4 }, { to: [6.5, 28.4], radius: 0.4, t: 6 }, { to: [4.5, 24.5], radius: 0.4 }, { to: [8.5, 24.5], radius: 0.4 }, { to: [6.5, 23.4], radius: 0.4, t: 6 }, { to: [6.5, 22.5], radius: 0.4, t: 6 },
-    { to: [3.5, 20.5], radius: 0.4 }, { to: [9.5, 20.5], radius: 0.4 }, { cannon: [6.5, 19.5] }, { squeeze: true, wait: 2 },
+    { to: [4.5, 39.5], radius: 0.4 }, { to: [8.5, 39.5], radius: 0.4 }, { to: [6.5, 38.4], radius: 0.4, t: 6 }, { to: [4.5, 34.5], radius: 0.4 }, { to: [8.5, 34.5], radius: 0.4 }, { to: [6.5, 33.4], radius: 0.4, t: 6 }, { to: [4.5, 29.5], radius: 0.4 }, { to: [8.5, 29.5], radius: 0.4 }, { to: [6.5, 28.4], radius: 0.4, t: 6 }, { to: [4.5, 24.5], radius: 0.4 }, { to: [8.5, 24.5], radius: 0.4 }, 
+    { squeeze: true, to: [6.5, 23.7], radius: 0.35, t: 6 }, { to: [6.5, 21.5], radius: 0.4, t: 6 }, { squeeze: false }, { to: [3.5, 20.5], radius: 0.4 }, { to: [9.5, 20.5], radius: 0.4 }, { cannon: [6.5, 19.5] }, { squeeze: true, wait: 2 },
     { squeeze: false, to: [4.5, 14.5], radius: 0.3 }, { to: [8.5, 14.5], radius: 0.3 }, { squeeze: true, wait: 1.5 },
     { squeeze: false, to: [2.5, 12.5], radius: 0.3 }, { wait: 0.5 }, { cannon: [10.5, 13.5] },
     { to: [2.5, 3.5], radius: 0.3 }, { squeeze: true, to: [1.5, 2.4], radius: 0.35, t: 5 },
@@ -358,8 +358,8 @@ export const ROUTES: Record<string, Step[]> = {
   'c4-railes-y-pozos': [
     { to: [3.5, 44.5], radius: 0.3, t: 6 }, { wait: 1.2 },
     { to: [4.5, 44.5], radius: 0.4 }, { to: [8.5, 44.5], radius: 0.4 }, { to: [6.5, 43.4], radius: 0.4, t: 6 }, { to: [4.5, 39.5], radius: 0.4 }, { to: [8.5, 39.5], radius: 0.4 }, { to: [6.5, 38.4], radius: 0.4, t: 6 }, { to: [4.5, 34.5], radius: 0.4 }, { to: [8.5, 34.5], radius: 0.4 }, { to: [6.5, 33.4], radius: 0.4, t: 6 }, { to: [6.5, 32.5], radius: 0.4, t: 6 },
-    { to: [4.5, 28.5], radius: 0.4 }, { to: [8.5, 28.5], radius: 0.4 }, { to: [6.5, 27.4], radius: 0.4, t: 6 }, { to: [4.5, 23.5], radius: 0.4 }, { to: [8.5, 23.5], radius: 0.4 }, { to: [6.5, 22.4], radius: 0.4, t: 6 }, { to: [4.5, 18.5], radius: 0.4 }, { to: [8.5, 18.5], radius: 0.4 }, { to: [6.5, 17.4], radius: 0.4, t: 6 }, { to: [4.5, 13.5], radius: 0.4 }, { to: [8.5, 13.5], radius: 0.4 }, { to: [6.5, 12.4], radius: 0.4, t: 6 }, { to: [6.5, 11.5], radius: 0.4, t: 6 },
-    { to: [3.5, 8.5], radius: 0.4 }, { to: [3.5, 9.8], radius: 0.4 }, { to: [9.5, 9.8], radius: 0.4 }, { to: [9.5, 8.5], radius: 0.4 },
+    { to: [4.5, 28.5], radius: 0.4 }, { to: [8.5, 28.5], radius: 0.4 }, { to: [6.5, 27.4], radius: 0.4, t: 6 }, { to: [4.5, 23.5], radius: 0.4 }, { to: [8.5, 23.5], radius: 0.4 }, { to: [6.5, 22.4], radius: 0.4, t: 6 }, { to: [4.5, 18.5], radius: 0.4 }, { to: [8.5, 18.5], radius: 0.4 }, { to: [6.5, 17.4], radius: 0.4, t: 6 }, { to: [4.5, 13.5], radius: 0.4 }, { to: [8.5, 13.5], radius: 0.4 }, 
+    { squeeze: true, to: [6.5, 12.7], radius: 0.35, t: 6 }, { to: [6.5, 10.5], radius: 0.4, t: 6 }, { squeeze: false }, { to: [3.5, 8.5], radius: 0.4 }, { to: [3.5, 9.8], radius: 0.4 }, { to: [9.5, 9.8], radius: 0.4 }, { to: [9.5, 8.5], radius: 0.4 },
     { to: [6.5, 8.5], radius: 0.2 }, { wait: 6 },
     { to: [2.5, 9.5], radius: 0.4 }, { to: [10.5, 9.5], radius: 0.4 }, { to: [4.5, 3.5], radius: 0.4 },
     { to: [9.5, 4.5], radius: 0.05, t: 6 }, { wait: 3 }, { to: [10.5, 3.5], radius: 0.4 }, { to: [2.5, 3.5], radius: 0.4 }, { to: [7.5, 1.5], t: 6 },
@@ -405,7 +405,7 @@ export const ROUTES: Record<string, Step[]> = {
     { to: [6.5, 50.5], radius: 0.3, t: 6 }, { wait: 1.2 },
     { to: [6.5, 53.5], radius: 0.4 }, { to: [10.5, 53.5], radius: 0.4 }, { to: [8.5, 52.4], radius: 0.4, t: 6 }, { to: [6.5, 48.5], radius: 0.4 }, { to: [10.5, 48.5], radius: 0.4 }, { to: [8.5, 47.4], radius: 0.4, t: 6 }, { to: [6.5, 43.5], radius: 0.4 }, { to: [10.5, 43.5], radius: 0.4 }, { to: [8.5, 42.4], radius: 0.4, t: 6 }, { to: [6.5, 38.5], radius: 0.4 }, { to: [10.5, 38.5], radius: 0.4 }, { to: [8.5, 37.4], radius: 0.4, t: 6 }, { to: [8.5, 36.5], radius: 0.4, t: 6 },
     { to: [6.5, 36.5], radius: 0.4 }, { to: [10.5, 36.5], radius: 0.4 }, { to: [8.5, 35.4], radius: 0.4, t: 6 }, { to: [6.5, 31.5], radius: 0.4 }, { to: [10.5, 31.5], radius: 0.4 }, { to: [8.5, 30.4], radius: 0.4, t: 6 }, { to: [6.5, 26.5], radius: 0.4 }, { to: [10.5, 26.5], radius: 0.4 }, { to: [8.5, 25.4], radius: 0.4, t: 6 }, { to: [8.5, 24.5], radius: 0.4, t: 6 },
-    { to: [7.5, 22.5], radius: 0.4 }, { to: [7.5, 20.4], radius: 0.4 },
+    { squeeze: true, to: [8.5, 23.7], radius: 0.35, t: 6 }, { to: [8.5, 21.5], radius: 0.4, t: 6 }, { squeeze: false }, { to: [7.5, 20.4], radius: 0.4 },
     { squeeze: true, to: [7.5, 16.6], radius: 0.4, t: 7 }, { squeeze: false, to: [4.5, 14.5], radius: 0.4 },
     { to: [10.5, 14.5], radius: 0.4 }, { to: [7.5, 12.6], radius: 0.4 },
     { squeeze: true, to: [7.5, 8.5], radius: 0.4, t: 8 }, { to: [7.5, 4.4], radius: 0.4, t: 8 }, { squeeze: false },
@@ -466,8 +466,8 @@ export const ROUTES: Record<string, Step[]> = {
   'c5-disco-y-tablas': [
     { to: [6.5, 49.5], radius: 0.3, t: 6 }, { wait: 1.2 },
     { to: [6.5, 52.5], radius: 0.4 }, { to: [10.5, 52.5], radius: 0.4 }, { to: [8.5, 51.4], radius: 0.4, t: 6 }, { to: [6.5, 47.5], radius: 0.4 }, { to: [10.5, 47.5], radius: 0.4 }, { to: [8.5, 46.4], radius: 0.4, t: 6 }, { to: [6.5, 42.5], radius: 0.4 }, { to: [10.5, 42.5], radius: 0.4 }, { to: [8.5, 41.4], radius: 0.4, t: 6 }, { to: [6.5, 37.5], radius: 0.4 }, { to: [10.5, 37.5], radius: 0.4 }, { to: [8.5, 36.4], radius: 0.4, t: 6 }, { to: [8.5, 35.5], radius: 0.4, t: 6 },
-    { to: [6.5, 35.5], radius: 0.4 }, { to: [10.5, 35.5], radius: 0.4 }, { to: [8.5, 34.4], radius: 0.4, t: 6 }, { to: [6.5, 30.5], radius: 0.4 }, { to: [10.5, 30.5], radius: 0.4 }, { to: [8.5, 29.4], radius: 0.4, t: 6 }, { to: [6.5, 25.5], radius: 0.4 }, { to: [10.5, 25.5], radius: 0.4 }, { to: [8.5, 24.4], radius: 0.4, t: 6 }, { to: [8.5, 23.5], radius: 0.4, t: 6 },
-    { to: [7.5, 21.5], radius: 0.4 }, { to: [7.5, 20.5], radius: 0.25 }, { squeeze: true, wait: 3 },
+    { to: [6.5, 35.5], radius: 0.4 }, { to: [10.5, 35.5], radius: 0.4 }, { to: [8.5, 34.4], radius: 0.4, t: 6 }, { to: [6.5, 30.5], radius: 0.4 }, { to: [10.5, 30.5], radius: 0.4 }, { to: [8.5, 29.4], radius: 0.4, t: 6 }, { to: [6.5, 25.5], radius: 0.4 }, { to: [10.5, 25.5], radius: 0.4 }, 
+    { squeeze: true, to: [8.5, 24.7], radius: 0.35, t: 6 }, { to: [8.5, 22.5], radius: 0.4, t: 6 }, { squeeze: false }, { to: [7.5, 21.5], radius: 0.4 }, { to: [7.5, 20.5], radius: 0.25 }, { squeeze: true, wait: 3 },
     { squeeze: false, to: [7.5, 19.4], radius: 0.4 },
     { squeeze: true, to: [7.5, 16.5], radius: 0.4, t: 6 }, { wait: 1 }, { to: [7.5, 13.6], radius: 0.4, t: 6 },
     { squeeze: false, to: [6.5, 10.5], radius: 0.4 }, { to: [4.5, 10.5], radius: 0.4 },
