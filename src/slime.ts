@@ -1912,6 +1912,7 @@ class Face {
   private lastDirZ = 0;
   private happyT = 0;
   private scaredT = 0;
+  private airT = 0;
   private scale = 1;
   private bounce = 0;
   private t = 0;
@@ -2019,7 +2020,16 @@ class Face {
     this.t += dt;
     this.painT -= dt;
     this.happyT -= dt;
+    const wasScared = this.scaredT > 0;
     this.scaredT -= dt;
+    // alivio: se queda contento un momento al salir del suelo hundido o del borde del agujero
+    if (wasScared && this.scaredT <= 0 && this.painT <= 0) this.cheer(0.45);
+    // y celebra el aterrizaje después de un buen vuelo (trampolines, cañón, saltos)
+    if (airFrac > 0.6) this.airT += dt;
+    else {
+      if (this.airT > 0.35 && this.painT <= 0) this.cheer(0.5);
+      this.airT = 0;
+    }
     this.dizzyT -= dt;
     this.bounce = Math.max(0, this.bounce - dt * 4);
 
