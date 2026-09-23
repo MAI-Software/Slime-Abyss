@@ -529,7 +529,7 @@ export const it: Dict = {
     },
     'c3-suelo-fragil': {
       name: 'Pavimento fragile',
-      tips: ['La roccia crepata si rompe quando la calpesti: non fermarti sopra', 'Ciò che si rompe non torna: attraversa in un colpo'],
+      tips: ['La via libera porta al pulsante che apre la seconda', 'La roccia crepata si rompe quando la calpesti: non fermarti sopra', 'Ciò che si rompe non torna: attraversa in un colpo'],
     },
     'c3-puente-quebradizo': {
       name: 'Ponte friabile',
@@ -541,7 +541,7 @@ export const it: Dict = {
     },
     'c3-pista-ardiente': {
       name: 'Pista ardente',
-      tips: ['Olio e fuoco per bruciare l’edera', 'In fiamme sciogli il ponte di ghiaccio: attraversalo tutto d’un fiato'],
+      tips: ['La via libera porta al pulsante che apre la seconda', 'Olio e fuoco per bruciare l’edera', 'In fiamme sciogli il ponte di ghiaccio: attraversalo tutto d’un fiato'],
     },
     'c3-grietas-entre-llamas': {
       name: 'Crepe tra le fiamme',
@@ -565,7 +565,7 @@ export const it: Dict = {
     },
     'c3-gran-grieta': {
       name: 'La grande crepa',
-      tips: ['Ultima prova del capitolo: usa tutto ciò che hai imparato', 'In fiamme il ghiaccio cede: non fermarti', 'Aspetta che le fiamme si spengano prima della roccia crepata'],
+      tips: ['La via libera porta al pulsante che apre la seconda', 'Ultima prova del capitolo: usa tutto ciò che hai imparato', 'In fiamme il ghiaccio cede: non fermarti', 'Aspetta che le fiamme si spengano prima della roccia crepata'],
     },
     'c4-dunas': {
       name: 'Dune',
@@ -577,7 +577,7 @@ export const it: Dict = {
     },
     'c4-sierras': {
       name: 'Denti di sabbia',
-      tips: ['Le punte dividono la melma, ma non fanno male', 'Stringi per ricomporti'],
+      tips: ['La via libera porta al pulsante che apre la seconda', 'Le punte dividono la melma, ma non fanno male', 'Stringi per ricomporti'],
     },
     'c4-el-pozo': {
       name: 'Il pozzo',
@@ -593,7 +593,7 @@ export const it: Dict = {
     },
     'c4-canonazo': {
       name: 'Cannonata',
-      tips: ['Entra nel cannone: ti lancia sopra il vuoto', 'Più lontano spara, più ti sparpagli in aria', 'Congelato voli tutto intero e atterri proprio nel punto giusto'],
+      tips: ['La via libera porta al pulsante che apre la seconda', 'Entra nel cannone: ti lancia sopra il vuoto', 'Più lontano spara, più ti sparpagli in aria', 'Congelato voli tutto intero e atterri proprio nel punto giusto'],
     },
     'c4-fuego-del-desierto': {
       name: 'Fuoco del deserto',
@@ -601,7 +601,7 @@ export const it: Dict = {
     },
     'c4-railes-y-pozos': {
       name: 'Binari e pozzi',
-      tips: ['Il binario sale in alto girando', 'E il pozzo ti porta giù fino al tesoro'],
+      tips: ['La via libera porta al pulsante che apre la seconda', 'Il binario sale in alto girando', 'E il pozzo ti porta giù fino al tesoro'],
     },
     'c4-corazon-de-arena': {
       name: 'Il cuore di sabbia',
@@ -609,7 +609,7 @@ export const it: Dict = {
     },
     'c5-balancines': {
       name: 'Bilancieri',
-      tips: ['I bilancieri si inclinano dove pesi', 'Attraversa senza fermarti: se resti, la tavola ti butta'],
+      tips: ['La via libera porta al pulsante che apre la seconda', 'I bilancieri si inclinano dove pesi', 'Attraversa senza fermarti: se resti, la tavola ti butta'],
     },
     'c5-tablas-y-sierra': {
       name: 'Tavole e sega',
@@ -617,7 +617,7 @@ export const it: Dict = {
     },
     'c5-viento-en-la-tabla': {
       name: 'Vento sulla tavola',
-      tips: ['Il vento spinge mentre la tavola si inclina', 'Attraversa dal lato da cui soffia'],
+      tips: ['La via libera porta al pulsante che apre la seconda', 'Il vento spinge mentre la tavola si inclina', 'Attraversa dal lato da cui soffia'],
     },
     'c5-espiral-mareante': {
       name: 'Spirale stordente',
@@ -625,7 +625,7 @@ export const it: Dict = {
     },
     'c5-canon-y-tabla': {
       name: 'Cannone e tavola',
-      tips: ['Il cannone ti lancia sul bersaglio sopra', 'Sopra, le tavole portano al tesoro'],
+      tips: ['La via libera porta al pulsante che apre la seconda', 'Il cannone ti lancia sul bersaglio sopra', 'Sopra, le tavole portano al tesoro'],
     },
     'c5-templo-hundido': {
       name: 'Tempio sommerso',
@@ -633,7 +633,7 @@ export const it: Dict = {
     },
     'c5-aceite-en-la-balanza': {
       name: 'Olio sulla bilancia',
-      tips: ['Prendi l’olio e prendi fuoco tra i bracieri', 'In fiamme, brucia l’edera alla fine'],
+      tips: ['La via libera porta al pulsante che apre la seconda', 'Prendi l’olio e prendi fuoco tra i bracieri', 'In fiamme, brucia l’edera alla fine'],
     },
     'c5-disco-y-tablas': {
       name: 'Disco e tavole',
@@ -641,7 +641,7 @@ export const it: Dict = {
     },
     'c5-pozo-doble': {
       name: 'Doppio pozzo',
-      tips: ['Attraversa il bilanciere e infilati nel pozzo', 'Sotto, il binario sale fino al tesoro'],
+      tips: ['La via libera porta al pulsante che apre la seconda', 'Attraversa il bilanciere e infilati nel pozzo', 'Sotto, il binario sale fino al tesoro'],
     },
     'c5-corazon-del-desierto': {
       name: 'Il cuore del deserto',

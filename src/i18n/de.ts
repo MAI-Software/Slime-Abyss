@@ -529,7 +529,7 @@ export const de: Dict = {
     },
     'c3-suelo-fragil': {
       name: 'Brüchiger Boden',
-      tips: ['Rissiger Fels bricht, wenn du darauf trittst: bleib nicht stehen', 'Was bricht, kommt nicht zurück: überquere es in einem Zug'],
+      tips: ['Das freie Gleis führt zum Schalter für das andere', 'Rissiger Fels bricht, wenn du darauf trittst: bleib nicht stehen', 'Was bricht, kommt nicht zurück: überquere es in einem Zug'],
     },
     'c3-puente-quebradizo': {
       name: 'Morsche Brücke',
@@ -541,7 +541,7 @@ export const de: Dict = {
     },
     'c3-pista-ardiente': {
       name: 'Glühende Bahn',
-      tips: ['Öl und Feuer, um den Efeu zu verbrennen', 'Brennend schmilzt du die Eisbrücke: überquere sie in einem Zug'],
+      tips: ['Das freie Gleis führt zum Schalter für das andere', 'Öl und Feuer, um den Efeu zu verbrennen', 'Brennend schmilzt du die Eisbrücke: überquere sie in einem Zug'],
     },
     'c3-grietas-entre-llamas': {
       name: 'Risse zwischen Flammen',
@@ -565,7 +565,7 @@ export const de: Dict = {
     },
     'c3-gran-grieta': {
       name: 'Die große Spalte',
-      tips: ['Letzte Prüfung des Kapitels: nutze alles, was du gelernt hast', 'Brennend gibt das Eis nach: bleib nicht stehen', 'Warte, bis die Flammen ausgehen, bevor du auf den rissigen Fels gehst'],
+      tips: ['Das freie Gleis führt zum Schalter für das andere', 'Letzte Prüfung des Kapitels: nutze alles, was du gelernt hast', 'Brennend gibt das Eis nach: bleib nicht stehen', 'Warte, bis die Flammen ausgehen, bevor du auf den rissigen Fels gehst'],
     },
     'c4-dunas': {
       name: 'Dünen',
@@ -577,7 +577,7 @@ export const de: Dict = {
     },
     'c4-sierras': {
       name: 'Sandzähne',
-      tips: ['Die Keile teilen den Schleim, tun aber nicht weh', 'Quetschen, um wieder eins zu werden'],
+      tips: ['Das freie Gleis führt zum Schalter für das andere', 'Die Keile teilen den Schleim, tun aber nicht weh', 'Quetschen, um wieder eins zu werden'],
     },
     'c4-el-pozo': {
       name: 'Der Brunnen',
@@ -593,7 +593,7 @@ export const de: Dict = {
     },
     'c4-canonazo': {
       name: 'Kanonenschuss',
-      tips: ['Kriech in die Kanone: Sie schießt dich über den Abgrund', 'Je weiter sie schießt, desto mehr verteilst du dich in der Luft', 'Gefroren fliegst du in einem Stück und landest genau an der Stelle'],
+      tips: ['Das freie Gleis führt zum Schalter für das andere', 'Kriech in die Kanone: Sie schießt dich über den Abgrund', 'Je weiter sie schießt, desto mehr verteilst du dich in der Luft', 'Gefroren fliegst du in einem Stück und landest genau an der Stelle'],
     },
     'c4-fuego-del-desierto': {
       name: 'Wüstenfeuer',
@@ -601,7 +601,7 @@ export const de: Dict = {
     },
     'c4-railes-y-pozos': {
       name: 'Schienen und Brunnen',
-      tips: ['Die Schiene windet sich nach oben', 'Und der Brunnen bringt dich hinab zum Schatz'],
+      tips: ['Das freie Gleis führt zum Schalter für das andere', 'Die Schiene windet sich nach oben', 'Und der Brunnen bringt dich hinab zum Schatz'],
     },
     'c4-corazon-de-arena': {
       name: 'Das Herz aus Sand',
@@ -609,7 +609,7 @@ export const de: Dict = {
     },
     'c5-balancines': {
       name: 'Wippen',
-      tips: ['Wippen kippen dorthin, wo dein Gewicht liegt', 'Geh ohne Pause hinüber: wer stehen bleibt, rutscht ab'],
+      tips: ['Das freie Gleis führt zum Schalter für das andere', 'Wippen kippen dorthin, wo dein Gewicht liegt', 'Geh ohne Pause hinüber: wer stehen bleibt, rutscht ab'],
     },
     'c5-tablas-y-sierra': {
       name: 'Planken und Säge',
@@ -617,7 +617,7 @@ export const de: Dict = {
     },
     'c5-viento-en-la-tabla': {
       name: 'Wind auf der Planke',
-      tips: ['Der Wind drückt, während die Planke kippt', 'Geh auf der Seite, von der es bläst'],
+      tips: ['Das freie Gleis führt zum Schalter für das andere', 'Der Wind drückt, während die Planke kippt', 'Geh auf der Seite, von der es bläst'],
     },
     'c5-espiral-mareante': {
       name: 'Schwindelspirale',
@@ -625,7 +625,7 @@ export const de: Dict = {
     },
     'c5-canon-y-tabla': {
       name: 'Kanone und Planke',
-      tips: ['Die Kanone schießt dich auf das Ziel oben', 'Oben führen die Planken zum Schatz'],
+      tips: ['Das freie Gleis führt zum Schalter für das andere', 'Die Kanone schießt dich auf das Ziel oben', 'Oben führen die Planken zum Schatz'],
     },
     'c5-templo-hundido': {
       name: 'Versunkener Tempel',
@@ -633,7 +633,7 @@ export const de: Dict = {
     },
     'c5-aceite-en-la-balanza': {
       name: 'Öl auf der Waage',
-      tips: ['Nimm das Öl und entzünde dich zwischen den Feuerschalen', 'Brennend verbrennst du den Efeu am Ende'],
+      tips: ['Das freie Gleis führt zum Schalter für das andere', 'Nimm das Öl und entzünde dich zwischen den Feuerschalen', 'Brennend verbrennst du den Efeu am Ende'],
     },
     'c5-disco-y-tablas': {
       name: 'Scheibe und Planken',
@@ -641,7 +641,7 @@ export const de: Dict = {
     },
     'c5-pozo-doble': {
       name: 'Doppelter Schacht',
-      tips: ['Über die Wippe und rein in den Schacht', 'Unten steigt die Bahn zum Schatz'],
+      tips: ['Das freie Gleis führt zum Schalter für das andere', 'Über die Wippe und rein in den Schacht', 'Unten steigt die Bahn zum Schatz'],
     },
     'c5-corazon-del-desierto': {
       name: 'Das Herz der Wüste',

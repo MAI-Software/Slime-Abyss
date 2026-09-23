@@ -529,7 +529,7 @@ export const fr: Dict = {
     },
     'c3-suelo-fragil': {
       name: 'Sol fragile',
-      tips: ['La roche fissurée se brise quand tu marches dessus : ne t’arrête pas', 'Ce qui se brise ne revient pas : traverse d’un coup'],
+      tips: ['La voie libre mène au bouton qui ouvre la seconde', 'La roche fissurée se brise quand tu marches dessus : ne t’arrête pas', 'Ce qui se brise ne revient pas : traverse d’un coup'],
     },
     'c3-puente-quebradizo': {
       name: 'Pont cassant',
@@ -541,7 +541,7 @@ export const fr: Dict = {
     },
     'c3-pista-ardiente': {
       name: 'Piste brûlante',
-      tips: ['Huile et feu pour brûler le lierre', 'En flammes, tu fais fondre le pont de glace : traverse d’un trait'],
+      tips: ['La voie libre mène au bouton qui ouvre la seconde', 'Huile et feu pour brûler le lierre', 'En flammes, tu fais fondre le pont de glace : traverse d’un trait'],
     },
     'c3-grietas-entre-llamas': {
       name: 'Failles entre les flammes',
@@ -565,7 +565,7 @@ export const fr: Dict = {
     },
     'c3-gran-grieta': {
       name: 'La grande faille',
-      tips: ['Dernière épreuve du chapitre : utilise tout ce que tu as appris', 'En flammes, la glace cède : ne t’arrête pas', 'Attends que les flammes s’éteignent avant la roche fissurée'],
+      tips: ['La voie libre mène au bouton qui ouvre la seconde', 'Dernière épreuve du chapitre : utilise tout ce que tu as appris', 'En flammes, la glace cède : ne t’arrête pas', 'Attends que les flammes s’éteignent avant la roche fissurée'],
     },
     'c4-dunas': {
       name: 'Dunes',
@@ -577,7 +577,7 @@ export const fr: Dict = {
     },
     'c4-sierras': {
       name: 'Dents de sable',
-      tips: ['Les pointes coupent le slime, sans le blesser', 'Serre pour te rassembler'],
+      tips: ['La voie libre mène au bouton qui ouvre la seconde', 'Les pointes coupent le slime, sans le blesser', 'Serre pour te rassembler'],
     },
     'c4-el-pozo': {
       name: 'Le puits',
@@ -593,7 +593,7 @@ export const fr: Dict = {
     },
     'c4-canonazo': {
       name: 'Coup de canon',
-      tips: ['Entre dans le canon : il te lance au-dessus du vide', 'Plus il tire loin, plus tu t’éparpilles dans les airs', 'Gelé, tu voles d’un seul bloc et tu tombes pile au bon endroit'],
+      tips: ['La voie libre mène au bouton qui ouvre la seconde', 'Entre dans le canon : il te lance au-dessus du vide', 'Plus il tire loin, plus tu t’éparpilles dans les airs', 'Gelé, tu voles d’un seul bloc et tu tombes pile au bon endroit'],
     },
     'c4-fuego-del-desierto': {
       name: 'Feu du désert',
@@ -601,7 +601,7 @@ export const fr: Dict = {
     },
     'c4-railes-y-pozos': {
       name: 'Voies et puits',
-      tips: ['La voie monte tout en haut en tournant', 'Et le puits te dépose au trésor'],
+      tips: ['La voie libre mène au bouton qui ouvre la seconde', 'La voie monte tout en haut en tournant', 'Et le puits te dépose au trésor'],
     },
     'c4-corazon-de-arena': {
       name: 'Le cœur de sable',
@@ -609,7 +609,7 @@ export const fr: Dict = {
     },
     'c5-balancines': {
       name: 'Bascules',
-      tips: ['Les bascules penchent du côté où tu pèses', 'Traverse sans t’arrêter : si tu restes, la planche te lâche'],
+      tips: ['La voie libre mène au bouton qui ouvre la seconde', 'Les bascules penchent du côté où tu pèses', 'Traverse sans t’arrêter : si tu restes, la planche te lâche'],
     },
     'c5-tablas-y-sierra': {
       name: 'Planches et scie',
@@ -617,7 +617,7 @@ export const fr: Dict = {
     },
     'c5-viento-en-la-tabla': {
       name: 'Vent sur la planche',
-      tips: ['Le vent pousse pendant que la planche penche', 'Traverse du côté d’où souffle le vent'],
+      tips: ['La voie libre mène au bouton qui ouvre la seconde', 'Le vent pousse pendant que la planche penche', 'Traverse du côté d’où souffle le vent'],
     },
     'c5-espiral-mareante': {
       name: 'Spirale étourdissante',
@@ -625,7 +625,7 @@ export const fr: Dict = {
     },
     'c5-canon-y-tabla': {
       name: 'Canon et planche',
-      tips: ['Le canon t’envoie sur la cible du dessus', 'En haut, les planches mènent au trésor'],
+      tips: ['La voie libre mène au bouton qui ouvre la seconde', 'Le canon t’envoie sur la cible du dessus', 'En haut, les planches mènent au trésor'],
     },
     'c5-templo-hundido': {
       name: 'Temple englouti',
@@ -633,7 +633,7 @@ export const fr: Dict = {
     },
     'c5-aceite-en-la-balanza': {
       name: 'Huile sur la balance',
-      tips: ['Prends l’huile et enflamme-toi entre les braseros', 'En flammes, brûle le lierre du bout'],
+      tips: ['La voie libre mène au bouton qui ouvre la seconde', 'Prends l’huile et enflamme-toi entre les braseros', 'En flammes, brûle le lierre du bout'],
     },
     'c5-disco-y-tablas': {
       name: 'Disque et planches',
@@ -641,7 +641,7 @@ export const fr: Dict = {
     },
     'c5-pozo-doble': {
       name: 'Double puits',
-      tips: ['Traverse la bascule et plonge dans le puits', 'En bas, la voie monte jusqu’au trésor'],
+      tips: ['La voie libre mène au bouton qui ouvre la seconde', 'Traverse la bascule et plonge dans le puits', 'En bas, la voie monte jusqu’au trésor'],
     },
     'c5-corazon-del-desierto': {
       name: 'Le cœur du désert',

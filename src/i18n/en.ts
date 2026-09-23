@@ -529,7 +529,7 @@ export const en: Dict = {
     },
     'c3-suelo-fragil': {
       name: 'Fragile Floor',
-      tips: ['Cracked rock breaks when you step on it: don’t stop on it', 'What breaks doesn’t come back: cross in one go'],
+      tips: ['The open rail leads to the switch that opens the other one', 'Cracked rock breaks when you step on it: don’t stop on it', 'What breaks doesn’t come back: cross in one go'],
     },
     'c3-puente-quebradizo': {
       name: 'Brittle Bridge',
@@ -541,7 +541,7 @@ export const en: Dict = {
     },
     'c3-pista-ardiente': {
       name: 'Blazing Track',
-      tips: ['Oil and fire to burn the ivy', 'Burning, you melt the ice bridge: cross it in one go'],
+      tips: ['The open rail leads to the switch that opens the other one', 'Oil and fire to burn the ivy', 'Burning, you melt the ice bridge: cross it in one go'],
     },
     'c3-grietas-entre-llamas': {
       name: 'Cracks Among Flames',
@@ -565,7 +565,7 @@ export const en: Dict = {
     },
     'c3-gran-grieta': {
       name: 'The Great Rift',
-      tips: ['Final trial of the chapter: use everything you have learned', 'Burning, the ice gives way: don’t stop', 'Wait for the flames to go out before the cracked rock'],
+      tips: ['The open rail leads to the switch that opens the other one', 'Final trial of the chapter: use everything you have learned', 'Burning, the ice gives way: don’t stop', 'Wait for the flames to go out before the cracked rock'],
     },
     'c4-dunas': {
       name: 'Dunes',
@@ -577,7 +577,7 @@ export const en: Dict = {
     },
     'c4-sierras': {
       name: 'Sand Teeth',
-      tips: ['The wedges split the slime, but they do no harm', 'Squeeze to pull back together'],
+      tips: ['The open rail leads to the switch that opens the other one', 'The wedges split the slime, but they do no harm', 'Squeeze to pull back together'],
     },
     'c4-el-pozo': {
       name: 'The Well',
@@ -593,7 +593,7 @@ export const en: Dict = {
     },
     'c4-canonazo': {
       name: 'Cannon Shot',
-      tips: ['Get into the cannon: it launches you over the abyss', 'The farther it shoots, the more you scatter in the air', 'Frozen, you fly in one piece and land right on the spot'],
+      tips: ['The open rail leads to the switch that opens the other one', 'Get into the cannon: it launches you over the abyss', 'The farther it shoots, the more you scatter in the air', 'Frozen, you fly in one piece and land right on the spot'],
     },
     'c4-fuego-del-desierto': {
       name: 'Desert Fire',
@@ -601,7 +601,7 @@ export const en: Dict = {
     },
     'c4-railes-y-pozos': {
       name: 'Tracks and Wells',
-      tips: ['The track spirals up high', 'And the well drops you to the treasure'],
+      tips: ['The open rail leads to the switch that opens the other one', 'The track spirals up high', 'And the well drops you to the treasure'],
     },
     'c4-corazon-de-arena': {
       name: 'The Heart of Sand',
@@ -609,7 +609,7 @@ export const en: Dict = {
     },
     'c5-balancines': {
       name: 'Seesaws',
-      tips: ['Seesaws tip toward your weight', 'Cross without stopping: if you stay, the plank drops you'],
+      tips: ['The open rail leads to the switch that opens the other one', 'Seesaws tip toward your weight', 'Cross without stopping: if you stay, the plank drops you'],
     },
     'c5-tablas-y-sierra': {
       name: 'Planks and saw',
@@ -617,7 +617,7 @@ export const en: Dict = {
     },
     'c5-viento-en-la-tabla': {
       name: 'Wind on the plank',
-      tips: ['The wind pushes while the plank tips', 'Cross on the side the wind blows from'],
+      tips: ['The open rail leads to the switch that opens the other one', 'The wind pushes while the plank tips', 'Cross on the side the wind blows from'],
     },
     'c5-espiral-mareante': {
       name: 'Dizzy spiral',
@@ -625,7 +625,7 @@ export const en: Dict = {
     },
     'c5-canon-y-tabla': {
       name: 'Cannon and plank',
-      tips: ['The cannon shoots you to the target above', 'Up there the planks lead to the treasure'],
+      tips: ['The open rail leads to the switch that opens the other one', 'The cannon shoots you to the target above', 'Up there the planks lead to the treasure'],
     },
     'c5-templo-hundido': {
       name: 'Sunken temple',
@@ -633,7 +633,7 @@ export const en: Dict = {
     },
     'c5-aceite-en-la-balanza': {
       name: 'Oil on the scales',
-      tips: ['Grab the oil and catch fire between the braziers', 'While burning, torch the ivy at the end'],
+      tips: ['The open rail leads to the switch that opens the other one', 'Grab the oil and catch fire between the braziers', 'While burning, torch the ivy at the end'],
     },
     'c5-disco-y-tablas': {
       name: 'Disc and planks',
@@ -641,7 +641,7 @@ export const en: Dict = {
     },
     'c5-pozo-doble': {
       name: 'Double well',
-      tips: ['Cross the seesaw and drop down the well', 'Below, the track climbs to the treasure'],
+      tips: ['The open rail leads to the switch that opens the other one', 'Cross the seesaw and drop down the well', 'Below, the track climbs to the treasure'],
     },
     'c5-corazon-del-desierto': {
       name: 'The heart of the desert',
