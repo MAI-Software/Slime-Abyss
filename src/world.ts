@@ -283,6 +283,9 @@ export class World {
   readonly windX: Float32Array;
   readonly windZ: Float32Array;
   readonly windBase: Float32Array;
+  /** hondonadas: hacia dónde tira el suelo hundido de cada casilla (0 = suelo normal) */
+  readonly bowlX: Float32Array;
+  readonly bowlZ: Float32Array;
   private windFx: THREE.Points | null = null;
   private windCells: { i: number; j: number; dx: number; dz: number; base: number; pow: number }[] = [];
   private mistFx: THREE.Points | null = null;
@@ -321,6 +324,9 @@ export class World {
     this.windX = new Float32Array(total);
     this.windZ = new Float32Array(total);
     this.windBase = new Float32Array(total);
+    this.bowlX = new Float32Array(total);
+    this.bowlZ = new Float32Array(total);
+    this.shapeBowls();
     this.build();
     // bloque suelto: la rampa es una cuña que sube de la arista de abajo a la de arriba, del tamaño de un cubo
     if (showcase && this.cells.some((c) => c.kind === 'ramp')) this.group.scale.y = 1 / RAMP_RISE;
@@ -336,6 +342,37 @@ export class World {
       kind: tile.kind, base, top, bottom: s === 0 ? -Infinity : base - UPPER_SLAB, story: s,
       channel: tile.channel, axis: tile.axis, dir: tile.dir, rise: tile.rise, corner: tile.corner, shape: tile.shape,
     };
+  }
+
+  /**
+    Hondonadas: cada casilla hundida se inclina hacia el agujero (o el vacío) que tenga más cerca.
+    La de al lado se hunde más que la de dos casillas, así el suelo hace cuenco con bloques enteros.
+  */
+  private shapeBowls() {
+    const DIP = [0, 0.34, 0.17];
+    const PULL = [0, 1, 0.55];
+    for (let idx = 0; idx < this.cells.length; idx++) {
+      const c = this.cells[idx];
+      if (c.kind !== 'bowl') continue;
+      const i = this.colOf(idx), j = this.rowOf(idx), s = this.storyOf(idx);
+      let best = 0, bx = 0, bz = 0;
+      for (let r = 1; r <= 2 && !best; r++) {
+        for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) {
+          if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
+          const n = this.cell(i + dx, j + dz, s);
+          if (!n || (n.kind !== 'hole' && n.kind !== 'void')) continue;
+          const d = Math.hypot(dx, dz);
+          bx += dx / d; bz += dz / d;
+          best = r;
+        }
+      }
+      if (!best) continue;
+      const len = Math.hypot(bx, bz) || 1;
+      this.bowlX[idx] = (bx / len) * PULL[best];
+      this.bowlZ[idx] = (bz / len) * PULL[best];
+      c.base -= DIP[best];
+      c.top -= DIP[best];
+    }
   }
 
   /** Índice absoluto de una casilla de una planta. */
@@ -622,6 +659,7 @@ export class World {
     const cIce = new THREE.Color(0xffffff);
     const cJump = new THREE.Color(0xf2e9f4);
     const cSwitch = new THREE.Color(0xc4bed6);
+    const cBowl = new THREE.Color(0xc9b795);
     const cCrackA = new THREE.Color(0xb9ada0);
     const cCrackB = new THREE.Color(0xaa9e92);
     const fireCells: FireCell[] = [];
@@ -647,6 +685,8 @@ export class World {
             this.add('fire_grate', x, c.base, z);
             break;
           case 'ice': solids.push({ i, j, top: c.base, color: cIce, set: 'ice' }); break;
+          // hondonada: suelo normal pero hundido (parse ya le ha bajado la altura) y con tono más oscuro
+          case 'bowl': solids.push({ i, j, top: c.base, color: cBowl, set: 'floor' }); break;
           case 'wedge':
             // muro en diagonal: parte al limo que lo embiste de frente (ver buildShapes y addWedge)
             this.shapes.push({ i, j, c });

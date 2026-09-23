@@ -18,7 +18,7 @@ export type CellKind =
   | 'coin' | 'wedge' | 'spike' | 'gem' | 'relic'
   | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet'
   | 'station' | 'rail' | 'crack'
-  | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner' | 'cannon' | 'target' | 'seesaw';
+  | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner' | 'cannon' | 'target' | 'seesaw' | 'bowl';
 
 export interface TileDef {
   char: string;
@@ -107,6 +107,8 @@ export const TILES: readonly TileDef[] = [
   { char: 'z', kind: 'slab', label: 'Suelo diagonal (esquina delantera izquierda)', corner: 'sw', color: '#e9d7ad' },
   { char: 'm', kind: 'slab', label: 'Suelo diagonal (esquina delantera derecha)', corner: 'se', color: '#e9d7ad' },
   // agujero redondo: el limo que cae por él aparece sobre la salida de agujero más cercana (mejor si está más abajo)
+  // hondonada: el suelo se hunde hacia el agujero (o el vacío) que tiene al lado y el limo resbala hacia dentro
+  { char: 'a', kind: 'bowl', label: 'Suelo hundido (arrastra hacia el agujero)', color: '#c9b48a' },
   { char: 'H', kind: 'hole', label: 'Agujero (lleva a una salida más abajo)', color: '#1f1a33' },
   { char: 'U', kind: 'exit', label: 'Salida de agujero', color: '#5b4b8a' },
   // plataforma giratoria (centro de un disco que ocupa 3x3 casillas): hace girar al limo y lo marea

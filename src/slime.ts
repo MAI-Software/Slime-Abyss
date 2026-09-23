@@ -140,6 +140,8 @@ const SEESAW_SLIDE = 9;       // cuánto resbala el limo por la tabla inclinada
 const SPINNER_GRIP = 7;       // lo que arrastra el disco al limo que lo pisa
 // Agujero: tira hacia abajo y hacia el centro de lo que está encima.
 const HOLE_PULL = 30;
+/** hondonada: cuánto arrastra el suelo hundido hacia el agujero (se puede salir andando, pero cuesta) */
+const BOWL_ACC = 5;
 const HOLE_FUNNEL = 12;    // congelado: la corriente lo transporta entero
 const HOVER_HEIGHT = 0.8;
 // Cañón: el trozo que se mete dentro espera un momento y sale en parábola hacia la diana; al tocar suelo frena en seco.
@@ -676,6 +678,12 @@ export class Slime {
           ay[i] -= HOLE_PULL;
           if (d > 0.05) { ax[i] -= (hx / d) * HOLE_FUNNEL; az[i] -= (hz / d) * HOLE_FUNNEL; }
         }
+      }
+      // hondonada: el suelo hundido tira hacia dentro mientras se va por él
+      const bx = w.bowlX[idx], bz = w.bowlZ[idx];
+      if ((bx !== 0 || bz !== 0) && py[i] < w.cells[idx].top + 0.7) {
+        ax[i] += bx * BOWL_ACC;
+        az[i] += bz * BOWL_ACC;
       }
       const wx = w.windX[idx], wz = w.windZ[idx];
       if (wx === 0 && wz === 0 || py[i] > w.windBase[idx] + 2.2) continue;
@@ -1833,6 +1841,9 @@ export class Slime {
         shadow.scale.set(size, 1, size * 0.9);
       }
       if (k > 0) continue;
+      // cara de susto: el suelo hundido tira de él o tiene el agujero justo debajo
+      const fidx = this.world.index(gx, gz, this.world.storyAt(gx, gz, g.cy));
+      if (fidx >= 0 && (this.world.bowlX[fidx] !== 0 || this.world.bowlZ[fidx] !== 0 || this.world.cells[fidx].kind === 'hole')) face.scare(0.25);
       let airborne = 0;
       for (const i of g.ids) if (this.air[i] > 0.15) airborne++;
       // en la vagoneta la cara va sobre la bola pequeña del cuenco, y a su tamaño
@@ -1865,7 +1876,7 @@ export class Slime {
 
 // ------------------------------------------------------------------ cara
 
-type Expr = 'idle' | 'wee' | 'air' | 'happy' | 'pain' | 'dizzy' | 'frozen' | 'squeeze';
+type Expr = 'idle' | 'wee' | 'air' | 'happy' | 'pain' | 'dizzy' | 'frozen' | 'squeeze' | 'scared';
 
 /**
   Cara kawaii modelada en Blender (face_*). Ojos, boca en reposo y mofletes se eligen en Mi limo (setLook);
@@ -1900,6 +1911,7 @@ class Face {
   private lastDirX = 0;
   private lastDirZ = 0;
   private happyT = 0;
+  private scaredT = 0;
   private scale = 1;
   private bounce = 0;
   private t = 0;
@@ -1992,6 +2004,11 @@ class Face {
     this.dizzyT = Math.max(this.dizzyT, t);
   }
 
+  /** susto: el suelo se lo lleva hacia un agujero o está pisando el borde */
+  scare(t: number) {
+    this.scaredT = Math.max(this.scaredT, t);
+  }
+
   cheer(t: number) {
     if (this.painT > 0) return;
     if (this.happyT <= 0) this.bounce = 1;
@@ -2002,6 +2019,7 @@ class Face {
     this.t += dt;
     this.painT -= dt;
     this.happyT -= dt;
+    this.scaredT -= dt;
     this.dizzyT -= dt;
     this.bounce = Math.max(0, this.bounce - dt * 4);
 
@@ -2054,6 +2072,7 @@ class Face {
     else if (squeeze) expr = 'squeeze';
     else if (this.frozen) expr = 'frozen';
     else if (this.dizzyT > 0) expr = 'dizzy';
+    else if (this.scaredT > 0) expr = 'scared';
     else if (airFrac > 0.6) expr = 'air';
     else if (speed > 4.4) expr = 'wee';
 
@@ -2067,11 +2086,11 @@ class Face {
       if (this.blinkT < -0.1) this.blinkT = 2 + Math.random() * 3;
     }
 
-    const normalEyes = expr === 'idle' || expr === 'wee' || expr === 'air' || expr === 'frozen';
+    const normalEyes = expr === 'idle' || expr === 'wee' || expr === 'air' || expr === 'frozen' || expr === 'scared';
     // mirada: el iris se desplaza dentro del blanco hacia donde va el limo
     const lx = Math.max(-1, Math.min(1, svx * 0.2 + lookX * 0.5)) * 0.016;
     const ly = (expr === 'air' ? 1 : Math.max(-1, Math.min(1, -svz * 0.12 - lookZ * 0.3))) * 0.022;
-    const eyeScale = expr === 'air' ? 1.25 : expr === 'wee' ? 0.9 : 1;
+    const eyeScale = expr === 'scared' ? 1.35 : expr === 'air' ? 1.25 : expr === 'wee' ? 0.9 : 1;
     for (const l of this.looks) {
       const r = l.userData.rest as THREE.Vector3;
       l.position.set(r.x + lx, r.y + ly, r.z);
@@ -2089,9 +2108,9 @@ class Face {
     });
     if (this.idleMouth) this.idleMouth.visible = expr === 'idle';
     this.mouths.open.visible = expr === 'wee' || expr === 'happy';
-    this.mouths.o.visible = expr === 'air' || expr === 'frozen' || expr === 'squeeze';
+    this.mouths.o.visible = expr === 'air' || expr === 'frozen' || expr === 'squeeze' || expr === 'scared';
     this.mouths.pain.visible = expr === 'pain' || expr === 'dizzy';
-    this.sweat.visible = expr === 'pain';
+    this.sweat.visible = expr === 'pain' || expr === 'scared';
     for (const b of this.blush) {
       b.visible = expr !== 'air';
       const s = expr === 'happy' || expr === 'pain' || expr === 'squeeze' ? 1.25 : 1;
@@ -2119,6 +2138,10 @@ class Face {
       // esfuerzo: tiembla un poquito
       shakeX = Math.sin(this.t * 45) * 0.008;
       wobble = Math.sin(this.t * 38) * 0.03;
+    } else if (expr === 'scared') {
+      // tiritona de susto: rápida y pequeña, sin llegar a la del dolor
+      shakeX = Math.sin(this.t * 52) * 0.012;
+      wobble = Math.sin(this.t * 24) * 0.05;
     } else if (expr === 'dizzy') {
       // balanceo lento y amplio, como quien ha dado vueltas
       shakeX = Math.sin(this.t * 3.2) * 0.05;
