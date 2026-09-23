@@ -76,6 +76,7 @@ export const es = {
     oiled: 'Aceite',
     burning: 'En llamas {s}',
     frozen: 'Congelado {s}',
+    bubble: 'Burbuja {s}',
     dizzy: 'Mareado · {s}',
   },
   toast: {
@@ -432,6 +433,8 @@ export const es = {
       slabSW: 'Suelo diagonal (delante izquierda)',
       slabSE: 'Suelo diagonal (delante derecha)',
       bowl: 'Suelo hundido (arrastra al agujero)',
+      soap: 'Pastilla de jabón (burbuja)',
+      fanup: 'Ventilador hacia arriba (sube la burbuja)',
       hole: 'Agujero (lleva a una salida más abajo)',
       exit: 'Salida de agujero',
       railLoop: 'Raíl con bucle (marea)',

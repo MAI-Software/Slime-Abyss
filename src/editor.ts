@@ -17,7 +17,7 @@ export const TILE_IDS: Record<string, string> = {
   '.': 'void', '0': 'floor', '#': 'wall', P: 'start', T: 'treasure', F: 'fire', X: 'firet', I: 'ice', J: 'jump',
   S: 'switchA', s: 'switchB', D: 'doorA', d: 'doorB', C: 'coin', Y: 'spike', G: 'gem',
   O: 'oil', W: 'plant', Z: 'iceblock', '^': 'fanN', v: 'fanS', '>': 'fanE', '<': 'fanW', Q: 'coldjet',
-  R: 'station', '=': 'rail', B: 'crack', a: 'bowl',
+  R: 'station', '=': 'rail', B: 'crack', a: 'bowl', b: 'soap', A: 'fanup',
   g: 'wedgeNW', h: 'wedgeNE', i: 'wedgeSE', j: 'wedgeSW',
   '-': 'seesawX', '|': 'seesawZ',
   n: 'rampN', u: 'rampS', e: 'rampE', o: 'rampW', q: 'slabNW', p: 'slabNE', z: 'slabSW', m: 'slabSE', H: 'hole', U: 'exit', '@': 'railLoop', '%': 'railSpiral', E: 'spinner', N: 'cannon', x: 'target',
@@ -30,8 +30,8 @@ export const BLOCK_GROUPS: readonly { id: string; tiles: readonly string[] }[] =
   { id: 'terrain', tiles: ['0', '.', '#', 'g', 'n', 'q', 'I', 'B', 'a'] },
   { id: 'goals', tiles: ['P', 'T', 'C', 'G'] },
   { id: 'hazards', tiles: ['F', 'Y'] },
-  { id: 'obstacles', tiles: ['W', 'Z', 'O'] },
-  { id: 'mechanisms', tiles: ['S', 'D', 'J', 'E', 'Q', '^', '-'] },
+  { id: 'obstacles', tiles: ['W', 'Z', 'O', 'b'] },
+  { id: 'mechanisms', tiles: ['S', 'D', 'J', 'E', 'Q', '^', 'A', '-'] },
   { id: 'travel', tiles: ['R', '=', '@', '%', 'H', 'U', 'N', 'x'] },
 ];
 

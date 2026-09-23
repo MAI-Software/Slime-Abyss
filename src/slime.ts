@@ -108,7 +108,7 @@ const XRAY_LIFT = 0.2;
 
 export type SlimeEvent =
   | { type: 'fall' | 'evaporate' | 'pad' | 'pop'; x: number; y: number; z: number }
-  | { type: 'coin' | 'gem' | 'oil' | 'relic'; x: number; y: number; z: number }
+  | { type: 'coin' | 'gem' | 'oil' | 'relic' | 'soap'; x: number; y: number; z: number }
   | { type: 'board' | 'unboard' | 'land' | 'merge' | 'dizzy' | 'load' | 'shoot' | 'hole'; x: number; y: number; z: number }
   | { type: 'cut'; x: number; z: number }
   | { type: 'burn'; x: number; z: number; what: 'plant' | 'iceblock' }
@@ -118,12 +118,21 @@ export type SlimeEvent =
   Reacciones del limo (todo el limo a la vez):
     normal  --aceite-->  oiled   --fuego-->  burning (quema plantas y hielo, no le daña el fuego)
     burning --fin o aire frío--> normal
-    cualquiera --aire frío--> frozen (30 s: rígido, no gotea, viaja sobre las corrientes de aire)
+    cualquiera --aire frío--> frozen (30 s: rígido, no gotea, no se pincha y vuela derecho en el cañón)
     frozen  --fuego--> normal (se derrite sin daño)
+    cualquiera --jabón--> bubble (20 s: flota, no rompe la roca agrietada, plana con las corrientes
+                                  y los ventiladores de techo la suben a las zonas altas)
+    bubble  --fuego o aire frío--> revienta y vuelve a normal
 */
-export type SlimeState = 'normal' | 'oiled' | 'burning' | 'frozen';
+export type SlimeState = 'normal' | 'oiled' | 'burning' | 'frozen' | 'bubble';
 export const BURN_TIME = 12;
 export const FREEZE_TIME = 30;
+export const BUBBLE_TIME = 20;
+/** Burbuja: pesa una cuarta parte, la corriente la lleva entera y el ventilador de techo la eleva. */
+const BUBBLE_GRAV = 0.25;
+const BUBBLE_WIND_ACC = 10;
+const BUBBLE_LIFT = 26;
+const BUBBLE_LIFT_H = 7;
 // Ventiladores: frenan y desvían al limo, pero ya no lo deshacen (la cohesión aguanta casi entera en la corriente).
 const WIND_ACC = 24;
 const WIND_SCATTER = 6;
@@ -169,6 +178,7 @@ const STATE_LOOK: Record<SlimeState, { color: number; emissive: number; rim: [nu
   oiled: { color: 0x9c7428, emissive: 0x352304, rim: [0.95, 0.8, 0.45], wobble: 0.8 },
   burning: { color: 0xff6a1a, emissive: 0xd23a00, rim: [1.0, 0.75, 0.2], wobble: 1.3 },
   frozen: { color: 0xbfe9ff, emissive: 0x3f8fc2, rim: [0.85, 0.97, 1.0], wobble: 0 },
+  bubble: { color: 0xd7f4ff, emissive: 0x63c7ff, rim: [0.95, 0.99, 1.0], wobble: 1.5 },
 };
 
 export interface Group {
@@ -582,10 +592,10 @@ export class Slime {
   poke() { for (const f of this.faces) f.poke(); }
 
   private setState(to: SlimeState) {
-    if (to === this.state && to !== 'frozen' && to !== 'burning') return;
+    if (to === this.state && to !== 'frozen' && to !== 'burning' && to !== 'bubble') return;
     const from = this.state;
     this.state = to;
-    this.stateT = to === 'burning' ? BURN_TIME : to === 'frozen' ? FREEZE_TIME : 0;
+    this.stateT = to === 'burning' ? BURN_TIME : to === 'frozen' ? FREEZE_TIME : to === 'bubble' ? BUBBLE_TIME : 0;
     if (from !== to) this.events.push({ type: 'state', from, to });
   }
 
@@ -660,10 +670,11 @@ export class Slime {
     const frozen = this.state === 'frozen';
     const kAttr = frozen ? K_ATT * 5 : K_ATT;
     const kVisc = frozen ? VISC * 6 : VISC;
+    const bubble = this.state === 'bubble';
     const w = this.world;
     for (let i = 0; i < n; i++) {
       ax[i] = 0;
-      ay[i] = -GRAVITY;
+      ay[i] = bubble ? -GRAVITY * BUBBLE_GRAV : -GRAVITY;
       az[i] = 0;
       if (!alive[i] || this.riding[i]) continue;
       // corriente de un ventilador
@@ -679,6 +690,10 @@ export class Slime {
           if (d > 0.05) { ax[i] -= (hx / d) * HOLE_FUNNEL; az[i] -= (hz / d) * HOLE_FUNNEL; }
         }
       }
+      // ventilador de techo: solo la burbuja es lo bastante ligera para subir con su chorro
+      if (bubble && w.isLift(idx) && py[i] < w.cells[idx].base + BUBBLE_LIFT_H) {
+        ay[i] += BUBBLE_LIFT * (1 - (py[i] - w.cells[idx].base) / BUBBLE_LIFT_H);
+      }
       // hondonada: el suelo hundido tira hacia dentro mientras se va por él
       const bx = w.bowlX[idx], bz = w.bowlZ[idx];
       if ((bx !== 0 || bz !== 0) && py[i] < w.cells[idx].top + 0.7) {
@@ -688,11 +703,11 @@ export class Slime {
       const wx = w.windX[idx], wz = w.windZ[idx];
       if (wx === 0 && wz === 0 || py[i] > w.windBase[idx] + 2.2) continue;
       const pow = Math.hypot(wx, wz);
-      if (frozen) {
-        // flota a media altura y se deja llevar entero
-        ax[i] += wx * WIND_FROZEN_ACC;
-        az[i] += wz * WIND_FROZEN_ACC;
-        ay[i] += GRAVITY + (w.windBase[idx] + HOVER_HEIGHT - py[i]) * 30 - vy[i] * 7;
+      if (bubble) {
+        // la burbuja plana: flota a media altura y la corriente se la lleva entera
+        ax[i] += wx * BUBBLE_WIND_ACC;
+        az[i] += wz * BUBBLE_WIND_ACC;
+        ay[i] += GRAVITY * BUBBLE_GRAV + (w.windBase[idx] + HOVER_HEIGHT - py[i]) * 26 - vy[i] * 6;
       } else {
         // lo empuja y lo esparce: se deshace. Sobre el vacío no hay colchón de aire que lo sostenga:
         // la turbulencia lo hunde (solo el limo congelado es capaz de flotar en la corriente)
@@ -1460,7 +1475,7 @@ export class Slime {
       // suelo que se hunde: la roca agrietada al pisarla, el hielo si el limo va en llamas.
       // Como con los objetos, las gotitas sueltas no pesan lo bastante (no rompen el camino por delante)
       if (under && this.air[i] < 0.1 && y < under.top + 0.5 && (under.kind === 'crack' || under.kind === 'ice')
-        && this.gid[i] >= 0 && (this.groups[this.gid[i]]?.ids.length ?? 0) >= PICKUP_MIN) {
+        && this.state !== 'bubble' && this.gid[i] >= 0 && (this.groups[this.gid[i]]?.ids.length ?? 0) >= PICKUP_MIN) {
         if (under.kind === 'crack') w.crumble(ci, cj, st);
         else if (under.kind === 'ice' && this.state === 'burning') w.melt(ci, cj, st);
       }
@@ -1471,12 +1486,13 @@ export class Slime {
       else this.grip[i] = this.overhanging(x, y, z) ? OVERHANG_GRIP : this.loose[i] > 0 ? CORNER_GRIP : 1;
 
       const chunk = this.gid[i] >= 0 ? this.groups[this.gid[i]].ids.length : 0;
-      if (under && (under.kind === 'coin' || under.kind === 'gem' || under.kind === 'oil' || under.kind === 'relic') && y < under.base + 1.3 && chunk >= pickMin) {
+      if (under && (under.kind === 'coin' || under.kind === 'gem' || under.kind === 'oil' || under.kind === 'soap' || under.kind === 'relic') && y < under.base + 1.3 && chunk >= pickMin) {
         const got = w.collectCoin(ci, cj, st);
         if (got) {
           const c = w.coinPosition(ci, cj, this.tmpCoin, st);
           this.events.push({ type: got, x: c.x, y: c.y, z: c.z });
           if (got === 'oil') { if (this.state !== 'burning') this.setState('oiled'); }
+          else if (got === 'soap') { if (this.state !== 'burning') this.setState('bubble'); }
           else for (const f of this.faces) f.cheer(got === 'gem' || got === 'relic' ? 1.2 : 0.5);
         }
       }
@@ -1492,11 +1508,11 @@ export class Slime {
       // aire frío: congela (o apaga las llamas)
       if (under && w.isCold(ci, cj, st) && y < under.base + 1.6) {
         if (this.state === 'burning') this.setState('normal');
-        else if (this.state !== 'frozen' || this.stateT < FREEZE_TIME - 0.5) this.setState('frozen');
+        else if (this.state !== 'frozen' || this.stateT < FREEZE_TIME - 0.5) this.setState('frozen');   // la burbuja también revienta al congelarse
       }
       if (under && w.fireActive(ci, cj, st) && y < under.base + 0.8) {
         if (this.state === 'oiled') this.setState('burning');
-        else if (this.state === 'frozen') this.setState('normal');
+        else if (this.state === 'frozen' || this.state === 'bubble') this.setState('normal');
         else if (this.state !== 'burning') {
           if (this.fireHits.length < 6) this.fireHits.push(ci + 0.5, cj + 0.5);
           if (w.fireLethal(ci, cj, st)) {

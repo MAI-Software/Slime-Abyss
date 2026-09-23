@@ -32,7 +32,7 @@ export const HOLE_R = 0.36;
 /** por debajo de esto, lo que cae por un agujero sale por su salida */
 export const HOLE_DROP = 0.9;
 
-export type PickupType = 'coin' | 'gem' | 'oil' | 'relic';
+export type PickupType = 'coin' | 'gem' | 'oil' | 'relic' | 'soap';
 
 /** Cañón: su casilla, la diana a la que apunta (NaN si no tiene) y el tubo dibujado. */
 export interface Cannon {
@@ -265,7 +265,7 @@ export class World {
   private crackOverlays = new Map<number, THREE.Object3D>();
   /** avisos para sonido y efectos (los consume main.ts) */
   readonly events: WorldEvent[] = [];
-  private fans: { blades: THREE.Object3D; i: number; j: number; s: number; dir: 'n' | 's' | 'e' | 'w'; base: number }[] = [];
+  private fans: { blades: THREE.Object3D; i: number; j: number; s: number; dir: 'n' | 's' | 'e' | 'w'; base: number; up?: boolean }[] = [];
   private saws: THREE.Object3D[] = [];
   private shapes: { i: number; j: number; c: Cell }[] = [];
   private holeExits = new Map<number, THREE.Vector3>();
@@ -284,6 +284,8 @@ export class World {
   readonly windZ: Float32Array;
   readonly windBase: Float32Array;
   /** hondonadas: hacia dónde tira el suelo hundido de cada casilla (0 = suelo normal) */
+  /** casillas con ventilador hacia arriba: su chorro sube por la columna de encima */
+  private readonly liftCells = new Set<number>();
   readonly bowlX: Float32Array;
   readonly bowlZ: Float32Array;
   private windFx: THREE.Points | null = null;
@@ -755,7 +757,7 @@ export class World {
             this.treasure.set(x, c.base, z);
             this.addChest(x, c.base, z);
             break;
-          case 'coin': case 'gem': case 'oil': case 'relic':
+          case 'coin': case 'gem': case 'oil': case 'relic': case 'soap':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.addCoin(idx, i, j, c.base, c.kind);
             break;
@@ -772,6 +774,14 @@ export class World {
             // el modelo sopla hacia +Z (hacia la cámara)
             obj.rotation.y = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }[c.dir ?? 's'];
             this.fans.push({ blades: Assets.child(obj, 'fan_blades'), i, j, s, dir: c.dir ?? 's', base: c.base });
+            break;
+          }
+          case 'fanup': {
+            // ventilador tumbado mirando al techo: su chorro sube por la columna de encima
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            const obj = this.add('fan', x, c.base, z);
+            obj.rotation.x = -Math.PI / 2;
+            this.fans.push({ blades: Assets.child(obj, 'fan_blades'), i, j, s, dir: 's', base: c.base, up: true });
             break;
           }
           case 'coldjet':
@@ -1238,15 +1248,16 @@ export class World {
   }
 
   private addCoin(idx: number, i: number, j: number, base: number, kind: string) {
-    const type: PickupType = kind === 'gem' ? 'gem' : kind === 'oil' ? 'oil' : kind === 'relic' ? 'relic' : 'coin';
+    const type: PickupType = kind === 'gem' ? 'gem' : kind === 'oil' ? 'oil'
+      : kind === 'soap' ? 'soap' : kind === 'relic' ? 'relic' : 'coin';
     const gem = type === 'gem';
     const relic = type === 'relic';
-    const y = base + (type === 'coin' ? 0.55 : type === 'oil' ? 0.12 : relic ? 0.3 : 0.62);
+    const y = base + (type === 'coin' ? 0.55 : type === 'oil' || type === 'soap' ? 0.12 : relic ? 0.3 : 0.62);
     const obj = gem ? this.addGem(i + 0.5, y, j + 0.5) : relic ? this.addRelic(i + 0.5, y, j + 0.5)
-      : this.add(type === 'coin' ? 'coin' : 'oil_bottle', i + 0.5, y, j + 0.5);
-    if (gem || relic || type === 'oil') {
+      : this.add(type === 'coin' ? 'coin' : type === 'soap' ? 'soap_bar' : 'oil_bottle', i + 0.5, y, j + 0.5);
+    if (gem || relic || type === 'oil' || type === 'soap') {
       // halo del color de la gema (rosa el coleccionable) bajo ella para que se vea desde lejos
-      const color = gem ? GEM_LOOK[GEM_OF_BIOME[this.biome]].glow : relic ? 0xf472b6 : 0xf5a524;
+      const color = gem ? GEM_LOOK[GEM_OF_BIOME[this.biome]].glow : relic ? 0xf472b6 : type === 'soap' ? 0x7dd3fc : 0xf5a524;
       const glowMat = createGlowMaterial(color, this.timeUniform, gem || relic ? 1 : 0.8);
       this.ownedMaterials.push(glowMat);
       const glow = new THREE.Mesh(this.assets.geometry('fire_glow'), glowMat);
@@ -1456,6 +1467,9 @@ export class World {
     }
   }
 
+  /** ¿Esta casilla tiene un ventilador que sopla hacia arriba? */
+  isLift(idx: number) { return this.liftCells.has(idx); }
+
   /** Vía que sale de la estación de esta casilla, si la hay. */
   railAt(i: number, j: number, s = 0): RailPath | null {
     if (i < 0 || j < 0 || i >= this.w || j >= this.d) return null;
@@ -1464,6 +1478,7 @@ export class World {
 
   private buildWind() {
     for (const f of this.fans) {
+      if (f.up) { this.liftCells.add(this.index(f.i, f.j, f.s)); continue; }   // este sopla al techo
       const [dx, dz] = DIRS[f.dir];
       for (let k = 1; k <= WIND_LEN; k++) {
         const ci = f.i + dx * k, cj = f.j + dz * k;

@@ -940,6 +940,7 @@ body[data-control="gyro"] .squeeze-btn { bottom: calc(26px + var(--safe-b)); rig
 .state-badge.oiled { --fill: #d9a441; --ring: #7a5212; }
 .state-badge.burning { --fill: #ffb15c; --ring: #e0461a; }
 .state-badge.frozen { --fill: #d8f4ff; --ring: #38a9e0; }
+.state-badge.bubble { --fill: #eafaff; --ring: #38bdf8; }
 .state-badge.dizzy { --fill: #e6c9ff; --ring: #8b5cf6; }
 .state-badge.dizzy .ico { animation: spin 1400ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

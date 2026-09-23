@@ -10,7 +10,7 @@ import { CHAPTERS, MENU_STAGE, PRACTICE, UPCOMING } from './level/campaign';
 import { DEFAULT_KEEP_PCT, createEmptyLevel, starsOf, traceRails, type ChapterDef, type FloorResult, type LevelData } from './level/format';
 import { BLOCK_GROUPS, EDITOR_LIMITS, LevelEditor, TILE_IDS, blockStage, familyOf, nextVariant, variantTurns, variantsOf, type EditorTool } from './editor';
 import { World } from './world';
-import { BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
+import { BUBBLE_TIME, BURN_TIME, DEFAULT_PITCH, FREEZE_TIME, Slime, type SlimeState } from './slime';
 import { BODY_COLORS, CHEEKS, EYES, GEMS_PER_KIND, IRIS_COLORS, IRIS_EYES, LOOK_GEM_PRICES, LOOK_PRICES, LOOK_SOON, LOOK_UNLOCKS, MOUTHS, lookOptionUnlocked, type SlimeLook } from './look';
 import { ACHIEVEMENTS, drawPatchIcon, type Achievement, type AchievementContext } from './achievements';
 import { BLOCK_CLIP, Thumbs, blockBounds, meshBounds, voidCube } from './thumbs';
@@ -424,6 +424,8 @@ const STATE_ICONS: Record<Exclude<SlimeState, 'normal'> | 'dizzy', string> = {
   dizzy: '<path d="M12 12a2 2 0 1 0 2 2"/><path d="M14 14a4 4 0 1 1-4-4"/><path d="M10 10a6.5 6.5 0 1 1 6.5 6.5"/>',
   oiled: '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
   burning: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  // burbuja: pompa con su brillo
+  bubble: '<circle cx="12" cy="12" r="8"/><circle cx="9" cy="9" r="1.6"/>',
   frozen: '<line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/>',
 };
 const fmtTime = (sec: number) => { const s = Math.floor(sec); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
@@ -1231,6 +1233,7 @@ const STATE_GAUGE: Record<Exclude<SlimeState, 'normal'>, [string, string]> = {
   oiled: ['#e0b45a', '#8a5a14'],
   burning: ['#ffb15c', '#e0461a'],
   frozen: ['#e6f8ff', '#6cc4ec'],
+  bubble: ['#eafaff', '#7dd3fc'],
 };
 function updateGaugeColors() {
   const st = slime?.state ?? 'normal';
@@ -2098,7 +2101,8 @@ function updateHud() {
       chip.className = `state-badge ${st}`;
       if (changed) bump(chip, 'bump');
       hudEls.stateIco.innerHTML = STATE_ICONS[st];
-      const total = st === 'burning' ? BURN_TIME : st === 'frozen' ? FREEZE_TIME : st === 'dizzy' ? slime.dizzyMax : 0;
+      const total = st === 'burning' ? BURN_TIME : st === 'frozen' ? FREEZE_TIME
+        : st === 'bubble' ? BUBBLE_TIME : st === 'dizzy' ? slime.dizzyMax : 0;
       const left = st === 'dizzy' ? slime.dizzyT : slime.stateT;
       chip.style.setProperty('--p', total ? String(Math.max(0, left / total)) : '1');
       hudEls.stateSec.textContent = total ? String(sec) : '';

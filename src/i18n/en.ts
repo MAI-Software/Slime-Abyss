@@ -77,6 +77,7 @@ export const en: Dict = {
     oiled: 'Oil',
     burning: 'On fire {s}',
     frozen: 'Frozen {s}',
+    bubble: 'Bubble {s}',
     dizzy: 'Dizzy · {s}',
   },
   toast: {
@@ -433,6 +434,8 @@ export const en: Dict = {
       slabSW: 'Diagonal floor (front left)',
       slabSE: 'Diagonal floor (front right)',
       bowl: 'Sunken floor (drags into the hole)',
+      soap: 'Soap bar (bubble)',
+      fanup: 'Fan blowing up (lifts the bubble)',
       hole: 'Hole (leads to a lower exit)',
       exit: 'Hole exit',
       railLoop: 'Track with loop (makes dizzy)',
@@ -480,8 +483,8 @@ export const en: Dict = {
       tips: ['Wind pushes your slime; here the wall stops you', 'With no wall, the wind blows you into the void: follow the coins and cross fast', 'Cross on the fan side, away from the edge'],
     },
     'c1-corriente-helada': {
-      name: 'Frozen Current',
-      tips: ['Cold air freezes your slime for 30 seconds', 'Frozen slime stays in one piece: the current carries it', 'Stand in front of the fans'],
+      name: 'Air current',
+      tips: ['The soap turns your slime into a bubble', 'The bubble floats: the current carries it whole', 'Stand in front of the fans'],
     },
     'c1-gran-cripta': {
       name: 'The Great Crypt',

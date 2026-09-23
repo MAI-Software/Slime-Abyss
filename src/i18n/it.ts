@@ -77,6 +77,7 @@ export const it: Dict = {
     oiled: 'Olio',
     burning: 'In fiamme {s}',
     frozen: 'Congelato {s}',
+    bubble: 'Bolla {s}',
     dizzy: 'Stordito · {s}',
   },
   toast: {
@@ -433,6 +434,8 @@ export const it: Dict = {
       slabSW: 'Pavimento diagonale (davanti sinistra)',
       slabSE: 'Pavimento diagonale (davanti destra)',
       bowl: 'Terreno infossato (trascina nel buco)',
+      soap: 'Saponetta (bolla)',
+      fanup: 'Ventola in alto (solleva la bolla)',
       hole: 'Buco (porta a un’uscita più in basso)',
       exit: 'Uscita del buco',
       railLoop: 'Binario con giro della morte (fa girare la testa)',
@@ -480,8 +483,8 @@ export const it: Dict = {
       tips: ['Il vento spinge lo slime; qui il muro ti ferma', 'Senza muro il vento ti butta nel vuoto: segui le monete e attraversa in fretta', 'Attraversa dal lato del ventilatore, lontano dal bordo'],
     },
     'c1-corriente-helada': {
-      name: 'Corrente gelata',
-      tips: ["L'aria fredda congela lo slime per 30 secondi", 'Congelato non si disfa: la corrente ti trasporta intero', 'Mettiti davanti ai ventilatori'],
+      name: 'Corrente d aria',
+      tips: ['Il sapone trasforma il limo in bolla', 'La bolla galleggia: la corrente la porta intera', 'Mettiti davanti alle ventole'],
     },
     'c1-gran-cripta': {
       name: 'La grande cripta',

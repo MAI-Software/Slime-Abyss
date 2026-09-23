@@ -901,6 +901,20 @@ bm = bmesh.new()
 cylinder(bm, 0.058, 0.07, (0, 0, 0.43), 14)
 mesh_object("oil_bottle_cork", bm, M["cork"], smooth=True, parent=bottle)
 
+# soap_bar: pastilla de jabón con su pompa encima; el limo que la pilla se hace burbuja
+M["soap_body"] = material("SoapBody", "7dd3fc", 0.35)
+M["soap_foam"] = material("SoapFoam", "eafaff", 0.15, emit="bae6fd", strength=1.2)
+
+soap = empty("soap_bar")
+bm = bmesh.new()
+box(bm, (0.44, 0.3, 0.16), (0, 0, 0.08))
+bmesh.ops.bevel(bm, geom=list(bm.edges), offset=0.055, segments=3, affect="EDGES")
+mesh_object("soap_bar_body", bm, M["soap_body"], smooth=True, parent=soap)
+bm = bmesh.new()
+ellipsoid(bm, (0.12, 0.12, 0.12), (0.05, 0, 0.3), 16, 10)
+ellipsoid(bm, (0.07, 0.07, 0.07), (-0.11, 0.02, 0.24), 14, 8)
+mesh_object("soap_bar_foam", bm, M["soap_foam"], smooth=True, parent=soap)
+
 # Plantas: pared de hiedra entrelazada (bloquea el paso hasta que arde). Ocupa la casilla, de z=0 a ~1.1.
 # Un núcleo oscuro, tallos leñosos que se cruzan en diagonal por las cuatro caras y por arriba, y hojas
 # de hiedra (forma de corazón con puntas) cubriéndolo casi todo. Pocos polígonos: tallos con bisel bajo

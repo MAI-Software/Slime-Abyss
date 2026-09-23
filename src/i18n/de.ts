@@ -77,6 +77,7 @@ export const de: Dict = {
     oiled: 'Öl',
     burning: 'Brennt {s}',
     frozen: 'Gefroren {s}',
+    bubble: 'Blase {s}',
     dizzy: 'Benommen · {s}',
   },
   toast: {
@@ -433,6 +434,8 @@ export const de: Dict = {
       slabSW: 'Diagonaler Boden (vorne links)',
       slabSE: 'Diagonaler Boden (vorne rechts)',
       bowl: 'Abgesackter Boden (zieht ins Loch)',
+      soap: 'Seifenstück (Blase)',
+      fanup: 'Ventilator nach oben (hebt die Blase)',
       hole: 'Loch (führt zu einem tieferen Ausgang)',
       exit: 'Lochausgang',
       railLoop: 'Schiene mit Looping (macht schwindlig)',
@@ -480,8 +483,8 @@ export const de: Dict = {
       tips: ['Der Wind schiebt den Schleim; hier bremst dich die Wand', 'Ohne Wand weht dich der Wind in den Abgrund: folge den Münzen und quere schnell', 'Quere auf der Seite des Ventilators, weg vom Rand'],
     },
     'c1-corriente-helada': {
-      name: 'Eisige Strömung',
-      tips: ['Kalte Luft friert deinen Schleim 30 Sekunden lang ein', 'Gefroren bleibt er ganz: Die Strömung trägt dich', 'Stell dich vor die Ventilatoren'],
+      name: 'Luftstrom',
+      tips: ['Die Seife macht aus dem Schleim eine Blase', 'Die Blase schwebt: die Strömung trägt sie ganz', 'Stell dich vor die Ventilatoren'],
     },
     'c1-gran-cripta': {
       name: 'Die große Gruft',

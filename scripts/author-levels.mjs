@@ -477,7 +477,7 @@ const CHAPTER1 = [
   {
     file: 'chapter1/09-c1-corriente-helada.json',
     latch: { B: true },
-    id: 'c1-corriente-helada', name: 'Corriente helada', count: 80, keepPct: 0.75,
+    id: 'c1-corriente-helada', name: 'Corriente de aire', count: 80, keepPct: 0.75,
     mood: 'cave', camYaw: 0,
     map: [
 '..#######..',
@@ -490,7 +490,7 @@ const CHAPTER1 = [
 '..#00000#..',
 '..#0^^^0#..',
 '..#C000C#..',
-'..#00Q00#..',
+'..#00b00#..',
 '..#00000#..',
 '..#00000#..',
 '..##000##..',
@@ -511,8 +511,8 @@ const CHAPTER1 = [
 '.#########.',
     ],
     tips: [
-      { z: 12, text: 'El aire frío congela al limo durante 30 segundos' },
-      { z: 9.5, text: 'Congelado no se deshace: la corriente te lleva entero' },
+      { z: 12, text: 'El jabón convierte al limo en burbuja' },
+      { z: 9.5, text: 'La burbuja flota: la corriente se la lleva entera' },
       { z: 7.5, text: 'Ponte delante de los ventiladores' },
     ],
   },
@@ -542,7 +542,7 @@ const CHAPTER1 = [
 '....#00000#....',
 '....#0^^^0#....',
 '....#00000#....',
-'....#0Q0C0#....',
+'....#0b0C0#....',
 '....#000C0#....',
 '....#00000#....',
 '....##000##....',

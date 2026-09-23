@@ -18,7 +18,7 @@ export type CellKind =
   | 'coin' | 'wedge' | 'spike' | 'gem' | 'relic'
   | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet'
   | 'station' | 'rail' | 'crack'
-  | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner' | 'cannon' | 'target' | 'seesaw' | 'bowl';
+  | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner' | 'cannon' | 'target' | 'seesaw' | 'bowl' | 'soap' | 'fanup';
 
 export interface TileDef {
   char: string;
@@ -84,6 +84,10 @@ export const TILES: readonly TileDef[] = [
   { char: '>', kind: 'fan', label: 'Ventilador (sopla a la derecha)', dir: 'e', raise: 1.0, color: '#3d4a66' },
   { char: '<', kind: 'fan', label: 'Ventilador (sopla a la izquierda)', dir: 'w', raise: 1.0, color: '#3d4a66' },
   { char: 'Q', kind: 'coldjet', label: 'Chorro de aire frío (congela 30 s)', color: '#bfefff' },
+  // jabón: el limo se hace burbuja 20 s (flota, no rompe la roca agrietada y el viento la lleva entera)
+  { char: 'b', kind: 'soap', label: 'Pastilla de jabón (burbuja)', color: '#7dd3fc' },
+  // ventilador hacia arriba: solo empuja a la burbuja, que sube hasta las zonas altas
+  { char: 'A', kind: 'fanup', label: 'Ventilador hacia arriba (sube la burbuja)', raise: 1.0, color: '#3d4a66' },
   // Raíles: el trozo que pisa una estación se hace bola y rueda por la vía hasta la otra estación.
   // La vía (casillas '=' seguidas, puede girar y subir) no se pisa: hace de valla para el limo a pie.
   { char: 'R', kind: 'station', label: 'Estación de raíl', color: '#7dd3fc' },

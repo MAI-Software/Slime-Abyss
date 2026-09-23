@@ -4,7 +4,7 @@
     "B": true
   },
   "id": "c1-corriente-helada",
-  "name": "Corriente helada",
+  "name": "Corriente de aire",
   "count": 80,
   "keepPct": 0.75,
   "mood": "cave",
@@ -12,11 +12,11 @@
   "tips": [
     {
       "z": 12,
-      "text": "El aire frío congela al limo durante 30 segundos"
+      "text": "El jabón convierte al limo en burbuja"
     },
     {
       "z": 9.5,
-      "text": "Congelado no se deshace: la corriente te lleva entero"
+      "text": "La burbuja flota: la corriente se la lleva entera"
     },
     {
       "z": 7.5,
@@ -34,7 +34,7 @@
     "..#00000#..",
     "..#0^^^0#..",
     "..#C000C#..",
-    "..#00Q00#..",
+    "..#00b00#..",
     "..#00000#..",
     "..#00000#..",
     "..##000##..",

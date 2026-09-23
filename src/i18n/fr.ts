@@ -77,6 +77,7 @@ export const fr: Dict = {
     oiled: 'Huile',
     burning: 'En feu {s}',
     frozen: 'Gelé {s}',
+    bubble: 'Bulle {s}',
     dizzy: 'Étourdi · {s}',
   },
   toast: {
@@ -433,6 +434,8 @@ export const fr: Dict = {
       slabSW: 'Sol diagonal (avant gauche)',
       slabSE: 'Sol diagonal (avant droite)',
       bowl: 'Sol creusé (entraîne vers le trou)',
+      soap: 'Savon (bulle)',
+      fanup: 'Ventilateur vers le haut (monte la bulle)',
       hole: 'Trou (mène à une sortie plus basse)',
       exit: 'Sortie de trou',
       railLoop: 'Voie avec boucle (donne le tournis)',
@@ -480,8 +483,8 @@ export const fr: Dict = {
       tips: ['Le vent pousse le slime ; ici le mur t’arrête', 'Sans mur, le vent te jette dans le vide : suis les pièces et traverse vite', 'Traverse du côté du ventilateur, loin du bord'],
     },
     'c1-corriente-helada': {
-      name: 'Courant glacé',
-      tips: ["L'air froid gèle ton slime pendant 30 secondes", 'Gelé, il ne se disperse pas : le courant te porte en entier', 'Place-toi devant les ventilateurs'],
+      name: 'Courant d air',
+      tips: ['Le savon change le limon en bulle', 'La bulle flotte : le courant la porte entière', 'Place-toi devant les ventilateurs'],
     },
     'c1-gran-cripta': {
       name: 'La grande crypte',
