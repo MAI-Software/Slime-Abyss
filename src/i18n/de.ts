@@ -77,6 +77,7 @@ export const de: Dict = {
     oiled: 'Öl',
     burning: 'Brennt {s}',
     frozen: 'Gefroren {s}',
+    dizzy: 'Benommen · {s}',
   },
   toast: {
     noGpu: 'Chrome nutzt die Grafikkarte nicht: Aktiviere „Grafikbeschleunigung verwenden, falls verfügbar“ unter Einstellungen → System und starte Chrome neu',

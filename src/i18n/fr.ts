@@ -77,6 +77,7 @@ export const fr: Dict = {
     oiled: 'Huile',
     burning: 'En feu {s}',
     frozen: 'Gelé {s}',
+    dizzy: 'Étourdi · {s}',
   },
   toast: {
     noGpu: 'Chrome n’utilise pas la carte graphique : active « Utiliser l’accélération graphique si disponible » dans Paramètres → Système et redémarre Chrome',

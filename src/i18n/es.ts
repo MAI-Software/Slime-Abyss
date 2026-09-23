@@ -76,6 +76,7 @@ export const es = {
     oiled: 'Aceite',
     burning: 'En llamas {s}',
     frozen: 'Congelado {s}',
+    dizzy: 'Mareado · {s}',
   },
   toast: {
     noGpu: 'Chrome no está usando la tarjeta gráfica: activa «Usar aceleración gráfica cuando esté disponible» en Configuración → Sistema y reinicia Chrome',

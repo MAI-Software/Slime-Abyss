@@ -1371,15 +1371,28 @@ export class World {
   */
   private buildLifts(lifts: [number, number][]) {
     for (const [lo, hi] of lifts) {
-      const cx = this.colOf(lo) + 0.5, cz = this.rowOf(lo) + 0.5;
+      const li = this.colOf(lo), lj = this.rowOf(lo);
+      const cx = li + 0.5, cz = lj + 0.5;
       const y0 = this.cells[lo].base, y1 = this.cells[hi].base;
-      const turns = Math.max(1, Math.round((y1 - y0) / 1.6));
-      const RADIUS = 0.36, N = turns * 24;
+      const turns = Math.max(1, Math.round((y1 - y0) / 2.2));
+      // la vía sale de la estación hacia el lado que da al vacío y baja dando vueltas a la vista;
+      // si la estación está encajada entre suelos, la espiral se queda pegada a la casilla
+      const hs = this.storyOf(hi);
+      const sides: [number, number][] = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+      const free = sides.find(([dx, dz]) => {
+        const c = this.cell(li + dx, lj + dz, hs);
+        return !c || c.top === -Infinity;
+      });
+      const RADIUS = free ? 1.15 : 0.36;
+      const ox = free ? free[0] * RADIUS : 0, oz = free ? free[1] * RADIUS : 0;
+      const ax = cx + ox, az = cz + oz;            // centro de la espiral, ya fuera del suelo
+      const a0 = Math.atan2(-oz, -ox);             // arranca mirando a la estación
+      const N = turns * 28;
       const xs: number[] = [cx], zs: number[] = [cz], ys: number[] = [y0];
       for (let q = 0; q <= N; q++) {
-        const a = (q / N) * turns * Math.PI * 2 - Math.PI / 2;
-        xs.push(cx + Math.cos(a) * RADIUS);
-        zs.push(cz + Math.sin(a) * RADIUS);
+        const a = a0 + (q / N) * turns * Math.PI * 2;
+        xs.push(ax + Math.cos(a) * RADIUS);
+        zs.push(az + Math.sin(a) * RADIUS);
         ys.push(y0 + (y1 - y0) * (q / N));
       }
       xs.push(cx); zs.push(cz); ys.push(y1);

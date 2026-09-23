@@ -133,9 +133,9 @@ const WIND_FROZEN_ACC = 9;
 // Mareo: al acumular vueltas (plataformas giratorias, curvas, bucles y espirales de las vías) el limo se marea
 // y durante unos segundos el mando responde torcido y flojo. Las vueltas se olvidan poco a poco.
 const DIZZY_TURNS = 1.4;
-const DIZZY_TIME = 3.2;
+const DIZZY_TIME = 2.2;
 const DIZZY_FORGET = 0.3;     // vueltas por segundo que se olvidan
-const DIZZY_CALM = 0.35;      // mareo acumulado que se pasa por segundo una vez se calma
+const DIZZY_CALM = 0.5;       // mareo acumulado que se pasa por segundo una vez se calma
 const SEESAW_SLIDE = 9;       // cuánto resbala el limo por la tabla inclinada
 const SPINNER_GRIP = 7;       // lo que arrastra el disco al limo que lo pisa
 // Agujero: tira hacia abajo y hacia el centro de lo que está encima.
@@ -252,6 +252,8 @@ export class Slime {
   /** vueltas acumuladas y tiempo de mareo restante */
   private turns = 0;
   dizzyT = 0;
+  /** lo que duraba el mareo al empezar (para la cuenta atrás del marcador) */
+  dizzyMax = 1;
   /** cuánto mareo se ha acumulado (0..1): con muchas vueltas seguidas el limo va errático */
   dizzyPower = 0;
   /** estaciones de llegada bloqueadas hasta que el limo se aparta (tiempo despejadas) */
@@ -614,13 +616,13 @@ export class Slime {
       // mareado: el mando gira de un lado a otro y empuja menos; con mucho mareo (muchas vueltas de raíl
       // o de disco seguidas) el giro es más amplio, la fuerza más irregular y a ratos se va solo
       const pw = this.dizzyPower;
-      const a = (Math.sin(this.time * 2.3) * 1.1 + Math.sin(this.time * 5.1 + 1) * 0.45) * (1 + pw * 1.5);
-      const k = (0.65 + Math.sin(this.time * 3.7) * 0.15) * (1 - pw * 0.25);
+      const a = (Math.sin(this.time * 2.3) * 0.55 + Math.sin(this.time * 5.1 + 1) * 0.2) * (1 + pw * 0.8);
+      const k = (0.82 + Math.sin(this.time * 3.7) * 0.1) * (1 - pw * 0.15);
       const c = Math.cos(a), s = Math.sin(a);
       let dx = (tiltX * c - tiltZ * s) * k, dz = (tiltX * s + tiltZ * c) * k;
-      if (pw > 0.25) {
+      if (pw > 0.45) {
         // tambaleo propio: empuja aunque no se toque el mando
-        const w = pw * 0.55;
+        const w = (pw - 0.45) * 0.5;
         dx += Math.sin(this.time * 1.7 + 0.5) * w;
         dz += Math.sin(this.time * 2.1 + 2.3) * w;
       }
@@ -1347,8 +1349,9 @@ export class Slime {
     this.turns = 0;
     const fresh = this.dizzyT <= 0;
     // cada mareo encima del anterior marea más y dura más
-    this.dizzyPower = Math.min(1, this.dizzyPower + (fresh ? 0.25 : 0.4));
-    this.dizzyT = DIZZY_TIME * (1 + this.dizzyPower);
+    this.dizzyPower = Math.min(1, this.dizzyPower + (fresh ? 0.2 : 0.3));
+    this.dizzyT = DIZZY_TIME * (1 + this.dizzyPower * 0.6);
+    this.dizzyMax = this.dizzyT;
     for (const f of this.faces) f.makeDizzy(this.dizzyT);
     const g = this.groups[0];
     if (fresh && g) this.events.push({ type: 'dizzy', x: g.cx, y: g.cy, z: g.cz });

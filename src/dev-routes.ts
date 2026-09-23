@@ -239,7 +239,8 @@ export const ROUTES: Record<string, Step[]> = {
     { to: [2.5, 42.5], radius: 0.3, t: 6 }, { wait: 1.2 },
     { to: [3.5, 41.5], radius: 0.4 }, { to: [7.5, 41.5], radius: 0.4 }, { to: [5.5, 40.4], radius: 0.4, t: 6 }, { to: [3.5, 36.5], radius: 0.4 }, { to: [7.5, 36.5], radius: 0.4 }, { to: [5.5, 35.4], radius: 0.4, t: 6 }, { to: [5.5, 34.5], radius: 0.4, t: 6 },
     { to: [3.5, 29.5], radius: 0.4 }, { to: [7.5, 29.5], radius: 0.4 }, { to: [5.5, 28.4], radius: 0.4, t: 6 }, { to: [3.5, 24.5], radius: 0.4 }, { to: [7.5, 24.5], radius: 0.4 }, { to: [5.5, 23.4], radius: 0.4, t: 6 }, { to: [3.5, 19.5], radius: 0.4 }, { to: [7.5, 19.5], radius: 0.4 }, { to: [5.5, 18.4], radius: 0.4, t: 6 }, { to: [5.5, 17.5], radius: 0.4, t: 6 },
-    { to: [4.5, 15.5], radius: 0.4 }, { to: [6.5, 15.5], radius: 0.4 }, { to: [5.5, 16.3], radius: 0.3 }, { dir: [0, -1], t: 3.5 }, { to: [5.5, 1.5], t: 6 },
+    { to: [4.5, 15.5], radius: 0.4 }, { to: [6.5, 15.5], radius: 0.4 },
+    { to: [5.5, 16.3], radius: 0.3 }, { dir: [0, -1], t: 3.5 }, { to: [5.5, 1.5], t: 6 },
   ],
   'c3-viento-y-grietas': [
     { to: [2.5, 39.5], radius: 0.3, t: 6 }, { wait: 1.2 },
@@ -340,8 +341,9 @@ export const ROUTES: Record<string, Step[]> = {
     { to: [3.5, 20.5], radius: 0.4 }, { to: [9.5, 20.5], radius: 0.4 }, { cannon: [6.5, 19.5] }, { squeeze: true, wait: 2 },
     { squeeze: false, to: [4.5, 14.5], radius: 0.3 }, { to: [8.5, 14.5], radius: 0.3 }, { squeeze: true, wait: 1.5 },
     { squeeze: false, to: [2.5, 12.5], radius: 0.3 }, { wait: 0.5 }, { cannon: [10.5, 13.5] },
-    { to: [2.5, 3.5], radius: 0.3 }, { to: [1.5, 2.4], radius: 0.35 }, { to: [1.5, 1.5], radius: 0.35, t: 4 },
-    { to: [3.5, 2.5], radius: 0.4 }, { to: [10.5, 3.5], radius: 0.3 }, { to: [6.5, 1.5], t: 6 },
+    { to: [2.5, 3.5], radius: 0.3 }, { squeeze: true, to: [1.5, 2.4], radius: 0.35, t: 5 },
+    { to: [1.5, 1.5], radius: 0.3, t: 5 }, { wait: 0.6 }, { squeeze: false, to: [3.5, 2.5], radius: 0.4 },
+    { to: [10.5, 3.5], radius: 0.35, t: 7 }, { to: [9.5, 2.5], radius: 0.4 }, { to: [6.5, 1.5], t: 6 },
   ],
   'c4-fuego-del-desierto': [
     { to: [2.5, 47.5], radius: 0.3, t: 6 }, { wait: 1.2 },
