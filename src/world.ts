@@ -175,6 +175,8 @@ const SLAB_H = 0.5;   // alto de la losa biselada (block_top)
 /** balancín: pendiente máxima (altura por casilla), fuerza del muelle y frenado */
 /** Separación entre traviesas de la vía. */
 const TIE_STEP = 0.42;
+/** radio del hueco del ascensor: la vuelta cabe dentro de las 8 casillas de alrededor */
+const LIFT_RADIUS = 1.45;
 const SEESAW_MAX = 0.32;
 const SEESAW_SPRING = 14;
 const SEESAW_DAMP = 3.2;
@@ -1374,19 +1376,9 @@ export class World {
       const li = this.colOf(lo), lj = this.rowOf(lo);
       const cx = li + 0.5, cz = lj + 0.5;
       const y0 = this.cells[lo].base, y1 = this.cells[hi].base;
-      // el hueco se abre todo lo que deje la sala de abajo: la bajada tiene que verse bien de lejos
-      const ls = this.storyOf(lo);
-      const clear = (dx: number, dz: number) => {
-        const c = this.cell(li + dx, lj + dz, ls);
-        return !c || c.top <= y0 + 0.6;            // suelo o vacío: la espiral pasa por encima
-      };
-      const ring = (r: number) => {
-        for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) {
-          if (Math.max(Math.abs(dx), Math.abs(dz)) === r && !clear(dx, dz)) return false;
-        }
-        return true;
-      };
-      const RADIUS = ring(1) ? (ring(2) ? 1.85 : 1.35) : 0.75;
+      // el ascensor ocupa siempre 3x3: la espiral cabe justo dentro de las casillas de al lado,
+      // así se ve igual de bien en todos los pisos (y en el creador se sabe el hueco que pide)
+      const RADIUS = LIFT_RADIUS;
       const ax = cx, az = cz;                      // la espiral rodea la estación
       const a0 = Math.PI / 2;                      // arranca de cara a la cámara
       const turns = Math.max(2, Math.round((y1 - y0) / 1.15));
