@@ -432,6 +432,7 @@ export const it: Dict = {
       slabNE: 'Pavimento diagonale (dietro destra)',
       slabSW: 'Pavimento diagonale (davanti sinistra)',
       slabSE: 'Pavimento diagonale (davanti destra)',
+      bowl: 'Terreno infossato (trascina nel buco)',
       hole: 'Buco (porta a un’uscita più in basso)',
       exit: 'Uscita del buco',
       railLoop: 'Binario con giro della morte (fa girare la testa)',

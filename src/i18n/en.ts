@@ -432,6 +432,7 @@ export const en: Dict = {
       slabNE: 'Diagonal floor (back right)',
       slabSW: 'Diagonal floor (front left)',
       slabSE: 'Diagonal floor (front right)',
+      bowl: 'Sunken floor (drags into the hole)',
       hole: 'Hole (leads to a lower exit)',
       exit: 'Hole exit',
       railLoop: 'Track with loop (makes dizzy)',

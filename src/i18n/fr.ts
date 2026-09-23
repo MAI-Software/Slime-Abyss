@@ -432,6 +432,7 @@ export const fr: Dict = {
       slabNE: 'Sol diagonal (fond droite)',
       slabSW: 'Sol diagonal (avant gauche)',
       slabSE: 'Sol diagonal (avant droite)',
+      bowl: 'Sol creusé (entraîne vers le trou)',
       hole: 'Trou (mène à une sortie plus basse)',
       exit: 'Sortie de trou',
       railLoop: 'Voie avec boucle (donne le tournis)',

@@ -431,6 +431,7 @@ export const es = {
       slabNE: 'Suelo diagonal (fondo derecha)',
       slabSW: 'Suelo diagonal (delante izquierda)',
       slabSE: 'Suelo diagonal (delante derecha)',
+      bowl: 'Suelo hundido (arrastra al agujero)',
       hole: 'Agujero (lleva a una salida más abajo)',
       exit: 'Salida de agujero',
       railLoop: 'Raíl con bucle (marea)',
