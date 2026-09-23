@@ -3309,7 +3309,7 @@ const CHAPTER4 = [
 '..#00000000000#',
 '..####0000000##',
 '..#00000000000#',
-'..#0000000000>#',
+'..#<000000000#',
 '..#00000000000#',
 '..#######000###',
 '........#000#..',
@@ -3845,8 +3845,8 @@ const CHAPTER4 = [
 '#0000000000000#',
 '#0000000000000#',
 '######000######',
-'#####L000######',
-'#0000000000000#',
+'###L00000######',
+'#00###00000000#',
 '#0000000000000#',
 '#000000E000000#',
 '#0CR000000H0C0#',
@@ -4147,6 +4147,13 @@ function checkNoDeadEnds(def, grids) {
     // hielo (ardiendo) y roca agrietada de una planta de arriba: al hundirse se cae a la de abajo
     if ((c === 'I' || c === 'B') && s > 0) { const l = landing(s, i, j); if (l) out.push(l); }
     if (c === 'N') { const t = cannonTarget(s, i, j); return t ? [t] : []; }
+    // ventilador de techo: hecho burbuja con el jabón, el limo sube con el chorro y se deja caer cerca,
+    // también en repisas más altas (es la única casilla desde la que se gana altura sin rampa)
+    if (c === 'A') {
+      for (let b = j - 4; b <= j + 4; b++) for (let a = i - 4; a <= i + 4; a++) {
+        if (walk(s, a, b)) out.push([s, a, b]);
+      }
+    }
     const reach = c === 'J' ? 6 : WIND[c] || c === 'Q' ? 10 : 1;
     const dirs = WIND[c] ? [WIND[c]] : DIRS;
     for (const [di, dj] of reach > 1 ? [...dirs, ...(dirs === DIRS ? [] : DIRS)] : DIRS) {
@@ -4471,7 +4478,7 @@ const CHAPTER5 = [
 '..#000000000#..',
 '..#####0#####..',
 '.....#|||#.....',
-'....>#|||#.....',
+'.....>|||#.....',
 '.....#|||#.....',
 '..####000####..',
 '..####Y000Y##..',
