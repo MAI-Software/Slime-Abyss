@@ -87,7 +87,7 @@ export const TILES: readonly TileDef[] = [
   // jabón: el limo se hace burbuja 20 s (flota, no rompe la roca agrietada y el viento la lleva entera)
   { char: 'b', kind: 'soap', label: 'Pastilla de jabón (burbuja)', color: '#7dd3fc' },
   // ventilador hacia arriba: solo empuja a la burbuja, que sube hasta las zonas altas
-  { char: 'A', kind: 'fanup', label: 'Ventilador hacia arriba (sube la burbuja)', raise: 1.0, color: '#3d4a66' },
+  { char: 'A', kind: 'fanup', label: 'Ventilador hacia arriba (sube la burbuja)', color: '#3d4a66' },
   // Raíles: el trozo que pisa una estación se hace bola y rueda por la vía hasta la otra estación.
   // La vía (casillas '=' seguidas, puede girar y subir) no se pisa: hace de valla para el limo a pie.
   { char: 'R', kind: 'station', label: 'Estación de raíl', color: '#7dd3fc' },
