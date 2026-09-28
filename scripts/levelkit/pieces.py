@@ -170,6 +170,9 @@ def bubble_tower(lv, rise=4):
     out.append(r)
     r = _row(lv); _walls(lv, r, c - 4, c + 4)
     lv.fill(r, c - 3, c + 1, high); lv.fill(r, c + 2, c + 3, lv.floor)
+    out.append(r)                                                  # repisa: una fila de margen por si se pasa
+    r = _row(lv); _walls(lv, r, c - 4, c + 4)
+    lv.fill(r, c - 3, c + 1, high); lv.fill(r, c + 2, c + 3, lv.floor)
     r[c + 2] = T.FAN_UP
     out.append(r)                                                  # el chorro, pegado a la repisa
     marks.append({'kind': 'tower', 'row': len(out) - 1, 'fan': c + 2, 'ledge': c - 1})

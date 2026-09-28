@@ -44,6 +44,10 @@ def floor1():
     section(lv, P.pit, right='Y', wedge=True)
     lv.add(P.crack_ledge(lv))
     lv.add(P.void_ledge(lv))
+    lv.add(P.seesaw_bridge(lv))
+    lv.add(P.spinner_room(lv))
+    lv.add(P.rail_puzzle(lv))
+    lv.add(P.neck(lv, rows=2))
     lv.add(P.treasure_room(lv, gem=True))
     return lv
 
@@ -59,6 +63,7 @@ def floor2():
     lv.add(P.void_ledge(lv))
     section(lv, P.loop, right='Y')
     lv.add(P.seesaw_bridge(lv))
+    lv.add(P.spinner_room(lv))
     lv.add(P.treasure_room(lv))
     return lv
 
@@ -75,6 +80,9 @@ def floor3():
     lv.add(P.crack_ledge(lv))
     lv.add(P.void_ledge(lv))
     lv.add(P.spinner_room(lv))
+    lv.add(P.seesaw_bridge(lv))
+    lv.add(P.rail_puzzle(lv))
+    lv.add(P.neck(lv, rows=2))
     lv.add(P.treasure_room(lv, gem=True))
     return lv
 
@@ -89,6 +97,8 @@ def floor4():
     section(lv, P.gauntlet, right='B', mix=P.fire_hall)
     section(lv, P.pit, right='Y')
     section(lv, P.loop, right='Y')
+    lv.add(P.seesaw_bridge(lv))
+    lv.add(P.spinner_room(lv))
     lv.add(P.treasure_room(lv))
     return lv
 
@@ -104,6 +114,9 @@ def floor5():
     lv.add(P.crack_ledge(lv))
     lv.add(P.void_ledge(lv))
     lv.add(P.seesaw_bridge(lv))
+    lv.add(P.spinner_room(lv))
+    lv.add(P.rail_puzzle(lv))
+    lv.add(P.neck(lv, rows=2))
     lv.add(P.treasure_room(lv, gem=True))
     return lv
 
@@ -120,6 +133,7 @@ def floor6():
     lv.add(P.crack_ledge(lv))
     lv.add(P.void_ledge(lv))
     lv.add(P.spinner_room(lv))
+    lv.add(P.seesaw_bridge(lv))
     lv.add(P.treasure_room(lv))
     return lv
 
@@ -133,6 +147,8 @@ def floor7():
     section(lv, P.bubble_tower, right='Z')
     lv.add(P.crack_ledge(lv))
     section(lv, P.loop, right='Z')
+    lv.add(P.seesaw_bridge(lv))
+    lv.add(P.spinner_room(lv))
     lv.add(P.treasure_room(lv, gem=True))
     return lv
 
@@ -148,6 +164,9 @@ def floor8():
     lv.add(P.crack_ledge(lv))
     lv.add(P.void_ledge(lv))
     lv.add(P.seesaw_bridge(lv))
+    lv.add(P.spinner_room(lv))
+    lv.add(P.rail_puzzle(lv))
+    lv.add(P.neck(lv, rows=2))
     lv.add(P.treasure_room(lv))
     return lv
 
