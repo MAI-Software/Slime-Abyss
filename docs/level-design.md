@@ -116,3 +116,31 @@ Media de filas por piso (después de la última tanda): 46 / 59 / 71 / 73 / 78 y
 arranca en ~95. Un piso corto se nota enseguida: si el recorrido no tiene al menos cuatro
 momentos distintos (sala con monedas, mecánica del capítulo, rodeo con secreto y remate), está
 corto aunque tenga filas.
+
+## 8. La nota de cada piso (para saber si es soso)
+
+`python -m scripts.levelkit.score` mide los 60 pisos y saca una nota de 0 a 100. No sustituye
+a jugarlos, pero dice sin discutir cuál está corto o vacío.
+
+| Medida | Qué mira | Peso |
+|---|---|---|
+| tamaño | filas del mapa | 15 |
+| largo | metros reales del recorrido del autopiloto | 10 |
+| variedad | familias de mecánica distintas (fuego, hielo, raíles, jabón…) | 20 |
+| combos | veces que dos familias DISTINTAS se tocan (a 3 casillas): eso es encadenar | 20 |
+| peligro | parte del recorrido que pasa pegada a algo que hace daño o al vacío | 15 |
+| decisiones | puertas con interruptor, estaciones, rodeos de la ruta | 15 |
+| relleno | tramos seguidos de suelo sin nada: resta | 5 |
+
+Avisos automáticos: `corto`, `poca variedad`, `sin encadenar`, `sin riesgo`, `tramo muerto`
+(ocho filas seguidas sin nada) y `flojo para el capítulo` (por debajo del objetivo del capítulo,
+que sube: 34 / 46 / 56 / 64 / 70 / 76). Al final avisa si un capítulo puntúa menos que el anterior.
+
+**Lo que enseñó la primera medición.** El capítulo 6 recién hecho era largo pero sacaba 50: mucho
+metro y ninguna mezcla. Subirlo a 74 fue meter las mecánicas unas junto a otras y poner el peligro
+en la fila de las monedas, no al final del pasillo.
+
+**El techo de dificultad lo pone el autopiloto.** Pinchos y fuego van comiendo limo: en un piso
+largo, seis tramos con pinchos dejan al bot en el 80 % y la prueba exige más del 90 %. Por eso la
+dificultad del final del juego se sube con ESTRUCTURA (tablas sobre el vacío, discos giratorios,
+puzles de vías, rodeos) y no con desgaste. Los pinchos, uno por sala y a un solo lado.

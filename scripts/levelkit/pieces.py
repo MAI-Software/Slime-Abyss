@@ -63,7 +63,15 @@ def room(lv, coins=True, left=None, right=None, wedge=False, rows=4, narrow=True
         r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
         if coins and k == 1:
             r[c - 2] = T.COIN; r[c + 2] = T.COIN
+            if left:
+                r[c - 3] = left           # la moneda se coge rozando el peligro
+            if right:
+                r[c + 3] = right
+            if left or right:
+                marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ squeeze: true }']})
             marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+            if left or right:
+                marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ squeeze: false }']})
         elif k == 2 and wedge:
             r[c - 1] = T.WEDGE['se']; r[c] = T.WEDGE['sw']
         elif k == 3 and (left or right):
@@ -269,4 +277,142 @@ def treasure_room(lv, coins=True, gem=False, relic=False, rows=4):
     out.append(r)
     r = _row(lv); lv.fill(r, c - 5, c + 5, T.WALL)
     out.append(r)
+    return Piece(out, marks)
+
+
+def ice_pass(lv, wind=None, spikes=False):
+    """Paso de hielo: se resbala, con pinchos a los lados y, si se pide, un ventilador
+    metido en el muro que empuja mientras se cruza. Dos mecánicas en la misma casilla."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)
+    for k in range(3):
+        # la pista de hielo va en medio, pero con suelo a los lados: sin hombros el limo
+        # resbala al vacío y se pierde media bola
+        r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+        lv.fill(r, c - 1, c + 1, T.ICE)
+        if spikes:
+            r[c - 2] = T.SPIKE; r[c + 2] = T.SPIKE
+        if wind and k == 1:
+            r[c - 4] = T.FAN[wind]        # el ventilador va METIDO en el muro
+        out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    out.append(r)
+    marks.insert(0, {'kind': 'raw', 'row': 0, 'steps': ['{ squeeze: true }']})
+    marks.append({'kind': 'pass', 'row': 2, 'col': c})
+    marks.append({'kind': 'raw', 'row': len(out) - 1, 'steps': ['{ squeeze: false }']})
+    return Piece(out, marks)
+
+
+def fire_hall(lv, oil=True, plants=True):
+    """Sala de fuego: aceite para prenderse, plantas que arden y llamas entre medias."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    if oil:
+        r[c - 2] = T.OIL
+    r[c + 2] = T.COIN
+    marks.append({'kind': 'coin', 'row': 0, 'col': c + 2})
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 3] = T.FIRE_T; r[c + 3] = T.FIRE_T   # intermitentes: dejan ventana para pasar
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    if plants:
+        r[c - 1] = T.PLANT; r[c + 1] = T.PLANT
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    r[c + 3] = T.FIRE_T
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    out.append(r)
+    return Piece(out, marks)
+
+
+def crack_ledge(lv, spikes=False):
+    """Repisa de roca agrietada con el vacío a un lado: solo se cruza una vez."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)
+    for k in range(3):
+        r = _row(lv); r[c + 4] = T.WALL
+        lv.fill(r, c - 1, c + 3, T.CRACK)
+        r[c + 3] = T.SPIKE if spikes else lv.floor
+        out.append(r)                    # a la izquierda, el vacío
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    r[c + 3] = T.CRACK
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    out.append(r)
+    marks.insert(0, {'kind': 'walk', 'row': 2, 'col': c + 1, 't': 6})
+    marks.insert(0, {'kind': 'raw', 'row': 0, 'steps': ['{ squeeze: true }']})
+    marks.append({'kind': 'raw', 'row': len(out) - 1, 'steps': ['{ squeeze: false }']})
+    return Piece(out, marks)
+
+
+def void_ledge(lv, side='w', rows=3):
+    """Cornisa sin muro a un lado: lo que asoma por el borde se cae. Apretar para cruzar."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)
+    for k in range(rows):
+        r = _row(lv)
+        if side == 'w':
+            r[c + 2] = T.WALL
+            lv.fill(r, c - 1, c + 1, lv.floor)     # a la izquierda, el abismo
+        else:
+            r[c - 2] = T.WALL
+            lv.fill(r, c - 1, c + 1, lv.floor)
+        if k == 1:
+            r[c] = T.COIN
+            marks.append({'kind': 'coin', 'row': len(out), 'col': c})
+        out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)
+    marks.insert(0, {'kind': 'raw', 'row': 0, 'steps': ['{ squeeze: true }']})
+    marks.append({'kind': 'raw', 'row': len(out) - 1, 'steps': ['{ squeeze: false }']})
+    return Piece(out, marks)
+
+
+def seesaw_bridge(lv, rows=4):
+    """Pasillo de tablas sobre el vacío: se inclinan con el peso, hay que cruzar sin pararse.
+    Lleva muro a los lados (sin él, el limo resbala de canto y se pierde)."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)
+    r = _row(lv); lv.fill(r, c - 2, c + 2, T.WALL); lv.fill(r, c - 1, c + 1, lv.floor)
+    out.append(r)
+    for _ in range(rows):
+        r = _row(lv)
+        r[c - 2] = T.WALL; r[c + 2] = T.WALL
+        lv.fill(r, c - 1, c + 1, T.SEESAW_Z)
+        out.append(r)
+    r = _row(lv); lv.fill(r, c - 2, c + 2, T.WALL); lv.fill(r, c - 1, c + 1, lv.floor)
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    marks.append({'kind': 'raw', 'row': 0, 'steps': ['{ squeeze: true }']})
+    marks.append({'kind': 'walk', 'row': len(out) - 1, 'col': c, 't': 8})
+    marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ squeeze: false }']})
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    out.append(r)
+    return Piece(out, marks)
+
+
+def spinner_room(lv):
+    """Plataforma giratoria en medio de la sala: marea y descoloca, con monedas alrededor."""
+    c, out, marks = lv.c, [], []
+    for k in range(5):
+        r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+        if k == 2:
+            r[c] = T.SPINNER
+        if k == 1:
+            r[c - 3] = T.COIN
+            marks.append({'kind': 'coin', 'row': len(out), 'col': c - 3})
+        if k == 3:
+            r[c + 3] = T.COIN
+            marks.append({'kind': 'coin', 'row': len(out), 'col': c + 3})
+        out.append(r)
+    marks.append({'kind': 'walk', 'row': len(out) - 1, 'col': c, 't': 6})
     return Piece(out, marks)
