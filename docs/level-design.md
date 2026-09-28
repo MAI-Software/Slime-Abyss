@@ -1,0 +1,118 @@
+# Cómo se hacen los pisos de Slime Abyss
+
+Manual de trabajo para montar niveles. Todo lo que hay aquí viene de tandas anteriores: cada
+regla está porque algo se rompió antes. El kit que automatiza esto es `scripts/levelkit/`.
+
+## 1. De qué está hecho un piso
+
+- El ASCII vive en `scripts/author-levels.mjs`; `node scripts/author-levels.mjs` lo convierte en
+  los `.json` de `src/level/campaign/`. **El generador escribe los ficheros uno a uno y si una
+  fila no mide lo que el mapa revienta a medias**: mirar siempre su salida sin filtrar.
+- En el ASCII un **dígito es la altura** del suelo (dígito × 0.5), no "suelo genérico".
+- `map:` es la **planta baja**; las de `stories` van hacia arriba, separadas 4 de altura.
+- La fila 0 del mapa es la de **arriba** (donde está el tesoro) y la última la de abajo, donde
+  sale el limo. El limo recorre el piso de abajo arriba.
+- Cada piso lleva su ruta de autopiloto en `src/dev-routes.ts`. Sin ruta no hay prueba, y sin
+  prueba el piso no está terminado.
+
+## 2. Reglas de medida
+
+| Cosa | Medida | Por qué |
+|---|---|---|
+| Paso estrecho | **3 casillas** | con 1 o 2 el limo no cabe y se encalla |
+| Sala | 7 de ancho, 4 filas | más ancha se ve vacía; las filas de en medio se cierran por los extremos |
+| Escalón que sube | 1 dígito (0.5) | más alto hace falta rampa; 4 de caída atraviesan la losa |
+| Hueco de ascensor | 3×3 libre alrededor de la estación | el radio de la espiral es fijo (1.45) |
+| Aterrizaje de trampolines | 5 de ancho, pinchos en los extremos | el centro es el único premio |
+| Hondonada | cruz: agujero en el centro, hundido a los lados | así se puede rodear pegado al muro |
+| Caída libre | máximo 3 de altura | con 4 el limo atraviesa la losa de abajo |
+
+## 3. Piezas y cuándo usarlas
+
+`scripts/levelkit/pieces.py` tiene una función por pieza. Todas devuelven sus filas **en orden
+de recorrido** y las marcas con las que el kit escribe la ruta.
+
+- `start_room` — sala de salida con la P y dos monedas.
+- `neck(door=...)` — paso de 3; con puerta si el nivel declara `latch`.
+- `room(left=, right=, wedge=)` — sala con monedas y adornos pegados a los muros.
+- `loop(left=, right=)` — dos carriles que se juntan arriba: hay que subir por uno y bajar por
+  el otro para llevarse las cuatro monedas.
+- `gauntlet` — fila de trampolines, hueco al vacío y aterrizaje castigado.
+- `pit` — hondonada con agujero al vacío.
+- `bubble_tower` — jabón, ventilador de techo y repisa dos alturas más arriba.
+- `rail_puzzle` — dos pozos de raíl con interruptores encadenados y dos puertas.
+- `treasure_room(gem=/relic=)` — sala final; el secreto va en un callejón, nunca de paso.
+
+## 4. Reglas de diseño (las que rompen pisos si se saltan)
+
+**Espacio.** Una sala de 7 con dos monedas y nada más se ve desangelada. Las filas vacías se
+cierran por los extremos (quedan alcobas) salvo:
+- la fila de **entrada** de una sala: ahí está el paso y se tapia el camino;
+- cerca de roca agrietada, hielo, trampolines u hondonada: ahí hace falta sitio para maniobrar.
+
+**Mecánicas.** Cada capítulo estrena una y sigue usando las anteriores. Nunca meter una mecánica
+nueva en el primer piso del capítulo sin una pista (`tips`).
+
+**Secretos.** La gema o el coleccionable van al final de un rodeo de 3 casillas o más; si el
+camino principal pasa a su lado no es un secreto. `check.py` lo mide contra la ruta.
+
+**Raíles.**
+- A una estación se llega **parado** (BOARD_SPEED) y apretado, o solo viaja un trozo.
+- Estación en medio de un pasillo = el limo se sube solo; van en un rincón.
+- Después de bajarse, el limo queda marcado 3 s: el interruptor de una isla tiene que estar a
+  **dos casillas** de la estación o no puede volver a montarse.
+- Las vías se dibujan con casillas seguidas y el juego pone los codos; no hacen falta curvas
+  a mano.
+
+**Ventiladores.** El viento se corta con cualquier muro: el ventilador va **metido en el hueco
+del muro**, no delante de él. El de techo (`A`) solo levanta a la burbuja y va pegado a la repisa.
+
+**Agujeros.** `H` cae a la salida `U` más cercana que esté más abajo; sin `U` cae a la planta
+de abajo. Un `H` en la planta alta sin nada debajo no traga.
+
+**Puertas.** El interruptor solo se queda pisado si el NIVEL declara `latch: { A: true }`. La
+puerta va en el paso de **más arriba** y su interruptor en la sala de **más abajo**: el limo lo
+pisa antes de toparse con ella. Solo hay dos canales (A y B) por piso.
+
+**El cofre** solo lo abre el limo principal; un trozo suelto que lo roce no cuenta.
+
+## 5. La ruta del autopiloto
+
+El bot **no busca camino**: va en línea recta al punto que le toca. Por eso:
+- antes de subir por un pozo hay que llevarlo al pie (misma x, fila de la sala);
+- los trampolines se cruzan **sin pararse encima**: un punto una fila antes y luego directo al
+  aterrizaje con `squeeze`;
+- a las monedas de una sala se va **antes** que al interruptor (el limo llega desde abajo);
+- tras un cañón o una caída conviene `{ squeeze: true, wait: 2 }` para que se junte;
+- los puntos que caigan dentro de un hueco hay que borrarlos: uno olvidado manda al limo al vacío.
+
+Umbral de la prueba: **todas las monedas y más del 90 % del limo** en los 50 pisos.
+
+## 6. Cómo se prueba (siempre, sin saltarse pasos)
+
+```bash
+node scripts/author-levels.mjs          # mirar la salida entera, no filtrarla
+npm run build
+```
+
+En el navegador (`preview_start` slime-abyss, puerto 5204):
+
+```js
+await __auto.level(c, k)   // un piso: c es 0-indexado, all(0) es el capítulo 1
+await __auto.all(c)        // un capítulo entero (~1 min)
+await __auto.all()         // los 50 pisos (~5 min)
+__auto.trace(c, k)         // paso a paso: dice dónde se queda o dónde pierde limo
+```
+
+Después de regenerar los JSON hay que **recargar la página**: si no, el piloto prueba los niveles
+viejos y los resultados salen con el nombre de otro nivel.
+
+Un piso terminado: `OK`, todas las monedas, limo > 90 %, y dos vueltas seguidas sin fallo (hay
+variación entre corridas; una sola no demuestra nada).
+
+## 7. Tamaños por capítulo
+
+Media de filas por piso (después de la última tanda): 46 / 59 / 71 / 73 / 78 y el capítulo 6
+arranca en ~95. Un piso corto se nota enseguida: si el recorrido no tiene al menos cuatro
+momentos distintos (sala con monedas, mecánica del capítulo, rodeo con secreto y remate), está
+corto aunque tenga filas.

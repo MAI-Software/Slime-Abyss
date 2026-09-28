@@ -51,6 +51,16 @@ import c5f7 from './campaign/chapter5/07-c5-aceite-en-la-balanza.json';
 import c5f8 from './campaign/chapter5/08-c5-disco-y-tablas.json';
 import c5f9 from './campaign/chapter5/09-c5-pozo-doble.json';
 import c5f10 from './campaign/chapter5/10-c5-corazon-del-desierto.json';
+import c6f1 from './campaign/chapter6/01-c6-gota-de-jabon.json';
+import c6f2 from './campaign/chapter6/02-c6-corrientes-del-oasis.json';
+import c6f3 from './campaign/chapter6/03-c6-torres-de-arena.json';
+import c6f4 from './campaign/chapter6/04-c6-espuma-y-grietas.json';
+import c6f5 from './campaign/chapter6/05-c6-pozos-de-espuma.json';
+import c6f6 from './campaign/chapter6/06-c6-vias-del-oasis.json';
+import c6f7 from './campaign/chapter6/07-c6-saltos-de-espuma.json';
+import c6f8 from './campaign/chapter6/08-c6-canaveral.json';
+import c6f9 from './campaign/chapter6/09-c6-laberinto-de-vidrio.json';
+import c6f10 from './campaign/chapter6/10-c6-corazon-del-oasis.json';
 
 /** Modo historia: capítulos de 10 pisos. Sus coleccionables están en collectibles.ts. */
 export const CHAPTERS: ChapterDef[] = [
@@ -93,10 +103,18 @@ export const CHAPTERS: ChapterDef[] = [
     biome: 'desert',
     floors: [c5f1, c5f2, c5f3, c5f4, c5f5, c5f6, c5f7, c5f8, c5f9, c5f10] as LevelData[],
   },
+  {
+    // jabón: el limo se hace burbuja, flota y sube con los ventiladores de techo (tercer capítulo del desierto)
+    id: 'oasis-hundido',
+    name: 'Capítulo 6',
+    subtitle: 'El Oasis Hundido',
+    biome: 'desert',
+    floors: [c6f1, c6f2, c6f3, c6f4, c6f5, c6f6, c6f7, c6f8, c6f9, c6f10] as LevelData[],
+  },
 ];
 
 /** Capítulos anunciados que aún no se pueden jugar. */
-export const UPCOMING = [{ name: 'Capítulo 6', subtitle: 'Próximamente' }];
+export const UPCOMING = [{ name: 'Capítulo 7', subtitle: 'Próximamente' }];
 
 /** Suelo del menú: 9x7 casillas bajo la habitación (solo sostiene al limo; el mundo no se dibuja). */
 export const MENU_STAGE: LevelData = {

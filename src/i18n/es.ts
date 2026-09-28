@@ -37,6 +37,7 @@ export const es = {
     'grietas-heladas': 'Las Grietas Heladas',
     'arenas-hundidas': 'Las Arenas Hundidas',
     'dunas-profundas': 'Las Dunas Profundas',
+    'oasis-hundido': 'El Oasis Hundido',
   },
   options: {
     title: 'Opciones',
@@ -648,6 +649,46 @@ export const es = {
     'c5-corazon-del-desierto': {
       name: 'El corazón del desierto',
       tips: ['Última prueba del desierto: tres plantas', 'Tablas largas sobre el vacío y disco que marea', 'El interruptor abre la sala de la gema'],
+    },
+    'c6-gota-de-jabon': {
+      name: 'Gota de jabón',
+      tips: ['El jabón convierte al limo en burbuja'],
+    },
+    'c6-corrientes-del-oasis': {
+      name: 'Corrientes del oasis',
+      tips: [],
+    },
+    'c6-torres-de-arena': {
+      name: 'Torres de arena',
+      tips: ['Con el chorro de aire la burbuja sube a la repisa'],
+    },
+    'c6-espuma-y-grietas': {
+      name: 'Espuma y grietas',
+      tips: ['De burbuja la roca agrietada no se rompe'],
+    },
+    'c6-pozos-de-espuma': {
+      name: 'Pozos de espuma',
+      tips: [],
+    },
+    'c6-vias-del-oasis': {
+      name: 'Vías del oasis',
+      tips: ['El interruptor de una vía abre la otra'],
+    },
+    'c6-saltos-de-espuma': {
+      name: 'Saltos de espuma',
+      tips: [],
+    },
+    'c6-canaveral': {
+      name: 'Cañaveral',
+      tips: [],
+    },
+    'c6-laberinto-de-vidrio': {
+      name: 'Laberinto de vidrio',
+      tips: [],
+    },
+    'c6-corazon-del-oasis': {
+      name: 'Corazón del oasis',
+      tips: [],
     },
   } as Record<string, { name: string; tips: string[] }>,
 };

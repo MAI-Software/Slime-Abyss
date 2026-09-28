@@ -38,6 +38,7 @@ export const it: Dict = {
     'grietas-heladas': 'Le Crepe Gelate',
     'arenas-hundidas': 'Le Sabbie Sommerse',
     'dunas-profundas': 'Le Dune Profonde',
+    'oasis-hundido': 'L oasi sommersa',
   },
   options: {
     title: 'Opzioni',
@@ -649,6 +650,46 @@ export const it: Dict = {
     'c5-corazon-del-desierto': {
       name: 'Il cuore del deserto',
       tips: ['Ultima prova del deserto: tre piani', 'Tavole lunghe sul vuoto e disco che stordisce', 'L’interruttore apre la sala della gemma'],
+    },
+    'c6-gota-de-jabon': {
+      name: 'Goccia di sapone',
+      tips: ['Il sapone trasforma il limo in bolla'],
+    },
+    'c6-corrientes-del-oasis': {
+      name: 'Correnti dell oasi',
+      tips: [],
+    },
+    'c6-torres-de-arena': {
+      name: 'Torri di sabbia',
+      tips: ['Il getto solleva la bolla fino al ripiano'],
+    },
+    'c6-espuma-y-grietas': {
+      name: 'Schiuma e crepe',
+      tips: ['Da bolla la roccia crepata non cede'],
+    },
+    'c6-pozos-de-espuma': {
+      name: 'Pozzi di schiuma',
+      tips: [],
+    },
+    'c6-vias-del-oasis': {
+      name: 'Binari dell oasi',
+      tips: ['Il pulsante di un binario apre l altro'],
+    },
+    'c6-saltos-de-espuma': {
+      name: 'Salti di schiuma',
+      tips: [],
+    },
+    'c6-canaveral': {
+      name: 'Canneto',
+      tips: [],
+    },
+    'c6-laberinto-de-vidrio': {
+      name: 'Labirinto di vetro',
+      tips: [],
+    },
+    'c6-corazon-del-oasis': {
+      name: 'Cuore dell oasi',
+      tips: [],
     },
   },
 };

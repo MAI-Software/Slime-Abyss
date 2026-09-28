@@ -38,6 +38,7 @@ export const en: Dict = {
     'grietas-heladas': 'The Frozen Rifts',
     'arenas-hundidas': 'The Sunken Sands',
     'dunas-profundas': 'The Deep Dunes',
+    'oasis-hundido': 'The Sunken Oasis',
   },
   options: {
     title: 'Options',
@@ -649,6 +650,46 @@ export const en: Dict = {
     'c5-corazon-del-desierto': {
       name: 'The heart of the desert',
       tips: ['Final desert trial: three storeys', 'Long planks over the void and a dizzying disc', 'The switch opens the gem room'],
+    },
+    'c6-gota-de-jabon': {
+      name: 'Drop of soap',
+      tips: ['Soap turns your slime into a bubble'],
+    },
+    'c6-corrientes-del-oasis': {
+      name: 'Oasis currents',
+      tips: [],
+    },
+    'c6-torres-de-arena': {
+      name: 'Sand towers',
+      tips: ['The updraft lifts the bubble onto the ledge'],
+    },
+    'c6-espuma-y-grietas': {
+      name: 'Foam and cracks',
+      tips: ['As a bubble the cracked rock holds'],
+    },
+    'c6-pozos-de-espuma': {
+      name: 'Foam pits',
+      tips: [],
+    },
+    'c6-vias-del-oasis': {
+      name: 'Oasis rails',
+      tips: ['The switch on one rail opens the other'],
+    },
+    'c6-saltos-de-espuma': {
+      name: 'Foam jumps',
+      tips: [],
+    },
+    'c6-canaveral': {
+      name: 'Reed bed',
+      tips: [],
+    },
+    'c6-laberinto-de-vidrio': {
+      name: 'Glass maze',
+      tips: [],
+    },
+    'c6-corazon-del-oasis': {
+      name: 'Heart of the oasis',
+      tips: [],
     },
   },
 };

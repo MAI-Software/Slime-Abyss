@@ -38,6 +38,7 @@ export const de: Dict = {
     'grietas-heladas': 'Die gefrorenen Spalten',
     'arenas-hundidas': 'Der versunkene Sand',
     'dunas-profundas': 'Die Tiefen Dünen',
+    'oasis-hundido': 'Die versunkene Oase',
   },
   options: {
     title: 'Optionen',
@@ -649,6 +650,46 @@ export const de: Dict = {
     'c5-corazon-del-desierto': {
       name: 'Das Herz der Wüste',
       tips: ['Letzte Wüstenprüfung: drei Stockwerke', 'Lange Planken über dem Abgrund und eine drehende Scheibe', 'Der Schalter öffnet den Edelstein-Raum'],
+    },
+    'c6-gota-de-jabon': {
+      name: 'Seifentropfen',
+      tips: ['Seife macht aus dem Schleim eine Blase'],
+    },
+    'c6-corrientes-del-oasis': {
+      name: 'Strömungen der Oase',
+      tips: [],
+    },
+    'c6-torres-de-arena': {
+      name: 'Sandtürme',
+      tips: ['Der Luftstrom hebt die Blase auf den Sims'],
+    },
+    'c6-espuma-y-grietas': {
+      name: 'Schaum und Risse',
+      tips: ['Als Blase hält der rissige Fels'],
+    },
+    'c6-pozos-de-espuma': {
+      name: 'Schaumgruben',
+      tips: [],
+    },
+    'c6-vias-del-oasis': {
+      name: 'Schienen der Oase',
+      tips: ['Der Schalter eines Gleises öffnet das andere'],
+    },
+    'c6-saltos-de-espuma': {
+      name: 'Schaumsprünge',
+      tips: [],
+    },
+    'c6-canaveral': {
+      name: 'Schilfgürtel',
+      tips: [],
+    },
+    'c6-laberinto-de-vidrio': {
+      name: 'Glaslabyrinth',
+      tips: [],
+    },
+    'c6-corazon-del-oasis': {
+      name: 'Herz der Oase',
+      tips: [],
     },
   },
 };

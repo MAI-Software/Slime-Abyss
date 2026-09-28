@@ -38,6 +38,7 @@ export const fr: Dict = {
     'grietas-heladas': 'Les Failles Gelées',
     'arenas-hundidas': 'Les Sables Engloutis',
     'dunas-profundas': 'Les Dunes Profondes',
+    'oasis-hundido': 'L oasis engloutie',
   },
   options: {
     title: 'Options',
@@ -649,6 +650,46 @@ export const fr: Dict = {
     'c5-corazon-del-desierto': {
       name: 'Le cœur du désert',
       tips: ['Dernière épreuve du désert : trois étages', 'Longues planches au-dessus du vide et disque étourdissant', 'L’interrupteur ouvre la salle de la gemme'],
+    },
+    'c6-gota-de-jabon': {
+      name: 'Goutte de savon',
+      tips: ['Le savon change le limon en bulle'],
+    },
+    'c6-corrientes-del-oasis': {
+      name: 'Courants de l oasis',
+      tips: [],
+    },
+    'c6-torres-de-arena': {
+      name: 'Tours de sable',
+      tips: ['Le souffle fait monter la bulle sur la corniche'],
+    },
+    'c6-espuma-y-grietas': {
+      name: 'Mousse et fissures',
+      tips: ['En bulle la roche fissurée ne cède pas'],
+    },
+    'c6-pozos-de-espuma': {
+      name: 'Puits de mousse',
+      tips: [],
+    },
+    'c6-vias-del-oasis': {
+      name: 'Rails de l oasis',
+      tips: ['Le bouton d une voie ouvre l autre'],
+    },
+    'c6-saltos-de-espuma': {
+      name: 'Sauts de mousse',
+      tips: [],
+    },
+    'c6-canaveral': {
+      name: 'Roseraie',
+      tips: [],
+    },
+    'c6-laberinto-de-vidrio': {
+      name: 'Labyrinthe de verre',
+      tips: [],
+    },
+    'c6-corazon-del-oasis': {
+      name: 'Coeur de l oasis',
+      tips: [],
     },
   },
 };
