@@ -61,6 +61,16 @@ import c6f7 from './campaign/chapter6/07-c6-saltos-de-espuma.json';
 import c6f8 from './campaign/chapter6/08-c6-canaveral.json';
 import c6f9 from './campaign/chapter6/09-c6-laberinto-de-vidrio.json';
 import c6f10 from './campaign/chapter6/10-c6-corazon-del-oasis.json';
+import c7f1 from './campaign/chapter7/01-c7-primer-hielo.json';
+import c7f2 from './campaign/chapter7/02-c7-canon-helado.json';
+import c7f3 from './campaign/chapter7/03-c7-cornisas-de-escarcha.json';
+import c7f4 from './campaign/chapter7/04-c7-vias-de-hielo.json';
+import c7f5 from './campaign/chapter7/05-c7-pozo-de-nieve.json';
+import c7f6 from './campaign/chapter7/06-c7-sala-de-los-espejos.json';
+import c7f7 from './campaign/chapter7/07-c7-tablas-heladas.json';
+import c7f8 from './campaign/chapter7/08-c7-grietas-de-escarcha.json';
+import c7f9 from './campaign/chapter7/09-c7-laberinto-de-escarcha.json';
+import c7f10 from './campaign/chapter7/10-c7-corazon-del-glaciar.json';
 
 /** Modo historia: capítulos de 10 pisos. Sus coleccionables están en collectibles.ts. */
 export const CHAPTERS: ChapterDef[] = [
@@ -111,10 +121,18 @@ export const CHAPTERS: ChapterDef[] = [
     biome: 'desert',
     floors: [c6f1, c6f2, c6f3, c6f4, c6f5, c6f6, c6f7, c6f8, c6f9, c6f10] as LevelData[],
   },
+  {
+    // frío: los chorros congelan y congelado el limo es duro (no se pincha) y vuela entero
+    id: 'glaciar-roto',
+    name: 'Capítulo 7',
+    subtitle: 'El Glaciar Roto',
+    biome: 'frost',
+    floors: [c7f1, c7f2, c7f3, c7f4, c7f5, c7f6, c7f7, c7f8, c7f9, c7f10] as LevelData[],
+  },
 ];
 
 /** Capítulos anunciados que aún no se pueden jugar. */
-export const UPCOMING = [{ name: 'Capítulo 7', subtitle: 'Próximamente' }];
+export const UPCOMING = [{ name: 'Capítulo 8', subtitle: 'Próximamente' }];
 
 /** Suelo del menú: 9x7 casillas bajo la habitación (solo sostiene al limo; el mundo no se dibuja). */
 export const MENU_STAGE: LevelData = {

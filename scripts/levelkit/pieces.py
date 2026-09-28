@@ -238,12 +238,15 @@ def rail_puzzle(lv):
         {'kind': 'station', 'row': st_low, 'col': c - 4},
         {'kind': 'walk', 'row': sw, 'col': c - 3, 't': 5},
         {'kind': 'switch', 'row': sw, 'col': c - 4},
+        # el limo baja del raíl marcado 3 s: si vuelve a la estación antes, no se monta
+        {'kind': 'raw', 'row': sw, 'steps': ['{ wait: 3 }']},
         {'kind': 'station', 'row': st_high, 'col': c - 4, 't': 5},
         {'kind': 'walk', 'row': entry, 'col': c - 4, 't': 6},
         {'kind': 'walk', 'row': entry, 'col': c + 4, 't': 6},
         {'kind': 'station', 'row': st_low, 'col': c + 4, 't': 7},
         {'kind': 'walk', 'row': sw, 'col': c + 3, 't': 5},
         {'kind': 'switch', 'row': sw, 'col': c + 4},
+        {'kind': 'raw', 'row': sw, 'steps': ['{ wait: 3 }']},
         {'kind': 'station', 'row': st_high, 'col': c + 4, 't': 5},
         {'kind': 'walk', 'row': entry, 'col': c + 4, 't': 6},
         {'kind': 'walk', 'row': entry, 'col': c, 't': 6},
@@ -418,4 +421,74 @@ def spinner_room(lv):
             marks.append({'kind': 'coin', 'row': len(out), 'col': c + 3})
         out.append(r)
     marks.append({'kind': 'walk', 'row': len(out) - 1, 'col': c, 't': 6})
+    return Piece(out, marks)
+
+
+def cold_spikes(lv, rows=3):
+    """Chorro de aire frío y, justo después, un pasillo de pinchos: congelado el limo es
+    duro y no se pincha, así que hay que congelarse ANTES de cruzar."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c] = T.COLD
+    marks.append({'kind': 'cold', 'row': 0, 'col': c})
+    out.append(r)                                        # el chorro frío
+    for _ in range(rows):
+        r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+        lv.fill(r, c - 1, c + 1, T.SPIKE)
+        out.append(r)                                    # la alfombra de pinchos
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    marks.append({'kind': 'walk', 'row': len(out), 'col': c, 't': 7})
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ squeeze: false }']})
+    out.append(r)
+    return Piece(out, marks)
+
+
+def cannon_hall(lv, gap=3):
+    """Cañón sobre el vacío: el chorro frío está al lado, porque congelado se vuela de una
+    pieza y se cae justo en la diana. La sala de aterrizaje va cerrada."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COLD; r[c + 2] = T.COIN
+    marks.append({'kind': 'cold', 'row': 0, 'col': c - 2})
+    marks.append({'kind': 'coin', 'row': 0, 'col': c + 2})
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c] = T.CANNON
+    marks.append({'kind': 'cannon', 'row': len(out), 'col': c})
+    out.append(r)                                        # el cañón
+    for _ in range(gap):
+        out.append(_row(lv))                             # el vacío que se cruza volando
+    r = _row(lv); lv.fill(r, c - 4, c + 4, T.WALL); lv.fill(r, c - 2, c + 2, lv.floor)
+    r[c] = T.TARGET
+    out.append(r)                                        # la diana, en sala cerrada
+    r = _row(lv); lv.fill(r, c - 4, c + 4, T.WALL); lv.fill(r, c - 2, c + 2, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)
+    return Piece(out, marks)
+
+
+def ice_slalom(lv, rows=4):
+    """Rampa de hielo con picos alternos: se resbala y hay que ir esquivando."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)
+    for k in range(rows):
+        r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, T.ICE)
+        if k % 2 == 0:
+            r[c - 3] = T.WEDGE['se']
+        else:
+            r[c + 3] = T.WEDGE['sw']
+        out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    marks.append({'kind': 'raw', 'row': 0, 'steps': ['{ squeeze: true }']})
+    marks.append({'kind': 'walk', 'row': len(out), 'col': c, 't': 7})
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ squeeze: false }']})
+    out.append(r)
     return Piece(out, marks)

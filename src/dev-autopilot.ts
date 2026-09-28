@@ -12,6 +12,8 @@ interface DevSlime {
   groups: { cx: number; cy: number; cz: number; ids: number[] }[];
   riding: Uint8Array;
   flying: Uint8Array;
+  air: Float32Array;
+  alive: Uint8Array;
   aliveCount: number;
   n: number;
 }
@@ -76,6 +78,31 @@ function shoot(tx: number, tz: number) {
   S.run(0.8);
 }
 
+/* Sube a una estación de raíl: empuja hasta que el limo monta y ahí suelta el mando.
+   Si se sigue empujando, al bajarse en la otra punta el empuje lo vuelve a montar y hace el viaje de vuelta. */
+function board(tx: number, tz: number, t = 6) {
+  const S = api();
+  const sl = S.slime()!;
+  goTo(tx, tz, 0.2, t, () => sl.riding.some((v) => v === 1));
+  S.drive(() => [0, 0]);
+}
+
+/* Espera a que el limo vuelva a pisar suelo: el trampolin lo lanza tan alto que los pasos
+   siguientes se darian en el aire y las monedas de la sala se quedarian sin coger. */
+function settle(t = 8) {
+  const S = api();
+  S.drive(() => [0, 0]);
+  for (let s = 0; s < t && playing(); s += 0.05) {
+    S.run(0.05);
+    sampleApart();
+    const sl = S.slime();
+    if (!sl) return;
+    let down = 0, alive = 0;
+    for (let i = 0; i < sl.n; i++) { if (!sl.alive[i]) continue; alive++; if (sl.air[i] < 0.1) down++; }
+    if (s > 0.4 && down > alive * 0.6) return;
+  }
+}
+
 function waitFireOff(i: number, j: number, t = 8) {
   const S = api();
   S.drive(() => [0, 0]);
@@ -109,6 +136,8 @@ async function run(c: number, k: number, steps: Step[], trace?: string[]): Promi
     if (st.squeeze !== undefined) key(st.squeeze ? 'keydown' : 'keyup', 'Space');
     if (st.to) goTo(st.to[0], st.to[1], st.radius, st.t);
     if (st.cannon) shoot(st.cannon[0], st.cannon[1]);
+    if (st.board) board(st.board[0], st.board[1], st.t);
+    if (st.settle) settle(st.settle);
     if (st.dir) { const d = st.dir; S.drive(() => d); advance(st.t ?? 1); }
     if (st.wait) { S.drive(() => [0, 0]); advance(st.wait); }
     if (st.fire) waitFireOff(st.fire[0], st.fire[1]);

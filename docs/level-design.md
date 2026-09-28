@@ -60,7 +60,12 @@ camino principal pasa a su lado no es un secreto. `check.py` lo mide contra la r
 - A una estación se llega **parado** (BOARD_SPEED) y apretado, o solo viaja un trozo.
 - Estación en medio de un pasillo = el limo se sube solo; van en un rincón.
 - Después de bajarse, el limo queda marcado 3 s: el interruptor de una isla tiene que estar a
-  **dos casillas** de la estación o no puede volver a montarse.
+  **dos casillas** de la estación, y la ruta tiene que **esperar 3 s en el interruptor** antes de
+  volver. La marca se quita por trozo y solo cuando ese trozo está a más de 1.4 de la estación:
+  si el limo vuelve antes, se queda plantado encima sin montarse (así se colgaban c7f1 y c7f4).
+- En la ruta la estación se toma con **`board`**, no con `to`: `board` suelta el mando en cuanto
+  monta. Con `to` el empuje seguía activo, al bajarse en la otra punta lo volvía a montar y el
+  limo hacía el viaje de vuelta (ida y vuelta infinita).
 - Las vías se dibujan con casillas seguidas y el juego pone los codos; no hacen falta curvas
   a mano.
 
@@ -81,7 +86,8 @@ pisa antes de toparse con ella. Solo hay dos canales (A y B) por piso.
 El bot **no busca camino**: va en línea recta al punto que le toca. Por eso:
 - antes de subir por un pozo hay que llevarlo al pie (misma x, fila de la sala);
 - los trampolines se cruzan **sin pararse encima**: un punto una fila antes y luego directo al
-  aterrizaje con `squeeze`;
+  aterrizaje con `squeeze`, y después **`settle`**: el trampolín lanza al limo 30 de alto y los
+  pasos siguientes se darían en el aire (se quedaban sin coger las monedas de la sala de arriba);
 - a las monedas de una sala se va **antes** que al interruptor (el limo llega desde abajo);
 - tras un cañón o una caída conviene `{ squeeze: true, wait: 2 }` para que se junte;
 - los puntos que caigan dentro de un hueco hay que borrarlos: uno olvidado manda al limo al vacío.
@@ -112,8 +118,8 @@ variación entre corridas; una sola no demuestra nada).
 
 ## 7. Tamaños por capítulo
 
-Media de filas por piso (después de la última tanda): 46 / 59 / 71 / 73 / 78 y el capítulo 6
-arranca en ~95. Un piso corto se nota enseguida: si el recorrido no tiene al menos cuatro
+Media de filas por piso (después de la última tanda): 46 / 59 / 71 / 73 / 78, el capítulo 6 ~117
+y el 7 ~142 (de 120 el primero a 169 el último). Un piso corto se nota enseguida: si el recorrido no tiene al menos cuatro
 momentos distintos (sala con monedas, mecánica del capítulo, rodeo con secreto y remate), está
 corto aunque tenga filas.
 

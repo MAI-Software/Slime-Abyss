@@ -39,6 +39,7 @@ export const en: Dict = {
     'arenas-hundidas': 'The Sunken Sands',
     'dunas-profundas': 'The Deep Dunes',
     'oasis-hundido': 'The Sunken Oasis',
+    'glaciar-roto': 'The Broken Glacier',
   },
   options: {
     title: 'Options',
@@ -689,6 +690,46 @@ export const en: Dict = {
     },
     'c6-corazon-del-oasis': {
       name: 'Heart of the oasis',
+      tips: [],
+    },
+    'c7-primer-hielo': {
+      name: 'First ice',
+      tips: ['Frozen you are hard: spikes cannot pop you'],
+    },
+    'c7-canon-helado': {
+      name: 'Frozen cannon',
+      tips: ['Frozen you fly in one piece and land on the target'],
+    },
+    'c7-cornisas-de-escarcha': {
+      name: 'Frost ledges',
+      tips: [],
+    },
+    'c7-vias-de-hielo': {
+      name: 'Ice rails',
+      tips: [],
+    },
+    'c7-pozo-de-nieve': {
+      name: 'Snow pit',
+      tips: [],
+    },
+    'c7-sala-de-los-espejos': {
+      name: 'Hall of mirrors',
+      tips: [],
+    },
+    'c7-tablas-heladas': {
+      name: 'Frozen planks',
+      tips: [],
+    },
+    'c7-grietas-de-escarcha': {
+      name: 'Frost cracks',
+      tips: [],
+    },
+    'c7-laberinto-de-escarcha': {
+      name: 'Frost maze',
+      tips: [],
+    },
+    'c7-corazon-del-glaciar': {
+      name: 'Heart of the glacier',
       tips: [],
     },
   },

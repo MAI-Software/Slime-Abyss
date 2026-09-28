@@ -105,8 +105,11 @@ def route_steps(lv, m, z):
                 '{ wait: 1.5 }']
     if k == 'jump':
         c = x(m.get('col', lv.c))
+        # el trampolin lanza muy alto: sin esta espera los pasos siguientes se dan en el aire
         return ['{ to: [%s, %s], radius: 0.4, t: 5 }' % (c, z(m['row']) + 1.6),
                 '{ squeeze: true, to: [%s, %s], radius: 0.4, t: 7 }' % (c, z(m['land']) + 0.5),
+                '{ settle: 16 }',   # congelado cae flotando: el vuelo del trampolin dura mas de 10 s
+                '{ to: [%s, %s], radius: 0.4, t: 4 }' % (c, z(m['land']) + 0.5),
                 '{ squeeze: false }']
     if k == 'pit':
         lane = x(m['lane'])
@@ -119,12 +122,20 @@ def route_steps(lv, m, z):
                 '{ to: [%s, %s], radius: 0.5, t: 4 }' % (x(m['ledge']), z(m['row']) + 0.5),
                 '{ squeeze: false, to: [%s, %s], radius: 0.4, t: 5 }' % (x(m['ledge']), z(m['row']) - 0.5)]
     if k == 'station':
-        return ['{ squeeze: true, to: [%s, %s], radius: 0.2, t: %d }' % (x(m['col']), z(m['row']) + 0.5, m.get('t', 6)),
+        # board suelta el mando en cuanto monta: con `to` el empuje lo devolvia en el viaje de vuelta
+        return ['{ squeeze: true, board: [%s, %s], t: %d }' % (x(m['col']), z(m['row']) + 0.5, m.get('t', 6)),
                 '{ wait: %s }' % m.get('wait', 6)]
     if k == 'walk':
         return ['{ squeeze: false, to: [%s, %s], radius: 0.4, t: %d }' % (x(m['col']), z(m['row']) + 0.5, m.get('t', 6))]
     if k == 'treasure':
         return ['{ to: [%s, %s], t: 8 }' % (x(m['col']), z(m['row']) + 0.5)]
+    if k == 'cannon':
+        return ['{ to: [%s, %s], radius: 0.4, t: 6 }' % (x(m['col']), z(m['row']) + 1.4),
+                '{ cannon: [%s, %s] }' % (x(m['col']), z(m['row']) + 0.5),
+                '{ squeeze: true, wait: 2 }', '{ squeeze: false }']
+    if k == 'cold':
+        return ['{ squeeze: true, to: [%s, %s], radius: 0.3, t: 5 }' % (x(m['col']), z(m['row']) + 0.5),
+                '{ wait: 1.2 }']
     if k == 'raw':
         return list(m['steps'])
     return []

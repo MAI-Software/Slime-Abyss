@@ -38,6 +38,7 @@ export const es = {
     'arenas-hundidas': 'Las Arenas Hundidas',
     'dunas-profundas': 'Las Dunas Profundas',
     'oasis-hundido': 'El Oasis Hundido',
+    'glaciar-roto': 'El Glaciar Roto',
   },
   options: {
     title: 'Opciones',
@@ -688,6 +689,46 @@ export const es = {
     },
     'c6-corazon-del-oasis': {
       name: 'Corazón del oasis',
+      tips: [],
+    },
+    'c7-primer-hielo': {
+      name: 'Primer hielo',
+      tips: ['Congelado eres duro: los pinchos no te pinchan'],
+    },
+    'c7-canon-helado': {
+      name: 'Cañón helado',
+      tips: ['Congelado vuelas de una pieza y caes en la diana'],
+    },
+    'c7-cornisas-de-escarcha': {
+      name: 'Cornisas de escarcha',
+      tips: [],
+    },
+    'c7-vias-de-hielo': {
+      name: 'Vías de hielo',
+      tips: [],
+    },
+    'c7-pozo-de-nieve': {
+      name: 'Pozo de nieve',
+      tips: [],
+    },
+    'c7-sala-de-los-espejos': {
+      name: 'Sala de los espejos',
+      tips: [],
+    },
+    'c7-tablas-heladas': {
+      name: 'Tablas heladas',
+      tips: [],
+    },
+    'c7-grietas-de-escarcha': {
+      name: 'Grietas de escarcha',
+      tips: [],
+    },
+    'c7-laberinto-de-escarcha': {
+      name: 'Laberinto de escarcha',
+      tips: [],
+    },
+    'c7-corazon-del-glaciar': {
+      name: 'Corazón del glaciar',
       tips: [],
     },
   } as Record<string, { name: string; tips: string[] }>,

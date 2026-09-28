@@ -39,6 +39,7 @@ export const de: Dict = {
     'arenas-hundidas': 'Der versunkene Sand',
     'dunas-profundas': 'Die Tiefen Dünen',
     'oasis-hundido': 'Die versunkene Oase',
+    'glaciar-roto': 'Der zerbrochene Gletscher',
   },
   options: {
     title: 'Optionen',
@@ -689,6 +690,46 @@ export const de: Dict = {
     },
     'c6-corazon-del-oasis': {
       name: 'Herz der Oase',
+      tips: [],
+    },
+    'c7-primer-hielo': {
+      name: 'Erstes Eis',
+      tips: ['Gefroren bist du hart: Stacheln stechen nicht'],
+    },
+    'c7-canon-helado': {
+      name: 'Gefrorene Kanone',
+      tips: ['Gefroren fliegst du am Stück und triffst das Ziel'],
+    },
+    'c7-cornisas-de-escarcha': {
+      name: 'Frostsimse',
+      tips: [],
+    },
+    'c7-vias-de-hielo': {
+      name: 'Eisschienen',
+      tips: [],
+    },
+    'c7-pozo-de-nieve': {
+      name: 'Schneegrube',
+      tips: [],
+    },
+    'c7-sala-de-los-espejos': {
+      name: 'Spiegelsaal',
+      tips: [],
+    },
+    'c7-tablas-heladas': {
+      name: 'Vereiste Planken',
+      tips: [],
+    },
+    'c7-grietas-de-escarcha': {
+      name: 'Frostrisse',
+      tips: [],
+    },
+    'c7-laberinto-de-escarcha': {
+      name: 'Frostlabyrinth',
+      tips: [],
+    },
+    'c7-corazon-del-glaciar': {
+      name: 'Herz des Gletschers',
       tips: [],
     },
   },

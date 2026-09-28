@@ -39,7 +39,7 @@ FAMILY = {
 }
 DANGER = set('FXY.aB')                     # hace daño, se lleva limo o es vacío
 #: nota que se le pide a cada capítulo (la dificultad tiene que subir)
-TARGET = {1: 34, 2: 46, 3: 56, 4: 64, 5: 70, 6: 76}
+TARGET = {1: 34, 2: 46, 3: 56, 4: 64, 5: 70, 6: 76, 7: 80}
 
 
 def levels():
@@ -128,10 +128,18 @@ def measure(ch, L, pts):
     filler = empty / max(1, rows)
 
     decisions = len([1 for _, _, _, f in mech if f in ('puertas', 'raíles')]) // 4 + detours
+    # trampas: lo que hace daño o se lleva limo, contado por grupos (no casilla a casilla)
+    trap_fams = ('pinchos', 'fuego', 'grietas', 'hondonada', 'saltos', 'disco')
+    traps = len({(s2, i // 4, j // 4, f) for s2, i, j, f in mech if f in trap_fams})
+    # puzles: cosas que hay que resolver, no solo esquivar
+    puzzles = (len({(s2, j // 6) for s2, i, j, f in mech if f == 'puertas'})
+               + len({(s2, j // 8) for s2, i, j, f in mech if f == 'raíles'})
+               + len({(s2, j // 6) for s2, i, j, f in mech if f in ('cañón', 'jabón', 'agujeros')}))
     return {
         'filas': rows, 'largo': round(length), 'variedad': len(fams), 'familias': sorted(fams),
         'combos': len(combos), 'peligro': round(exposure, 2), 'decisiones': decisions,
         'relleno': round(filler, 2), 'vacio_max': worst, 'plantas': len(gs), 'monedas': sum(r.count('C') for g in gs for r in g),
+        'trampas': traps, 'puzles': puzzles,
     }
 
 
@@ -159,6 +167,10 @@ def tags(ch, m, s):
         out.append('sin riesgo')
     if m['vacio_max'] >= 8:
         out.append('tramo muerto')
+    if m['trampas'] < 4:
+        out.append('pocas trampas')
+    if m['puzles'] < 2 and ch >= 4:
+        out.append('sin puzles')
     if s < TARGET.get(ch, 70) - 8:
         out.append('flojo para el capítulo')
     return out
@@ -168,8 +180,8 @@ def main():
     text = io.open(ROUTES, encoding='utf8').read()
     only_bad = '--flojos' in sys.argv
     by_ch = defaultdict(list)
-    print('%-28s %5s %5s %4s %4s %5s %4s %4s  %s' %
-          ('piso', 'filas', 'largo', 'var', 'com', 'peli', 'dec', 'nota', 'avisos'))
+    print('%-28s %5s %5s %4s %4s %5s %4s %4s %4s %4s  %s' %
+          ('piso', 'filas', 'largo', 'var', 'com', 'peli', 'tram', 'puz', 'mon', 'nota', 'avisos'))
     for ch, L in levels():
         m = measure(ch, L, route_of(text, L['id']))
         s = score(m)
@@ -177,9 +189,9 @@ def main():
         bad = tags(ch, m, s)
         if only_bad and not bad:
             continue
-        print('%-28s %5d %5d %4d %4d %5.2f %4d %4d  %s' %
+        print('%-28s %5d %5d %4d %4d %5.2f %4d %4d %4d %4d  %s' %
               (L['id'], m['filas'], m['largo'], m['variedad'], m['combos'], m['peligro'],
-               m['decisiones'], s, ', '.join(bad)))
+               m['trampas'], m['puzles'], m['monedas'], s, ', '.join(bad)))
     print()
     for ch in sorted(by_ch):
         notas = by_ch[ch]

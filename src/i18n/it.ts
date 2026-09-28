@@ -39,6 +39,7 @@ export const it: Dict = {
     'arenas-hundidas': 'Le Sabbie Sommerse',
     'dunas-profundas': 'Le Dune Profonde',
     'oasis-hundido': 'L oasi sommersa',
+    'glaciar-roto': 'Il ghiacciaio spezzato',
   },
   options: {
     title: 'Opzioni',
@@ -689,6 +690,46 @@ export const it: Dict = {
     },
     'c6-corazon-del-oasis': {
       name: 'Cuore dell oasi',
+      tips: [],
+    },
+    'c7-primer-hielo': {
+      name: 'Primo ghiaccio',
+      tips: ['Congelato sei duro: le spine non ti bucano'],
+    },
+    'c7-canon-helado': {
+      name: 'Cannone gelato',
+      tips: ['Congelato voli intero e cadi sul bersaglio'],
+    },
+    'c7-cornisas-de-escarcha': {
+      name: 'Cornici di brina',
+      tips: [],
+    },
+    'c7-vias-de-hielo': {
+      name: 'Binari di ghiaccio',
+      tips: [],
+    },
+    'c7-pozo-de-nieve': {
+      name: 'Pozzo di neve',
+      tips: [],
+    },
+    'c7-sala-de-los-espejos': {
+      name: 'Sala degli specchi',
+      tips: [],
+    },
+    'c7-tablas-heladas': {
+      name: 'Assi gelate',
+      tips: [],
+    },
+    'c7-grietas-de-escarcha': {
+      name: 'Crepe di brina',
+      tips: [],
+    },
+    'c7-laberinto-de-escarcha': {
+      name: 'Labirinto di brina',
+      tips: [],
+    },
+    'c7-corazon-del-glaciar': {
+      name: 'Cuore del ghiacciaio',
       tips: [],
     },
   },

@@ -39,6 +39,7 @@ export const fr: Dict = {
     'arenas-hundidas': 'Les Sables Engloutis',
     'dunas-profundas': 'Les Dunes Profondes',
     'oasis-hundido': 'L oasis engloutie',
+    'glaciar-roto': 'Le glacier brise',
   },
   options: {
     title: 'Options',
@@ -689,6 +690,46 @@ export const fr: Dict = {
     },
     'c6-corazon-del-oasis': {
       name: 'Coeur de l oasis',
+      tips: [],
+    },
+    'c7-primer-hielo': {
+      name: 'Premiere glace',
+      tips: ['Gele tu es dur: les piques ne te percent pas'],
+    },
+    'c7-canon-helado': {
+      name: 'Canon gele',
+      tips: ['Gele tu voles en un morceau et tombes sur la cible'],
+    },
+    'c7-cornisas-de-escarcha': {
+      name: 'Corniches de givre',
+      tips: [],
+    },
+    'c7-vias-de-hielo': {
+      name: 'Voies de glace',
+      tips: [],
+    },
+    'c7-pozo-de-nieve': {
+      name: 'Puits de neige',
+      tips: [],
+    },
+    'c7-sala-de-los-espejos': {
+      name: 'Salle des miroirs',
+      tips: [],
+    },
+    'c7-tablas-heladas': {
+      name: 'Planches gelees',
+      tips: [],
+    },
+    'c7-grietas-de-escarcha': {
+      name: 'Fissures de givre',
+      tips: [],
+    },
+    'c7-laberinto-de-escarcha': {
+      name: 'Labyrinthe de givre',
+      tips: [],
+    },
+    'c7-corazon-del-glaciar': {
+      name: 'Coeur du glacier',
       tips: [],
     },
   },
