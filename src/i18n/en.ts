@@ -40,6 +40,7 @@ export const en: Dict = {
     'dunas-profundas': 'The Deep Dunes',
     'oasis-hundido': 'The Sunken Oasis',
     'glaciar-roto': 'The Broken Glacier',
+    'la-ventisca': 'The Blizzard',
   },
   options: {
     title: 'Options',
@@ -730,6 +731,46 @@ export const en: Dict = {
     },
     'c7-corazon-del-glaciar': {
       name: 'Heart of the glacier',
+      tips: [],
+    },
+    'c8-primeras-rachas': {
+      name: 'First Gusts',
+      tips: ['The gust shoves: squeeze up and hug the wall'],
+    },
+    'c8-puertas-de-escarcha': {
+      name: 'Frost Gates',
+      tips: ['One switch opens the door to the next'],
+    },
+    'c8-torre-de-nieve': {
+      name: 'Snow Tower',
+      tips: [],
+    },
+    'c8-vientos-cruzados': {
+      name: 'Crosswinds',
+      tips: [],
+    },
+    'c8-pozo-blanco': {
+      name: 'White Well',
+      tips: [],
+    },
+    'c8-cristales': {
+      name: 'Crystals',
+      tips: [],
+    },
+    'c8-cornisas-del-viento': {
+      name: 'Wind Ledges',
+      tips: [],
+    },
+    'c8-sala-de-las-corrientes': {
+      name: 'Hall of Currents',
+      tips: [],
+    },
+    'c8-laberinto-blanco': {
+      name: 'White Maze',
+      tips: [],
+    },
+    'c8-ojo-de-la-ventisca': {
+      name: 'Eye of the Blizzard',
       tips: [],
     },
   },

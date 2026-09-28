@@ -71,6 +71,16 @@ import c7f7 from './campaign/chapter7/07-c7-tablas-heladas.json';
 import c7f8 from './campaign/chapter7/08-c7-grietas-de-escarcha.json';
 import c7f9 from './campaign/chapter7/09-c7-laberinto-de-escarcha.json';
 import c7f10 from './campaign/chapter7/10-c7-corazon-del-glaciar.json';
+import c8f1 from './campaign/chapter8/01-c8-primeras-rachas.json';
+import c8f2 from './campaign/chapter8/02-c8-puertas-de-escarcha.json';
+import c8f3 from './campaign/chapter8/03-c8-torre-de-nieve.json';
+import c8f4 from './campaign/chapter8/04-c8-vientos-cruzados.json';
+import c8f5 from './campaign/chapter8/05-c8-pozo-blanco.json';
+import c8f6 from './campaign/chapter8/06-c8-cristales.json';
+import c8f7 from './campaign/chapter8/07-c8-cornisas-del-viento.json';
+import c8f8 from './campaign/chapter8/08-c8-sala-de-las-corrientes.json';
+import c8f9 from './campaign/chapter8/09-c8-laberinto-blanco.json';
+import c8f10 from './campaign/chapter8/10-c8-ojo-de-la-ventisca.json';
 
 /** Modo historia: capítulos de 10 pisos. Sus coleccionables están en collectibles.ts. */
 export const CHAPTERS: ChapterDef[] = [
@@ -129,10 +139,18 @@ export const CHAPTERS: ChapterDef[] = [
     biome: 'frost',
     floors: [c7f1, c7f2, c7f3, c7f4, c7f5, c7f6, c7f7, c7f8, c7f9, c7f10] as LevelData[],
   },
+  {
+    // ventisca: rachas de viento cruzando el hielo y puertas encadenadas a pie
+    id: 'la-ventisca',
+    name: 'Capítulo 8',
+    subtitle: 'La Ventisca',
+    biome: 'frost',
+    floors: [c8f1, c8f2, c8f3, c8f4, c8f5, c8f6, c8f7, c8f8, c8f9, c8f10] as LevelData[],
+  },
 ];
 
 /** Capítulos anunciados que aún no se pueden jugar. */
-export const UPCOMING = [{ name: 'Capítulo 8', subtitle: 'Próximamente' }];
+export const UPCOMING = [{ name: 'Capítulo 9', subtitle: 'Próximamente' }];
 
 /** Suelo del menú: 9x7 casillas bajo la habitación (solo sostiene al limo; el mundo no se dibuja). */
 export const MENU_STAGE: LevelData = {

@@ -39,7 +39,8 @@ FAMILY = {
 }
 DANGER = set('FXY.aB')                     # hace daño, se lleva limo o es vacío
 #: nota que se le pide a cada capítulo (la dificultad tiene que subir)
-TARGET = {1: 34, 2: 46, 3: 56, 4: 64, 5: 70, 6: 76, 7: 80}
+# objetivos con los topes nuevos: cada capítulo tiene que quedar por encima del suyo
+TARGET = {1: 26, 2: 40, 3: 58, 4: 60, 5: 72, 6: 76, 7: 80, 8: 84}
 
 
 def levels():
@@ -144,13 +145,19 @@ def measure(ch, L, pts):
 
 
 def score(m):
-    """Nota 0-100. Cada parte está acotada para que ninguna se dispare sola."""
-    size = min(1, m['filas'] / 100) * 15
-    length = min(1, m['largo'] / 220) * 10
-    variety = min(1, m['variedad'] / 9) * 20
-    combo = min(1, m['combos'] / 14) * 20
-    danger = min(1, m['peligro'] / 0.75) * 15
-    decide = min(1, m['decisiones'] / 8) * 15
+    """Nota 0-100. Cada parte está acotada para que ninguna se dispare sola.
+
+    Los topes se recalibraron cuando los capítulos 5 al 8 se quedaron todos entre 80 y 84: con
+    los topes viejos (100 filas, 220 m, 9 familias, 14 combos) un piso grande los reventaba y la
+    nota dejaba de distinguir. Y el peligro se mide contra 0.30, no contra 0.75: más exposición
+    que esa no se puede pedir, porque el listón de la prueba es conservar más del 90 % del limo
+    y los pinchos y el fuego se lo van comiendo."""
+    size = min(1, m['filas'] / 150) * 15
+    length = min(1, m['largo'] / 400) * 10
+    variety = min(1, m['variedad'] / 12) * 20
+    combo = min(1, m['combos'] / 25) * 20
+    danger = min(1, m['peligro'] / 0.30) * 15
+    decide = min(1, m['decisiones'] / 12) * 15
     fill = (1 - min(1, m['relleno'] / 0.5)) * 5
     return round(size + length + variety + combo + danger + decide + fill)
 

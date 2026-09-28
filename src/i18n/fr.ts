@@ -40,6 +40,7 @@ export const fr: Dict = {
     'dunas-profundas': 'Les Dunes Profondes',
     'oasis-hundido': 'L oasis engloutie',
     'glaciar-roto': 'Le glacier brise',
+    'la-ventisca': 'La Tempete de Neige',
   },
   options: {
     title: 'Options',
@@ -730,6 +731,46 @@ export const fr: Dict = {
     },
     'c7-corazon-del-glaciar': {
       name: 'Coeur du glacier',
+      tips: [],
+    },
+    'c8-primeras-rachas': {
+      name: 'Premieres rafales',
+      tips: ['La rafale pousse: serre-toi et longe le mur'],
+    },
+    'c8-puertas-de-escarcha': {
+      name: 'Portes de givre',
+      tips: ['Un interrupteur ouvre la porte du suivant'],
+    },
+    'c8-torre-de-nieve': {
+      name: 'Tour de neige',
+      tips: [],
+    },
+    'c8-vientos-cruzados': {
+      name: 'Vents croises',
+      tips: [],
+    },
+    'c8-pozo-blanco': {
+      name: 'Puits blanc',
+      tips: [],
+    },
+    'c8-cristales': {
+      name: 'Cristaux',
+      tips: [],
+    },
+    'c8-cornisas-del-viento': {
+      name: 'Corniches du vent',
+      tips: [],
+    },
+    'c8-sala-de-las-corrientes': {
+      name: 'Salle des courants',
+      tips: [],
+    },
+    'c8-laberinto-blanco': {
+      name: 'Labyrinthe blanc',
+      tips: [],
+    },
+    'c8-ojo-de-la-ventisca': {
+      name: 'Oeil de la tempete',
       tips: [],
     },
   },

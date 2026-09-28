@@ -39,6 +39,7 @@ export const es = {
     'dunas-profundas': 'Las Dunas Profundas',
     'oasis-hundido': 'El Oasis Hundido',
     'glaciar-roto': 'El Glaciar Roto',
+    'la-ventisca': 'La Ventisca',
   },
   options: {
     title: 'Opciones',
@@ -729,6 +730,46 @@ export const es = {
     },
     'c7-corazon-del-glaciar': {
       name: 'Corazón del glaciar',
+      tips: [],
+    },
+    'c8-primeras-rachas': {
+      name: 'Primeras rachas',
+      tips: ['La racha empuja: cruza apretado y pegado al muro'],
+    },
+    'c8-puertas-de-escarcha': {
+      name: 'Puertas de escarcha',
+      tips: ['Un interruptor abre la puerta del siguiente'],
+    },
+    'c8-torre-de-nieve': {
+      name: 'Torre de nieve',
+      tips: [],
+    },
+    'c8-vientos-cruzados': {
+      name: 'Vientos cruzados',
+      tips: [],
+    },
+    'c8-pozo-blanco': {
+      name: 'Pozo blanco',
+      tips: [],
+    },
+    'c8-cristales': {
+      name: 'Cristales',
+      tips: [],
+    },
+    'c8-cornisas-del-viento': {
+      name: 'Cornisas del viento',
+      tips: [],
+    },
+    'c8-sala-de-las-corrientes': {
+      name: 'Sala de las corrientes',
+      tips: [],
+    },
+    'c8-laberinto-blanco': {
+      name: 'Laberinto blanco',
+      tips: [],
+    },
+    'c8-ojo-de-la-ventisca': {
+      name: 'Ojo de la ventisca',
       tips: [],
     },
   } as Record<string, { name: string; tips: string[] }>,

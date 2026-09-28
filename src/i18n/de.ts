@@ -40,6 +40,7 @@ export const de: Dict = {
     'dunas-profundas': 'Die Tiefen Dünen',
     'oasis-hundido': 'Die versunkene Oase',
     'glaciar-roto': 'Der zerbrochene Gletscher',
+    'la-ventisca': 'Der Schneesturm',
   },
   options: {
     title: 'Optionen',
@@ -730,6 +731,46 @@ export const de: Dict = {
     },
     'c7-corazon-del-glaciar': {
       name: 'Herz des Gletschers',
+      tips: [],
+    },
+    'c8-primeras-rachas': {
+      name: 'Erste Boen',
+      tips: ['Die Boe schiebt: zusammendruecken und an der Wand entlang'],
+    },
+    'c8-puertas-de-escarcha': {
+      name: 'Frosttore',
+      tips: ['Ein Schalter oeffnet das Tor zum naechsten'],
+    },
+    'c8-torre-de-nieve': {
+      name: 'Schneeturm',
+      tips: [],
+    },
+    'c8-vientos-cruzados': {
+      name: 'Kreuzwinde',
+      tips: [],
+    },
+    'c8-pozo-blanco': {
+      name: 'Weisser Schacht',
+      tips: [],
+    },
+    'c8-cristales': {
+      name: 'Kristalle',
+      tips: [],
+    },
+    'c8-cornisas-del-viento': {
+      name: 'Windsimse',
+      tips: [],
+    },
+    'c8-sala-de-las-corrientes': {
+      name: 'Halle der Stroemungen',
+      tips: [],
+    },
+    'c8-laberinto-blanco': {
+      name: 'Weisses Labyrinth',
+      tips: [],
+    },
+    'c8-ojo-de-la-ventisca': {
+      name: 'Auge des Schneesturms',
       tips: [],
     },
   },

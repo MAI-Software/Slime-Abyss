@@ -41,6 +41,15 @@ de recorrido** y las marcas con las que el kit escribe la ruta.
 - `pit` — hondonada con agujero al vacío.
 - `bubble_tower` — jabón, ventilador de techo y repisa dos alturas más arriba.
 - `rail_puzzle` — dos pozos de raíl con interruptores encadenados y dos puertas.
+- `blizzard` — pista de hielo con dos rachas de viento metidas en los muros, una por lado, y las
+  monedas al lado contrario del empujón. Detrás del ventilador SIEMPRE un muro: si se deja el
+  vacío, la racha va tirando trozos de limo por el borde.
+- `switch_gate` — dos ramales sin comunicación (moneda en cada uno), el interruptor A al fondo
+  del izquierdo y detrás de su puerta el interruptor B, que abre la salida. Gasta los dos
+  canales del piso, así que no se junta con `rail_puzzle`.
+- `room(cliff=True)` — la misma sala pero sin muros laterales: una terraza colgada del abismo.
+  Las monedas se quedan a dos casillas del borde; pegadas al borde el limo asoma media bola y
+  se deja los trozos de fuera (probado: bajó al 66 % en c8f1).
 - `treasure_room(gem=/relic=)` — sala final; el secreto va en un callejón, nunca de paso.
 
 ## 4. Reglas de diseño (las que rompen pisos si se saltan)
@@ -118,8 +127,10 @@ variación entre corridas; una sola no demuestra nada).
 
 ## 7. Tamaños por capítulo
 
-Media de filas por piso (después de la última tanda): 46 / 59 / 71 / 73 / 78, el capítulo 6 ~117
-y el 7 ~142 (de 120 el primero a 169 el último). Un piso corto se nota enseguida: si el recorrido no tiene al menos cuatro
+Media de filas por piso (después de la última tanda): 46 / 59 / 71 / 73 / 78 / 120 / 145 / 170.
+Del capítulo 6 en adelante los tramos se montan con pasos de UNA fila, salas de cuatro y una
+sala de cada dos colgada del vacío (`cliff`), más un bucle de más por piso: el bucle es un rodeo
+y los rodeos son lo que el medidor cuenta como decisiones. Un piso corto se nota enseguida: si el recorrido no tiene al menos cuatro
 momentos distintos (sala con monedas, mecánica del capítulo, rodeo con secreto y remate), está
 corto aunque tenga filas.
 
@@ -130,13 +141,19 @@ a jugarlos, pero dice sin discutir cuál está corto o vacío.
 
 | Medida | Qué mira | Peso |
 |---|---|---|
-| tamaño | filas del mapa | 15 |
-| largo | metros reales del recorrido del autopiloto | 10 |
-| variedad | familias de mecánica distintas (fuego, hielo, raíles, jabón…) | 20 |
-| combos | veces que dos familias DISTINTAS se tocan (a 3 casillas): eso es encadenar | 20 |
-| peligro | parte del recorrido que pasa pegada a algo que hace daño o al vacío | 15 |
-| decisiones | puertas con interruptor, estaciones, rodeos de la ruta | 15 |
+| tamaño | filas del mapa (tope 150) | 15 |
+| largo | metros reales del recorrido del autopiloto (tope 400) | 10 |
+| variedad | familias de mecánica distintas (tope 12) | 20 |
+| combos | veces que dos familias DISTINTAS se tocan a 3 casillas (tope 25) | 20 |
+| peligro | parte del recorrido pegada a algo que hace daño o al vacío (tope 0.30) | 15 |
+| decisiones | puertas con interruptor, estaciones y rodeos de la ruta (tope 12) | 15 |
 | relleno | tramos seguidos de suelo sin nada: resta | 5 |
+
+**Los topes se recalibraron** cuando los capítulos 5 al 8 se quedaron todos entre 80 y 84: con
+los topes viejos un piso grande los reventaba y la nota dejaba de distinguir. El peligro se mide
+contra 0.30 y no contra 0.75 porque más exposición no se puede pedir: la prueba exige conservar
+más del 90 % del limo y los pinchos van comiendo. Objetivos por capítulo con los topes nuevos:
+26 / 40 / 58 / 60 / 72 / 76 / 80 / 84.
 
 Avisos automáticos: `corto`, `poca variedad`, `sin encadenar`, `sin riesgo`, `tramo muerto`
 (ocho filas seguidas sin nada) y `flojo para el capítulo` (por debajo del objetivo del capítulo,

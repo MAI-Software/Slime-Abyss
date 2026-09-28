@@ -18,9 +18,15 @@ from scripts.levelkit import Level, check, pieces as P, writer   # noqa: E402
 W = 15
 
 
-def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=2, mix=None):
-    """Sala con su peligro en la fila de las monedas, paso y la mecánica que toque."""
-    lv.add(P.room(lv, left=left, right=right, wedge=wedge, rows=5))
+def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=1, mix=None, cliff=None):
+    """Sala con su peligro en la fila de las monedas, paso y la mecánica que toque.
+    Pasos de una fila, salas de cuatro y una sala de cada dos colgada del vacío."""
+    if cliff is None:
+        cliff = (len(lv.rows) // 20) % 2 == 0
+    if left is None:
+        # roca agrietada, nunca pinchos: el pincho pegado a la moneda va comiendo limo
+        left = 'B'
+    lv.add(P.room(lv, left=left, right=right, wedge=wedge, rows=4, cliff=cliff))
     if mix:
         lv.add(mix(lv))
     lv.add(P.neck(lv, rows=neck_rows))
@@ -35,6 +41,7 @@ def floor1():
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Y', mix=P.ice_slalom)
     section(lv, P.cold_spikes, right='Z')
+    section(lv, P.loop, right='W', mix=P.void_ledge)
     lv.tip('Congelado eres duro: los pinchos no te pinchan', back=-8)
     section(lv, P.gauntlet, right='B')
     section(lv, P.rail_puzzle, right='Z')
@@ -55,6 +62,7 @@ def floor2():
     section(lv, P.bubble_tower, right='B', mix=P.cold_spikes)
     section(lv, P.rail_puzzle, right='W')
     section(lv, P.gauntlet, right='Z', mix=P.ice_slalom)
+    section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.pit, right='Y', mix=P.crack_ledge)
     section(lv, P.loop, right='B')
     lv.add(P.seesaw_bridge(lv))
@@ -69,6 +77,7 @@ def floor3():
     section(lv, P.ice_slalom, right='Y')
     section(lv, P.loop, right='B', mix=P.crack_ledge)
     section(lv, P.cold_spikes, right='Z')
+    section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.rail_puzzle, right='W')
     section(lv, P.pit, right='Y', mix=P.cold_spikes)
     section(lv, P.gauntlet, right='Z', mix=P.ice_slalom)
@@ -84,6 +93,7 @@ def floor4():
     lv.add(P.start_room(lv))
     section(lv, P.rail_puzzle, right='Z', mix=P.ice_slalom)
     section(lv, P.cold_spikes, right='Y')
+    section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.loop, right='W', mix=P.crack_ledge)
     section(lv, P.cannon_hall, right='B')
     section(lv, P.gauntlet, right='Z', mix=P.ice_slalom)
@@ -99,6 +109,7 @@ def floor5():
     lv = Level('c7-pozo-de-nieve', 'Pozo de nieve', w=W, mood='bright', cam_yaw=-14, keep=0.75)
     lv.add(P.start_room(lv))
     section(lv, P.pit, right='Y', mix=P.ice_slalom)
+    section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.bubble_tower, right='Z')
     section(lv, P.cold_spikes, right='B')
     section(lv, P.loop, right='W')
@@ -118,6 +129,7 @@ def floor6():
     section(lv, P.rail_puzzle, right='Y')
     section(lv, P.spinner_room, right='B', mix=P.cold_spikes)
     section(lv, P.pit, right='W')
+    section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.cannon_hall, right='Z')
     section(lv, P.gauntlet, right='Y')
     section(lv, P.bubble_tower, right='B')
@@ -132,6 +144,7 @@ def floor7():
     lv.add(P.start_room(lv))
     section(lv, P.seesaw_bridge, right='Y', mix=P.ice_slalom)
     section(lv, P.cold_spikes, right='Z')
+    section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.gauntlet, right='B')
     section(lv, P.bubble_tower, right='W', mix=P.crack_ledge)
     section(lv, P.loop, right='Y')
@@ -148,6 +161,7 @@ def floor8():
     lv.add(P.start_room(lv))
     section(lv, P.crack_ledge, right='B', mix=P.ice_slalom)
     section(lv, P.cold_spikes, right='Y')
+    section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.rail_puzzle, right='Z')
     section(lv, P.pit, right='W', mix=P.ice_slalom)
     section(lv, P.cannon_hall, right='B')
@@ -166,6 +180,7 @@ def floor9():
     section(lv, P.loop, right='Y', mix=P.ice_slalom)
     section(lv, P.rail_puzzle, right='Z')
     section(lv, P.cold_spikes, right='B')
+    section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.bubble_tower, right='W')
     section(lv, P.gauntlet, right='Y')
     section(lv, P.pit, right='Z')
@@ -184,6 +199,7 @@ def floor10():
     section(lv, P.loop, right='Z', mix=P.ice_slalom)
     section(lv, P.rail_puzzle, right='Y')
     section(lv, P.cold_spikes, right='B')
+    section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.cannon_hall, right='W')
     section(lv, P.bubble_tower, right='Z')
     section(lv, P.gauntlet, right='Y')

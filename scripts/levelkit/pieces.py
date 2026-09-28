@@ -55,21 +55,30 @@ def neck(lv, door=None, rows=1):
     return Piece(out, marks)
 
 
-def room(lv, coins=True, left=None, right=None, wedge=False, rows=4, narrow=True):
+def room(lv, coins=True, left=None, right=None, wedge=False, rows=4, narrow=True, cliff=False):
     """Sala de 7 con sus dos monedas y, si se piden, adornos pegados a los muros.
-    `narrow` cierra los extremos de las filas vacías: menos suelo desangelado."""
+    `narrow` cierra los extremos de las filas vacías: menos suelo desangelado.
+    `cliff` quita los muros de los lados y deja el vacío: la sala pasa a ser una terraza
+    colgada del abismo (más tensión al ir a por las monedas, pero el suelo sigue siendo el
+    mismo: el limo solo se cae si lo empujan o si se pasa de largo)."""
     c, out, marks = lv.c, [], []
     for k in range(rows):
-        r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+        r = _row(lv)
+        if not cliff:
+            _walls(lv, r, c - 4, c + 4)
+        lv.fill(r, c - 3, c + 3, lv.floor)
         if coins and k == 1:
-            r[c - 2] = T.COIN; r[c + 2] = T.COIN
+            # las monedas NUNCA en la fila del borde: con la moneda pegada al vacío el limo
+            # asoma media bola y pierde los trozos de fuera (se probó: 66 % de limo)
+            a, b = c - 2, c + 2
+            r[a] = T.COIN; r[b] = T.COIN
             if left:
-                r[c - 3] = left           # la moneda se coge rozando el peligro
+                r[c - 3] = left                          # la moneda se coge rozando el peligro
             if right:
                 r[c + 3] = right
             if left or right:
                 marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ squeeze: true }']})
-            marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+            marks.append({'kind': 'coins', 'row': len(out), 'l': a, 'r': b})
             if left or right:
                 marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ squeeze: false }']})
         elif k == 2 and wedge:
@@ -79,7 +88,7 @@ def room(lv, coins=True, left=None, right=None, wedge=False, rows=4, narrow=True
                 r[c - 3] = left
             if right:
                 r[c + 3] = right
-        elif narrow and k not in (0, rows - 1):
+        elif narrow and not cliff and k not in (0, rows - 1):
             r[c - 3] = T.WALL; r[c + 3] = T.WALL      # alcobas en vez de pista abierta
         out.append(r)
     return Piece(out, marks)
@@ -178,8 +187,10 @@ def bubble_tower(lv, rise=4):
     marks.append({'kind': 'tower', 'row': len(out) - 1, 'fan': c + 2, 'ledge': c - 1})
     r = _row(lv); _walls(lv, r, c - 4, c + 4)
     lv.fill(r, c - 3, c + 1, high); lv.fill(r, c + 2, c + 3, lv.floor)
-    r[c - 2] = T.COIN
+    r[c - 1] = T.COIN
     out.append(r)                                                  # repisa con su premio
+    # el premio, una casilla dentro: en el borde de la repisa alta el limo deja trozos abajo
+    marks.append({'kind': 'coin', 'row': len(out) - 1, 'col': c - 1})   # sin marca se quedaba sin coger
     r = _row(lv); lv.fill(r, c - 4, c + 4, T.WALL); lv.fill(r, c - 1, c + 1, high)
     out.append(r)
     marks.append({'kind': 'pass', 'row': len(out) - 1, 'col': c})
@@ -282,6 +293,85 @@ def treasure_room(lv, coins=True, gem=False, relic=False, rows=4):
     marks.append({'kind': 'treasure', 'row': len(out), 'col': c + 3})
     out.append(r)
     r = _row(lv); lv.fill(r, c - 5, c + 5, T.WALL)
+    out.append(r)
+    return Piece(out, marks)
+
+
+def blizzard(lv, rows=5):
+    """Ventisca: pista de hielo con rachas de viento que entran por huecos del muro, una a
+    cada lado. No hace daño, pero empuja mientras se resbala, y las monedas están en el lado
+    contrario al que empuja cada racha: hay que cruzar apretado y a contraviento."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)
+    for k in range(rows):
+        r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+        lv.fill(r, c - 1, c + 1, T.ICE)            # el hielo solo en medio: los hombros agarran
+        # dos rachas, una por lado y separadas: con una en cada fila el limo se deshilacha
+        if k == 1:
+            r[c - 4] = T.FAN['e']                  # la racha va METIDA en el muro
+            r[c - 5] = T.WALL                      # y detrás, muro: si no, lo que empuje se cae
+            r[c + 3] = T.COIN                      # la moneda, contra el viento
+            marks.append({'kind': 'coin', 'row': len(out), 'col': c + 3})
+        elif k == rows - 2:
+            r[c + 4] = T.FAN['w']
+            r[c + 5] = T.WALL
+            r[c - 3] = T.COIN
+            marks.append({'kind': 'coin', 'row': len(out), 'col': c - 3})
+        out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    marks.insert(0, {'kind': 'raw', 'row': 0, 'steps': ['{ squeeze: true }']})
+    marks.append({'kind': 'walk', 'row': len(out), 'col': c, 't': 8})
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ squeeze: false }']})
+    out.append(r)
+    return Piece(out, marks)
+
+
+def switch_gate(lv):
+    """Puertas encadenadas a pie: el interruptor del fondo del ramal abre la primera puerta,
+    y detrás está el interruptor que abre la segunda. Gasta los dos canales del piso, así que
+    no se junta con el puzle de vías."""
+    c, out, marks = lv.c, [], []
+    lv.latch.update({'A': True, 'B': True})
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)                                              # sala de entrada
+    entry = len(out) - 1
+    coin_row = None
+    for k in range(3):
+        r = _row(lv); _walls(lv, r, c - 4, c + 4)
+        lv.fill(r, c - 3, c - 1, lv.floor); lv.fill(r, c + 1, c + 3, lv.floor)
+        r[c] = T.WALL                                          # dos ramales separados
+        if k == 1:
+            r[c - 2] = T.COIN; r[c + 2] = T.COIN
+            coin_row = len(out)
+        out.append(r)
+    # los dos ramales NO se comunican: se sube por uno, se baja a la entrada y se sube por el otro
+    marks.append({'kind': 'walk', 'row': entry, 'col': c + 2, 't': 5})
+    marks.append({'kind': 'coin', 'row': coin_row, 'col': c + 2})
+    marks.append({'kind': 'walk', 'row': entry, 'col': c + 2, 't': 6})
+    marks.append({'kind': 'walk', 'row': entry, 'col': c - 2, 't': 6})
+    marks.append({'kind': 'coin', 'row': coin_row, 'col': c - 2})
+    r = _row(lv); _walls(lv, r, c - 4, c + 4)
+    lv.fill(r, c - 3, c - 1, lv.floor); lv.fill(r, c + 1, c + 3, T.WALL)
+    r[c] = T.WALL; r[c - 2] = T.SWITCH_A
+    marks.append({'kind': 'switch', 'row': len(out), 'col': c - 2})
+    out.append(r)                                              # el ramal izquierdo muere en A
+    r = _row(lv); lv.fill(r, c - 4, c + 4, T.WALL); lv.fill(r, c - 1, c + 1, T.DOOR_A)
+    out.append(r)                                              # la puerta que abre A
+    marks.append({'kind': 'walk', 'row': len(out) - 1, 'col': c, 't': 8})
+    for k in range(2):
+        r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+        if k == 1:
+            r[c + 2] = T.SWITCH_B; r[c - 2] = T.COIN
+            marks.append({'kind': 'coin', 'row': len(out), 'col': c - 2})
+            marks.append({'kind': 'switch', 'row': len(out), 'col': c + 2})
+        out.append(r)                                          # sala del interruptor B
+    r = _row(lv); lv.fill(r, c - 4, c + 4, T.WALL); lv.fill(r, c - 1, c + 1, T.DOOR_B)
+    out.append(r)
+    marks.append({'kind': 'walk', 'row': len(out) - 1, 'col': c, 't': 8})
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
     out.append(r)
     return Piece(out, marks)
 

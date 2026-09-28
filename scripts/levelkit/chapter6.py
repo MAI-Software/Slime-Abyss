@@ -20,10 +20,17 @@ from scripts.levelkit import Level, check, pieces as P, writer   # noqa: E402
 W = 15
 
 
-def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=2, mix=None, **kw):
+def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=1, mix=None, cliff=None, **kw):
     """Tramo tipo: sala con su peligro en la fila de las monedas, paso y la mecánica que toque.
-    `mix` pega otra pieza justo al lado para que las mecánicas se toquen (eso son los combos)."""
-    lv.add(P.room(lv, left=left, right=right, wedge=wedge, rows=5))
+    `mix` pega otra pieza justo al lado para que las mecánicas se toquen (eso son los combos).
+    Pasos de una fila, salas de cuatro y una sala de cada dos colgada del vacío: menos suelo
+    muerto y más tensión sin gastar limo."""
+    if cliff is None:
+        cliff = (len(lv.rows) // 20) % 3 == 0   # una de cada tres: con una de cada dos el limo baja del 90 %
+    if left is None:
+        # roca agrietada, nunca pinchos: el pincho pegado a la moneda va comiendo limo
+        left = 'B'
+    lv.add(P.room(lv, left=left, right=right, wedge=wedge, rows=4, cliff=cliff))
     if mix:
         lv.add(mix(lv, **kw) if mix is P.ice_pass else mix(lv))
     lv.add(P.neck(lv, rows=neck_rows))
@@ -39,6 +46,7 @@ def floor1():
     section(lv, right='O')
     section(lv, P.loop, right='Y', mix=P.ice_pass)
     section(lv, P.bubble_tower, right='Y')
+    section(lv, P.loop, right='Y', mix=P.void_ledge)
     lv.tip('El jabón convierte al limo en burbuja', back=-8)
     section(lv, P.gauntlet, right='B', mix=P.fire_hall)
     section(lv, P.pit, right='Y', wedge=True)
@@ -57,6 +65,7 @@ def floor2():
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Y', mix=P.ice_pass)
     section(lv, P.bubble_tower, right='W')
+    section(lv, P.loop, right='Y', mix=P.void_ledge)
     section(lv, P.pit, right='Y', mix=P.fire_hall)
     section(lv, P.gauntlet, right='B', wedge=True)
     lv.add(P.crack_ledge(lv))
@@ -73,6 +82,7 @@ def floor3():
     lv.add(P.start_room(lv))
     section(lv, P.room, right='B', mix=P.ice_pass, wind='e')
     section(lv, P.bubble_tower, right='Y')
+    section(lv, P.loop, right='Y', mix=P.void_ledge)
     section(lv, P.loop, right='Z', mix=P.fire_hall)
     section(lv, P.bubble_tower, right='Y')
     lv.tip('Con el chorro de aire la burbuja sube a la repisa', back=-8)
@@ -92,6 +102,7 @@ def floor4():
     lv.add(P.start_room(lv))
     section(lv, P.room, right='B', mix=P.crack_ledge)
     section(lv, P.bubble_tower, right='B')
+    section(lv, P.loop, right='Y', mix=P.void_ledge)
     lv.tip('De burbuja la roca agrietada no se rompe', back=-8)
     section(lv, P.loop, right='Y', mix=P.ice_pass, wind='w')
     section(lv, P.gauntlet, right='B', mix=P.fire_hall)
@@ -107,6 +118,7 @@ def floor5():
     lv = Level('c6-pozos-de-espuma', 'Pozos de espuma', w=W, mood='dusk', cam_yaw=-12, keep=0.75)
     lv.add(P.start_room(lv))
     section(lv, P.pit, right='B', mix=P.ice_pass)
+    section(lv, P.loop, right='Y', mix=P.void_ledge)
     section(lv, P.loop, right='Z', mix=P.fire_hall)
     section(lv, P.pit, right='Y', wedge=True)
     section(lv, P.bubble_tower, right='Y')
@@ -129,6 +141,7 @@ def floor6():
     lv.tip('El interruptor de una vía abre la otra', back=-12)
     section(lv, P.loop, right='Y', mix=P.fire_hall)
     section(lv, P.bubble_tower, right='Y')
+    section(lv, P.loop, right='Y', mix=P.void_ledge)
     section(lv, P.gauntlet, right='B')
     lv.add(P.crack_ledge(lv))
     lv.add(P.void_ledge(lv))
@@ -142,6 +155,7 @@ def floor7():
     lv = Level('c6-saltos-de-espuma', 'Saltos de espuma', w=W, mood='bright', cam_yaw=-20, keep=0.7)
     lv.add(P.start_room(lv))
     section(lv, P.gauntlet, right='B', mix=P.ice_pass)
+    section(lv, P.loop, right='Y', mix=P.void_ledge)
     section(lv, P.room, right='Y', mix=P.fire_hall)
     section(lv, P.gauntlet, wedge=True)
     section(lv, P.bubble_tower, right='Z')
@@ -159,6 +173,7 @@ def floor8():
     section(lv, P.room, right='W', mix=P.fire_hall)
     section(lv, P.loop, right='Y', mix=P.ice_pass, wind='w')
     section(lv, P.bubble_tower, right='B')
+    section(lv, P.loop, right='Y', mix=P.void_ledge)
     section(lv, P.pit, right='Y')
     section(lv, P.gauntlet, right='B')
     lv.add(P.crack_ledge(lv))
@@ -177,6 +192,7 @@ def floor9():
     section(lv, P.loop, right='B', mix=P.ice_pass, wind='e')
     section(lv, P.rail_puzzle, right='Y')
     section(lv, P.pit, right='Z', wedge=True, mix=P.fire_hall)
+    section(lv, P.loop, right='Y', mix=P.void_ledge)
     section(lv, P.bubble_tower, right='Y')
     section(lv, P.gauntlet, right='B')
     lv.add(P.crack_ledge(lv))
@@ -193,6 +209,7 @@ def floor10():
     section(lv, P.loop, right='W', mix=P.fire_hall)
     section(lv, P.rail_puzzle, right='W')
     section(lv, P.pit, right='Z')
+    section(lv, P.loop, right='Y', mix=P.void_ledge)
     section(lv, P.bubble_tower, right='B')
     section(lv, P.gauntlet, right='W', wedge=True)
     section(lv, P.loop, right='B')

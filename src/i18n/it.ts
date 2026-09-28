@@ -40,6 +40,7 @@ export const it: Dict = {
     'dunas-profundas': 'Le Dune Profonde',
     'oasis-hundido': 'L oasi sommersa',
     'glaciar-roto': 'Il ghiacciaio spezzato',
+    'la-ventisca': 'La Bufera',
   },
   options: {
     title: 'Opzioni',
@@ -730,6 +731,46 @@ export const it: Dict = {
     },
     'c7-corazon-del-glaciar': {
       name: 'Cuore del ghiacciaio',
+      tips: [],
+    },
+    'c8-primeras-rachas': {
+      name: 'Prime raffiche',
+      tips: ['La raffica spinge: stringiti e resta vicino al muro'],
+    },
+    'c8-puertas-de-escarcha': {
+      name: 'Porte di brina',
+      tips: ['Un interruttore apre la porta del successivo'],
+    },
+    'c8-torre-de-nieve': {
+      name: 'Torre di neve',
+      tips: [],
+    },
+    'c8-vientos-cruzados': {
+      name: 'Venti incrociati',
+      tips: [],
+    },
+    'c8-pozo-blanco': {
+      name: 'Pozzo bianco',
+      tips: [],
+    },
+    'c8-cristales': {
+      name: 'Cristalli',
+      tips: [],
+    },
+    'c8-cornisas-del-viento': {
+      name: 'Cornici del vento',
+      tips: [],
+    },
+    'c8-sala-de-las-corrientes': {
+      name: 'Sala delle correnti',
+      tips: [],
+    },
+    'c8-laberinto-blanco': {
+      name: 'Labirinto bianco',
+      tips: [],
+    },
+    'c8-ojo-de-la-ventisca': {
+      name: 'Occhio della bufera',
       tips: [],
     },
   },
