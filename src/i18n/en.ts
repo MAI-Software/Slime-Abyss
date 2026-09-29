@@ -42,6 +42,7 @@ export const en: Dict = {
     'glaciar-roto': 'The Broken Glacier',
     'la-ventisca': 'The Blizzard',
     'nucleo-helado': 'The Frozen Core',
+    'la-fabrica': 'The Factory',
   },
   options: {
     title: 'Options',
@@ -776,7 +777,7 @@ export const en: Dict = {
     },
     'c9-placa-de-hielo': {
       name: 'Ice Plate',
-      tips: ['The plate needs nearly all the slime: arrive whole'],
+      tips: ['Spread out on the plate: it counts the blobs resting on it'],
     },
     'c9-vias-del-nucleo': {
       name: 'Core Rails',
@@ -812,6 +813,46 @@ export const en: Dict = {
     },
     'c9-corazon-de-hielo': {
       name: 'Heart of Ice',
+      tips: [],
+    },
+    'c10-cinta-de-montaje': {
+      name: 'Assembly Line',
+      tips: ['The cart loops the loop: hold on'],
+    },
+    'c10-sala-de-calderas': {
+      name: 'Boiler Room',
+      tips: [],
+    },
+    'c10-engranajes': {
+      name: 'Gears',
+      tips: [],
+    },
+    'c10-tuberias': {
+      name: 'Pipes',
+      tips: [],
+    },
+    'c10-horno': {
+      name: 'Furnace',
+      tips: [],
+    },
+    'c10-almacen': {
+      name: 'Warehouse',
+      tips: [],
+    },
+    'c10-cadena-de-vias': {
+      name: 'Rail Chain',
+      tips: [],
+    },
+    'c10-sala-de-control': {
+      name: 'Control Room',
+      tips: [],
+    },
+    'c10-laberinto-de-acero': {
+      name: 'Steel Maze',
+      tips: [],
+    },
+    'c10-corazon-de-la-maquina': {
+      name: 'Heart of the Machine',
       tips: [],
     },
   },

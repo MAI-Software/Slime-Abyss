@@ -42,6 +42,7 @@ export const it: Dict = {
     'glaciar-roto': 'Il ghiacciaio spezzato',
     'la-ventisca': 'La Bufera',
     'nucleo-helado': 'Il Nucleo Gelato',
+    'la-fabrica': 'La Fabbrica',
   },
   options: {
     title: 'Opzioni',
@@ -776,7 +777,7 @@ export const it: Dict = {
     },
     'c9-placa-de-hielo': {
       name: 'Piastra di ghiaccio',
-      tips: ['La piastra vuole quasi tutto il limo: arriva intero'],
+      tips: ['Spandi sulla piastra: conta i limetti appoggiati'],
     },
     'c9-vias-del-nucleo': {
       name: 'Binari del nucleo',
@@ -812,6 +813,46 @@ export const it: Dict = {
     },
     'c9-corazon-de-hielo': {
       name: 'Cuore di ghiaccio',
+      tips: [],
+    },
+    'c10-cinta-de-montaje': {
+      name: 'Catena di montaggio',
+      tips: ['Il carrello fa il giro della morte: tieniti forte'],
+    },
+    'c10-sala-de-calderas': {
+      name: 'Sala caldaie',
+      tips: [],
+    },
+    'c10-engranajes': {
+      name: 'Ingranaggi',
+      tips: [],
+    },
+    'c10-tuberias': {
+      name: 'Tubature',
+      tips: [],
+    },
+    'c10-horno': {
+      name: 'Forno',
+      tips: [],
+    },
+    'c10-almacen': {
+      name: 'Magazzino',
+      tips: [],
+    },
+    'c10-cadena-de-vias': {
+      name: 'Catena di binari',
+      tips: [],
+    },
+    'c10-sala-de-control': {
+      name: 'Sala di controllo',
+      tips: [],
+    },
+    'c10-laberinto-de-acero': {
+      name: 'Labirinto di acciaio',
+      tips: [],
+    },
+    'c10-corazon-de-la-maquina': {
+      name: 'Cuore della macchina',
       tips: [],
     },
   },

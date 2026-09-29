@@ -42,6 +42,7 @@ export const de: Dict = {
     'glaciar-roto': 'Der zerbrochene Gletscher',
     'la-ventisca': 'Der Schneesturm',
     'nucleo-helado': 'Der Gefrorene Kern',
+    'la-fabrica': 'Die Fabrik',
   },
   options: {
     title: 'Optionen',
@@ -776,7 +777,7 @@ export const de: Dict = {
     },
     'c9-placa-de-hielo': {
       name: 'Eisplatte',
-      tips: ['Die Platte will fast den ganzen Schleim: komm ganz an'],
+      tips: ['Breite dich auf der Platte aus: sie zaehlt die aufliegenden Kleckse'],
     },
     'c9-vias-del-nucleo': {
       name: 'Kernschienen',
@@ -812,6 +813,46 @@ export const de: Dict = {
     },
     'c9-corazon-de-hielo': {
       name: 'Herz aus Eis',
+      tips: [],
+    },
+    'c10-cinta-de-montaje': {
+      name: 'Fliessband',
+      tips: ['Die Lore faehrt den Looping: halt dich fest'],
+    },
+    'c10-sala-de-calderas': {
+      name: 'Kesselraum',
+      tips: [],
+    },
+    'c10-engranajes': {
+      name: 'Zahnraeder',
+      tips: [],
+    },
+    'c10-tuberias': {
+      name: 'Rohre',
+      tips: [],
+    },
+    'c10-horno': {
+      name: 'Ofen',
+      tips: [],
+    },
+    'c10-almacen': {
+      name: 'Lagerhalle',
+      tips: [],
+    },
+    'c10-cadena-de-vias': {
+      name: 'Schienenkette',
+      tips: [],
+    },
+    'c10-sala-de-control': {
+      name: 'Kontrollraum',
+      tips: [],
+    },
+    'c10-laberinto-de-acero': {
+      name: 'Stahllabyrinth',
+      tips: [],
+    },
+    'c10-corazon-de-la-maquina': {
+      name: 'Herz der Maschine',
       tips: [],
     },
   },

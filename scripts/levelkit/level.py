@@ -126,6 +126,13 @@ def route_steps(lv, m, z):
         # board suelta el mando en cuanto monta: con `to` el empuje lo devolvia en el viaje de vuelta
         return ['{ squeeze: true, board: [%s, %s], t: %d }' % (x(m['col']), z(m['row']) + 0.5, m.get('t', 6)),
                 '{ wait: %s }' % m.get('wait', 6)]
+    if k == 'plate':
+        # la placa cuenta los limitos APOYADOS: hecho bola solo tocan los de abajo (8 de 80) y
+        # esparramado toca 30. Así que aquí se suelta el apretón y se espera a que se extienda
+        x0, z0 = x(m['col']), z(m['row']) + 0.5
+        return ['{ squeeze: false, to: [%s, %s], radius: 0.4, t: 6 }' % (x0, z0),
+                '{ to: [%s, %s], radius: 0.25, t: 4 }' % (x0, z0),
+                '{ wait: 4.5 }']
     if k == 'walk':
         return ['{ squeeze: false, to: [%s, %s], radius: 0.4, t: %d }' % (x(m['col']), z(m['row']) + 0.5, m.get('t', 6))]
     if k == 'treasure':

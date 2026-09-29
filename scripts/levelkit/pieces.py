@@ -379,9 +379,10 @@ def switch_gate(lv):
     return Piece(out, marks)
 
 
-def weight_gate(lv, need=24, ch='A'):
-    """Puerta de peso: la placa solo baja con casi todo el limo encima, así que no vale mandar
-    un trocito. El contador de la placa dice cuántos limitos faltan."""
+def weight_gate(lv, need=12, ch='A'):
+    """Puerta de peso: la placa cuenta los limitos que TOCAN el suelo encima de ella, que son
+    los de la capa de abajo: el limo entero pone 13-16 y un cuarto de limo se queda en 6-7.
+    Por eso pide 12: se abre llegando entero y no se abre mandando un trozo por delante."""
     c, out, marks = lv.c, [], []
     sw = T.SWITCH_A if ch == 'A' else T.SWITCH_B
     door = T.DOOR_A if ch == 'A' else T.DOOR_B
@@ -392,10 +393,10 @@ def weight_gate(lv, need=24, ch='A'):
     marks.append({'kind': 'coins', 'row': 0, 'l': c - 3, 'r': c + 3})
     out.append(r)                                              # sala de la placa
     r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
-    lv.fill(r, c - 1, c + 1, sw)                               # la placa, de tres casillas
-    marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ squeeze: true }']})
-    marks.append({'kind': 'walk', 'row': len(out), 'col': c, 't': 6})
-    marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ wait: 2.5 }']})
+    lv.fill(r, c - 2, c + 2, sw)                               # la placa, de cinco casillas
+    # el paso 'walk' suelta el apretón, así que se aprieta DESPUÉS de estar encima: suelto,
+    # el limo se desparrama fuera de la placa y no llega al peso que pide
+    marks.append({'kind': 'plate', 'row': len(out), 'col': c})
     out.append(r)
     r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
     out.append(r)
@@ -407,6 +408,33 @@ def weight_gate(lv, need=24, ch='A'):
     r[c - 2] = T.COIN; r[c + 2] = T.COIN
     marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
     out.append(r)
+    return Piece(out, marks)
+
+
+def loop_rail(lv, spiral=True):
+    """La atracción de la fábrica: vía recta con un BUCLE vertical (y, si se pide, una espiral
+    de dos vueltas que marea). La vagoneta entra por la estación de abajo y sale arriba."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 3] = T.COIN; r[c + 3] = T.COIN
+    marks.append({'kind': 'coins', 'row': 0, 'l': c - 3, 'r': c + 3})
+    out.append(r)                                               # sala de embarque
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c] = T.STATION
+    out.append(r)
+    marks.append({'kind': 'station', 'row': len(out) - 1, 'col': c, 't': 6, 'wait': 12})
+    shapes = [T.RAIL, T.RAIL_LOOP, T.RAIL, T.RAIL_SPIRAL, T.RAIL] if spiral else [T.RAIL, T.RAIL_LOOP, T.RAIL]
+    for ch in shapes:
+        r = _row(lv); lv.fill(r, c - 4, c + 4, T.WALL); r[c] = ch
+        out.append(r)                                           # la vía: el bucle necesita sitio a los lados
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c] = T.STATION
+    out.append(r)                                               # estación de arriba
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    marks.append({'kind': 'walk', 'row': len(out), 'col': c, 't': 6})
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    out.append(r)                                               # sala de llegada
     return Piece(out, marks)
 
 
@@ -451,6 +479,8 @@ def fire_hall(lv, oil=True, plants=True):
     r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
     if plants:
         r[c - 1] = T.PLANT; r[c + 1] = T.PLANT
+    # las plantas dejan el hueco del medio: sin este punto el bot iba en diagonal y chocaba
+    marks.append({'kind': 'walk', 'row': len(out), 'col': c, 't': 6})
     out.append(r)
     r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
     r[c - 2] = T.COIN; r[c + 2] = T.COIN

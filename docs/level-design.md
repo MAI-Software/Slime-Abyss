@@ -47,9 +47,14 @@ de recorrido** y las marcas con las que el kit escribe la ruta.
 - `switch_gate` — dos ramales sin comunicación (moneda en cada uno), el interruptor A al fondo
   del izquierdo y detrás de su puerta el interruptor B, que abre la salida. Gasta los dos
   canales del piso, así que no se junta con `rail_puzzle`.
-- `weight_gate(need=24)` — placa de tres casillas que solo baja con casi todo el limo encima
-  (el cartel dice cuántos limitos faltan): no vale mandar un trozo por delante. Usa un canal y
-  el nivel sale con `need: { A: 24 }`.
+- `weight_gate(need=12)` — placa de cinco casillas que solo baja con el limo entero encima.
+  **La placa cuenta los limitos que TOCAN el suelo sobre ella, no los que hay**: el limo entero
+  apoya 13-16 (la capa de abajo) y un cuarto de limo apoya 6-7, así que pide 12. Hecho bola
+  apoya menos todavía, de modo que aquí se llega SIN apretar. Usa un canal y el nivel sale con
+  `need: { A: 12 }`.
+- `loop_rail` — la vía con forma: estación abajo, `@` (bucle vertical) y `%` (espiral de dos
+  vueltas, marea) por el medio y estación arriba. Las casillas con forma NO pueden ser punta de
+  la vía, así que siempre van con un `=` antes y otro después.
 - **Las tablas (`seesaw_bridge`) van de REMATE, nunca como tramo con paso.** Puestas en medio
   del recorrido el limo se para encima, la tabla vuelca y se va un cuarto de la bola: c9f7
   alternaba entre 100 % y 69 % hasta que se sacaron del camino principal.

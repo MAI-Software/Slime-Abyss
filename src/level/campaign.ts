@@ -91,6 +91,16 @@ import c9f7 from './campaign/chapter9/07-c9-cornisas-del-nucleo.json';
 import c9f8 from './campaign/chapter9/08-c9-sala-de-los-ecos.json';
 import c9f9 from './campaign/chapter9/09-c9-laberinto-del-nucleo.json';
 import c9f10 from './campaign/chapter9/10-c9-corazon-de-hielo.json';
+import c10f1 from './campaign/chapter10/01-c10-cinta-de-montaje.json';
+import c10f2 from './campaign/chapter10/02-c10-sala-de-calderas.json';
+import c10f3 from './campaign/chapter10/03-c10-engranajes.json';
+import c10f4 from './campaign/chapter10/04-c10-tuberias.json';
+import c10f5 from './campaign/chapter10/05-c10-horno.json';
+import c10f6 from './campaign/chapter10/06-c10-almacen.json';
+import c10f7 from './campaign/chapter10/07-c10-cadena-de-vias.json';
+import c10f8 from './campaign/chapter10/08-c10-sala-de-control.json';
+import c10f9 from './campaign/chapter10/09-c10-laberinto-de-acero.json';
+import c10f10 from './campaign/chapter10/10-c10-corazon-de-la-maquina.json';
 
 /** Modo historia: capítulos de 10 pisos. Sus coleccionables están en collectibles.ts. */
 export const CHAPTERS: ChapterDef[] = [
@@ -165,10 +175,18 @@ export const CHAPTERS: ChapterDef[] = [
     biome: 'frost',
     floors: [c9f1, c9f2, c9f3, c9f4, c9f5, c9f6, c9f7, c9f8, c9f9, c9f10] as LevelData[],
   },
+  {
+    // la fábrica: vías con bucle y espiral, y todas las mecánicas anteriores mezcladas
+    id: 'la-fabrica',
+    name: 'Capítulo 10',
+    subtitle: 'La Fábrica',
+    biome: 'tech',
+    floors: [c10f1, c10f2, c10f3, c10f4, c10f5, c10f6, c10f7, c10f8, c10f9, c10f10] as LevelData[],
+  },
 ];
 
 /** Capítulos anunciados que aún no se pueden jugar. */
-export const UPCOMING = [{ name: 'Capítulo 10', subtitle: 'Próximamente' }];
+export const UPCOMING = [{ name: 'Capítulo 11', subtitle: 'Próximamente' }];
 
 /** Suelo del menú: 9x7 casillas bajo la habitación (solo sostiene al limo; el mundo no se dibuja). */
 export const MENU_STAGE: LevelData = {

@@ -40,7 +40,7 @@ FAMILY = {
 DANGER = set('FXY.aB')                     # hace daño, se lleva limo o es vacío
 #: nota que se le pide a cada capítulo (la dificultad tiene que subir)
 # objetivos con los topes nuevos: cada capítulo tiene que quedar por encima del suyo
-TARGET = {1: 26, 2: 40, 3: 58, 4: 60, 5: 72, 6: 76, 7: 80, 8: 84, 9: 86}
+TARGET = {1: 26, 2: 40, 3: 58, 4: 60, 5: 72, 6: 76, 7: 80, 8: 84, 9: 86, 10: 88}
 
 
 def levels():

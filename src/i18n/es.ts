@@ -41,6 +41,7 @@ export const es = {
     'glaciar-roto': 'El Glaciar Roto',
     'la-ventisca': 'La Ventisca',
     'nucleo-helado': 'El Núcleo Helado',
+    'la-fabrica': 'La Fábrica',
   },
   options: {
     title: 'Opciones',
@@ -775,7 +776,7 @@ export const es = {
     },
     'c9-placa-de-hielo': {
       name: 'Placa de hielo',
-      tips: ['La placa pide casi todo el limo: llega entero'],
+      tips: ['Espárrate sobre la placa: cuenta los limitos apoyados'],
     },
     'c9-vias-del-nucleo': {
       name: 'Vías del núcleo',
@@ -811,6 +812,46 @@ export const es = {
     },
     'c9-corazon-de-hielo': {
       name: 'Corazón de hielo',
+      tips: [],
+    },
+    'c10-cinta-de-montaje': {
+      name: 'Cinta de montaje',
+      tips: ['La vagoneta hace el rizo: agárrate'],
+    },
+    'c10-sala-de-calderas': {
+      name: 'Sala de calderas',
+      tips: [],
+    },
+    'c10-engranajes': {
+      name: 'Engranajes',
+      tips: [],
+    },
+    'c10-tuberias': {
+      name: 'Tuberías',
+      tips: [],
+    },
+    'c10-horno': {
+      name: 'Horno',
+      tips: [],
+    },
+    'c10-almacen': {
+      name: 'Almacén',
+      tips: [],
+    },
+    'c10-cadena-de-vias': {
+      name: 'Cadena de vías',
+      tips: [],
+    },
+    'c10-sala-de-control': {
+      name: 'Sala de control',
+      tips: [],
+    },
+    'c10-laberinto-de-acero': {
+      name: 'Laberinto de acero',
+      tips: [],
+    },
+    'c10-corazon-de-la-maquina': {
+      name: 'Corazón de la máquina',
       tips: [],
     },
   } as Record<string, { name: string; tips: string[] }>,
