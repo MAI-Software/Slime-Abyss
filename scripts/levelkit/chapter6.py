@@ -61,16 +61,19 @@ def floor1():
 
 
 def floor2():
+    """Este piso ya castiga bastante con la hondonada, los trampolines y las dos cornisas, así
+    que el adorno de al lado de las monedas es inofensivo (bloque de hielo o planta): con roca
+    agrietada y pinchos pegados a cada moneda se quedaba en el 84 % de limo."""
     lv = Level('c6-corrientes-del-oasis', 'Corrientes del oasis', w=W, mood='dusk', cam_yaw=12)
     lv.add(P.start_room(lv))
-    section(lv, P.loop, right='Y', mix=P.ice_pass)
-    section(lv, P.bubble_tower, right='W')
-    section(lv, P.loop, right='Y', mix=P.void_ledge)
-    section(lv, P.pit, right='Y', mix=P.fire_hall)
-    section(lv, P.gauntlet, right='B', wedge=True)
+    section(lv, P.loop, left='Z', right='W', mix=P.ice_pass)
+    section(lv, P.bubble_tower, left='W', right='Z')
+    section(lv, P.loop, left='Z', right='W', mix=P.void_ledge)
+    section(lv, P.pit, left='W', right='Z', mix=lambda lv: P.fire_hall(lv, oil=False))
+    section(lv, P.gauntlet, left='Z', right='W', wedge=True)
     lv.add(P.crack_ledge(lv))
     lv.add(P.void_ledge(lv))
-    section(lv, P.loop, right='Y')
+    section(lv, P.loop, left='W', right='Z')
     lv.add(P.seesaw_bridge(lv))
     lv.add(P.spinner_room(lv))
     lv.add(P.treasure_room(lv))

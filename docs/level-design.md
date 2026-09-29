@@ -174,6 +174,12 @@ que sube: 34 / 46 / 56 / 64 / 70 / 76). Al final avisa si un capítulo puntúa m
 metro y ninguna mezcla. Subirlo a 74 fue meter las mecánicas unas junto a otras y poner el peligro
 en la fila de las monedas, no al final del pasillo.
 
+**El adorno peligroso pegado a la moneda va sangrando.** La roca agrietada o los pinchos en la
+casilla de al lado de una moneda se llevan 1-2 limitos por sala, porque el borde de la bola los
+pisa al recoger. En un piso de doce salas eso es un 10 % de limo: en los pisos que ya castigan
+con hondonadas, trampolines o cornisas, el adorno tiene que ser inofensivo (bloque de hielo o
+planta). Así se arreglaron c6-corrientes-del-oasis (84 % → 99 %) y c10-horno (88 % → 99 %).
+
 **El techo de dificultad lo pone el autopiloto.** Pinchos y fuego van comiendo limo: en un piso
 largo, seis tramos con pinchos dejan al bot en el 80 % y la prueba exige más del 90 %. Por eso la
 dificultad del final del juego se sube con ESTRUCTURA (tablas sobre el vacío, discos giratorios,

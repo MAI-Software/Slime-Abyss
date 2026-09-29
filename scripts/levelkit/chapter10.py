@@ -130,7 +130,7 @@ def floor5():
     section(lv, P.blizzard, left='Z', right='W', mix=lambda lv: P.fire_hall(lv, oil=False))
     section(lv, P.loop_rail, left='Z', right='W')
     section(lv, P.weight_gate, left='B', right='Z')
-    section(lv, P.pit, left='Z', right='W')
+    section(lv, P.pit, left='Z', right='W', mix=P.void_ledge)
     section(lv, P.bubble_tower, left='W', right='Z')
     section(lv, P.loop, left='Z', right='W', mix=P.void_ledge)
     section(lv, P.cannon_hall, left='B', right='Z')
@@ -140,6 +140,7 @@ def floor5():
     section(lv, P.loop, left='B', right='Y', mix=P.ice_slalom)
     section(lv, P.spinner_room, left='Z', right='W')
     lv.add(P.spinner_room(lv))
+    lv.add(P.void_ledge(lv))
     lv.add(P.seesaw_bridge(lv))
     lv.add(P.treasure_room(lv, gem=True))
     return lv

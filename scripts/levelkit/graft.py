@@ -44,13 +44,19 @@ def graft(lid, names):
     assert ps >= 0, lid
     floor = next((ch for ch in plants[ps][2][pj] if ch.isdigit()), '0')
 
-    wide = any(n == 'rail_puzzle' for n in names)
+    wide = any(n.startswith('rail_puzzle') for n in names)
     c = min(max(pi, 6 if wide else 4), w - (7 if wide else 5))
     lv = Level(lid, lid, w=w, floor=floor)
     lv.c = c
     lv.add(P.start_room(lv))
     for n in names:
-        lv.add(getattr(P, n)(lv))
+        # las piezas admiten argumentos: "ice_pass:wind=e", "fire_hall:oil=0"
+        base, _, args = n.partition(':')
+        kw = {}
+        for a in filter(None, args.split(',')):
+            k, _, v = a.partition('=')
+            kw[k] = int(v) if v in ('0', '1') else v
+        lv.add(getattr(P, base)(lv, **kw))
     rows_new, steps, _ = lv.build()
 
     # el tramo nuevo cuelga justo debajo de la salida vieja, que pasa a ser suelo
