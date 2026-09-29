@@ -162,7 +162,8 @@ def floor7():
     lv = Level('c8-cornisas-del-viento', 'Cornisas del viento', w=W, mood='dusk', cam_yaw=-24, keep=0.72)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Y')
-    section(lv, P.seesaw_bridge, right='Z', mix=P.ice_slalom)
+    # las tablas van de remate, nunca como tramo de paso
+    section(lv, P.crack_ledge, right='Z', mix=P.ice_slalom)
     section(lv, P.rail_puzzle, right='B')
     section(lv, P.cold_spikes, right='W')
     section(lv, P.loop, right='B')
@@ -174,6 +175,7 @@ def floor7():
     section(lv, P.loop, right='W', mix=P.void_ledge)
     lv.add(P.spinner_room(lv))
     lv.add(P.void_ledge(lv))
+    lv.add(P.seesaw_bridge(lv))
     lv.add(P.treasure_room(lv, gem=True))
     return lv
 

@@ -142,7 +142,8 @@ def floor6():
 def floor7():
     lv = Level('c7-tablas-heladas', 'Tablas heladas', w=W, mood='dusk', cam_yaw=-20, keep=0.72)
     lv.add(P.start_room(lv))
-    section(lv, P.seesaw_bridge, right='Y', mix=P.ice_slalom)
+    # las tablas van de remate, nunca como tramo de paso: ahi se llevan un cuarto del limo
+    section(lv, P.crack_ledge, right='Y', mix=P.ice_slalom)
     section(lv, P.cold_spikes, right='Z')
     section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.gauntlet, right='B')
@@ -152,6 +153,7 @@ def floor7():
     section(lv, P.pit, right='B', mix=P.ice_slalom)
     lv.add(P.spinner_room(lv))
     lv.add(P.void_ledge(lv))
+    lv.add(P.seesaw_bridge(lv))
     lv.add(P.treasure_room(lv, gem=True))
     return lv
 

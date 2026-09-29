@@ -43,13 +43,16 @@ def start_room(lv, coins=True, rows=3):
     return Piece(out, marks)
 
 
-def neck(lv, door=None, rows=1):
-    """Paso estrecho de 3 casillas; `door` pone una puerta ('d' o 'D')."""
+def neck(lv, door=None, rows=1, coin=False):
+    """Paso estrecho de 3 casillas; `door` pone una puerta ('d' o 'D').
+    `coin` deja una moneda en el paso: el pasillo pelado es lo que el medidor llama relleno."""
     c, out, marks = lv.c, [], []
     for k in range(rows):
         r = _row(lv)
         lv.fill(r, c - 4, c + 4, T.WALL)
         lv.fill(r, c - 1, c + 1, door if (door and k == 0) else lv.floor)
+        if coin and not door and k == rows - 1:
+            r[c] = T.COIN
         out.append(r)
     marks.append({'kind': 'pass', 'row': 0, 'col': c})
     return Piece(out, marks)
@@ -372,6 +375,37 @@ def switch_gate(lv):
     out.append(r)
     marks.append({'kind': 'walk', 'row': len(out) - 1, 'col': c, 't': 8})
     r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)
+    return Piece(out, marks)
+
+
+def weight_gate(lv, need=24, ch='A'):
+    """Puerta de peso: la placa solo baja con casi todo el limo encima, así que no vale mandar
+    un trocito. El contador de la placa dice cuántos limitos faltan."""
+    c, out, marks = lv.c, [], []
+    sw = T.SWITCH_A if ch == 'A' else T.SWITCH_B
+    door = T.DOOR_A if ch == 'A' else T.DOOR_B
+    lv.latch[ch] = True
+    lv.need[ch] = need
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 3] = T.COIN; r[c + 3] = T.COIN
+    marks.append({'kind': 'coins', 'row': 0, 'l': c - 3, 'r': c + 3})
+    out.append(r)                                              # sala de la placa
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    lv.fill(r, c - 1, c + 1, sw)                               # la placa, de tres casillas
+    marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ squeeze: true }']})
+    marks.append({'kind': 'walk', 'row': len(out), 'col': c, 't': 6})
+    marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ wait: 2.5 }']})
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)
+    r = _row(lv); lv.fill(r, c - 4, c + 4, T.WALL); lv.fill(r, c - 1, c + 1, door)
+    out.append(r)                                              # la puerta que abre la placa
+    marks.append({'kind': 'walk', 'row': len(out) - 1, 'col': c, 't': 8})
+    marks.append({'kind': 'raw', 'row': len(out) - 1, 'steps': ['{ squeeze: false }']})
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
     out.append(r)
     return Piece(out, marks)
 

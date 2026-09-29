@@ -47,6 +47,12 @@ de recorrido** y las marcas con las que el kit escribe la ruta.
 - `switch_gate` — dos ramales sin comunicación (moneda en cada uno), el interruptor A al fondo
   del izquierdo y detrás de su puerta el interruptor B, que abre la salida. Gasta los dos
   canales del piso, así que no se junta con `rail_puzzle`.
+- `weight_gate(need=24)` — placa de tres casillas que solo baja con casi todo el limo encima
+  (el cartel dice cuántos limitos faltan): no vale mandar un trozo por delante. Usa un canal y
+  el nivel sale con `need: { A: 24 }`.
+- **Las tablas (`seesaw_bridge`) van de REMATE, nunca como tramo con paso.** Puestas en medio
+  del recorrido el limo se para encima, la tabla vuelca y se va un cuarto de la bola: c9f7
+  alternaba entre 100 % y 69 % hasta que se sacaron del camino principal.
 - `room(cliff=True)` — la misma sala pero sin muros laterales: una terraza colgada del abismo.
   Las monedas se quedan a dos casillas del borde; pegadas al borde el limo asoma media bola y
   se deja los trozos de fuera (probado: bajó al 66 % en c8f1).

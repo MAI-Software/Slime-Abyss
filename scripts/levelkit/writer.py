@@ -20,6 +20,8 @@ def level_block(lv, rows, tips, file_path):
             "    mood: '%s', camYaw: %d," % (lv.mood, lv.cam_yaw)]
     if lv.latch:
         meta.insert(1, '    latch: { %s },' % ', '.join('%s: true' % k for k in sorted(lv.latch)))
+    if getattr(lv, 'need', None):
+        meta.insert(1, '    need: { %s },' % ', '.join('%s: %d' % (k, v) for k, v in sorted(lv.need.items())))
     body = ['  {'] + meta + ['    map: [']
     body += ["'%s'," % r for r in rows]
     body.append('    ],')

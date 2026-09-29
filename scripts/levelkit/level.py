@@ -28,7 +28,7 @@ class Level:
     """Piso en construcción. Las piezas se añaden en orden de recorrido."""
 
     def __init__(self, lid, name, w=15, floor='0', mood='dusk', cam_yaw=0, count=80, keep=0.8,
-                 latch=None, story=0):
+                 latch=None, story=0, need=None):
         self.id = lid
         self.name = name
         self.w = w
@@ -38,6 +38,7 @@ class Level:
         self.count = count
         self.keep = keep
         self.latch = latch or {}
+        self.need = need or {}            # limitos que tiene que haber encima del interruptor
         self.c = w // 2                      # columna por la que corre el camino
         self.rows = []                       # de abajo (salida) hacia arriba (tesoro)
         self.marks = []                      # marcas absolutas: {'kind', 'row', ...}

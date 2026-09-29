@@ -41,6 +41,7 @@ export const fr: Dict = {
     'oasis-hundido': 'L oasis engloutie',
     'glaciar-roto': 'Le glacier brise',
     'la-ventisca': 'La Tempete de Neige',
+    'nucleo-helado': 'Le Noyau Gele',
   },
   options: {
     title: 'Options',
@@ -771,6 +772,46 @@ export const fr: Dict = {
     },
     'c8-ojo-de-la-ventisca': {
       name: 'Oeil de la tempete',
+      tips: [],
+    },
+    'c9-placa-de-hielo': {
+      name: 'Plaque de glace',
+      tips: ['La plaque veut presque tout le limon: arrive entier'],
+    },
+    'c9-vias-del-nucleo': {
+      name: 'Rails du noyau',
+      tips: [],
+    },
+    'c9-galeria-de-escarcha': {
+      name: 'Galerie de givre',
+      tips: [],
+    },
+    'c9-puertas-del-nucleo': {
+      name: 'Portes du noyau',
+      tips: [],
+    },
+    'c9-pozo-del-nucleo': {
+      name: 'Puits du noyau',
+      tips: [],
+    },
+    'c9-cristal-mayor': {
+      name: 'Grand cristal',
+      tips: [],
+    },
+    'c9-cornisas-del-nucleo': {
+      name: 'Corniches du noyau',
+      tips: [],
+    },
+    'c9-sala-de-los-ecos': {
+      name: 'Salle des echos',
+      tips: [],
+    },
+    'c9-laberinto-del-nucleo': {
+      name: 'Labyrinthe du noyau',
+      tips: [],
+    },
+    'c9-corazon-de-hielo': {
+      name: 'Coeur de glace',
       tips: [],
     },
   },

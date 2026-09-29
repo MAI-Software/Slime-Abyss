@@ -41,6 +41,7 @@ export const it: Dict = {
     'oasis-hundido': 'L oasi sommersa',
     'glaciar-roto': 'Il ghiacciaio spezzato',
     'la-ventisca': 'La Bufera',
+    'nucleo-helado': 'Il Nucleo Gelato',
   },
   options: {
     title: 'Opzioni',
@@ -771,6 +772,46 @@ export const it: Dict = {
     },
     'c8-ojo-de-la-ventisca': {
       name: 'Occhio della bufera',
+      tips: [],
+    },
+    'c9-placa-de-hielo': {
+      name: 'Piastra di ghiaccio',
+      tips: ['La piastra vuole quasi tutto il limo: arriva intero'],
+    },
+    'c9-vias-del-nucleo': {
+      name: 'Binari del nucleo',
+      tips: [],
+    },
+    'c9-galeria-de-escarcha': {
+      name: 'Galleria di brina',
+      tips: [],
+    },
+    'c9-puertas-del-nucleo': {
+      name: 'Porte del nucleo',
+      tips: [],
+    },
+    'c9-pozo-del-nucleo': {
+      name: 'Pozzo del nucleo',
+      tips: [],
+    },
+    'c9-cristal-mayor': {
+      name: 'Gran cristallo',
+      tips: [],
+    },
+    'c9-cornisas-del-nucleo': {
+      name: 'Cornici del nucleo',
+      tips: [],
+    },
+    'c9-sala-de-los-ecos': {
+      name: 'Sala degli echi',
+      tips: [],
+    },
+    'c9-laberinto-del-nucleo': {
+      name: 'Labirinto del nucleo',
+      tips: [],
+    },
+    'c9-corazon-de-hielo': {
+      name: 'Cuore di ghiaccio',
       tips: [],
     },
   },

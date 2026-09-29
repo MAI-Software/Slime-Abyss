@@ -41,6 +41,7 @@ export const en: Dict = {
     'oasis-hundido': 'The Sunken Oasis',
     'glaciar-roto': 'The Broken Glacier',
     'la-ventisca': 'The Blizzard',
+    'nucleo-helado': 'The Frozen Core',
   },
   options: {
     title: 'Options',
@@ -771,6 +772,46 @@ export const en: Dict = {
     },
     'c8-ojo-de-la-ventisca': {
       name: 'Eye of the Blizzard',
+      tips: [],
+    },
+    'c9-placa-de-hielo': {
+      name: 'Ice Plate',
+      tips: ['The plate needs nearly all the slime: arrive whole'],
+    },
+    'c9-vias-del-nucleo': {
+      name: 'Core Rails',
+      tips: [],
+    },
+    'c9-galeria-de-escarcha': {
+      name: 'Frost Gallery',
+      tips: [],
+    },
+    'c9-puertas-del-nucleo': {
+      name: 'Core Gates',
+      tips: [],
+    },
+    'c9-pozo-del-nucleo': {
+      name: 'Core Well',
+      tips: [],
+    },
+    'c9-cristal-mayor': {
+      name: 'Great Crystal',
+      tips: [],
+    },
+    'c9-cornisas-del-nucleo': {
+      name: 'Core Ledges',
+      tips: [],
+    },
+    'c9-sala-de-los-ecos': {
+      name: 'Hall of Echoes',
+      tips: [],
+    },
+    'c9-laberinto-del-nucleo': {
+      name: 'Core Maze',
+      tips: [],
+    },
+    'c9-corazon-de-hielo': {
+      name: 'Heart of Ice',
       tips: [],
     },
   },

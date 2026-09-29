@@ -41,6 +41,7 @@ export const de: Dict = {
     'oasis-hundido': 'Die versunkene Oase',
     'glaciar-roto': 'Der zerbrochene Gletscher',
     'la-ventisca': 'Der Schneesturm',
+    'nucleo-helado': 'Der Gefrorene Kern',
   },
   options: {
     title: 'Optionen',
@@ -771,6 +772,46 @@ export const de: Dict = {
     },
     'c8-ojo-de-la-ventisca': {
       name: 'Auge des Schneesturms',
+      tips: [],
+    },
+    'c9-placa-de-hielo': {
+      name: 'Eisplatte',
+      tips: ['Die Platte will fast den ganzen Schleim: komm ganz an'],
+    },
+    'c9-vias-del-nucleo': {
+      name: 'Kernschienen',
+      tips: [],
+    },
+    'c9-galeria-de-escarcha': {
+      name: 'Frostgalerie',
+      tips: [],
+    },
+    'c9-puertas-del-nucleo': {
+      name: 'Kerntore',
+      tips: [],
+    },
+    'c9-pozo-del-nucleo': {
+      name: 'Kernschacht',
+      tips: [],
+    },
+    'c9-cristal-mayor': {
+      name: 'Grosser Kristall',
+      tips: [],
+    },
+    'c9-cornisas-del-nucleo': {
+      name: 'Kernsimse',
+      tips: [],
+    },
+    'c9-sala-de-los-ecos': {
+      name: 'Halle der Echos',
+      tips: [],
+    },
+    'c9-laberinto-del-nucleo': {
+      name: 'Kernlabyrinth',
+      tips: [],
+    },
+    'c9-corazon-de-hielo': {
+      name: 'Herz aus Eis',
       tips: [],
     },
   },

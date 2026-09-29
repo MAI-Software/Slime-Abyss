@@ -40,6 +40,7 @@ export const es = {
     'oasis-hundido': 'El Oasis Hundido',
     'glaciar-roto': 'El Glaciar Roto',
     'la-ventisca': 'La Ventisca',
+    'nucleo-helado': 'El Núcleo Helado',
   },
   options: {
     title: 'Opciones',
@@ -770,6 +771,46 @@ export const es = {
     },
     'c8-ojo-de-la-ventisca': {
       name: 'Ojo de la ventisca',
+      tips: [],
+    },
+    'c9-placa-de-hielo': {
+      name: 'Placa de hielo',
+      tips: ['La placa pide casi todo el limo: llega entero'],
+    },
+    'c9-vias-del-nucleo': {
+      name: 'Vías del núcleo',
+      tips: [],
+    },
+    'c9-galeria-de-escarcha': {
+      name: 'Galería de escarcha',
+      tips: [],
+    },
+    'c9-puertas-del-nucleo': {
+      name: 'Puertas del núcleo',
+      tips: [],
+    },
+    'c9-pozo-del-nucleo': {
+      name: 'Pozo del núcleo',
+      tips: [],
+    },
+    'c9-cristal-mayor': {
+      name: 'Cristal mayor',
+      tips: [],
+    },
+    'c9-cornisas-del-nucleo': {
+      name: 'Cornisas del núcleo',
+      tips: [],
+    },
+    'c9-sala-de-los-ecos': {
+      name: 'Sala de los ecos',
+      tips: [],
+    },
+    'c9-laberinto-del-nucleo': {
+      name: 'Laberinto del núcleo',
+      tips: [],
+    },
+    'c9-corazon-de-hielo': {
+      name: 'Corazón de hielo',
       tips: [],
     },
   } as Record<string, { name: string; tips: string[] }>,

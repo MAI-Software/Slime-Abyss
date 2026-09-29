@@ -81,6 +81,16 @@ import c8f7 from './campaign/chapter8/07-c8-cornisas-del-viento.json';
 import c8f8 from './campaign/chapter8/08-c8-sala-de-las-corrientes.json';
 import c8f9 from './campaign/chapter8/09-c8-laberinto-blanco.json';
 import c8f10 from './campaign/chapter8/10-c8-ojo-de-la-ventisca.json';
+import c9f1 from './campaign/chapter9/01-c9-placa-de-hielo.json';
+import c9f2 from './campaign/chapter9/02-c9-vias-del-nucleo.json';
+import c9f3 from './campaign/chapter9/03-c9-galeria-de-escarcha.json';
+import c9f4 from './campaign/chapter9/04-c9-puertas-del-nucleo.json';
+import c9f5 from './campaign/chapter9/05-c9-pozo-del-nucleo.json';
+import c9f6 from './campaign/chapter9/06-c9-cristal-mayor.json';
+import c9f7 from './campaign/chapter9/07-c9-cornisas-del-nucleo.json';
+import c9f8 from './campaign/chapter9/08-c9-sala-de-los-ecos.json';
+import c9f9 from './campaign/chapter9/09-c9-laberinto-del-nucleo.json';
+import c9f10 from './campaign/chapter9/10-c9-corazon-de-hielo.json';
 
 /** Modo historia: capítulos de 10 pisos. Sus coleccionables están en collectibles.ts. */
 export const CHAPTERS: ChapterDef[] = [
@@ -147,10 +157,18 @@ export const CHAPTERS: ChapterDef[] = [
     biome: 'frost',
     floors: [c8f1, c8f2, c8f3, c8f4, c8f5, c8f6, c8f7, c8f8, c8f9, c8f10] as LevelData[],
   },
+  {
+    // el fondo del hielo: placas de peso que solo bajan con el limo entero encima
+    id: 'nucleo-helado',
+    name: 'Capítulo 9',
+    subtitle: 'El Núcleo Helado',
+    biome: 'frost',
+    floors: [c9f1, c9f2, c9f3, c9f4, c9f5, c9f6, c9f7, c9f8, c9f9, c9f10] as LevelData[],
+  },
 ];
 
 /** Capítulos anunciados que aún no se pueden jugar. */
-export const UPCOMING = [{ name: 'Capítulo 9', subtitle: 'Próximamente' }];
+export const UPCOMING = [{ name: 'Capítulo 10', subtitle: 'Próximamente' }];
 
 /** Suelo del menú: 9x7 casillas bajo la habitación (solo sostiene al limo; el mundo no se dibuja). */
 export const MENU_STAGE: LevelData = {
