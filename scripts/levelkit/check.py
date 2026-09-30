@@ -21,15 +21,18 @@ def band(row, i):
     return list(range(lo, hi + 1))
 
 
-def check(rows, steps=(), lid='?'):
-    """Devuelve la lista de avisos (vacía = bien)."""
+def check(rows, steps=(), lid='?', up=None):
+    """Devuelve la lista de avisos (vacía = bien).
+    `up` es la planta alta de los pisos de dos plantas: allí también hay salida, tesoro y
+    monedas, y una estación sin vía al lado NO está suelta si tiene su gemela justo encima."""
     bad = []
     say = lambda m: bad.append('%s: %s' % (lid, m))
     w = len(rows[0])
+    twin = lambda i, j: (up[j][i] if up and 0 <= j < len(up) and 0 <= i < len(up[j]) else T.VOID) == T.STATION
     for j, r in enumerate(rows):
         if len(r) != w:
             say('la fila %d mide %d y el mapa %d' % (j, len(r), w))
-    txt = ''.join(rows)
+    txt = ''.join(rows) + ''.join(up or [])
     if txt.count(T.START) != 1:
         say('tiene %d salidas del limo' % txt.count(T.START))
     if txt.count(T.TREASURE) != 1:
@@ -41,7 +44,7 @@ def check(rows, steps=(), lid='?'):
         for i, ch in enumerate(r):
             side = [at(i + 1, j), at(i - 1, j), at(i, j + 1), at(i, j - 1)]
             if ch == T.STATION:
-                if not any(c in (T.RAIL, T.RAIL_LOOP, T.RAIL_SPIRAL, T.STATION) for c in side):
+                if not any(c in (T.RAIL, T.RAIL_LOOP, T.RAIL_SPIRAL, T.STATION) for c in side) and not twin(i, j):
                     say('estación suelta en (%d,%d)' % (i, j))
                 walls = [(a, b) for a in (-1, 0, 1) for b in (-1, 0, 1)
                          if (a or b) and at(i + a, j + b) == T.WALL]

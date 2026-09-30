@@ -438,6 +438,60 @@ def loop_rail(lv, spiral=True):
     return Piece(out, marks)
 
 
+def roller_gap(lv):
+    """Trampa de cilindros: dos cilindros pegados a los muros de un pasillo. El que pase rozando
+    uno sale disparado contra la pared de enfrente; por el centro no pasa nada. La gracia es que
+    las monedas están justo delante de cada cilindro."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 3] = T.COIN; r[c + 3] = T.COIN
+    marks.append({'kind': 'coins', 'row': 0, 'l': c - 3, 'r': c + 3})
+    out.append(r)                                              # carrerilla
+    marks.append({'kind': 'raw', 'row': 0, 'steps': ['{ squeeze: true }']})
+    for k in range(3):
+        r = _row(lv); lv.fill(r, c - 4, c + 4, T.WALL); lv.fill(r, c - 2, c + 2, lv.floor)
+        if k == 0:
+            r[c - 2] = T.ROLLER
+        if k == 2:
+            r[c + 2] = T.ROLLER
+        out.append(r)
+        marks.append({'kind': 'walk', 'row': len(out) - 1, 'col': c, 't': 6})
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    marks.append({'kind': 'walk', 'row': len(out), 'col': c, 't': 6})
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ squeeze: false }']})
+    out.append(r)
+    return Piece(out, marks)
+
+
+def roller_launch(lv):
+    """El cilindro como herramienta, no como trampa: se coge carrerilla hacia él y el empujón
+    cruza un hueco al vacío que a pie no se pasa.
+    OJO: sin usar en ningún capítulo todavía. El empujón manda por delante al trozo grande y los
+    rezagados se caen al hueco: el autopiloto se queda en el 20 % de limo. Falta afinarla."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c] = T.ROLLER                                            # el cilindro, en medio del paso
+    out.append(r)
+    marks.append({'kind': 'raw', 'row': 0, 'steps': ['{ squeeze: true }']})
+    marks.append({'kind': 'walk', 'row': len(out) - 1, 'col': c, 't': 5})
+    out.append(_row(lv))                                       # el hueco que cruza el empujón
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    # el empujón manda por delante al trozo grande: se espera a que caiga TODO antes de seguir
+    marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ settle: 8 }', '{ squeeze: true }', '{ wait: 2 }']})
+    marks.append({'kind': 'walk', 'row': len(out), 'col': c, 't': 6})
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    marks.append({'kind': 'raw', 'row': len(out), 'steps': ['{ squeeze: false }']})
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    out.append(r)
+    return Piece(out, marks)
+
+
 def ice_pass(lv, wind=None, spikes=False):
     """Paso de hielo: se resbala, con pinchos a los lados y, si se pide, un ventilador
     metido en el muro que empuja mientras se cruza. Dos mecánicas en la misma casilla."""

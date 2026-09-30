@@ -33,6 +33,7 @@ JUMP = 'J'
 SWITCH_A, SWITCH_B = 'S', 's'
 DOOR_A, DOOR_B = 'D', 'd'
 SPINNER = 'E'
+ROLLER = 'K'
 COLD = 'Q'
 CANNON, TARGET = 'N', 'x'
 FAN = {'n': '^', 's': 'v', 'e': '>', 'w': '<'}

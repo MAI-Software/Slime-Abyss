@@ -25,6 +25,12 @@ def level_block(lv, rows, tips, file_path):
     body = ['  {'] + meta + ['    map: [']
     body += ["'%s'," % r for r in rows]
     body.append('    ],')
+    if getattr(lv, 'top_up', None):
+        body.append('    stories: [{')
+        body.append('      map: [')
+        body += ["'%s'," % r for r in lv.top_up]
+        body.append('      ],')
+        body.append('    }],')
     if tips:
         body.append('    tips: [')
         body += ["      { z: %d, text: '%s' }," % (t['z'], t['text'].replace("'", "\\'")) for t in tips]

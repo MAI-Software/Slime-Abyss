@@ -33,6 +33,13 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const key = (type: string, code: string) => window.dispatchEvent(new KeyboardEvent(type, { code, key: ' ', bubbles: true }));
 const playing = () => api().state().mode === 'play';
 
+/** Segundos de juego que lleva la prueba del piso: dice de un vistazo si un piso se hace largo. */
+let clock = 0;
+function step(dt: number) {
+  api().run(dt);
+  clock += dt;
+}
+
 /** Mayor número de limitos separados del trozo principal visto en la prueba (y dónde). */
 let apart = { n: 0, x: 0, z: 0 };
 function sampleApart() {
@@ -45,7 +52,7 @@ function sampleApart() {
 /** Avanza la simulación en pasos cortos midiendo las separaciones. */
 function advance(t: number) {
   const S = api();
-  for (let s = 0; s < t - 1e-6 && playing(); s += 0.05) { S.run(Math.min(0.05, t - s)); sampleApart(); }
+  for (let s = 0; s < t - 1e-6 && playing(); s += 0.05) { step(Math.min(0.05, t - s)); sampleApart(); }
 }
 
 function goTo(tx: number, tz: number, radius = 0.45, t = 8, until?: () => boolean) {
@@ -60,7 +67,7 @@ function goTo(tx: number, tz: number, radius = 0.45, t = 8, until?: () => boolea
     return d < 0.05 ? [0, 0] : [(dx / d) * k, (dz / d) * k];
   });
   for (let s = 0; s < t && playing(); s += 0.05) {
-    S.run(0.05);
+    step(0.05);
     sampleApart();
     const g = S.slime()?.groups[0];
     if (g && Math.hypot(tx - g.cx, tz - g.cz) < radius) return;
@@ -74,8 +81,8 @@ function shoot(tx: number, tz: number) {
   const sl = S.slime()!;
   goTo(tx, tz, 0.05, 6, () => sl.riding.some((v) => v === 1));
   S.drive(() => [0, 0]);
-  for (let s = 0; s < 6 && playing() && (sl.riding.some((v) => v === 1) || sl.flying.some((v) => v === 1)); s += 0.05) S.run(0.05);
-  S.run(0.8);
+  for (let s = 0; s < 6 && playing() && (sl.riding.some((v) => v === 1) || sl.flying.some((v) => v === 1)); s += 0.05) step(0.05);
+  step(0.8);
 }
 
 /* Sube a una estación de raíl: empuja hasta que el limo monta y ahí suelta el mando.
@@ -93,7 +100,7 @@ function settle(t = 8) {
   const S = api();
   S.drive(() => [0, 0]);
   for (let s = 0; s < t && playing(); s += 0.05) {
-    S.run(0.05);
+    step(0.05);
     sampleApart();
     const sl = S.slime();
     if (!sl) return;
@@ -110,7 +117,7 @@ function waitFireOff(i: number, j: number, t = 8) {
   const on = () => [0, 1, 2].some((st) => S.world().fireActive(i, j, st));
   let was = on();
   for (let s = 0; s < t && playing(); s += 0.02) {
-    S.run(0.02);
+    step(0.02);
     const now = on();
     if (was && !now) return;
     was = now;
@@ -129,8 +136,9 @@ async function run(c: number, k: number, steps: Step[], trace?: string[]): Promi
   S.start(c, k);
   await sleep(1200);
   apart = { n: 0, x: 0, z: 0 };
+  clock = 0;
   S.drive(() => [0, 0]);
-  S.run(0.8);
+  step(0.8);
   for (const st of steps) {
     if (!playing()) break;
     if (st.squeeze !== undefined) key(st.squeeze ? 'keydown' : 'keyup', 'Space');
@@ -148,7 +156,7 @@ async function run(c: number, k: number, steps: Step[], trace?: string[]): Promi
     }
   }
   key('keyup', 'Space');
-  for (let s = 0; s < 4 && playing(); s += 0.5) S.run(0.5);
+  for (let s = 0; s < 4 && playing(); s += 0.5) step(0.5);
   const st = S.state();
   S.drive(null);
   const w = S.world();
@@ -158,7 +166,7 @@ async function run(c: number, k: number, steps: Step[], trace?: string[]): Promi
   const pct = sl ? sl.aliveCount / sl.n : 0;
   const coins = w.coinsCollected === w.coinsTotal;
   const ok = done && coins && pct > 0.9;
-  const line = `${ok ? 'OK ' : 'MAL'} c${c + 1}f${k + 1} ${w.def.id}: ${done ? 'tesoro' : 'SIN TESORO'} · limo ${Math.round(pct * 100)}% · monedas ${w.coinsCollected}/${w.coinsTotal}${w.gemsTotal ? ` · gema ${w.gemsCollected}/${w.gemsTotal}` : ''}${w.relicsTotal ? ` · coleccionable ${w.relicsCollected}/${w.relicsTotal}` : ''} · separado máx ${apart.n} en (${apart.x.toFixed(1)}, ${apart.z.toFixed(1)})`;
+  const line = `${ok ? 'OK ' : 'MAL'} c${c + 1}f${k + 1} ${w.def.id}: ${done ? 'tesoro' : 'SIN TESORO'} · ${Math.round(clock)} s · limo ${Math.round(pct * 100)}% · monedas ${w.coinsCollected}/${w.coinsTotal}${w.gemsTotal ? ` · gema ${w.gemsCollected}/${w.gemsTotal}` : ''}${w.relicsTotal ? ` · coleccionable ${w.relicsCollected}/${w.relicsTotal}` : ''} · separado máx ${apart.n} en (${apart.x.toFixed(1)}, ${apart.z.toFixed(1)})`;
   return { id: w.def.id, ok, line };
 }
 

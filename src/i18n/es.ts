@@ -42,6 +42,7 @@ export const es = {
     'la-ventisca': 'La Ventisca',
     'nucleo-helado': 'El Núcleo Helado',
     'la-fabrica': 'La Fábrica',
+    'la-torre': 'La Torre',
   },
   options: {
     title: 'Opciones',
@@ -440,6 +441,7 @@ export const es = {
       bowl: 'Suelo hundido (arrastra al agujero)',
       soap: 'Pastilla de jabón (burbuja)',
       fanup: 'Ventilador hacia arriba (sube la burbuja)',
+      roller: 'Cilindro (te lanza hacia donde empujas)',
       hole: 'Agujero (lleva a una salida más abajo)',
       exit: 'Salida de agujero',
       railLoop: 'Raíl con bucle (marea)',
@@ -852,6 +854,46 @@ export const es = {
     },
     'c10-corazon-de-la-maquina': {
       name: 'Corazón de la máquina',
+      tips: [],
+    },
+    'c11-primer-ascensor': {
+      name: 'Primer ascensor',
+      tips: ['El ascensor sube a la planta de arriba'],
+    },
+    'c11-andamios': {
+      name: 'Andamios',
+      tips: [],
+    },
+    'c11-grua': {
+      name: 'Grúa',
+      tips: [],
+    },
+    'c11-sala-de-turbinas': {
+      name: 'Sala de turbinas',
+      tips: [],
+    },
+    'c11-pasarelas': {
+      name: 'Pasarelas',
+      tips: [],
+    },
+    'c11-almacen-alto': {
+      name: 'Almacén alto',
+      tips: [],
+    },
+    'c11-cornisas-altas': {
+      name: 'Cornisas altas',
+      tips: [],
+    },
+    'c11-sala-de-maquinas': {
+      name: 'Sala de máquinas',
+      tips: [],
+    },
+    'c11-laberinto-alto': {
+      name: 'Laberinto alto',
+      tips: [],
+    },
+    'c11-cima-de-la-torre': {
+      name: 'Cima de la torre',
       tips: [],
     },
   } as Record<string, { name: string; tips: string[] }>,

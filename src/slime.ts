@@ -23,6 +23,10 @@ const MAX_V = 11;
 const MAX_A = 140;
 const JUMP_V = 7.6;
 const PAD_V = 12.5;
+/** Cilindro: velocidad con la que sale disparado el limo y empujoncito hacia arriba. */
+const ROLLER_V = 11;
+const ROLLER_UP = 4.5;
+const ROLLER_REARM = 0.8;
 const DRAG = 0.15;
 // Control: el mando fija una velocidad objetivo y cada limito se acerca a ella.
 // Arranca y frena rápido en suelo normal; en hielo apenas agarra; en el aire casi nada.
@@ -224,6 +228,10 @@ export class Slime {
   private looseActive = 0;
   private gvx: Float32Array; private gvz: Float32Array; private gcnt: Float32Array;
   private padX: Float32Array; private padZ: Float32Array; private padTop: Float32Array;
+  /** cilindros: trozo tocado este frame y tiempo que le queda a cada uno para volver a disparar */
+  private rollHit: Uint8Array;
+  private rollDX: Float32Array; private rollDZ: Float32Array;
+  private rollWait = new Map<number, number>();
   private lastCutEvent = -1;
   private lastHoleEvent = -10;
   /** limitos que van en una bola por la vía (no siguen la física) */
@@ -348,6 +356,7 @@ export class Slime {
     this.loose = new Float32Array(n);
     this.gvx = new Float32Array(n); this.gvz = new Float32Array(n); this.gcnt = new Float32Array(n);
     this.padX = new Float32Array(n); this.padZ = new Float32Array(n); this.padTop = new Float32Array(n);
+    this.rollHit = new Uint8Array(n); this.rollDX = new Float32Array(n); this.rollDZ = new Float32Array(n);
     for (let k = 0; k < n; k++) this.groupPool.push({ ids: [], cx: 0, cy: 0, cz: 0, maxY: 0, maxZ: 0, vx: 0, vz: 0 });
 
     // aparición: espiral compacta en 3 capas, sin salirse a casillas de otra altura (muros, vacío)
@@ -1412,6 +1421,9 @@ export class Slime {
     const largest = this.groups[0]?.ids.length ?? 0;
     const pickMin = Math.min(largest, PICKUP_MIN);
     const pad = this.padFlags;
+    const roll = this.rollHit;
+    roll.fill(0);
+    let anyRoll = false;
     pad.fill(0);
     let anyPad = false;
     let looseNow = 0;
@@ -1536,6 +1548,23 @@ export class Slime {
         this.hurts.push({ x, z });
       }
 
+      // cilindro: se marca el trozo que lo toca y la dirección en la que venía empujando
+      if (w.rollers.length && this.gid[i] >= 0) {
+        const roll = w.rollerAt(x, z, y);
+        if (roll) {
+          const g = this.gid[i];
+          // hacia donde se está EMPUJANDO, que es del limo al cilindro: si lo tocas yendo al
+          // norte sales disparado al norte, por encima de él
+          let dx = roll.x - x, dz = roll.z - z;
+          if (Math.hypot(dx, dz) < 0.05) { const gv = this.groups[g]; dx = gv.vx; dz = gv.vz; }
+          const len = Math.hypot(dx, dz) || 1;
+          this.rollHit[g] = 1;
+          this.rollDX[g] = dx / len;
+          this.rollDZ[g] = dz / len;
+          anyRoll = true;
+        }
+      }
+
       // plataforma de salto: si un limito pisa la tapa, se lanza su trozo (ver abajo)
       if (under && under.kind === 'jump' && this.air[i] < 0.06 && this.vy[i] < PAD_V * 0.5 && this.gid[i] >= 0) {
         const fx = x - ci, fz = z - cj;
@@ -1572,6 +1601,7 @@ export class Slime {
     if (this.fireHits.length) this.recoilFromFire();
     this.updateStations(dt);
     this.updateCannons(dt);
+    if (anyRoll) this.fireRollers(dt);
     if (!anyPad) return;
     // sale lanzado todo el trozo que está sobre la plataforma o pegado a ella;
     // solo las gotas que van lejos (cola larga, restos sueltos) se quedan
@@ -1585,6 +1615,28 @@ export class Slime {
         this.air[i] = 1;
         this.padFly[i] = 1;
       }
+    }
+  }
+
+  /** Cilindros: el trozo que ha tocado uno sale disparado hacia donde venía empujando. */
+  private fireRollers(dt: number) {
+    for (const [g, t] of this.rollWait) {
+      const next = t - dt;
+      if (next <= 0) this.rollWait.delete(g);
+      else this.rollWait.set(g, next);
+    }
+    for (let k = 0; k < this.groups.length; k++) {
+      if (!this.rollHit[k] || this.rollWait.has(k)) continue;
+      const dx = this.rollDX[k], dz = this.rollDZ[k];
+      for (const i of this.groups[k].ids) {
+        this.vx[i] = dx * ROLLER_V;
+        this.vz[i] = dz * ROLLER_V;
+        this.vy[i] = Math.max(this.vy[i], ROLLER_UP);
+        this.air[i] = Math.max(this.air[i], 0.1);
+      }
+      const g = this.groups[k];
+      this.rollWait.set(k, ROLLER_REARM);
+      this.events.push({ type: 'pad', x: g.cx, y: g.cy, z: g.cz });
     }
   }
 

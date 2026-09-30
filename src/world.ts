@@ -27,6 +27,10 @@ export interface Cell {
 export const SPINNER_R = 1.35;
 export const SPINNER_W = 5.2;
 
+/** Cilindro: radio y alto. Al tocarlo, el limo sale disparado hacia donde estaba empujando. */
+export const ROLLER_R = 0.62;
+export const ROLLER_H = 1.5;
+
 /** radio del agujero redondo (la casilla mide 1) */
 export const HOLE_R = 0.36;
 /** por debajo de esto, lo que cae por un agujero sale por su salida */
@@ -250,6 +254,7 @@ export class World {
   private pads = new Map<number, Pad>();
   private coins: Coin[] = [];
   private coinAt = new Map<number, Coin>();
+  readonly rollers: { x: number; z: number; y: number; mesh: THREE.Mesh }[] = [];
   readonly obstacles: Obstacle[] = [];
   /** índice de casilla → obstáculo (-1 si no hay) */
   private obstacleAt: Int32Array;
@@ -709,6 +714,10 @@ export class World {
           case 'spinner':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             this.addSpinner(x, c.base, z);
+            break;
+          case 'roller':
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            this.addRoller(x, c.base, z);
             break;
           case 'cannon':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
@@ -1239,6 +1248,34 @@ export class World {
   }
 
   /** Plataforma giratoria bajo el punto (x, z), si lo hay. */
+  /** Cilindro que toca el limo en ese punto (si lo hay). */
+  rollerAt(x: number, z: number, y: number) {
+    for (const r of this.rollers) {
+      const dx = x - r.x, dz = z - r.z;
+      if (dx * dx + dz * dz < ROLLER_R * ROLLER_R && y > r.y - 0.4 && y < r.y + ROLLER_H) return r;
+    }
+    return null;
+  }
+
+  private addRoller(x: number, y: number, z: number) {
+    const geo = new THREE.CylinderGeometry(ROLLER_R * 0.82, ROLLER_R * 0.82, ROLLER_H, 18, 1, false);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x7dd3fc, roughness: 0.3, metalness: 0.45,
+      emissive: 0x1d5f8a, emissiveIntensity: 0.6 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y + ROLLER_H / 2, z);
+    mesh.castShadow = mesh.receiveShadow = true;
+    this.storyGroups[this.buildStory].add(mesh);
+    // dos aros oscuros para que se vea girar
+    for (const t of [0.3, 0.7]) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(ROLLER_R * 0.84, 0.05, 6, 20),
+        new THREE.MeshStandardMaterial({ color: 0x0f2740, roughness: 0.5 }));
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(x, y + ROLLER_H * t, z);
+      this.storyGroups[this.buildStory].add(ring);
+    }
+    this.rollers.push({ x, z, y, mesh });
+  }
+
   spinnerAt(x: number, z: number, y: number) {
     for (const s of this.spinners) {
       const dx = x - s.x, dz = z - s.z;

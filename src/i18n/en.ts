@@ -43,6 +43,7 @@ export const en: Dict = {
     'la-ventisca': 'The Blizzard',
     'nucleo-helado': 'The Frozen Core',
     'la-fabrica': 'The Factory',
+    'la-torre': 'The Tower',
   },
   options: {
     title: 'Options',
@@ -441,6 +442,7 @@ export const en: Dict = {
       bowl: 'Sunken floor (drags into the hole)',
       soap: 'Soap bar (bubble)',
       fanup: 'Fan blowing up (lifts the bubble)',
+      roller: 'Roller (throws you the way you push)',
       hole: 'Hole (leads to a lower exit)',
       exit: 'Hole exit',
       railLoop: 'Track with loop (makes dizzy)',
@@ -853,6 +855,46 @@ export const en: Dict = {
     },
     'c10-corazon-de-la-maquina': {
       name: 'Heart of the Machine',
+      tips: [],
+    },
+    'c11-primer-ascensor': {
+      name: 'First Lift',
+      tips: ['The lift takes you to the upper deck'],
+    },
+    'c11-andamios': {
+      name: 'Scaffolds',
+      tips: [],
+    },
+    'c11-grua': {
+      name: 'Crane',
+      tips: [],
+    },
+    'c11-sala-de-turbinas': {
+      name: 'Turbine Hall',
+      tips: [],
+    },
+    'c11-pasarelas': {
+      name: 'Catwalks',
+      tips: [],
+    },
+    'c11-almacen-alto': {
+      name: 'High Warehouse',
+      tips: [],
+    },
+    'c11-cornisas-altas': {
+      name: 'High Ledges',
+      tips: [],
+    },
+    'c11-sala-de-maquinas': {
+      name: 'Machine Room',
+      tips: [],
+    },
+    'c11-laberinto-alto': {
+      name: 'High Maze',
+      tips: [],
+    },
+    'c11-cima-de-la-torre': {
+      name: 'Top of the Tower',
       tips: [],
     },
   },

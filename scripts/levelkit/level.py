@@ -40,7 +40,9 @@ class Level:
         self.latch = latch or {}
         self.need = need or {}            # limitos que tiene que haber encima del interruptor
         self.c = w // 2                      # columna por la que corre el camino
-        self.rows = []                       # de abajo (salida) hacia arriba (tesoro)
+        self.rows = []                       # planta baja, de abajo (salida) hacia arriba (tesoro)
+        self.up = []                         # planta alta: misma longitud, vacío donde no hay nada
+        self.story = 0                       # planta en la que se está construyendo
         self.marks = []                      # marcas absolutas: {'kind', 'row', ...}
         self.tips = []
 
@@ -55,7 +57,12 @@ class Level:
 
     def add(self, piece: Piece):
         base = len(self.rows)
-        self.rows += [''.join(r) if isinstance(r, list) else r for r in piece.rows]
+        void = T.VOID * self.w
+        for r in piece.rows:
+            line = ''.join(r) if isinstance(r, list) else r
+            # las dos plantas van siempre a la par: lo que se construye arriba deja vacío abajo
+            self.rows.append(void if self.story else line)
+            self.up.append(line if self.story else void)
         for m in piece.marks:
             m = dict(m)
             # todas las filas de una marca son relativas a la pieza: hay que correrlas
@@ -63,6 +70,54 @@ class Level:
                 if key in m:
                     m[key] = base + m[key]
             self.marks.append(m)
+        return self
+
+    def lift(self, col=None, rows=1):
+        """Ascensor de raíl: una estación sin vía al lado con su gemela JUSTO ENCIMA en la otra
+        planta. La vagoneta sube en espiral entre las dos y a partir de aquí se construye arriba.
+        La estación necesita su hueco de 3x3, así que la fila va despejada a los lados."""
+        c = self.c if col is None else col
+        void = T.VOID * self.w
+        for _ in range(rows):                       # sitio para acercarse parado a la estación
+            r = [T.WALL] * self.w
+            self.fill(r, c - 3, c + 3, self.floor)
+            r[c - 4] = r[c + 4] = T.WALL
+            self.rows.append(''.join(r)); self.up.append(void)
+        # el rellano mide lo mismo que una sala (7 de ancho): si es más estrecho que la sala de
+        # al lado, al pasar de uno a otra el limo asoma medio cuerpo sobre el vacío y lo pierde
+        r = [T.VOID] * self.w
+        self.fill(r, c - 3, c + 3, self.floor)
+        r[c - 4] = r[c + 4] = T.WALL
+        r[c] = T.STATION
+        self.rows.append(''.join(r))                # la estación de abajo
+        u = [T.VOID] * self.w
+        self.fill(u, c - 3, c + 3, self.floor)
+        u[c] = T.STATION
+        self.up.append(''.join(u))                  # y la de arriba, en la misma casilla
+        for _ in range(2):
+            # abajo, un cuarto cerrado alrededor del ascensor: al rezagado lo tira la cohesión
+            # hacia el limo de arriba, y sin muros se cae al vacío
+            d = [T.VOID] * self.w
+            self.fill(d, c - 3, c + 3, self.floor)
+            d[c - 4] = d[c + 4] = T.WALL
+            self.rows.append(''.join(d))
+            u = [T.VOID] * self.w
+            self.fill(u, c - 3, c + 3, self.floor)
+            self.up.append(''.join(u))              # y arriba, el rellano del ascensor
+        # y se tapia el cuarto por arriba: si se deja abierto, a los rezagados los arrastra la
+        # cohesión hacia el limo de la planta alta y se tiran por el borde
+        self.rows.append(T.WALL * self.w)
+        u = [T.VOID] * self.w
+        self.fill(u, c - 3, c + 3, self.floor)
+        self.up.append(''.join(u))
+        # al ascensor se llega HECHO UNA BOLA: la vagoneta se lleva el grupo que haya en ese
+        # momento y los rezagados se quedan abajo, en una planta que ya no lleva a ningún sitio.
+        # Después se espera de sobra: los que se queden montan solos en el siguiente viaje.
+        row = len(self.rows) - 4                    # la fila de las dos estaciones
+        self.marks.append({'kind': 'walk', 'row': row - 1, 'col': c, 't': 6})
+        self.marks.append({'kind': 'raw', 'row': row - 1, 'steps': ['{ squeeze: true }', '{ wait: 3 }']})
+        self.marks.append({'kind': 'station', 'row': row, 'col': c, 't': 7, 'wait': 20})
+        self.story = 1
         return self
 
     def tip(self, text, back=2):
@@ -82,6 +137,7 @@ class Level:
         for m in self.marks:
             steps += route_steps(self, m, z)
         tips = [{'z': z(t['row']), 'text': t['text']} for t in self.tips]
+        self.top_up = list(reversed(self.up)) if any(set(r) - {T.VOID} for r in self.up) else None
         return top_rows, steps, tips
 
 

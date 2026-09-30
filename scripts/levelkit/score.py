@@ -33,14 +33,14 @@ FAMILY = {
     '^': 'viento', 'v': 'viento', '<': 'viento', '>': 'viento', 'Q': 'frío',
     'R': 'raíles', '=': 'raíles', '@': 'raíles', '%': 'raíles',
     'S': 'puertas', 's': 'puertas', 'D': 'puertas', 'd': 'puertas',
-    'E': 'disco', 'N': 'cañón', 'x': 'cañón', 'H': 'agujeros', 'U': 'agujeros',
+    'E': 'disco', 'N': 'cañón', 'x': 'cañón', 'H': 'agujeros', 'U': 'agujeros', 'K': 'cilindros',
     '-': 'balancines', '|': 'balancines', 'g': 'picos', 'h': 'picos', 'i': 'picos', 'j': 'picos',
     'n': 'rampas', 'u': 'rampas', 'e': 'rampas', 'o': 'rampas',
 }
 DANGER = set('FXY.aB')                     # hace daño, se lleva limo o es vacío
 #: nota que se le pide a cada capítulo (la dificultad tiene que subir)
 # objetivos con los topes nuevos: cada capítulo tiene que quedar por encima del suyo
-TARGET = {1: 26, 2: 40, 3: 58, 4: 60, 5: 72, 6: 76, 7: 80, 8: 84, 9: 86, 10: 88}
+TARGET = {1: 26, 2: 40, 3: 58, 4: 60, 5: 72, 6: 76, 7: 80, 8: 84, 9: 86, 10: 88, 11: 88}
 
 
 def levels():
@@ -130,7 +130,7 @@ def measure(ch, L, pts):
 
     decisions = len([1 for _, _, _, f in mech if f in ('puertas', 'raíles')]) // 4 + detours
     # trampas: lo que hace daño o se lleva limo, contado por grupos (no casilla a casilla)
-    trap_fams = ('pinchos', 'fuego', 'grietas', 'hondonada', 'saltos', 'disco')
+    trap_fams = ('pinchos', 'fuego', 'grietas', 'hondonada', 'saltos', 'disco', 'cilindros')
     traps = len({(s2, i // 4, j // 4, f) for s2, i, j, f in mech if f in trap_fams})
     # puzles: cosas que hay que resolver, no solo esquivar
     puzzles = (len({(s2, j // 6) for s2, i, j, f in mech if f == 'puertas'})

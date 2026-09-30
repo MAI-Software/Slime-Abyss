@@ -43,6 +43,7 @@ export const de: Dict = {
     'la-ventisca': 'Der Schneesturm',
     'nucleo-helado': 'Der Gefrorene Kern',
     'la-fabrica': 'Die Fabrik',
+    'la-torre': 'Der Turm',
   },
   options: {
     title: 'Optionen',
@@ -441,6 +442,7 @@ export const de: Dict = {
       bowl: 'Abgesackter Boden (zieht ins Loch)',
       soap: 'Seifenstück (Blase)',
       fanup: 'Ventilator nach oben (hebt die Blase)',
+      roller: 'Walze (schleudert dich in deine Schubrichtung)',
       hole: 'Loch (führt zu einem tieferen Ausgang)',
       exit: 'Lochausgang',
       railLoop: 'Schiene mit Looping (macht schwindlig)',
@@ -853,6 +855,46 @@ export const de: Dict = {
     },
     'c10-corazon-de-la-maquina': {
       name: 'Herz der Maschine',
+      tips: [],
+    },
+    'c11-primer-ascensor': {
+      name: 'Erster Aufzug',
+      tips: ['Der Aufzug bringt dich nach oben'],
+    },
+    'c11-andamios': {
+      name: 'Geruest',
+      tips: [],
+    },
+    'c11-grua': {
+      name: 'Kran',
+      tips: [],
+    },
+    'c11-sala-de-turbinas': {
+      name: 'Turbinenhalle',
+      tips: [],
+    },
+    'c11-pasarelas': {
+      name: 'Laufstege',
+      tips: [],
+    },
+    'c11-almacen-alto': {
+      name: 'Hochlager',
+      tips: [],
+    },
+    'c11-cornisas-altas': {
+      name: 'Hohe Simse',
+      tips: [],
+    },
+    'c11-sala-de-maquinas': {
+      name: 'Maschinenraum',
+      tips: [],
+    },
+    'c11-laberinto-alto': {
+      name: 'Hohes Labyrinth',
+      tips: [],
+    },
+    'c11-cima-de-la-torre': {
+      name: 'Spitze des Turms',
       tips: [],
     },
   },

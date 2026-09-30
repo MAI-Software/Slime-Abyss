@@ -101,6 +101,16 @@ import c10f7 from './campaign/chapter10/07-c10-cadena-de-vias.json';
 import c10f8 from './campaign/chapter10/08-c10-sala-de-control.json';
 import c10f9 from './campaign/chapter10/09-c10-laberinto-de-acero.json';
 import c10f10 from './campaign/chapter10/10-c10-corazon-de-la-maquina.json';
+import c11f1 from './campaign/chapter11/01-c11-primer-ascensor.json';
+import c11f2 from './campaign/chapter11/02-c11-andamios.json';
+import c11f3 from './campaign/chapter11/03-c11-grua.json';
+import c11f4 from './campaign/chapter11/04-c11-sala-de-turbinas.json';
+import c11f5 from './campaign/chapter11/05-c11-pasarelas.json';
+import c11f6 from './campaign/chapter11/06-c11-almacen-alto.json';
+import c11f7 from './campaign/chapter11/07-c11-cornisas-altas.json';
+import c11f8 from './campaign/chapter11/08-c11-sala-de-maquinas.json';
+import c11f9 from './campaign/chapter11/09-c11-laberinto-alto.json';
+import c11f10 from './campaign/chapter11/10-c11-cima-de-la-torre.json';
 
 /** Modo historia: capítulos de 10 pisos. Sus coleccionables están en collectibles.ts. */
 export const CHAPTERS: ChapterDef[] = [
@@ -183,10 +193,18 @@ export const CHAPTERS: ChapterDef[] = [
     biome: 'tech',
     floors: [c10f1, c10f2, c10f3, c10f4, c10f5, c10f6, c10f7, c10f8, c10f9, c10f10] as LevelData[],
   },
+  {
+    // la torre: a mitad de camino un ascensor sube a la planta de arriba, colgada sobre el vacío
+    id: 'la-torre',
+    name: 'Capítulo 11',
+    subtitle: 'La Torre',
+    biome: 'tech',
+    floors: [c11f1, c11f2, c11f3, c11f4, c11f5, c11f6, c11f7, c11f8, c11f9, c11f10] as LevelData[],
+  },
 ];
 
 /** Capítulos anunciados que aún no se pueden jugar. */
-export const UPCOMING = [{ name: 'Capítulo 11', subtitle: 'Próximamente' }];
+export const UPCOMING = [{ name: 'Capítulo 12', subtitle: 'Próximamente' }];
 
 /** Suelo del menú: 9x7 casillas bajo la habitación (solo sostiene al limo; el mundo no se dibuja). */
 export const MENU_STAGE: LevelData = {

@@ -16,7 +16,7 @@ export type Channel = 'A' | 'B';
 export type CellKind =
   | 'void' | 'floor' | 'wall' | 'fire' | 'firet' | 'ice' | 'jump' | 'switch' | 'door' | 'start' | 'treasure'
   | 'coin' | 'wedge' | 'spike' | 'gem' | 'relic'
-  | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet'
+  | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet' | 'roller'
   | 'station' | 'rail' | 'crack'
   | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner' | 'cannon' | 'target' | 'seesaw' | 'bowl' | 'soap' | 'fanup';
 
@@ -88,6 +88,7 @@ export const TILES: readonly TileDef[] = [
   { char: 'b', kind: 'soap', label: 'Pastilla de jabón (burbuja)', color: '#7dd3fc' },
   // ventilador hacia arriba: solo empuja a la burbuja, que sube hasta las zonas altas
   { char: 'A', kind: 'fanup', label: 'Ventilador hacia arriba (sube la burbuja)', color: '#3d4a66' },
+  { char: 'K', kind: 'roller', label: 'Cilindro (te lanza hacia donde empujas)', raise: 1.0, color: '#7dd3fc' },
   // Raíles: el trozo que pisa una estación se hace bola y rueda por la vía hasta la otra estación.
   // La vía (casillas '=' seguidas, puede girar y subir) no se pisa: hace de valla para el limo a pie.
   { char: 'R', kind: 'station', label: 'Estación de raíl', color: '#7dd3fc' },

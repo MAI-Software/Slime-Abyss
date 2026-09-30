@@ -43,6 +43,7 @@ export const it: Dict = {
     'la-ventisca': 'La Bufera',
     'nucleo-helado': 'Il Nucleo Gelato',
     'la-fabrica': 'La Fabbrica',
+    'la-torre': 'La Torre',
   },
   options: {
     title: 'Opzioni',
@@ -441,6 +442,7 @@ export const it: Dict = {
       bowl: 'Terreno infossato (trascina nel buco)',
       soap: 'Saponetta (bolla)',
       fanup: 'Ventola in alto (solleva la bolla)',
+      roller: 'Cilindro (ti lancia dove stai spingendo)',
       hole: 'Buco (porta a un’uscita più in basso)',
       exit: 'Uscita del buco',
       railLoop: 'Binario con giro della morte (fa girare la testa)',
@@ -853,6 +855,46 @@ export const it: Dict = {
     },
     'c10-corazon-de-la-maquina': {
       name: 'Cuore della macchina',
+      tips: [],
+    },
+    'c11-primer-ascensor': {
+      name: 'Primo ascensore',
+      tips: ['Ascensore: sale al piano di sopra'],
+    },
+    'c11-andamios': {
+      name: 'Impalcature',
+      tips: [],
+    },
+    'c11-grua': {
+      name: 'Gru',
+      tips: [],
+    },
+    'c11-sala-de-turbinas': {
+      name: 'Sala turbine',
+      tips: [],
+    },
+    'c11-pasarelas': {
+      name: 'Passerelle',
+      tips: [],
+    },
+    'c11-almacen-alto': {
+      name: 'Magazzino alto',
+      tips: [],
+    },
+    'c11-cornisas-altas': {
+      name: 'Cornici alte',
+      tips: [],
+    },
+    'c11-sala-de-maquinas': {
+      name: 'Sala macchine',
+      tips: [],
+    },
+    'c11-laberinto-alto': {
+      name: 'Labirinto alto',
+      tips: [],
+    },
+    'c11-cima-de-la-torre': {
+      name: 'Cima della torre',
       tips: [],
     },
   },
