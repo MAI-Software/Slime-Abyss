@@ -2720,9 +2720,11 @@ if (import.meta.env.DEV) {
         camera.updateProjectionMatrix();
         frame(1 / 60);
         if (room) {
+          // el mismo plano del menú (limo en su alfombra, de lejos y algo por encima), pero
+          // corrido a la derecha para dejarle el hueco al título
           const o = room.position;
-          camera.position.set(o.x - 1.05, o.y + 1.15, o.z + 2.7);
-          camera.lookAt(o.x - 0.8, o.y + 0.5, o.z);
+          camera.position.set(o.x - 0.42, o.y + 1.85, o.z + 3.05);
+          camera.lookAt(o.x - 0.86, o.y + 0.62, o.z - 0.35);
           renderer.render(scene, camera);
         }
         const shot = document.createElement('canvas');
@@ -2739,6 +2741,12 @@ if (import.meta.env.DEV) {
         const url = shot.toDataURL('image/jpeg', 0.9);
         applyQuality(quality);
         return url;
+      },
+      /** guarda esa misma imagen en public/og-image.jpg (solo con el servidor de desarrollo) */
+      saveShareImage: async (w = 1200, h = 630) => {
+        const url = (window as unknown as { __slime: { shareImage(w: number, h: number): string } }).__slime.shareImage(w, h);
+        const r = await fetch('/__share-image', { method: 'POST', body: url });
+        return r.text();
       },
       run: (seconds: number) => { for (let s = 0; s < seconds && mode === 'play'; s += FIXED) frame(FIXED); return mode; },
       state: () => ({ mode, alive: slime?.aliveCount, slimeState: slime?.state, groups: slime?.groups.map((g) => g.ids.length), coins: world && `${world.coinsCollected}/${world.coinsTotal}`, lead: slime?.groups[0] && { x: slime.groups[0].cx.toFixed(2), y: slime.groups[0].cy.toFixed(2), z: slime.groups[0].cz.toFixed(2) } }),
