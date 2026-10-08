@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { appendFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { defineConfig, type Plugin } from 'vite';
@@ -22,6 +22,17 @@ function saveShareImage(): Plugin {
           const out = join(server.config.root, 'public', 'og-image.jpg');
           writeFileSync(out, Buffer.from(data, 'base64'));
           res.end(out);
+        });
+      });
+      // apunta en un fichero lo que va saliendo de la prueba del autopiloto: si se cierra la
+      // pestaña a mitad de una tanda de 110 pisos, los resultados no se pierden
+      server.middlewares.use('/__auto-log', (req, res) => {
+        if (req.method !== 'POST') { res.statusCode = 405; return res.end('solo POST'); }
+        let body = '';
+        req.on('data', (c) => { body += c; });
+        req.on('end', () => {
+          appendFileSync(join(server.config.root, 'auto-run.log'), `${body}\n`);
+          res.end('ok');
         });
       });
     },

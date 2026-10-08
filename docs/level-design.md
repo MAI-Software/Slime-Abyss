@@ -174,6 +174,15 @@ que sube: 34 / 46 / 56 / 64 / 70 / 76). Al final avisa si un capítulo puntúa m
 metro y ninguna mezcla. Subirlo a 74 fue meter las mecánicas unas junto a otras y poner el peligro
 en la fila de las monedas, no al final del pasillo.
 
+**Peligro que no muerde.** Cuando un piso necesita tensión pero ya no le sobra limo, el peligro
+se mete con HONDONADAS y CORNISAS AL VACÍO, no con pinchos ni roca agrietada: la ruta pasa pegada
+a ellas (y por eso cuentan en la nota) pero no se llevan limitos. Del capítulo 10 en adelante cada
+sala lleva una de las dos.
+
+**Arriba la nota se aplana.** Del capítulo 8 en adelante todos los ejes están al tope menos el
+peligro, y el peligro lo limita la propia prueba (>90 % de limo). Por eso el medidor solo avisa
+cuando un capítulo CAE cuatro puntos o más respecto al anterior, no por uno o dos de diferencia.
+
 **El adorno peligroso pegado a la moneda va sangrando.** La roca agrietada o los pinchos en la
 casilla de al lado de una moneda se llevan 1-2 limitos por sala, porque el borde de la bola los
 pisa al recoger. En un piso de doce salas eso es un 10 % de limo: en los pisos que ya castigan

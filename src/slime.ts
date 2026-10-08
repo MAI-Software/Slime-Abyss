@@ -324,6 +324,10 @@ export class Slime {
   private blob: BlobMesh;
   private spheres: THREE.InstancedMesh;
   private faces: Face[] = [];
+  /** Para la foto de compartir: deja los ojos abiertos un rato (si no, sale pestañeando). */
+  keepEyesOpen(seconds = 6) {
+    for (const f of this.faces) f.blinkT = seconds;
+  }
   private contactShadows: THREE.Mesh[] = [];
   private shadowTex = createContactShadowTexture();
 
@@ -1968,7 +1972,7 @@ class Face {
   private materials: THREE.Material[] = [];
   private pos = new THREE.Vector3();
   private initialized = false;
-  private blinkT = 2 + Math.random() * 2;
+  blinkT = 2 + Math.random() * 2;
   private painT = 0;
   // mareo: se acumula con los cambios bruscos de velocidad y se va pasando solo
   private dizzyT = 0;

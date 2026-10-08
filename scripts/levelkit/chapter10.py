@@ -28,6 +28,8 @@ def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=1, m
         # la roca agrietada de al lado de la moneda también se lleva algún limito (el borde de
         # la bola la pisa), así que va una sala sí y otra no; la otra lleva bloque de hielo
         left = 'B' if (len(lv.rows) // 20) % 2 else 'Z'
+    if mix is None:
+        mix = (P.pit, P.void_ledge)[(len(lv.rows) // 20) % 2]
     lv.add(P.room(lv, left=left, right=right, wedge=wedge, rows=4, cliff=cliff))
     if mix:
         lv.add(mix(lv))
@@ -131,10 +133,11 @@ def floor5():
     section(lv, P.loop_rail, left='Z', right='W')
     section(lv, P.weight_gate, left='B', right='Z')
     section(lv, P.pit, left='Z', right='W', mix=P.void_ledge)
+    section(lv, P.loop, left='W', right='Z', mix=P.void_ledge)
     section(lv, P.bubble_tower, left='W', right='Z')
     section(lv, P.loop, left='Z', right='W', mix=P.void_ledge)
-    section(lv, P.cannon_hall, left='B', right='Z')
-    section(lv, P.gauntlet, left='Z', right='W')
+    section(lv, P.cannon_hall, left='B', right='Z', mix=P.void_ledge)
+    section(lv, P.gauntlet, left='Z', right='W', mix=P.void_ledge)
     section(lv, P.cold_spikes, left='W', right='Z')
     section(lv, P.loop, left='Z', right='W')
     section(lv, P.loop, left='B', right='Y', mix=P.ice_slalom)

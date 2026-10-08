@@ -2718,13 +2718,18 @@ if (import.meta.env.DEV) {
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
-        frame(1 / 60);
+        // el limo del menú está siempre temblando: si se fotografía tal cual sale aplastado.
+        // Se le dejan unos segundos de quietud para que se asiente y quede redondo, y se le
+        // paran los pestañeos, que si no sale con los ojos cerrados
+        for (let i = 0; i < 240; i++) frame(FIXED);
+        slime?.keepEyesOpen(6);
+        for (let i = 0; i < 20; i++) frame(FIXED);
         if (room) {
           // el mismo plano del menú (limo en su alfombra, de lejos y algo por encima), pero
           // corrido a la derecha para dejarle el hueco al título
           const o = room.position;
-          camera.position.set(o.x - 0.42, o.y + 1.85, o.z + 3.05);
-          camera.lookAt(o.x - 0.86, o.y + 0.62, o.z - 0.35);
+          camera.position.set(o.x - 0.40, o.y + 1.76, o.z + 2.95);
+          camera.lookAt(o.x - 0.80, o.y + 0.42, o.z - 0.30);
           renderer.render(scene, camera);
         }
         const shot = document.createElement('canvas');
@@ -2748,6 +2753,8 @@ if (import.meta.env.DEV) {
         const r = await fetch('/__share-image', { method: 'POST', body: url });
         return r.text();
       },
+      /** apunta una línea en auto-run.log (solo con el servidor de desarrollo) */
+      log: (line: string) => fetch('/__auto-log', { method: 'POST', body: line }).then(() => line),
       run: (seconds: number) => { for (let s = 0; s < seconds && mode === 'play'; s += FIXED) frame(FIXED); return mode; },
       state: () => ({ mode, alive: slime?.aliveCount, slimeState: slime?.state, groups: slime?.groups.map((g) => g.ids.length), coins: world && `${world.coinsCollected}/${world.coinsTotal}`, lead: slime?.groups[0] && { x: slime.groups[0].cx.toFixed(2), y: slime.groups[0].cy.toFixed(2), z: slime.groups[0].cz.toFixed(2) } }),
     },

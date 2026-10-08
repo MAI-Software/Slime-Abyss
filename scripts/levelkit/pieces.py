@@ -492,6 +492,32 @@ def roller_launch(lv):
     return Piece(out, marks)
 
 
+def rail_ride(lv, rows=3):
+    """Vía corriente y moliente: estación abajo, tramo recto y estación arriba. Vocabulario del
+    capítulo 2, sin puertas ni canales, para los pisos que se quedaron sin nada que resolver."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 3] = T.COIN; r[c + 3] = T.COIN
+    marks.append({'kind': 'coins', 'row': 0, 'l': c - 3, 'r': c + 3})
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c] = T.STATION
+    out.append(r)
+    marks.append({'kind': 'station', 'row': len(out) - 1, 'col': c, 't': 6, 'wait': 9})
+    for _ in range(rows):
+        r = _row(lv); lv.fill(r, c - 4, c + 4, T.WALL); r[c] = T.RAIL
+        out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c] = T.STATION
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    marks.append({'kind': 'walk', 'row': len(out), 'col': c, 't': 6})
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    out.append(r)
+    return Piece(out, marks)
+
+
 def ice_pass(lv, wind=None, spikes=False):
     """Paso de hielo: se resbala, con pinchos a los lados y, si se pide, un ventilador
     metido en el muro que empuja mientras se cruza. Dos mecánicas en la misma casilla."""

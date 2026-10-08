@@ -29,9 +29,24 @@ interface DevApi {
 }
 
 const api = () => (window as unknown as { __slime: DevApi }).__slime;
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const key = (type: string, code: string) => window.dispatchEvent(new KeyboardEvent(type, { code, key: ' ', bubbles: true }));
 const playing = () => api().state().mode === 'play';
+
+/** Cede el turno sin depender del reloj (los temporizadores se estrangulan en segundo plano). */
+const tick = () => new Promise<void>((r) => {
+  const ch = new MessageChannel();
+  ch.port1.onmessage = () => r();
+  ch.port2.postMessage(0);
+});
+
+/** Espera a que el piso pedido esté montado y jugándose. */
+async function ready(id: string) {
+  for (let i = 0; i < 200000; i++) {
+    if (api().world()?.def?.id === id && playing()) return true;
+    await tick();
+  }
+  return false;
+}
 
 /** Segundos de juego que lleva la prueba del piso: dice de un vistazo si un piso se hace largo. */
 let clock = 0;
@@ -90,7 +105,16 @@ function shoot(tx: number, tz: number) {
 function board(tx: number, tz: number, t = 6) {
   const S = api();
   const sl = S.slime()!;
-  goTo(tx, tz, 0.2, t, () => sl.riding.some((v) => v === 1));
+  const riding = () => sl.riding.some((v) => v === 1);
+  // dos cosas a la vez: acercarse sin empujar de más (empujando 12 s seguidos contra la
+  // estación el limo se deshilacha) y no quedarse corto: parado a 0.47 de la casilla no monta,
+  // porque el juego pide menos de 0.42. Así que se acerca, se suelta el mando para que monte y,
+  // si no ha montado, se vuelve a acercar un poco más
+  for (let intento = 0; intento < 4 && playing() && !riding(); intento++) {
+    goTo(tx, tz, 0.3 - intento * 0.07, t, riding);
+    S.drive(() => [0, 0]);
+    for (let s = 0; s < 2.5 && playing() && !riding(); s += 0.05) { step(0.05); sampleApart(); }
+  }
   S.drive(() => [0, 0]);
 }
 
@@ -134,7 +158,11 @@ async function run(c: number, k: number, steps: Step[], trace?: string[]): Promi
   const saved = S.save().floors[floorId];
   delete S.save().floors[floorId];
   S.start(c, k);
-  await sleep(1200);
+  // el piso tarda en cargar (las texturas del tema van por su cuenta) y hay que esperarlo, pero
+  // NO por reloj: con la pestaña en segundo plano el navegador estrangula setTimeout y cada piso
+  // se iba a más de un minuto. Un puerto de mensajes sigue corriendo aunque no se vea nada.
+  await ready(floorId);
+  step(0.8);
   apart = { n: 0, x: 0, z: 0 };
   clock = 0;
   S.drive(() => [0, 0]);

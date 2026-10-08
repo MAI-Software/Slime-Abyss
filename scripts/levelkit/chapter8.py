@@ -36,10 +36,10 @@ def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=1, m
     lv.add(P.room(lv, left=left, right=right, wedge=wedge, rows=4, cliff=cliff))
     if mix:
         lv.add(mix(lv))
-    lv.add(P.neck(lv, rows=neck_rows))
+    lv.add(P.neck(lv, rows=neck_rows, coin=True))
     if feature:
         lv.add(feature(lv))
-        lv.add(P.neck(lv, rows=neck_rows))
+        lv.add(P.neck(lv, rows=neck_rows, coin=True))
     return lv
 
 
