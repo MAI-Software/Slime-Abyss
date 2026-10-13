@@ -35,10 +35,14 @@ export const BIOMES: Record<Biome, BiomeLook> = {
     hemiSky: 0xe4f4ff, hemiGround: 0x36577f, sun: 0xf2f8ff, rim: 0x9fd8ff,
     dots: 0xe8f7ff, glow: ['rgba(140,220,255,0.5)', 'rgba(80,150,230,0.22)', 'rgba(20,50,100,0)'],
   },
+  // ruina de neón: cielo magenta, reborde cian de máquina y motas rosas. Los cuatro temas
+  // tienen que distinguirse de un vistazo, y el azul grisáceo de antes era casi el hielo del
+  // 7 al 9 (y el violeta, casi la piedra del 1 al 3). La luz del cielo se queda fría a
+  // propósito: si también fuera rosa, el suelo dejaría de leerse.
   tech: {
-    sky: ['#1f3346', '#0d1826', '#04070d'], fog: 0x0b1420,
-    hemiSky: 0xd2ecff, hemiGround: 0x2b2244, sun: 0xe2ebff, rim: 0x6ff7ff,
-    dots: 0x6ff7ff, glow: ['rgba(60,240,255,0.45)', 'rgba(200,60,220,0.2)', 'rgba(30,10,60,0)'],
+    sky: ['#6b1f63', '#2a0f33', '#07040c'], fog: 0x1a0c24,
+    hemiSky: 0xe8e2ff, hemiGround: 0x3a1744, sun: 0xffe8fb, rim: 0x7cf7ff,
+    dots: 0xff9ae8, glow: ['rgba(255,80,210,0.5)', 'rgba(60,240,255,0.25)', 'rgba(40,6,50,0)'],
   },
 };
 

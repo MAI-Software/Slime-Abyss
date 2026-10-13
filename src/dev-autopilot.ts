@@ -9,7 +9,7 @@
 import { ROUTES, type Step } from './dev-routes';
 
 interface DevSlime {
-  groups: { cx: number; cy: number; cz: number; ids: number[] }[];
+  groups: { cx: number; cy: number; cz: number; vx: number; vz: number; ids: number[] }[];
   riding: Uint8Array;
   flying: Uint8Array;
   air: Float32Array;
@@ -100,20 +100,31 @@ function shoot(tx: number, tz: number) {
   step(0.8);
 }
 
-/* Sube a una estación de raíl: empuja hasta que el limo monta y ahí suelta el mando.
-   Si se sigue empujando, al bajarse en la otra punta el empuje lo vuelve a montar y hace el viaje de vuelta. */
+/* Sube a una estación de raíl: se llega A TOQUECITOS y ahí se suelta el mando.
+   Empujando seguido el limo cruza la casilla a 3 de velocidad y el juego pide menos de 1.8 para
+   montar, así que se pasaba de largo una y otra vez (el ascensor del capítulo 11 no se cogía en
+   8 de los 10 pisos). Con toques de 0.15 s y esperar a que casi se pare, monta a la tercera.
+   Si se sigue empujando después, al bajarse en la otra punta el empuje lo vuelve a montar. */
 function board(tx: number, tz: number, t = 6) {
   const S = api();
   const sl = S.slime()!;
   const riding = () => sl.riding.some((v) => v === 1);
-  // dos cosas a la vez: acercarse sin empujar de más (empujando 12 s seguidos contra la
-  // estación el limo se deshilacha) y no quedarse corto: parado a 0.47 de la casilla no monta,
-  // porque el juego pide menos de 0.42. Así que se acerca, se suelta el mando para que monte y,
-  // si no ha montado, se vuelve a acercar un poco más
-  for (let intento = 0; intento < 4 && playing() && !riding(); intento++) {
-    goTo(tx, tz, 0.3 - intento * 0.07, t, riding);
+  const grupo = () => S.slime()?.groups[0];
+  for (let s = 0; s < t * 3 && playing() && !riding(); ) {
+    const g = grupo();
+    if (!g) break;
+    const dx = tx - g.cx, dz = tz - g.cz;
+    const d = Math.hypot(dx, dz);
+    if (d > 0.2) {
+      S.drive(() => [dx / d, dz / d]);   // a tope: hecho una bola, medio mando no lo mueve
+      for (let k = 0; k < 3 && playing(); k++) { step(0.05); s += 0.05; }
+    }
     S.drive(() => [0, 0]);
-    for (let s = 0; s < 2.5 && playing() && !riding(); s += 0.05) { step(0.05); sampleApart(); }
+    for (let k = 0; k < 30 && playing() && !riding(); k++) {
+      step(0.05); s += 0.05; sampleApart();
+      const b = grupo();
+      if (b && Math.hypot(b.vx, b.vz) < 0.3) break;
+    }
   }
   S.drive(() => [0, 0]);
 }

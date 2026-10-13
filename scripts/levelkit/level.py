@@ -114,9 +114,13 @@ class Level:
         # momento y los rezagados se quedan abajo, en una planta que ya no lleva a ningún sitio.
         # Después se espera de sobra: los que se queden montan solos en el siguiente viaje.
         row = len(self.rows) - 4                    # la fila de las dos estaciones
+        # SE PASA DE LARGO LA ESTACIÓN A PROPÓSITO y se monta desde el rellano de arriba:
+        # llegando de frente el limo se queda clavado a 0.47 de la casilla (su centro nunca
+        # llega a entrar en ella) y no monta ni en 20 segundos. Desde el otro lado sí entra.
         self.marks.append({'kind': 'walk', 'row': row - 1, 'col': c, 't': 6})
-        self.marks.append({'kind': 'raw', 'row': row - 1, 'steps': ['{ squeeze: true }', '{ wait: 3 }']})
-        self.marks.append({'kind': 'station', 'row': row, 'col': c, 't': 7, 'wait': 20})
+        self.marks.append({'kind': 'walk', 'row': row + 2, 'col': c, 't': 6})
+        self.marks.append({'kind': 'raw', 'row': row + 2, 'steps': ['{ squeeze: true }', '{ wait: 2 }']})
+        self.marks.append({'kind': 'station', 'row': row, 'col': c, 't': 8, 'wait': 20})
         self.story = 1
         return self
 

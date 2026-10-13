@@ -32,19 +32,18 @@ def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=1, m
     lv.add(P.neck(lv, rows=neck_rows, coin=True))
     if feature:
         lv.add(feature(lv))
-        lv.add(P.neck(lv, rows=neck_rows, coin=True))
+        lv.add(P.neck(lv, rows=neck_rows))
     return lv
 
 
 def floor1():
-    lv = Level('c11-primer-ascensor', 'Primer ascensor', w=W, mood='cave', cam_yaw=-12, keep=0.78)
+    lv = Level('c11-via-de-carga', 'Vía de carga', w=W, mood='cave', cam_yaw=-12, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Z', mix=P.ice_slalom)
     section(lv, P.roller_gap, right='W')
     section(lv, P.weight_gate, right='B')
     section(lv, P.loop, right='Y', mix=P.void_ledge)
-    lv.lift()
-    lv.tip('El ascensor sube a la planta de arriba', back=-4)
+    section(lv, P.rail_ride, right='W')
     lv.tip('El cilindro te lanza hacia donde empujas', back=-26)
     section(lv, P.cannon_hall, right='Z')
     section(lv, P.bubble_tower, right='W', mix=P.crack_ledge)
@@ -58,13 +57,13 @@ def floor1():
 
 
 def floor2():
-    lv = Level('c11-andamios', 'Andamios', w=W, mood='dusk', cam_yaw=16, keep=0.76)
+    lv = Level('c11-andamios', 'Andamios', w=W, mood='dusk', cam_yaw=16, keep=0.83)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='B', mix=P.ice_slalom)
     section(lv, P.rail_puzzle, right='Z')
     section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.roller_gap, right='Y')
-    lv.lift()
+    section(lv, P.rail_ride, right='W')
     section(lv, P.loop_rail, right='Z')
     section(lv, P.bubble_tower, right='B')
     section(lv, P.cannon_hall, right='W', mix=P.crack_ledge)
@@ -76,13 +75,13 @@ def floor2():
 
 
 def floor3():
-    lv = Level('c11-grua', 'Grúa', w=W, mood='cave', cam_yaw=-20, keep=0.75)
+    lv = Level('c11-grua', 'Grúa', w=W, mood='cave', cam_yaw=-20, keep=0.82)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Y', mix=P.blizzard)
     section(lv, P.switch_gate, right='Z')
     section(lv, P.bubble_tower, right='W')
     section(lv, P.loop, right='B', mix=P.void_ledge)
-    lv.lift()
+    section(lv, P.rail_ride, right='W')
     section(lv, P.loop_rail, right='Y')
     section(lv, P.roller_gap, right='Z', mix=P.ice_slalom)
     section(lv, P.cannon_hall, right='W')
@@ -95,15 +94,14 @@ def floor3():
 
 
 def floor4():
-    lv = Level('c11-sala-de-turbinas', 'Sala de turbinas', w=W, mood='dusk', cam_yaw=20, keep=0.75)
+    lv = Level('c11-sala-de-turbinas', 'Sala de turbinas', w=W, mood='dusk', cam_yaw=20, keep=0.82)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Z', mix=P.ice_slalom)
     section(lv, P.weight_gate, right='W')
     section(lv, P.loop, right='B', mix=P.void_ledge)
     section(lv, P.cannon_hall, right='Y')
-    lv.lift()
+    section(lv, P.rail_ride, right='W')
     section(lv, P.loop_rail, right='Z')
-    section(lv, P.blizzard, right='W', mix=P.crack_ledge)
     section(lv, P.bubble_tower, right='B')
     section(lv, P.gauntlet, right='Y')
     section(lv, P.roller_gap, right='Z')
@@ -114,13 +112,13 @@ def floor4():
 
 
 def floor5():
-    lv = Level('c11-pasarelas', 'Pasarelas', w=W, mood='cave', cam_yaw=-16, keep=0.74)
+    lv = Level('c11-pasarelas', 'Pasarelas', w=W, mood='cave', cam_yaw=-16, keep=0.81)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='W', mix=P.ice_slalom)
     section(lv, P.rail_puzzle, right='B')
     section(lv, P.pit, right='Y')
     section(lv, P.loop, right='Z', mix=P.void_ledge)
-    lv.lift()
+    section(lv, P.rail_ride, right='W')
     section(lv, P.bubble_tower, right='W')
     section(lv, P.loop_rail, right='B')
     section(lv, P.roller_gap, right='Y', mix=P.crack_ledge)
@@ -133,13 +131,13 @@ def floor5():
 
 
 def floor6():
-    lv = Level('c11-almacen-alto', 'Almacén alto', w=W, mood='cave', cam_yaw=22, keep=0.74)
+    lv = Level('c11-almacen-alto', 'Almacén alto', w=W, mood='cave', cam_yaw=22, keep=0.81)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Y', mix=P.ice_slalom)
     section(lv, P.switch_gate, right='Z')
     section(lv, P.cannon_hall, right='W')
     section(lv, P.loop, right='B', mix=P.void_ledge)
-    lv.lift()
+    section(lv, P.rail_ride, right='W')
     section(lv, P.loop_rail, right='Y')
     section(lv, P.bubble_tower, right='Z', mix=P.crack_ledge)
     section(lv, P.spinner_room, right='W')
@@ -152,13 +150,13 @@ def floor6():
 
 
 def floor7():
-    lv = Level('c11-cornisas-altas', 'Cornisas altas', w=W, mood='dusk', cam_yaw=-24, keep=0.72)
+    lv = Level('c11-cornisas-altas', 'Cornisas altas', w=W, mood='dusk', cam_yaw=-24, keep=0.79)
     lv.add(P.start_room(lv))
     section(lv, P.loop_rail, right='Z')
     section(lv, P.weight_gate, right='W', mix=P.ice_slalom)
     section(lv, P.blizzard, right='B')
     section(lv, P.loop, right='Y', mix=P.void_ledge)
-    lv.lift()
+    section(lv, P.rail_ride, right='W')
     section(lv, P.bubble_tower, right='Z', mix=P.crack_ledge)
     section(lv, P.cannon_hall, right='W')
     section(lv, P.roller_gap, right='B')
@@ -171,13 +169,12 @@ def floor7():
 
 
 def floor8():
-    lv = Level('c11-sala-de-maquinas', 'Sala de máquinas', w=W, mood='cave', cam_yaw=18, keep=0.72)
+    lv = Level('c11-sala-de-maquinas', 'Sala de máquinas', w=W, mood='cave', cam_yaw=18, keep=0.79)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='B', mix=P.blizzard)
     section(lv, P.rail_puzzle, right='Y')
     section(lv, P.cannon_hall, right='Z')
-    section(lv, P.loop, right='W', mix=P.void_ledge)
-    lv.lift()
+    section(lv, P.rail_ride, right='W')
     section(lv, P.loop_rail, right='B')
     section(lv, P.fire_hall, right='Y', mix=P.ice_slalom)
     section(lv, P.bubble_tower, right='Z')
@@ -190,19 +187,17 @@ def floor8():
 
 
 def floor9():
-    lv = Level('c11-laberinto-alto', 'Laberinto alto', w=W, mood='cave', cam_yaw=-26, keep=0.72)
+    lv = Level('c11-laberinto-alto', 'Laberinto alto', w=W, mood='cave', cam_yaw=-26, keep=0.79)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Z', mix=P.ice_slalom)
     section(lv, P.switch_gate, right='W')
     section(lv, P.bubble_tower, right='B')
     section(lv, P.loop, right='Y', mix=P.void_ledge)
     section(lv, P.roller_gap, right='Z')
-    lv.lift()
+    section(lv, P.rail_ride, right='W')
     section(lv, P.loop_rail, right='W')
     section(lv, P.cannon_hall, right='B')
-    section(lv, P.loop, right='Y', mix=P.crack_ledge)
     section(lv, P.gauntlet, right='Z')
-    section(lv, P.blizzard, right='W')
     section(lv, P.pit, right='B')
     lv.add(P.spinner_room(lv))
     lv.add(P.seesaw_bridge(lv))
@@ -211,15 +206,13 @@ def floor9():
 
 
 def floor10():
-    lv = Level('c11-cima-de-la-torre', 'Cima de la torre', w=W, mood='dungeon', cam_yaw=0, keep=0.7)
+    lv = Level('c11-cima-de-la-torre', 'Cima de la torre', w=W, mood='dungeon', cam_yaw=0, keep=0.77)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Y', mix=P.blizzard)
     section(lv, P.weight_gate, right='Z')
     section(lv, P.loop_rail, right='W')
     section(lv, P.cannon_hall, right='B')
-    section(lv, P.loop, right='Z', mix=P.void_ledge)
-    lv.lift()
-    section(lv, P.loop_rail, right='Y')
+    section(lv, P.rail_ride, right='W')
     section(lv, P.bubble_tower, right='W', mix=P.crack_ledge)
     section(lv, P.blizzard, right='B')
     section(lv, P.gauntlet, right='Z')

@@ -140,13 +140,18 @@ variación entre corridas; una sola no demuestra nada).
 navegador escondido el cronómetro del navegador se frena (un `setTimeout` de 2 s tarda 45) y la
 tanda se queda clavada en el primer piso sin dar error.
 
-**El capítulo 11 está hecho pero no publicado** (`scripts/levelkit/chapter11.py`): el ascensor
-de dos plantas deja al limo a 0,47 de la estación y el motor pide menos de 0,42 para subir, así
-que 8 de los 10 pisos se quedan a mitad. Vuelve a la campaña cuando pase el autopiloto.
+**El ascensor de dos plantas (`Level.lift()`) NO se usa en ningún capítulo publicado.** La
+vagoneta se lleva solo a los limitos que estén encima de la estación en ese momento y el resto
+se queda abajo, en un cuarto sellado: el piso de prueba acabó con el 23 % del limo. Dos cosas
+sí quedaron arregladas por el camino y valen para todas las vías: el radio de embarque pasó de
+0,42 a 0,55 (el centro del limo no llega a ponerse encima del todo cuando se apoya en un muro)
+y el autopiloto monta A TOQUECITOS, porque empujando seguido cruza la casilla a 3 de velocidad
+y el juego pide menos de 1,8. La pieza se queda en `level.py` para cuando el ascensor sepa
+subir a los 80 limitos de una vez.
 
 ## 7. Tamaños por capítulo (y el techo)
 
-Media de filas por piso: 67 / 82 / 91 / 110 / 110 / 124 / 142 / 169 / 174 / 180.
+Media de filas por piso: 67 / 82 / 91 / 110 / 110 / 124 / 142 / 169 / 174 / 180 / 163 / 149.
 
 **Techo: 180 filas y 80 monedas por piso.** El capítulo 9 llegó a 192 filas y el 10 a 225, con
 112 monedas: tres minutos de piso para un autopiloto perfecto, y mucho más para una persona.
@@ -158,7 +163,7 @@ Lo que sube con el capítulo no es el tamaño, es la exigencia:
 
 | Palanca | Cómo se aprieta |
 |---|---|
-| `keep` (limo que hay que conservar) | 0,80→0,70 en el cap. 1-8, 0,81→0,73 en el 9, 0,84→0,76 en el 10 |
+| `keep` (limo que hay que conservar) | 0,80→0,70 en el cap. 1-8; 0,81→0,73 en el 9; 0,84→0,76 en el 10; 0,85→0,77 en el 11; 0,86→0,78 en el 12 |
 | peligro de borde (`crack_ledge`, `void_ledge`) | dos secciones más por piso en los capítulos tardíos |
 | puzles | del capítulo 6 en adelante, NINGÚN piso sin puzle: ni uno de solo esquivar |
 | variedad | las secciones de un piso son todas distintas; `loop` suelto es relleno |

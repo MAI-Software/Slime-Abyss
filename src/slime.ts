@@ -1028,7 +1028,10 @@ export class Slime {
       const ci = Math.floor(g.cx), cj = Math.floor(g.cz);
       const path = w.railAt(ci, cj, w.storyAt(ci, cj, g.cy));
       if (!path || this.stationLock.has(path.from)) continue;
-      if (Math.hypot(g.cx - (ci + 0.5), g.cz - (cj + 0.5)) > 0.42) continue;
+      // 0.55 y no 0.42: en el hueco del ascensor la estación tiene muros a los lados y el
+      // limo se apoya en ellos, así que su centro nunca llega a ponerse encima del todo.
+      // Sigue pidiendo estar dentro de la casilla (la media diagonal es 0.71).
+      if (Math.hypot(g.cx - (ci + 0.5), g.cz - (cj + 0.5)) > 0.55) continue;
       if (Math.hypot(g.vx, g.vz) > BOARD_SPEED) continue;
       let grounded = 0, onBoard = false;
       for (const i of g.ids) {

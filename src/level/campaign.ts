@@ -101,6 +101,26 @@ import c10f7 from './campaign/chapter10/07-c10-cadena-de-vias.json';
 import c10f8 from './campaign/chapter10/08-c10-sala-de-control.json';
 import c10f9 from './campaign/chapter10/09-c10-laberinto-de-acero.json';
 import c10f10 from './campaign/chapter10/10-c10-corazon-de-la-maquina.json';
+import c11f1 from './campaign/chapter11/01-c11-via-de-carga.json';
+import c11f2 from './campaign/chapter11/02-c11-andamios.json';
+import c11f3 from './campaign/chapter11/03-c11-grua.json';
+import c11f4 from './campaign/chapter11/04-c11-sala-de-turbinas.json';
+import c11f5 from './campaign/chapter11/05-c11-pasarelas.json';
+import c11f6 from './campaign/chapter11/06-c11-almacen-alto.json';
+import c11f7 from './campaign/chapter11/07-c11-cornisas-altas.json';
+import c11f8 from './campaign/chapter11/08-c11-sala-de-maquinas.json';
+import c11f9 from './campaign/chapter11/09-c11-laberinto-alto.json';
+import c11f10 from './campaign/chapter11/10-c11-cima-de-la-torre.json';
+import c12f1 from './campaign/chapter12/01-c12-puertas-de-la-ciudadela.json';
+import c12f2 from './campaign/chapter12/02-c12-avenida-rota.json';
+import c12f3 from './campaign/chapter12/03-c12-torres-caidas.json';
+import c12f4 from './campaign/chapter12/04-c12-grua-parada.json';
+import c12f5 from './campaign/chapter12/05-c12-plaza-de-neon.json';
+import c12f6 from './campaign/chapter12/06-c12-conductos.json';
+import c12f7 from './campaign/chapter12/07-c12-mirador-roto.json';
+import c12f8 from './campaign/chapter12/08-c12-sala-de-los-relojes.json';
+import c12f9 from './campaign/chapter12/09-c12-laberinto-de-la-ciudadela.json';
+import c12f10 from './campaign/chapter12/10-c12-corazon-de-la-ciudadela.json';
 
 /** Modo historia: capítulos de 10 pisos. Sus coleccionables están en collectibles.ts. */
 export const CHAPTERS: ChapterDef[] = [
@@ -183,12 +203,27 @@ export const CHAPTERS: ChapterDef[] = [
     biome: 'tech',
     floors: [c10f1, c10f2, c10f3, c10f4, c10f5, c10f6, c10f7, c10f8, c10f9, c10f10] as LevelData[],
   },
+  {
+    // la torre: a mitad de camino un ascensor sube a la planta de arriba, colgada sobre el vacío
+    id: 'la-torre',
+    name: 'Capítulo 11',
+    subtitle: 'La Torre',
+    biome: 'tech',
+    floors: [c11f1, c11f2, c11f3, c11f4, c11f5, c11f6, c11f7, c11f8, c11f9, c11f10] as LevelData[],
+  },
+  {
+    // la ciudadela: la ruina de la ciudad de arriba. No estrena nada, lo junta todo
+    id: 'la-ciudadela',
+    name: 'Capítulo 12',
+    subtitle: 'La Ciudadela',
+    biome: 'tech',
+    floors: [c12f1, c12f2, c12f3, c12f4, c12f5, c12f6, c12f7, c12f8, c12f9, c12f10] as LevelData[],
+  },
 ];
 
 /** Capítulos anunciados que aún no se pueden jugar. */
-// el capítulo 11 está hecho (scripts/levelkit/chapter11.py) pero NO se publica: el ascensor
-// deja al limo a medias en 8 de los 10 pisos. Vuelve cuando pase el autopiloto.
-export const UPCOMING = [{ name: 'Capítulo 11', subtitle: 'Próximamente' }];
+// 12 capítulos y se acabó el abismo: no hay nada anunciado detrás.
+export const UPCOMING: { name: string; subtitle: string }[] = [];
 
 /** Suelo del menú: 9x7 casillas bajo la habitación (solo sostiene al limo; el mundo no se dibuja). */
 export const MENU_STAGE: LevelData = {
