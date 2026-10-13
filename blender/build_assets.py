@@ -173,7 +173,10 @@ def tube(name, points, radius, mat, parent=None, loc=(0, 0, 0), poly=False, cycl
     cu = bpy.data.curves.new(name + "_curve", "CURVE")
     cu.dimensions = "3D"
     cu.bevel_depth = radius
-    cu.bevel_resolution = 6
+    # 2 y no 6: estas lineas son de 5 mm (ojos, bocas, aros) y con 28 lados alrededor se comian
+    # 20-30 mil triangulos cada una. Con 12 lados se ven igual en el movil y el .glb pesa un
+    # tercio, que es lo primero que descarga el jugador.
+    cu.bevel_resolution = 2
     cu.use_fill_caps = True
     sp = cu.splines.new("POLY" if poly else "NURBS")
     sp.points.add(len(points) - 1)
@@ -183,7 +186,7 @@ def tube(name, points, radius, mat, parent=None, loc=(0, 0, 0), poly=False, cycl
     if not poly:
         sp.use_endpoint_u = True
         sp.order_u = 3
-        sp.resolution_u = 16
+        sp.resolution_u = 6
     tmp = bpy.data.objects.new(name + "_tmp", cu)
     SCENE.objects.link(tmp)
     dg = bpy.context.evaluated_depsgraph_get()

@@ -39,7 +39,7 @@ def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=1, m
     lv.add(P.neck(lv, rows=neck_rows, coin=True))
     if feature:
         lv.add(feature(lv))
-        lv.add(P.neck(lv, rows=neck_rows, coin=True))
+        lv.add(P.neck(lv, rows=neck_rows))
     return lv
 
 

@@ -147,19 +147,21 @@ def measure(ch, L, pts):
 def score(m):
     """Nota 0-100. Cada parte está acotada para que ninguna se dispare sola.
 
-    Los topes se recalibraron cuando los capítulos 5 al 8 se quedaron todos entre 80 y 84: con
-    los topes viejos (100 filas, 220 m, 9 familias, 14 combos) un piso grande los reventaba y la
-    nota dejaba de distinguir. Y el peligro se mide contra 0.30, no contra 0.75: más exposición
+    El tamaño y el largo pesan poco a propósito: un piso no es mejor por ser más largo, y con el
+    tope viejo (400 m) la nota premiaba alargar. Los topes se quedan en 150 filas y 260 m, que es
+    lo que se tarda en jugar un piso sin que se haga pesado, y lo que sube la nota es la variedad,
+    los combos, las decisiones y los puzles. Y el peligro se mide contra 0.30, no contra 0.75: más exposición
     que esa no se puede pedir, porque el listón de la prueba es conservar más del 90 % del limo
     y los pinchos y el fuego se lo van comiendo."""
-    size = min(1, m['filas'] / 150) * 15
-    length = min(1, m['largo'] / 400) * 10
+    size = min(1, m['filas'] / 150) * 12
+    length = min(1, m['largo'] / 260) * 6
     variety = min(1, m['variedad'] / 12) * 20
-    combo = min(1, m['combos'] / 25) * 20
+    combo = min(1, m['combos'] / 25) * 18
     danger = min(1, m['peligro'] / 0.30) * 15
-    decide = min(1, m['decisiones'] / 12) * 15
+    decide = min(1, m['decisiones'] / 12) * 16
+    puzzle = min(1, m['puzles'] / 6) * 8
     fill = (1 - min(1, m['relleno'] / 0.5)) * 5
-    return round(size + length + variety + combo + danger + decide + fill)
+    return round(size + length + variety + combo + danger + decide + puzzle + fill)
 
 
 def tags(ch, m, s):

@@ -136,14 +136,39 @@ viejos y los resultados salen con el nombre de otro nivel.
 Un piso terminado: `OK`, todas las monedas, limo > 90 %, y dos vueltas seguidas sin fallo (hay
 variación entre corridas; una sola no demuestra nada).
 
-## 7. Tamaños por capítulo
+**La pestaña del juego tiene que estar DELANTE mientras corre la tanda.** Con el panel del
+navegador escondido el cronómetro del navegador se frena (un `setTimeout` de 2 s tarda 45) y la
+tanda se queda clavada en el primer piso sin dar error.
 
-Media de filas por piso (después de la última tanda): 46 / 59 / 71 / 73 / 78 / 120 / 145 / 170.
-Del capítulo 6 en adelante los tramos se montan con pasos de UNA fila, salas de cuatro y una
-sala de cada dos colgada del vacío (`cliff`), más un bucle de más por piso: el bucle es un rodeo
-y los rodeos son lo que el medidor cuenta como decisiones. Un piso corto se nota enseguida: si el recorrido no tiene al menos cuatro
-momentos distintos (sala con monedas, mecánica del capítulo, rodeo con secreto y remate), está
-corto aunque tenga filas.
+**El capítulo 11 está hecho pero no publicado** (`scripts/levelkit/chapter11.py`): el ascensor
+de dos plantas deja al limo a 0,47 de la estación y el motor pide menos de 0,42 para subir, así
+que 8 de los 10 pisos se quedan a mitad. Vuelve a la campaña cuando pase el autopiloto.
+
+## 7. Tamaños por capítulo (y el techo)
+
+Media de filas por piso: 67 / 82 / 91 / 110 / 110 / 124 / 142 / 169 / 174 / 180.
+
+**Techo: 180 filas y 80 monedas por piso.** El capítulo 9 llegó a 192 filas y el 10 a 225, con
+112 monedas: tres minutos de piso para un autopiloto perfecto, y mucho más para una persona.
+Un piso largo no es un piso difícil, solo es un piso largo. Si un piso pasa del techo, lo que
+se quita son las secciones REPETIDAS (la misma mecánica dos veces en el mismo piso), nunca la
+mecánica nueva del capítulo ni el remate.
+
+Lo que sube con el capítulo no es el tamaño, es la exigencia:
+
+| Palanca | Cómo se aprieta |
+|---|---|
+| `keep` (limo que hay que conservar) | 0,80→0,70 en el cap. 1-8, 0,81→0,73 en el 9, 0,84→0,76 en el 10 |
+| peligro de borde (`crack_ledge`, `void_ledge`) | dos secciones más por piso en los capítulos tardíos |
+| puzles | del capítulo 6 en adelante, NINGÚN piso sin puzle: ni uno de solo esquivar |
+| variedad | las secciones de un piso son todas distintas; `loop` suelto es relleno |
+
+El listón era el mismo (0,78→0,70) en los capítulos 7, 8, 9 y 10: la precisión no subía nunca.
+El autopiloto conserva el 97-99 % en los capítulos tardíos, así que hay margen de sobra.
+
+Un piso corto se nota enseguida: si el recorrido no tiene al menos cuatro momentos distintos
+(sala con monedas, mecánica del capítulo, rodeo con secreto y remate), está corto aunque tenga
+filas.
 
 ## 8. La nota de cada piso (para saber si es soso)
 
@@ -152,12 +177,13 @@ a jugarlos, pero dice sin discutir cuál está corto o vacío.
 
 | Medida | Qué mira | Peso |
 |---|---|---|
-| tamaño | filas del mapa (tope 150) | 15 |
-| largo | metros reales del recorrido del autopiloto (tope 400) | 10 |
+| tamaño | filas del mapa (tope 150) | 12 |
+| largo | metros reales del recorrido del autopiloto (tope 260) | 6 |
 | variedad | familias de mecánica distintas (tope 12) | 20 |
-| combos | veces que dos familias DISTINTAS se tocan a 3 casillas (tope 25) | 20 |
+| combos | veces que dos familias DISTINTAS se tocan a 3 casillas (tope 25) | 18 |
 | peligro | parte del recorrido pegada a algo que hace daño o al vacío (tope 0.30) | 15 |
-| decisiones | puertas con interruptor, estaciones y rodeos de la ruta (tope 12) | 15 |
+| decisiones | puertas con interruptor, estaciones y rodeos de la ruta (tope 12) | 16 |
+| puzles | puertas, raíles, cañones y jabón que hay que resolver (tope 6) | 8 |
 | relleno | tramos seguidos de suelo sin nada: resta | 5 |
 
 **Los topes se recalibraron** cuando los capítulos 5 al 8 se quedaron todos entre 80 y 84: con

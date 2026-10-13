@@ -32,7 +32,7 @@ def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=1, m
     lv.add(P.neck(lv, rows=neck_rows, coin=True))
     if feature:
         lv.add(feature(lv))
-        lv.add(P.neck(lv, rows=neck_rows, coin=True))
+        lv.add(P.neck(lv, rows=neck_rows))
     return lv
 
 
@@ -127,7 +127,7 @@ def floor6():
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Z', mix=P.ice_slalom)
     section(lv, P.rail_puzzle, right='Y')
-    section(lv, P.spinner_room, right='B', mix=P.cold_spikes)
+    section(lv, P.spinner_room, right='B', mix=P.crack_ledge)
     section(lv, P.pit, right='W')
     section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.cannon_hall, right='Z')
