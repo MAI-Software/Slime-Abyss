@@ -6,7 +6,7 @@
   "id": "c2-salto-a-la-estacion",
   "name": "Salto a la estación",
   "count": 80,
-  "keepPct": 0.5,
+  "keepPct": 0.76,
   "mood": "cave",
   "camYaw": -16,
   "tips": [

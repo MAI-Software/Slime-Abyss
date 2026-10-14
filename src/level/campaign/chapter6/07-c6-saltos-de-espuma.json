@@ -7,7 +7,7 @@
   "id": "c6-saltos-de-espuma",
   "name": "Saltos de espuma",
   "count": 80,
-  "keepPct": 0.7,
+  "keepPct": 0.81,
   "mood": "bright",
   "camYaw": -20,
   "tiles": [

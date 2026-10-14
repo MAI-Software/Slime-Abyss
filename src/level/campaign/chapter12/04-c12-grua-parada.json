@@ -7,7 +7,7 @@
   "id": "c12-grua-parada",
   "name": "Grúa parada",
   "count": 80,
-  "keepPct": 0.84,
+  "keepPct": 0.83,
   "mood": "cave",
   "camYaw": 20,
   "tiles": [

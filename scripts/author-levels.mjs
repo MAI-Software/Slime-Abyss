@@ -74,7 +74,7 @@ const CHAPTER1 = [
 '.....#000#.....',
 '.....#uuu#.....',
 '.....#111#.....',
-'...#22222222#..',
+'...#22C22222#..',
 '...#2C222222#..',
 '...#2222.222#..',
 '...#222222C2#..',
@@ -98,11 +98,11 @@ const CHAPTER1 = [
 '..#66########..',
 '..#66666C666#..',
 '..#666666666#..',
-'..#######666#..',
+'..#######C66#..',
 '..#######666#..',
 '........#888#..',
 '........#888#..',
-'........888##..',
+'........8C8##..',
 '.....#8888888#.',
 '.....#8C888C8#.',
 '.....##88888##.',
@@ -154,7 +154,7 @@ const CHAPTER1 = [
   },
   {
     file: 'chapter1/02-c1-filo-de-cuchilla.json',
-    id: 'c1-filo-de-cuchilla', name: 'Pico de piedra', count: 80, keepPct: 0.7,
+    id: 'c1-filo-de-cuchilla', name: 'Pico de piedra', count: 80, keepPct: 0.8,
     mood: 'cave', camYaw: -12,
     // secreto: el interruptor verde pide 14 limitos juntos y abre el rincón de la gema
     need: { B: 14 }, latch: { B: true },
@@ -175,15 +175,15 @@ const CHAPTER1 = [
 '....#22#22#....',
 '....#22#C2#....',
 '....#22#22#....',
-'....#22#22#....',
+'....#C2#22#....',
 '....#22222#....',
 '....#22222#....',
 '....#44444#....',
 '....#44C44#....',
 '....#44444#....',
-'....#44444#....',
+'....#44C44#....',
 '....##444##....',
-'...#4444444#...',
+'...#444C444#...',
 '...#4C444C4#...',
 '...##44444##...',
 '...#4444444#...',
@@ -195,11 +195,11 @@ const CHAPTER1 = [
 '...#4444444#...',
 '...#44C4C44#...',
 '...##44444##...',
-'...#4444444#...',
+'...#444C444#...',
 '...###444###...',
+'...###C44###...',
 '...###444###...',
-'...###444###...',
-'...#4444444#...',
+'...#444C444#...',
 '...#4C4#4C4#...',
 '...#444#444#...',
 '...#444#444#...',
@@ -207,7 +207,7 @@ const CHAPTER1 = [
 '...#4444444#...',
 '...#4C444C4#...',
 '...###444###...',
-'...###444###...',
+'...###4C4###...',
 '...##Y444Y##...',
 '...............',
 '...##JJJJJ##...',
@@ -215,17 +215,17 @@ const CHAPTER1 = [
 '...#4444444#...',
 '...#4C4#4C4#...',
 '...#444#444#...',
-'...#444#444#...',
+'...#4C4#444#...',
 '...#4C4#4C4#...',
 '...#4444444#...',
 '...#4444444#...',
 '...#4C444C4#...',
 '...#4444444#...',
-'...###444###...',
+'...###44C###...',
 '...#4444444#...',
 '...#4C4#4C4#...',
 '...#444#444#...',
-'...#444#444#...',
+'...#C44#444#...',
 '...#4C4#4C4#...',
 '...#4444444#...',
 '...#4444444#...',
@@ -242,7 +242,7 @@ const CHAPTER1 = [
   {
     file: 'chapter1/03-c1-pasillo-de-fuego.json',
     latch: { B: true },
-    id: 'c1-pasillo-de-fuego', name: 'Pasillo de fuego', count: 80, keepPct: 0.7,
+    id: 'c1-pasillo-de-fuego', name: 'Pasillo de fuego', count: 80, keepPct: 0.8,
     mood: 'dusk', camYaw: 0,
     // Solo fuego, de menos a más y siempre entre muros:
     // 1) sala con braseros fijos apartados del centro (el camino de 3 casillas queda libre)
@@ -269,7 +269,7 @@ const CHAPTER1 = [
 '.....#000#.....',
 '.....#000#.....',
 '.....#000#.....',
-'...#0000000#...',
+'...#0C00000#...',
 '...#0C000C0#...',
 '...#ij00000#...',
 '...#0000000#...',
@@ -277,15 +277,15 @@ const CHAPTER1 = [
 '...#0000000#...',
 '...#sC000C0#...',
 '...#0000000#...',
-'...###000###...',
+'...###C00###...',
 '...#0000000#...',
 '...#00C0C00#...',
 '...##00000##...',
 '...#0000000#...',
 '...###000###...',
+'...###0C0###...',
 '...###000###...',
-'...###000###...',
-'...#0000000#...',
+'...#00C0000#...',
 '...#0C0#0C0#...',
 '...#000#000#...',
 '...#000#000#...',
@@ -293,7 +293,7 @@ const CHAPTER1 = [
 '...#0000000#...',
 '...#0C000C0#...',
 '...###000###...',
-'...###000###...',
+'...###0C0###...',
 '...##Y000Y##...',
 '...............',
 '...##JJJJJ##...',
@@ -317,7 +317,7 @@ const CHAPTER1 = [
   },
   {
     file: 'chapter1/04-c1-divide-y-venceras.json',
-    id: 'c1-divide-y-venceras', name: 'Divide y vencerás', count: 80, keepPct: 0.75,
+    id: 'c1-divide-y-venceras', name: 'Divide y vencerás', count: 80, keepPct: 0.8,
     mood: 'cave', camYaw: 14,
     // Todo llano y sin callejones: la cuchilla parte al limo en dos carriles.
     // Izquierda: S (A, mientras se pisa) justo delante de la puerta d, así esa mitad lo sigue pisando al avanzar.
@@ -332,13 +332,13 @@ const CHAPTER1 = [
 '###00#00###',
 '###00#C0###',
 '###00#00###',
-'###00000###',
+'###C0000###',
 '###00000###',
 '###00C00###',
 '###00000###',
 '###00000###',
 '####000####',
-'.#0000000#.',
+'.#00C0000#.',
 '.#0C000C0#.',
 '.##00000##.',
 '.#0000000#.',
@@ -346,7 +346,7 @@ const CHAPTER1 = [
 '.#0000000#.',
 '.#0C000C0#.',
 '.#0000000#.',
-'.###000###.',
+'.###0C0###.',
 '.#0000000#.',
 '.#00C0C00#.',
 '.##00000##.',
@@ -354,7 +354,7 @@ const CHAPTER1 = [
 '.###000###.',
 '.###000###.',
 '.###000###.',
-'.#0000000#.',
+'.#0C00000#.',
 '.#0C0#0C0#.',
 '.#000#000#.',
 '.#000#000#.',
@@ -362,7 +362,7 @@ const CHAPTER1 = [
 '.#0000000#.',
 '.#0C000C0#.',
 '.###000###.',
-'.###000###.',
+'.###C00###.',
 '.##Y000Y##.',
 '...........',
 '.##JJJJJ##.',
@@ -376,11 +376,11 @@ const CHAPTER1 = [
 '.#0000000#.',
 '.#0C000C0#.',
 '.#0000000#.',
-'.###000###.',
+'.###0C0###.',
 '.#0000000#.',
 '.#0C0#0C0#.',
 '.#000#000#.',
-'.#000#000#.',
+'.#000#C00#.',
 '.#0C0#0C0#.',
 '.#0000000#.',
 '.#0000000#.',
@@ -395,7 +395,7 @@ const CHAPTER1 = [
   },
   {
     file: 'chapter1/05-c1-salto-al-abismo.json',
-    id: 'c1-salto-al-abismo', name: 'Salto al abismo', count: 80, keepPct: 0.65,
+    id: 'c1-salto-al-abismo', name: 'Salto al abismo', count: 80, keepPct: 0.8,
     mood: 'cave', camYaw: 0,
     // S abre la salida con solo tocarlo; s (secreto) pide 12 limitos juntos y abre la sala de la gema
     need: { B: 12 }, latch: { A: true, B: true },
@@ -422,7 +422,7 @@ const CHAPTER1 = [
 '..#ij00000#.....',
 '..#0000000#.....',
 '..###000###.....',
-'..#0000000#.....',
+'..#000C000#.....',
 '..#0C000C0#.....',
 '..#0000000#.....',
 '..###000###.....',
@@ -452,17 +452,17 @@ const CHAPTER1 = [
 '..#000#000#.....',
 '..#0C0#0C0#.....',
 '..#0000000#.....',
-'..#0000000#.....',
+'..#00C0000#.....',
 '..#0C000C0#.....',
 '..#0000000#.....',
 '..###000###.....',
-'..#0000000#.....',
+'..#000C000#.....',
 '..#0C0#0C0#.....',
 '..#000#000#.....',
 '..#000#000#.....',
 '..#0C0#0C0#.....',
 '..#0000000#.....',
-'..#0000000#.....',
+'..#000C000#.....',
 '..#0C000C0#.....',
 '..#000P000#.....',
 '..#########.....',
@@ -475,7 +475,7 @@ const CHAPTER1 = [
   {
     file: 'chapter1/06-c1-aceite-y-chispas.json',
     latch: { B: true },
-    id: 'c1-aceite-y-chispas', name: 'Aceite y chispas', count: 80, keepPct: 0.75,
+    id: 'c1-aceite-y-chispas', name: 'Aceite y chispas', count: 80, keepPct: 0.8,
     mood: 'dusk', camYaw: -18,
     map: [
 '#############',
@@ -490,7 +490,7 @@ const CHAPTER1 = [
 '#LW00F0F00#..',
 '###0C000C0#..',
 '..###000###..',
-'....#000#....',
+'....#0C0#....',
 '....#0O0#....',
 '....#000#....',
 '....#000#....',
@@ -504,11 +504,11 @@ const CHAPTER1 = [
 '..#sC000C0#..',
 '..#0000000#..',
 '..###000###..',
-'..#0000000#..',
+'..#000C000#..',
 '..#00C0C00#..',
 '..##00000##..',
 '..#0000000#..',
-'..###000###..',
+'..###0C0###..',
 '..###000###..',
 '..###000###..',
 '..#0000000#..',
@@ -530,7 +530,7 @@ const CHAPTER1 = [
 '..#000#000#..',
 '..#0C0#0C0#..',
 '..#0000000#..',
-'..#0000000#..',
+'..#000C000#..',
 '..#0C000C0#..',
 '..#000P000#..',
 '..#########..',
@@ -544,7 +544,7 @@ const CHAPTER1 = [
   {
     file: 'chapter1/07-c1-hielo-que-arde.json',
     latch: { B: true },
-    id: 'c1-hielo-que-arde', name: 'Hielo que arde', count: 80, keepPct: 0.75,
+    id: 'c1-hielo-que-arde', name: 'Hielo que arde', count: 80, keepPct: 0.8,
     mood: 'cave', camYaw: 0,
     // Primero el suelo helado solo, en una pista cerrada y sin peligros; después el aceite y el fuego
     // (ya vistos en el piso 6) con una sola idea nueva: ardiendo se derriten los bloques de hielo.
@@ -571,7 +571,7 @@ const CHAPTER1 = [
 '...#000#...',
 '...#000#...',
 '...#000#...',
-'.#0000000#.',
+'.#0C00000#.',
 '.#0C000C0#.',
 '.##00000##.',
 '.#0000000#.',
@@ -579,7 +579,7 @@ const CHAPTER1 = [
 '.#0000000#.',
 '.#sC000C0#.',
 '.#0000000#.',
-'.###000###.',
+'.###C00###.',
 '.#0000000#.',
 '.#00C0C00#.',
 '.##00000##.',
@@ -587,7 +587,7 @@ const CHAPTER1 = [
 '.###000###.',
 '.###000###.',
 '.###000###.',
-'.#0000000#.',
+'.#000C000#.',
 '.#0C0#0C0#.',
 '.#000#000#.',
 '.#000#000#.',
@@ -595,7 +595,7 @@ const CHAPTER1 = [
 '.#0000000#.',
 '.#0C000C0#.',
 '.###000###.',
-'.###000###.',
+'.###C00###.',
 '.##Y000Y##.',
 '...........',
 '.##JJJJJ##.',
@@ -609,7 +609,7 @@ const CHAPTER1 = [
 '.#0000000#.',
 '.#0C000C0#.',
 '.#0000000#.',
-'.###000###.',
+'.###C00###.',
 '.#0C000C0#.',
 '.#00III00#.',
 '.>00III00#.',
@@ -621,7 +621,7 @@ const CHAPTER1 = [
 '.#000#000#.',
 '.#0C0#0C0#.',
 '.#0000000#.',
-'.#0000000#.',
+'.#000C000#.',
 '.#0C000C0#.',
 '.#000P000#.',
 '.#########.',
@@ -635,7 +635,7 @@ const CHAPTER1 = [
   {
     file: 'chapter1/08-c1-ventiladores.json',
     latch: { B: true },
-    id: 'c1-ventiladores', name: '0entiladores', count: 80, keepPct: 0.6,
+    id: 'c1-ventiladores', name: '0entiladores', count: 80, keepPct: 0.8,
     mood: 'dusk', camYaw: 16,
     // Tres ráfagas de menos a más. Las monedas marcan la mejor línea (capítulo 1: guiar, no castigar):
     // 1) viento contra un muro: no se puede caer; la moneda está justo donde te deja el viento
@@ -668,7 +668,7 @@ const CHAPTER1 = [
 '..#0000000#..',
 '..#0C000C0#..',
 '..##00000##..',
-'..#0000000#..',
+'..#000C000#..',
 '..###ddd###..',
 '..#0000000#..',
 '..#sC000C0#..',
@@ -680,7 +680,7 @@ const CHAPTER1 = [
 '..#0000000#..',
 '..###000###..',
 '..###000###..',
-'..###000###..',
+'..###0C0###..',
 '..#0000000#..',
 '..#0C0#0C0#..',
 '..#000#000#..',
@@ -700,7 +700,7 @@ const CHAPTER1 = [
 '..#000#000#..',
 '..#0C0#0C0#..',
 '..#0000000#..',
-'..#0000000#..',
+'..#000C000#..',
 '..#0C000C0#..',
 '..#0000000#..',
 '..###000###..',
@@ -729,7 +729,7 @@ const CHAPTER1 = [
   {
     file: 'chapter1/09-c1-corriente-helada.json',
     latch: { B: true },
-    id: 'c1-corriente-helada', name: 'Corriente de aire', count: 80, keepPct: 0.75,
+    id: 'c1-corriente-helada', name: 'Corriente de aire', count: 80, keepPct: 0.8,
     mood: 'cave', camYaw: 0,
     map: [
 '..#######..',
@@ -744,9 +744,9 @@ const CHAPTER1 = [
 '..#C000C#..',
 '..#00b00#..',
 '..#00000#..',
-'..#00000#..',
+'..#C0000#..',
 '..##000##..',
-'.#0000000#.',
+'.#00C0000#.',
 '.#0C000C0#.',
 '.##00000##.',
 '.#0000000#.',
@@ -754,7 +754,7 @@ const CHAPTER1 = [
 '.#0000000#.',
 '.#sC000C0#.',
 '.#0000000#.',
-'.###000###.',
+'.###0C0###.',
 '.#0000000#.',
 '.#00C0C00#.',
 '.##00000##.',
@@ -762,7 +762,7 @@ const CHAPTER1 = [
 '.###000###.',
 '.###000###.',
 '.###000###.',
-'.#0000000#.',
+'.#0C00000#.',
 '.#0C0#0C0#.',
 '.#000#000#.',
 '.#000#000#.',
@@ -770,7 +770,7 @@ const CHAPTER1 = [
 '.#0000000#.',
 '.#0C000C0#.',
 '.###000###.',
-'.###000###.',
+'.###C00###.',
 '.##Y000Y##.',
 '...........',
 '.##JJJJJ##.',
@@ -805,7 +805,7 @@ const CHAPTER1 = [
   {
     file: 'chapter1/10-c1-gran-cripta.json',
     latch: { B: true },
-    id: 'c1-gran-cripta', name: 'La gran cripta', count: 80, keepPct: 0.7,
+    id: 'c1-gran-cripta', name: 'La gran cripta', count: 80, keepPct: 0.8,
     mood: 'dungeon', camYaw: -20,
     map: [
 '###############',
@@ -832,7 +832,7 @@ const CHAPTER1 = [
 '....#000C0#....',
 '....#00000#....',
 '....##000##....',
-'...#0000000#...',
+'...#000C000#...',
 '...#0C000C0#...',
 '...##00000##...',
 '...#0000000#...',
@@ -844,11 +844,11 @@ const CHAPTER1 = [
 '...#0000000#...',
 '...#00C0C00#...',
 '...##00000##...',
-'...#0000000#...',
+'...#00C0000#...',
 '...###000###...',
+'...###0C0###...',
 '...###000###...',
-'...###000###...',
-'...#0000000#...',
+'...#0000C00#...',
 '...#0C0#0C0#...',
 '...#000#000#...',
 '...#000#000#...',
@@ -856,7 +856,7 @@ const CHAPTER1 = [
 '...#0000000#...',
 '...#0C000C0#...',
 '...###000###...',
-'...###000###...',
+'...###0C0###...',
 '...##Y000Y##...',
 '...............',
 '...##JJJJJ##...',
@@ -887,7 +887,7 @@ const CHAPTER2 = [
   {
     file: 'chapter2/01-c2-todos-a-una.json',
     latch: { B: true },
-    id: 'c2-todos-a-una', name: 'Todos a una', count: 80, keepPct: 0.75,
+    id: 'c2-todos-a-una', name: 'Todos a una', count: 80, keepPct: 0.78,
     mood: 'dusk', camYaw: 0,
     // Botón de apretar: la cuchilla y los pinchos desperdigan el limo en una sala sin peligros.
     map: [
@@ -989,7 +989,7 @@ const CHAPTER2 = [
   {
     file: 'chapter2/02-c2-sobre-railes.json',
     latch: { B: true },
-    id: 'c2-sobre-railes', name: 'Sobre raíles', count: 80, keepPct: 0.8,
+    id: 'c2-sobre-railes', name: 'Sobre raíles', count: 80, keepPct: 0.78,
     mood: 'dusk', camYaw: 15,
     // Raíles: una vía recta y corta entre dos estaciones; no hay forma de caerse.
     map: [
@@ -1081,7 +1081,7 @@ const CHAPTER2 = [
   {
     file: 'chapter2/03-c2-curvas.json',
     latch: { B: true },
-    id: 'c2-curvas', name: 'Curvas', count: 80, keepPct: 0.8,
+    id: 'c2-curvas', name: 'Curvas', count: 80, keepPct: 0.79,
     mood: 'cave', camYaw: 0,
     // Vías con curvas y dos trayectos seguidos con una isla en medio.
     // Escondido: un agujero en una esquina de la isla baja a un sótano con el coleccionable; el ascensor devuelve a la isla.
@@ -1282,7 +1282,7 @@ const CHAPTER2 = [
   {
     file: 'chapter2/04-c2-cuesta-arriba.json',
     latch: { B: true },
-    id: 'c2-cuesta-arriba', name: 'Cuesta arriba', count: 80, keepPct: 0.8,
+    id: 'c2-cuesta-arriba', name: 'Cuesta arriba', count: 80, keepPct: 0.79,
     mood: 'dusk', camYaw: -14,
     // Las vías suben: a pie solo se baja, en bola se sube.
     // Escondido: una estación en el muro de la sala del medio baja a un saliente con el coleccionable.
@@ -1376,7 +1376,7 @@ const CHAPTER2 = [
   {
     file: 'chapter2/05-c2-todos-a-bordo.json',
     latch: { B: true },
-    id: 'c2-todos-a-bordo', name: 'Todos a bordo', count: 80, keepPct: 0.75,
+    id: 'c2-todos-a-bordo', name: 'Todos a bordo', count: 80, keepPct: 0.76,
     mood: 'cave', camYaw: 18,
     // Dos plantas: se empieza arriba. Apretar + ascensor: solo viaja el trozo que pisa la estación.
     // Escondido: el ascensor de la esquina baja a un cuartito con el coleccionable (y vuelve a subir).
@@ -1558,7 +1558,7 @@ const CHAPTER2 = [
   {
     file: 'chapter2/06-c2-plantas-en-la-via.json',
     latch: { B: true },
-    id: 'c2-plantas-en-la-via', name: 'Plantas en la vía', count: 80, keepPct: 0.75,
+    id: 'c2-plantas-en-la-via', name: 'Plantas en la vía', count: 80, keepPct: 0.74,
     mood: 'dusk', camYaw: 0,
     // Dos plantas: arriba aceite y fuego (capítulo 1) para quemar las plantas que tapan el agujero; abajo, la vía al tesoro.
     // Escondido: otra planta tapa un rincón con el coleccionable.
@@ -1740,7 +1740,7 @@ const CHAPTER2 = [
   {
     file: 'chapter2/07-c2-salto-a-la-estacion.json',
     latch: { B: true },
-    id: 'c2-salto-a-la-estacion', name: 'Salto a la estación', count: 80, keepPct: 0.5,
+    id: 'c2-salto-a-la-estacion', name: 'Salto a la estación', count: 80, keepPct: 0.76,
     mood: 'cave', camYaw: -16,
     // Plataformas de salto hasta una isla con estación que sube.
     map: [
@@ -1839,7 +1839,7 @@ const CHAPTER2 = [
   {
     file: 'chapter2/08-c2-puente-de-viento.json',
     latch: { B: true },
-    id: 'c2-puente-de-viento', name: 'Puente de viento', count: 80, keepPct: 0.7,
+    id: 'c2-puente-de-viento', name: 'Puente de viento', count: 80, keepPct: 0.75,
     mood: 'dusk', camYaw: 0,
     // Dos caminos: puente con ventiladores o vía; las monedas llevan a la vía. Presenta la casilla de pinchos (flanquea el puente).
     map: [
@@ -1925,7 +1925,7 @@ const CHAPTER2 = [
   },
   {
     file: 'chapter2/09-c2-bifurcacion.json',
-    id: 'c2-bifurcacion', name: 'Bifurcación', count: 80, keepPct: 0.75,
+    id: 'c2-bifurcacion', name: 'Bifurcación', count: 80, keepPct: 0.8,
     mood: 'cave', camYaw: 20,
     // Secreto: la vía de la izquierda lleva a un interruptor que pide peso (apretar) y a la gema; se vuelve en bola.
     need: { B: 14 }, latch: { B: true },
@@ -2010,7 +2010,7 @@ const CHAPTER2 = [
   {
     file: 'chapter2/10-c2-gran-raiz.json',
     latch: { B: true },
-    id: 'c2-gran-raiz', name: 'La gran raíz', count: 80, keepPct: 0.5,
+    id: 'c2-gran-raiz', name: 'La gran raíz', count: 80, keepPct: 0.74,
     mood: 'dungeon', camYaw: -22,
     // Final en dos plantas: arriba apretar tras la cuchilla, aceite, saltar, prenderse lejos del borde y quemar las plantas
     // que tapan el agujero; abajo, la vía sube con un bucle hasta el tesoro.
@@ -2220,7 +2220,7 @@ const CHAPTER3 = [
   {
     file: 'chapter3/01-c3-suelo-fragil.json',
     latch: { A: true, B: true },
-    id: 'c3-suelo-fragil', name: 'Suelo frágil', count: 80, keepPct: 0.8,
+    id: 'c3-suelo-fragil', name: 'Suelo frágil', count: 80, keepPct: 0.79,
     mood: 'cave', camYaw: 0,
     // Presenta la roca agrietada: dos franjas cortas dentro de salas con muros.
     map: [
@@ -2327,7 +2327,7 @@ const CHAPTER3 = [
   {
     file: 'chapter3/02-c3-puente-quebradizo.json',
     latch: { B: true },
-    id: 'c3-puente-quebradizo', name: 'Puente quebradizo', count: 80, keepPct: 0.6,
+    id: 'c3-puente-quebradizo', name: 'Puente quebradizo', count: 80, keepPct: 0.8,
     mood: 'cave', camYaw: 16,
     // Puente agrietado sobre el vacío con dos giros.
     map: [
@@ -2430,7 +2430,7 @@ const CHAPTER3 = [
   {
     file: 'chapter3/03-c3-hielo-fundido.json',
     latch: { B: true },
-    id: 'c3-hielo-fundido', name: 'Hielo fundido', count: 80, keepPct: 0.75,
+    id: 'c3-hielo-fundido', name: 'Hielo fundido', count: 80, keepPct: 0.8,
     mood: 'dusk', camYaw: -15,
     // Presenta el hielo que se derrite, en dos plantas: arriba aceite, fuego y plantas llevan a una mazmorra cerrada
     // cuyo único hueco es una baldosa de hielo; ardiendo se derrite y se cae a la sala del tesoro.
@@ -2619,7 +2619,7 @@ const CHAPTER3 = [
   {
     file: 'chapter3/04-c3-pista-ardiente.json',
     latch: { A: true, B: true },
-    id: 'c3-pista-ardiente', name: 'Pista ardiente', count: 80, keepPct: 0.7,
+    id: 'c3-pista-ardiente', name: 'Pista ardiente', count: 80, keepPct: 0.8,
     mood: 'cave', camYaw: 0,
     // Puente de hielo sobre el vacío que se funde bajo el limo en llamas: resbala, así que se cruza de un tirón.
     map: [
@@ -2732,7 +2732,7 @@ const CHAPTER3 = [
   {
     file: 'chapter3/05-c3-grietas-entre-llamas.json',
     latch: { B: true },
-    id: 'c3-grietas-entre-llamas', name: 'Grietas entre llamas', count: 80, keepPct: 0.65,
+    id: 'c3-grietas-entre-llamas', name: 'Grietas entre llamas', count: 80, keepPct: 0.76,
     mood: 'dungeon', camYaw: 18,
     // Dos plantas. Arriba: llamas intermitentes y, justo detrás de las segundas, roca agrietada; al final, un pozo.
     // Abajo, el tesoro. Escondido: tras una llama intermitente de la sala de abajo, el hueco del coleccionable.
@@ -2924,7 +2924,7 @@ const CHAPTER3 = [
   {
     file: 'chapter3/06-c3-dos-puentes.json',
     latch: { B: true },
-    id: 'c3-dos-puentes', name: 'Dos puentes', count: 80, keepPct: 0.6,
+    id: 'c3-dos-puentes', name: 'Dos puentes', count: 80, keepPct: 0.8,
     mood: 'cave', camYaw: -20,
     // La cuchilla parte al limo y cada mitad cruza su puente agrietado; se reúnen arriba.
     // Escondido: un hueco en el muro derecho lleva a un tercer puente agrietado con el coleccionable al final.
@@ -3027,7 +3027,7 @@ const CHAPTER3 = [
   {
     file: 'chapter3/07-c3-saltos-fragiles.json',
     latch: { B: true },
-    id: 'c3-saltos-fragiles', name: 'Saltos frágiles', count: 80, keepPct: 0.6,
+    id: 'c3-saltos-fragiles', name: 'Saltos frágiles', count: 80, keepPct: 0.8,
     mood: 'dusk', camYaw: 0,
     // Plataformas de salto que aterrizan sobre roca agrietada; la siguiente plataforma está justo después.
     map: [
@@ -3126,7 +3126,7 @@ const CHAPTER3 = [
   },
   {
     file: 'chapter3/08-c3-viento-y-grietas.json',
-    id: 'c3-viento-y-grietas', name: 'Viento y grietas', count: 80, keepPct: 0.5,
+    id: 'c3-viento-y-grietas', name: 'Viento y grietas', count: 80, keepPct: 0.8,
     mood: 'cave', camYaw: 15,
     // Los ventiladores empujan contra el muro mientras la roca se rompe: el muro impide caer, la prisa evita hundirse.
     // Escondido: el interruptor pide peso (apretar) y abre la puerta del rincón del coleccionable.
@@ -3225,7 +3225,7 @@ const CHAPTER3 = [
   {
     file: 'chapter3/09-c3-plaza-rota.json',
     latch: { B: true },
-    id: 'c3-plaza-rota', name: 'Plaza rota', count: 80, keepPct: 0.55,
+    id: 'c3-plaza-rota', name: 'Plaza rota', count: 80, keepPct: 0.8,
     mood: 'dungeon', camYaw: -18,
     // La cuchilla parte al limo justo antes de una plaza agrietada: hay que apretar mientras se avanza.
     // Arriba la plaza acaba en una mazmorra: aceite y fuego dentro, y una sola baldosa de hielo que derretir para bajar.
@@ -3418,7 +3418,7 @@ const CHAPTER3 = [
   {
     file: 'chapter3/10-c3-gran-grieta.json',
     latch: { A: true, B: true },
-    id: 'c3-gran-grieta', name: 'La gran grieta', count: 80, keepPct: 0.5,
+    id: 'c3-gran-grieta', name: 'La gran grieta', count: 80, keepPct: 0.78,
     mood: 'dungeon', camYaw: 0,
     // Final en tres plantas hacia abajo. Arriba: aceite y fuego, hiedra, puente de hielo que se funde y la gema tras la hiedra;
     // la sala del final solo tiene salida por una baldosa de hielo. En medio: llamas, roca agrietada y un pozo.
@@ -3795,7 +3795,7 @@ const CHAPTER4 = [
   {
     file: 'chapter4/01-c4-dunas.json',
     latch: { B: true },
-    id: 'c4-dunas', name: 'Dunas', count: 80, keepPct: 0.85,
+    id: 'c4-dunas', name: 'Dunas', count: 80, keepPct: 0.83,
     mood: 'bright', camYaw: 0,
     // Rampas: bajar y volver a subir, con muros a los lados.
     map: [
@@ -3929,7 +3929,7 @@ const CHAPTER4 = [
   {
     file: 'chapter4/02-c4-sendero-diagonal.json',
     latch: { B: true },
-    id: 'c4-sendero-diagonal', name: 'Sendero diagonal', count: 80, keepPct: 0.75,
+    id: 'c4-sendero-diagonal', name: 'Sendero diagonal', count: 80, keepPct: 0.79,
     mood: 'bright', camYaw: 14,
     // Un camino en diagonal sin muros: las medias casillas lo dejan liso.
     map: [
@@ -4043,7 +4043,7 @@ const CHAPTER4 = [
   {
     file: 'chapter4/03-c4-sierras.json',
     latch: { A: true, B: true },
-    id: 'c4-sierras', name: 'Dientes de arena', count: 80, keepPct: 0.8,
+    id: 'c4-sierras', name: 'Dientes de arena', count: 80, keepPct: 0.83,
     mood: 'dusk', camYaw: -16,
     // Dos plantas de sierras: arriba las diagonales y el pozo, abajo las demás y el tesoro.
     // Escondido: en la sala de abajo, una rampa sube al saliente del coleccionable.
@@ -4288,7 +4288,7 @@ const CHAPTER4 = [
   {
     file: 'chapter4/04-c4-el-pozo.json',
     latch: { B: true },
-    id: 'c4-el-pozo', name: 'El pozo', count: 80, keepPct: 0.85,
+    id: 'c4-el-pozo', name: 'El pozo', count: 80, keepPct: 0.83,
     mood: 'cave', camYaw: 0,
     // Presenta las plantas: se empieza en la de arriba y el agujero deja caer justo a la sala de debajo.
     map: [
@@ -4526,7 +4526,7 @@ const CHAPTER4 = [
   {
     file: 'chapter4/05-c4-pozos-y-rampas.json',
     latch: { B: true },
-    id: 'c4-pozos-y-rampas', name: 'Pozos y rampas', count: 80, keepPct: 0.8,
+    id: 'c4-pozos-y-rampas', name: 'Pozos y rampas', count: 80, keepPct: 0.79,
     mood: 'bright', camYaw: 18,
     // Se empieza en la planta de arriba: por el pozo se baja a la sala del medio y las rampas suben hasta el tesoro.
     // Escondido: un segundo pozo en la esquina cae al rincón del coleccionable, que sale a la sala del medio.
@@ -4756,7 +4756,7 @@ const CHAPTER4 = [
   },
   {
     file: 'chapter4/06-c4-remolino.json',
-    id: 'c4-remolino', name: 'Mazmorra de arena', count: 80, keepPct: 0.7,
+    id: 'c4-remolino', name: 'Mazmorra de arena', count: 80, keepPct: 0.81,
     mood: 'dungeon', camYaw: 22,
     // Mazmorra: se sube en zigzag entre antorchas, hielo, grietas, disco y pinchos. El hueco del centro
     // no da al abismo: justo debajo hay una repisa con la gema y de vuelta se sube por el ascensor.
@@ -5041,7 +5041,7 @@ const CHAPTER4 = [
   {
     file: 'chapter4/07-c4-canonazo.json',
     latch: { A: true, B: true },
-    id: 'c4-canonazo', name: 'Cañonazo', count: 80, keepPct: 0.75,
+    id: 'c4-canonazo', name: 'Cañonazo', count: 80, keepPct: 0.78,
     mood: 'dusk', camYaw: -15,
     // Escondido: un rincón tapiado en la sala del tesoro guarda el coleccionable.
     // Presenta el cañón: primero un disparo corto a una sala cerrada (líquido, se esparce poco) y después
@@ -5171,7 +5171,7 @@ const CHAPTER4 = [
   {
     file: 'chapter4/08-c4-fuego-del-desierto.json',
     latch: { B: true },
-    id: 'c4-fuego-del-desierto', name: 'Fuego del desierto', count: 80, keepPct: 0.65,
+    id: 'c4-fuego-del-desierto', name: 'Fuego del desierto', count: 80, keepPct: 0.81,
     mood: 'dungeon', camYaw: 0,
     // Dos plantas: arriba aceite, fuego, rampas y sierra hasta una mazmorra cerrada; su única salida es la baldosa de hielo.
     // Escondido: dentro de la mazmorra, un bloque de hielo tapa el rincón del coleccionable.
@@ -5437,7 +5437,7 @@ const CHAPTER4 = [
   {
     file: 'chapter4/09-c4-railes-y-pozos.json',
     latch: { A: true, B: true },
-    id: 'c4-railes-y-pozos', name: 'Raíles y pozos', count: 80, keepPct: 0.8,
+    id: 'c4-railes-y-pozos', name: 'Raíles y pozos', count: 80, keepPct: 0.77,
     mood: 'cave', camYaw: 16,
     // Dos plantas: el ascensor (estaciones una encima de otra) sube dando vueltas y el pozo baja a la sala del tesoro.
     map: [
@@ -5659,7 +5659,7 @@ const CHAPTER4 = [
   {
     file: 'chapter4/10-c4-corazon-de-arena.json',
     latch: { B: true },
-    id: 'c4-corazon-de-arena', name: 'El corazón de arena', count: 80, keepPct: 0.55,
+    id: 'c4-corazon-de-arena', name: 'El corazón de arena', count: 80, keepPct: 0.83,
     mood: 'dungeon', camYaw: -20,
     // Final en tres plantas hacia abajo: puente de roca rota y pozo arriba; sierras, disco y pozo en medio;
     // el tesoro abajo, con un ascensor para volver a la planta del medio a por lo que se haya quedado.
@@ -6265,7 +6265,7 @@ const CHAPTER5 = [
   {
     file: 'chapter5/01-c5-balancines.json',
     latch: { A: true, B: true },
-    id: 'c5-balancines', name: 'Balancines', count: 80, keepPct: 0.75,
+    id: 'c5-balancines', name: 'Balancines', count: 80, keepPct: 0.78,
     mood: 'dusk', camYaw: 0,
     map: [
 '###############',
@@ -6394,7 +6394,7 @@ const CHAPTER5 = [
   {
     file: 'chapter5/02-c5-tablas-y-sierra.json',
     latch: { B: true },
-    id: 'c5-tablas-y-sierra', name: 'Tablas y sierra', count: 80, keepPct: 0.7,
+    id: 'c5-tablas-y-sierra', name: 'Tablas y sierra', count: 80, keepPct: 0.78,
     mood: 'cave', camYaw: -16,
     map: [
 '###############',
@@ -6517,7 +6517,7 @@ const CHAPTER5 = [
   {
     file: 'chapter5/03-c5-viento-en-la-tabla.json',
     latch: { A: true, B: true },
-    id: 'c5-viento-en-la-tabla', name: 'Viento en la tabla', count: 80, keepPct: 0.65,
+    id: 'c5-viento-en-la-tabla', name: 'Viento en la tabla', count: 80, keepPct: 0.78,
     mood: 'bright', camYaw: 15,
     map: [
 '###############',
@@ -6646,7 +6646,7 @@ const CHAPTER5 = [
   {
     file: 'chapter5/04-c5-espiral-mareante.json',
     latch: { B: true },
-    id: 'c5-espiral-mareante', name: 'Espiral mareante', count: 80, keepPct: 0.7,
+    id: 'c5-espiral-mareante', name: 'Espiral mareante', count: 80, keepPct: 0.79,
     mood: 'cave', camYaw: 0,
     map: [
 '###############',
@@ -6764,7 +6764,7 @@ const CHAPTER5 = [
   {
     file: 'chapter5/05-c5-canon-y-tabla.json',
     latch: { A: true, B: true },
-    id: 'c5-canon-y-tabla', name: 'Cañón y tabla', count: 80, keepPct: 0.7,
+    id: 'c5-canon-y-tabla', name: 'Cañón y tabla', count: 80, keepPct: 0.81,
     mood: 'dusk', camYaw: 18,
     map: [
 '###############',
@@ -6894,7 +6894,7 @@ const CHAPTER5 = [
   {
     file: 'chapter5/06-c5-templo-hundido.json',
     latch: { B: true },
-    id: 'c5-templo-hundido', name: 'Templo hundido', count: 80, keepPct: 0.6,
+    id: 'c5-templo-hundido', name: 'Templo hundido', count: 80, keepPct: 0.79,
     mood: 'dungeon', camYaw: -14,
     map: [
 '...............',
@@ -7226,7 +7226,7 @@ const CHAPTER5 = [
   {
     file: 'chapter5/07-c5-aceite-en-la-balanza.json',
     latch: { A: true, B: true },
-    id: 'c5-aceite-en-la-balanza', name: 'Aceite en la balanza', count: 80, keepPct: 0.65,
+    id: 'c5-aceite-en-la-balanza', name: 'Aceite en la balanza', count: 80, keepPct: 0.81,
     mood: 'cave', camYaw: 0,
     map: [
 '###############',
@@ -7355,7 +7355,7 @@ const CHAPTER5 = [
   {
     file: 'chapter5/08-c5-disco-y-tablas.json',
     latch: { B: true },
-    id: 'c5-disco-y-tablas', name: 'Disco y tablas', count: 80, keepPct: 0.65,
+    id: 'c5-disco-y-tablas', name: 'Disco y tablas', count: 80, keepPct: 0.77,
     mood: 'dusk', camYaw: 16,
     map: [
 '###############',
@@ -7471,7 +7471,7 @@ const CHAPTER5 = [
   {
     file: 'chapter5/09-c5-pozo-doble.json',
     latch: { A: true, B: true },
-    id: 'c5-pozo-doble', name: 'Pozo doble', count: 80, keepPct: 0.6,
+    id: 'c5-pozo-doble', name: 'Pozo doble', count: 80, keepPct: 0.81,
     mood: 'dungeon', camYaw: -18,
     map: [
 '###############',
@@ -7712,7 +7712,7 @@ const CHAPTER5 = [
   {
     file: 'chapter5/10-c5-corazon-del-desierto.json',
     latch: { B: true },
-    id: 'c5-corazon-del-desierto', name: 'Corazón del desierto', count: 80, keepPct: 0.6,
+    id: 'c5-corazon-del-desierto', name: 'Corazón del desierto', count: 80, keepPct: 0.78,
     mood: 'dungeon', camYaw: 20,
     map: [
 '###############',
@@ -7944,13 +7944,13 @@ const CHAPTER6 = [
   {
     file: 'chapter6/01-c6-gota-de-jabon.json',
     latch: { A: true, B: true },
-    id: 'c6-gota-de-jabon', name: 'Gota de jabón', count: 80, keepPct: 0.85,
+    id: 'c6-gota-de-jabon', name: 'Gota de jabón', count: 80, keepPct: 0.81,
     mood: 'bright', camYaw: -8,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...###444###...',
@@ -8365,7 +8365,7 @@ const CHAPTER6 = [
   {
     file: 'chapter6/04-c6-espuma-y-grietas.json',
     latch: { A: true, B: true },
-    id: 'c6-espuma-y-grietas', name: 'Espuma y grietas', count: 80, keepPct: 0.75,
+    id: 'c6-espuma-y-grietas', name: 'Espuma y grietas', count: 80, keepPct: 0.82,
     mood: 'cave', camYaw: 10,
     map: [
 '..###########..',
@@ -8500,7 +8500,7 @@ const CHAPTER6 = [
   {
     file: 'chapter6/05-c6-pozos-de-espuma.json',
     latch: { A: true, B: true },
-    id: 'c6-pozos-de-espuma', name: 'Pozos de espuma', count: 80, keepPct: 0.75,
+    id: 'c6-pozos-de-espuma', name: 'Pozos de espuma', count: 80, keepPct: 0.79,
     mood: 'dusk', camYaw: -12,
     map: [
 '..###########..',
@@ -8763,7 +8763,7 @@ const CHAPTER6 = [
   {
     file: 'chapter6/07-c6-saltos-de-espuma.json',
     latch: { A: true, B: true },
-    id: 'c6-saltos-de-espuma', name: 'Saltos de espuma', count: 80, keepPct: 0.7,
+    id: 'c6-saltos-de-espuma', name: 'Saltos de espuma', count: 80, keepPct: 0.81,
     mood: 'bright', camYaw: -20,
     map: [
 '..###########..',
@@ -8883,7 +8883,7 @@ const CHAPTER6 = [
   {
     file: 'chapter6/08-c6-canaveral.json',
     latch: { A: true, B: true },
-    id: 'c6-canaveral', name: 'Cañaveral', count: 80, keepPct: 0.75,
+    id: 'c6-canaveral', name: 'Cañaveral', count: 80, keepPct: 0.79,
     mood: 'dusk', camYaw: 14,
     map: [
 '..###########..',
@@ -9016,13 +9016,13 @@ const CHAPTER6 = [
   {
     file: 'chapter6/09-c6-laberinto-de-vidrio.json',
     latch: { A: true, B: true },
-    id: 'c6-laberinto-de-vidrio', name: 'Laberinto de vidrio', count: 80, keepPct: 0.75,
+    id: 'c6-laberinto-de-vidrio', name: 'Laberinto de vidrio', count: 80, keepPct: 0.82,
     mood: 'cave', camYaw: -22,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4444444#...',
@@ -9135,7 +9135,7 @@ const CHAPTER6 = [
   {
     file: 'chapter6/10-c6-corazon-del-oasis.json',
     latch: { A: true, B: true },
-    id: 'c6-corazon-del-oasis', name: 'Corazón del oasis', count: 80, keepPct: 0.7,
+    id: 'c6-corazon-del-oasis', name: 'Corazón del oasis', count: 80, keepPct: 0.82,
     mood: 'dungeon', camYaw: 0,
     map: [
 '..###########..',
@@ -9277,13 +9277,13 @@ const CHAPTER7 = [
   {
     file: 'chapter7/01-c7-primer-hielo.json',
     latch: { A: true, B: true },
-    id: 'c7-primer-hielo', name: 'Primer hielo', count: 80, keepPct: 0.8,
+    id: 'c7-primer-hielo', name: 'Primer hielo', count: 80, keepPct: 0.84,
     mood: 'bright', camYaw: -10,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444CB#...',
@@ -9407,7 +9407,7 @@ const CHAPTER7 = [
   {
     file: 'chapter7/02-c7-canon-helado.json',
     latch: { A: true, B: true },
-    id: 'c7-canon-helado', name: 'Canon helado', count: 80, keepPct: 0.78,
+    id: 'c7-canon-helado', name: 'Canon helado', count: 80, keepPct: 0.85,
     mood: 'dusk', camYaw: 14,
     map: [
 '..###########..',
@@ -9560,13 +9560,14 @@ const CHAPTER7 = [
 '...#########...',
     ],
     tips: [
+      { z: 133, text: 'El hielo resbala: deja de empujar antes de la curva' },
       { z: 121, text: 'Congelado vuelas de una pieza y caes en la diana' },
     ],
   },
   {
     file: 'chapter7/03-c7-cornisas-de-escarcha.json',
     latch: { A: true, B: true },
-    id: 'c7-cornisas-de-escarcha', name: 'Cornisas de escarcha', count: 80, keepPct: 0.75,
+    id: 'c7-cornisas-de-escarcha', name: 'Cornisas de escarcha', count: 80, keepPct: 0.85,
     mood: 'cave', camYaw: -18,
     map: [
 '..###########..',
@@ -9710,7 +9711,7 @@ const CHAPTER7 = [
   {
     file: 'chapter7/04-c7-vias-de-hielo.json',
     latch: { A: true, B: true },
-    id: 'c7-vias-de-hielo', name: 'Vias de hielo', count: 80, keepPct: 0.78,
+    id: 'c7-vias-de-hielo', name: 'Vias de hielo', count: 80, keepPct: 0.85,
     mood: 'dusk', camYaw: 20,
     map: [
 '..###########..',
@@ -9865,13 +9866,13 @@ const CHAPTER7 = [
   {
     file: 'chapter7/05-c7-pozo-de-nieve.json',
     latch: { A: true, B: true },
-    id: 'c7-pozo-de-nieve', name: 'Pozo de nieve', count: 80, keepPct: 0.75,
+    id: 'c7-pozo-de-nieve', name: 'Pozo de nieve', count: 80, keepPct: 0.84,
     mood: 'bright', camYaw: -14,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4444444#...',
@@ -9999,7 +10000,7 @@ const CHAPTER7 = [
   {
     file: 'chapter7/06-c7-sala-de-los-espejos.json',
     latch: { A: true, B: true },
-    id: 'c7-sala-de-los-espejos', name: 'Sala de los espejos', count: 80, keepPct: 0.75,
+    id: 'c7-sala-de-los-espejos', name: 'Sala de los espejos', count: 80, keepPct: 0.85,
     mood: 'cave', camYaw: 22,
     map: [
 '..###########..',
@@ -10143,7 +10144,7 @@ const CHAPTER7 = [
   {
     file: 'chapter7/07-c7-tablas-heladas.json',
     latch: { A: true, B: true },
-    id: 'c7-tablas-heladas', name: 'Tablas heladas', count: 80, keepPct: 0.72,
+    id: 'c7-tablas-heladas', name: 'Tablas heladas', count: 80, keepPct: 0.78,
     mood: 'dusk', camYaw: -20,
     map: [
 '..###########..',
@@ -10295,7 +10296,7 @@ const CHAPTER7 = [
   {
     file: 'chapter7/08-c7-grietas-de-escarcha.json',
     latch: { A: true, B: true },
-    id: 'c7-grietas-de-escarcha', name: 'Grietas de escarcha', count: 80, keepPct: 0.72,
+    id: 'c7-grietas-de-escarcha', name: 'Grietas de escarcha', count: 80, keepPct: 0.79,
     mood: 'cave', camYaw: 16,
     map: [
 '..###########..',
@@ -10461,13 +10462,13 @@ const CHAPTER7 = [
   {
     file: 'chapter7/09-c7-laberinto-de-escarcha.json',
     latch: { A: true, B: true },
-    id: 'c7-laberinto-de-escarcha', name: 'Laberinto de escarcha', count: 80, keepPct: 0.72,
+    id: 'c7-laberinto-de-escarcha', name: 'Laberinto de escarcha', count: 80, keepPct: 0.83,
     mood: 'cave', camYaw: -24,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444CB#...',
@@ -10617,7 +10618,7 @@ const CHAPTER7 = [
   {
     file: 'chapter7/10-c7-corazon-del-glaciar.json',
     latch: { A: true, B: true },
-    id: 'c7-corazon-del-glaciar', name: 'Corazon del glaciar', count: 80, keepPct: 0.7,
+    id: 'c7-corazon-del-glaciar', name: 'Corazon del glaciar', count: 80, keepPct: 0.81,
     mood: 'dungeon', camYaw: 0,
     map: [
 '..###########..',
@@ -10787,13 +10788,13 @@ const CHAPTER8 = [
   {
     file: 'chapter8/01-c8-primeras-rachas.json',
     latch: { A: true, B: true },
-    id: 'c8-primeras-rachas', name: 'Primeras rachas', count: 80, keepPct: 0.78,
+    id: 'c8-primeras-rachas', name: 'Primeras rachas', count: 80, keepPct: 0.81,
     mood: 'bright', camYaw: -12,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -10957,7 +10958,7 @@ const CHAPTER8 = [
   {
     file: 'chapter8/02-c8-puertas-de-escarcha.json',
     latch: { A: true, B: true },
-    id: 'c8-puertas-de-escarcha', name: 'Puertas de escarcha', count: 80, keepPct: 0.76,
+    id: 'c8-puertas-de-escarcha', name: 'Puertas de escarcha', count: 80, keepPct: 0.78,
     mood: 'cave', camYaw: 16,
     map: [
 '..###########..',
@@ -11121,7 +11122,7 @@ const CHAPTER8 = [
   {
     file: 'chapter8/03-c8-torre-de-nieve.json',
     latch: { A: true, B: true },
-    id: 'c8-torre-de-nieve', name: 'Torre de nieve', count: 80, keepPct: 0.75,
+    id: 'c8-torre-de-nieve', name: 'Torre de nieve', count: 80, keepPct: 0.85,
     mood: 'dusk', camYaw: -20,
     map: [
 '..###########..',
@@ -11284,11 +11285,14 @@ const CHAPTER8 = [
 '...#000P000#...',
 '...#########...',
     ],
+    tips: [
+      { z: 26, text: 'Aquí no muerde nada: lo que se te lleva es el borde' },
+    ],
   },
   {
     file: 'chapter8/04-c8-vientos-cruzados.json',
     latch: { A: true, B: true },
-    id: 'c8-vientos-cruzados', name: 'Vientos cruzados', count: 80, keepPct: 0.75,
+    id: 'c8-vientos-cruzados', name: 'Vientos cruzados', count: 80, keepPct: 0.83,
     mood: 'cave', camYaw: 22,
     map: [
 '..###########..',
@@ -11463,13 +11467,13 @@ const CHAPTER8 = [
   {
     file: 'chapter8/05-c8-pozo-blanco.json',
     latch: { A: true, B: true },
-    id: 'c8-pozo-blanco', name: 'Pozo blanco', count: 80, keepPct: 0.74,
+    id: 'c8-pozo-blanco', name: 'Pozo blanco', count: 80, keepPct: 0.81,
     mood: 'bright', camYaw: -18,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4444444#...',
@@ -11634,7 +11638,7 @@ const CHAPTER8 = [
   {
     file: 'chapter8/06-c8-cristales.json',
     latch: { A: true, B: true },
-    id: 'c8-cristales', name: 'Cristales', count: 80, keepPct: 0.74,
+    id: 'c8-cristales', name: 'Cristales', count: 80, keepPct: 0.84,
     mood: 'cave', camYaw: 14,
     map: [
 '..###########..',
@@ -11815,7 +11819,7 @@ const CHAPTER8 = [
   {
     file: 'chapter8/07-c8-cornisas-del-viento.json',
     latch: { A: true, B: true },
-    id: 'c8-cornisas-del-viento', name: 'Cornisas del viento', count: 80, keepPct: 0.72,
+    id: 'c8-cornisas-del-viento', name: 'Cornisas del viento', count: 80, keepPct: 0.84,
     mood: 'dusk', camYaw: -24,
     map: [
 '..###########..',
@@ -11998,7 +12002,7 @@ const CHAPTER8 = [
   {
     file: 'chapter8/08-c8-sala-de-las-corrientes.json',
     latch: { A: true, B: true },
-    id: 'c8-sala-de-las-corrientes', name: 'Sala de las corrientes', count: 80, keepPct: 0.72,
+    id: 'c8-sala-de-las-corrientes', name: 'Sala de las corrientes', count: 80, keepPct: 0.84,
     mood: 'cave', camYaw: 18,
     map: [
 '..###########..',
@@ -12179,13 +12183,13 @@ const CHAPTER8 = [
   {
     file: 'chapter8/09-c8-laberinto-blanco.json',
     latch: { A: true, B: true },
-    id: 'c8-laberinto-blanco', name: 'Laberinto blanco', count: 80, keepPct: 0.72,
+    id: 'c8-laberinto-blanco', name: 'Laberinto blanco', count: 80, keepPct: 0.81,
     mood: 'cave', camYaw: -26,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -12367,7 +12371,7 @@ const CHAPTER8 = [
   {
     file: 'chapter8/10-c8-ojo-de-la-ventisca.json',
     latch: { A: true, B: true },
-    id: 'c8-ojo-de-la-ventisca', name: 'Ojo de la ventisca', count: 80, keepPct: 0.7,
+    id: 'c8-ojo-de-la-ventisca', name: 'Ojo de la ventisca', count: 80, keepPct: 0.81,
     mood: 'dungeon', camYaw: 0,
     map: [
 '..###########..',
@@ -12570,13 +12574,13 @@ const CHAPTER9 = [
     file: 'chapter9/01-c9-placa-de-hielo.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c9-placa-de-hielo', name: 'Placa de hielo', count: 80, keepPct: 0.81,
+    id: 'c9-placa-de-hielo', name: 'Placa de hielo', count: 80, keepPct: 0.85,
     mood: 'bright', camYaw: -12,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -12742,13 +12746,14 @@ const CHAPTER9 = [
 '...#########...',
     ],
     tips: [
+      { z: 161, text: 'Encima de la placa, suéltate: cuenta los limitos apoyados' },
       { z: 155, text: 'La placa pide casi todo el limo: llega entero' },
     ],
   },
   {
     file: 'chapter9/02-c9-vias-del-nucleo.json',
     latch: { A: true, B: true },
-    id: 'c9-vias-del-nucleo', name: 'Vías del núcleo', count: 80, keepPct: 0.79,
+    id: 'c9-vias-del-nucleo', name: 'Vías del núcleo', count: 80, keepPct: 0.76,
     mood: 'cave', camYaw: 18,
     map: [
 '..###########..',
@@ -12933,7 +12938,7 @@ const CHAPTER9 = [
     file: 'chapter9/03-c9-galeria-de-escarcha.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c9-galeria-de-escarcha', name: 'Galería de escarcha', count: 80, keepPct: 0.78,
+    id: 'c9-galeria-de-escarcha', name: 'Galería de escarcha', count: 80, keepPct: 0.85,
     mood: 'dusk', camYaw: -20,
     map: [
 '..###########..',
@@ -13113,7 +13118,7 @@ const CHAPTER9 = [
   {
     file: 'chapter9/04-c9-puertas-del-nucleo.json',
     latch: { A: true, B: true },
-    id: 'c9-puertas-del-nucleo', name: 'Puertas del núcleo', count: 80, keepPct: 0.78,
+    id: 'c9-puertas-del-nucleo', name: 'Puertas del núcleo', count: 80, keepPct: 0.83,
     mood: 'cave', camYaw: 22,
     map: [
 '..###########..',
@@ -13294,18 +13299,21 @@ const CHAPTER9 = [
 '...#000P000#...',
 '...#########...',
     ],
+    tips: [
+      { z: 128, text: 'La racha empuja: cruza apretado y pegado al muro' },
+    ],
   },
   {
     file: 'chapter9/05-c9-pozo-del-nucleo.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c9-pozo-del-nucleo', name: 'Pozo del núcleo', count: 80, keepPct: 0.77,
+    id: 'c9-pozo-del-nucleo', name: 'Pozo del núcleo', count: 80, keepPct: 0.83,
     mood: 'bright', camYaw: -16,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4444444#...',
@@ -13483,7 +13491,7 @@ const CHAPTER9 = [
   {
     file: 'chapter9/06-c9-cristal-mayor.json',
     latch: { A: true, B: true },
-    id: 'c9-cristal-mayor', name: 'Cristal mayor', count: 80, keepPct: 0.77,
+    id: 'c9-cristal-mayor', name: 'Cristal mayor', count: 80, keepPct: 0.85,
     mood: 'cave', camYaw: 14,
     map: [
 '..###########..',
@@ -13662,7 +13670,7 @@ const CHAPTER9 = [
     file: 'chapter9/07-c9-cornisas-del-nucleo.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c9-cornisas-del-nucleo', name: 'Cornisas del núcleo', count: 80, keepPct: 0.75,
+    id: 'c9-cornisas-del-nucleo', name: 'Cornisas del núcleo', count: 80, keepPct: 0.85,
     mood: 'dusk', camYaw: -24,
     map: [
 '..###########..',
@@ -13842,7 +13850,7 @@ const CHAPTER9 = [
   {
     file: 'chapter9/08-c9-sala-de-los-ecos.json',
     latch: { A: true, B: true },
-    id: 'c9-sala-de-los-ecos', name: 'Sala de los ecos', count: 80, keepPct: 0.75,
+    id: 'c9-sala-de-los-ecos', name: 'Sala de los ecos', count: 80, keepPct: 0.81,
     mood: 'cave', camYaw: 20,
     map: [
 '..###########..',
@@ -14026,13 +14034,13 @@ const CHAPTER9 = [
   {
     file: 'chapter9/09-c9-laberinto-del-nucleo.json',
     latch: { A: true, B: true },
-    id: 'c9-laberinto-del-nucleo', name: 'Laberinto del núcleo', count: 80, keepPct: 0.75,
+    id: 'c9-laberinto-del-nucleo', name: 'Laberinto del núcleo', count: 80, keepPct: 0.83,
     mood: 'cave', camYaw: -26,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -14212,7 +14220,7 @@ const CHAPTER9 = [
     file: 'chapter9/10-c9-corazon-de-hielo.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c9-corazon-de-hielo', name: 'Corazón de hielo', count: 80, keepPct: 0.73,
+    id: 'c9-corazon-de-hielo', name: 'Corazón de hielo', count: 80, keepPct: 0.81,
     mood: 'dungeon', camYaw: 0,
     map: [
 '..###########..',
@@ -14398,13 +14406,13 @@ const CHAPTER10 = [
     file: 'chapter10/01-c10-cinta-de-montaje.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c10-cinta-de-montaje', name: 'Cinta de montaje', count: 80, keepPct: 0.84,
+    id: 'c10-cinta-de-montaje', name: 'Cinta de montaje', count: 80, keepPct: 0.85,
     mood: 'cave', camYaw: -10,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -14578,13 +14586,14 @@ const CHAPTER10 = [
 '...#########...',
     ],
     tips: [
+      { z: 165, text: 'La espiral da dos vueltas: sales mareado' },
       { z: 163, text: 'La vagoneta hace el rizo: agárrate' },
     ],
   },
   {
     file: 'chapter10/02-c10-sala-de-calderas.json',
     latch: { A: true, B: true },
-    id: 'c10-sala-de-calderas', name: 'Sala de calderas', count: 80, keepPct: 0.82,
+    id: 'c10-sala-de-calderas', name: 'Sala de calderas', count: 80, keepPct: 0.79,
     mood: 'dusk', camYaw: 16,
     map: [
 '..###########..',
@@ -14764,7 +14773,7 @@ const CHAPTER10 = [
     file: 'chapter10/03-c10-engranajes.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c10-engranajes', name: 'Engranajes', count: 80, keepPct: 0.81,
+    id: 'c10-engranajes', name: 'Engranajes', count: 80, keepPct: 0.85,
     mood: 'cave', camYaw: -18,
     map: [
 '..###########..',
@@ -14960,11 +14969,14 @@ const CHAPTER10 = [
 '...#000P000#...',
 '...#########...',
     ],
+    tips: [
+      { z: 148, text: 'La placa cuenta los limitos apoyados, no los apretados' },
+    ],
   },
   {
     file: 'chapter10/04-c10-tuberias.json',
     latch: { A: true, B: true },
-    id: 'c10-tuberias', name: 'Tuberías', count: 80, keepPct: 0.81,
+    id: 'c10-tuberias', name: 'Tuberías', count: 80, keepPct: 0.85,
     mood: 'dusk', camYaw: 20,
     map: [
 '..###########..',
@@ -15144,13 +15156,13 @@ const CHAPTER10 = [
     file: 'chapter10/05-c10-horno.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c10-horno', name: 'Horno', count: 80, keepPct: 0.8,
+    id: 'c10-horno', name: 'Horno', count: 80, keepPct: 0.84,
     mood: 'dusk', camYaw: -14,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -15345,7 +15357,7 @@ const CHAPTER10 = [
   {
     file: 'chapter10/06-c10-almacen.json',
     latch: { A: true, B: true },
-    id: 'c10-almacen', name: 'Almacén', count: 80, keepPct: 0.8,
+    id: 'c10-almacen', name: 'Almacén', count: 80, keepPct: 0.84,
     mood: 'cave', camYaw: 22,
     map: [
 '..###########..',
@@ -15542,7 +15554,7 @@ const CHAPTER10 = [
     file: 'chapter10/07-c10-cadena-de-vias.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c10-cadena-de-vias', name: 'Cadena de vías', count: 80, keepPct: 0.78,
+    id: 'c10-cadena-de-vias', name: 'Cadena de vías', count: 80, keepPct: 0.85,
     mood: 'cave', camYaw: -24,
     map: [
 '..###########..',
@@ -15725,7 +15737,7 @@ const CHAPTER10 = [
   {
     file: 'chapter10/08-c10-sala-de-control.json',
     latch: { A: true, B: true },
-    id: 'c10-sala-de-control', name: 'Sala de control', count: 80, keepPct: 0.78,
+    id: 'c10-sala-de-control', name: 'Sala de control', count: 80, keepPct: 0.85,
     mood: 'cave', camYaw: 18,
     map: [
 '..###########..',
@@ -15904,13 +15916,13 @@ const CHAPTER10 = [
   {
     file: 'chapter10/09-c10-laberinto-de-acero.json',
     latch: { A: true, B: true },
-    id: 'c10-laberinto-de-acero', name: 'Laberinto de acero', count: 80, keepPct: 0.78,
+    id: 'c10-laberinto-de-acero', name: 'Laberinto de acero', count: 80, keepPct: 0.84,
     mood: 'cave', camYaw: -26,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -16107,7 +16119,7 @@ const CHAPTER10 = [
     file: 'chapter10/10-c10-corazon-de-la-maquina.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c10-corazon-de-la-maquina', name: 'Corazón de la máquina', count: 80, keepPct: 0.76,
+    id: 'c10-corazon-de-la-maquina', name: 'Corazón de la máquina', count: 80, keepPct: 0.81,
     mood: 'dungeon', camYaw: 0,
     map: [
 '..###########..',
@@ -16299,8 +16311,8 @@ const CHAPTER11 = [
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -16462,7 +16474,7 @@ const CHAPTER11 = [
   {
     file: 'chapter11/02-c11-andamios.json',
     latch: { A: true, B: true },
-    id: 'c11-andamios', name: 'Andamios', count: 80, keepPct: 0.83,
+    id: 'c11-andamios', name: 'Andamios', count: 80, keepPct: 0.85,
     mood: 'dusk', camYaw: 16,
     map: [
 '..###########..',
@@ -16482,20 +16494,20 @@ const CHAPTER11 = [
 '...#44a.a44#...',
 '...#C44a444#...',
 '...###4C4###...',
-'....Z44444Z....',
-'....4444444....',
-'....ZC444CZ....',
-'....4444444....',
+'...#B44444Z#...',
+'...##44444##...',
+'...#BC444CZ#...',
+'...#4444444#...',
 '...###444###...',
 '...##Y444Y##...',
 '...............',
 '...##JJJJJ##...',
 '...#C44444C#...',
 '...###4C4###...',
-'....Z44444Y....',
-'....4444444....',
-'....ZC444CY....',
-'....4444444....',
+'...#B44444Y#...',
+'...##44444##...',
+'...#BC444CY#...',
+'...#4444444#...',
 '...###444###...',
 '...#4444444#...',
 '...##C444C##...',
@@ -16511,9 +16523,9 @@ const CHAPTER11 = [
 '......BBBB4#...',
 '......BBBB4#...',
 '...#4444444#...',
-'...#B44444W#...',
+'...#Z44444W#...',
 '...##44444##...',
-'...#BC444CW#...',
+'...#ZC444CW#...',
 '...#4444444#...',
 '...###444###...',
 '...###444###...',
@@ -16523,10 +16535,10 @@ const CHAPTER11 = [
 '...#0000000#...',
 '...#0b000C0#...',
 '...###0C0###...',
-'...#Z00000B#...',
-'...##00000##...',
-'...#ZC000CB#...',
-'...#0000000#...',
+'....B00000B....',
+'....0000000....',
+'....BC000CB....',
+'....0000000....',
 '...###000###...',
 '...#0C000C0#...',
 '...#000R000#...',
@@ -16538,10 +16550,10 @@ const CHAPTER11 = [
 '...#000R000#...',
 '...#C00000C#...',
 '...###0C0###...',
-'...#Z00000Z#...',
-'...##00000##...',
-'...#ZC000CZ#...',
-'...#0000000#...',
+'....B00000Z....',
+'....0000000....',
+'....BC000CZ....',
+'....0000000....',
 '...###000###...',
 '...#0C000C0#...',
 '...#000R000#...',
@@ -16551,10 +16563,10 @@ const CHAPTER11 = [
 '...#000R000#...',
 '...#C00000C#...',
 '...###0C0###...',
-'....B00000W....',
-'....0000000....',
-'....BC000CW....',
-'....0000000....',
+'...#Z00000W#...',
+'...##00000##...',
+'...#ZC000CW#...',
+'...#0000000#...',
 '...###000###...',
 '...#0C000C0#...',
 '...##0000K##...',
@@ -16562,26 +16574,9 @@ const CHAPTER11 = [
 '...##K0000##...',
 '...#C00000C#...',
 '...###0C0###...',
-'...#Z00000Y#...',
+'...#B00000Y#...',
 '...##00000##...',
-'...#ZC000CY#...',
-'...#0000000#...',
-'...###000###...',
-'...#0000000#...',
-'...#0C0#0C0#...',
-'...#000#000#...',
-'...#000#000#...',
-'...#0C0#0C0#...',
-'...#0000000#...',
-'...###0C0###...',
-'...#0000000#...',
-'......000#.....',
-'......0C0#.....',
-'......000#.....',
-'...#0000000#...',
-'...#B00000W#...',
-'...##00000##...',
-'...#BC000CW#...',
+'...#BC000CY#...',
 '...#0000000#...',
 '...###000###...',
 '.#####ddd#####.',
@@ -16623,11 +16618,14 @@ const CHAPTER11 = [
 '...#000P000#...',
 '...#########...',
     ],
+    tips: [
+      { z: 99, text: 'El cilindro te lanza hacia donde empujas' },
+    ],
   },
   {
     file: 'chapter11/03-c11-grua.json',
     latch: { A: true, B: true },
-    id: 'c11-grua', name: 'Grúa', count: 80, keepPct: 0.82,
+    id: 'c11-grua', name: 'Grúa', count: 80, keepPct: 0.8,
     mood: 'cave', camYaw: -20,
     map: [
 '..###########..',
@@ -16807,7 +16805,7 @@ const CHAPTER11 = [
     file: 'chapter11/04-c11-sala-de-turbinas.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c11-sala-de-turbinas', name: 'Sala de turbinas', count: 80, keepPct: 0.82,
+    id: 'c11-sala-de-turbinas', name: 'Sala de turbinas', count: 80, keepPct: 0.83,
     mood: 'dusk', camYaw: 20,
     map: [
 '..###########..',
@@ -16967,8 +16965,8 @@ const CHAPTER11 = [
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -17129,11 +17127,14 @@ const CHAPTER11 = [
 '...#000P000#...',
 '...#########...',
     ],
+    tips: [
+      { z: 105, text: 'Aquí el borde es la trampa: el vacío no avisa' },
+    ],
   },
   {
     file: 'chapter11/06-c11-almacen-alto.json',
     latch: { A: true, B: true },
-    id: 'c11-almacen-alto', name: 'Almacén alto', count: 80, keepPct: 0.81,
+    id: 'c11-almacen-alto', name: 'Almacén alto', count: 80, keepPct: 0.85,
     mood: 'cave', camYaw: 22,
     map: [
 '..###########..',
@@ -17310,7 +17311,7 @@ const CHAPTER11 = [
     file: 'chapter11/07-c11-cornisas-altas.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c11-cornisas-altas', name: 'Cornisas altas', count: 80, keepPct: 0.79,
+    id: 'c11-cornisas-altas', name: 'Cornisas altas', count: 80, keepPct: 0.84,
     mood: 'dusk', camYaw: -24,
     map: [
 '..###########..',
@@ -17475,7 +17476,7 @@ const CHAPTER11 = [
   {
     file: 'chapter11/08-c11-sala-de-maquinas.json',
     latch: { A: true, B: true },
-    id: 'c11-sala-de-maquinas', name: 'Sala de máquinas', count: 80, keepPct: 0.79,
+    id: 'c11-sala-de-maquinas', name: 'Sala de máquinas', count: 80, keepPct: 0.84,
     mood: 'cave', camYaw: 18,
     map: [
 '..###########..',
@@ -17639,13 +17640,13 @@ const CHAPTER11 = [
   {
     file: 'chapter11/09-c11-laberinto-alto.json',
     latch: { A: true, B: true },
-    id: 'c11-laberinto-alto', name: 'Laberinto alto', count: 80, keepPct: 0.79,
+    id: 'c11-laberinto-alto', name: 'Laberinto alto', count: 80, keepPct: 0.81,
     mood: 'cave', camYaw: -26,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -17808,7 +17809,7 @@ const CHAPTER11 = [
     file: 'chapter11/10-c11-cima-de-la-torre.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c11-cima-de-la-torre', name: 'Cima de la torre', count: 80, keepPct: 0.77,
+    id: 'c11-cima-de-la-torre', name: 'Cima de la torre', count: 80, keepPct: 0.8,
     mood: 'dungeon', camYaw: 0,
     map: [
 '..###########..',
@@ -17981,13 +17982,13 @@ const CHAPTER12 = [
   {
     file: 'chapter12/01-c12-puertas-de-la-ciudadela.json',
     latch: { A: true, B: true },
-    id: 'c12-puertas-de-la-ciudadela', name: 'Puertas de la ciudadela', count: 80, keepPct: 0.86,
+    id: 'c12-puertas-de-la-ciudadela', name: 'Puertas de la ciudadela', count: 80, keepPct: 0.85,
     mood: 'dusk', camYaw: -12,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -18160,7 +18161,7 @@ const CHAPTER12 = [
   {
     file: 'chapter12/02-c12-avenida-rota.json',
     latch: { A: true, B: true },
-    id: 'c12-avenida-rota', name: 'Avenida rota', count: 80, keepPct: 0.85,
+    id: 'c12-avenida-rota', name: 'Avenida rota', count: 80, keepPct: 0.84,
     mood: 'cave', camYaw: 16,
     map: [
 '..###########..',
@@ -18322,12 +18323,15 @@ const CHAPTER12 = [
 '...#000P000#...',
 '...#########...',
     ],
+    tips: [
+      { z: 112, text: 'El cilindro te lanza hacia donde empujas' },
+    ],
   },
   {
     file: 'chapter12/03-c12-torres-caidas.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c12-torres-caidas', name: 'Torres caídas', count: 80, keepPct: 0.84,
+    id: 'c12-torres-caidas', name: 'Torres caídas', count: 80, keepPct: 0.8,
     mood: 'dusk', camYaw: -20,
     map: [
 '..###########..',
@@ -18498,7 +18502,7 @@ const CHAPTER12 = [
   {
     file: 'chapter12/04-c12-grua-parada.json',
     latch: { A: true, B: true },
-    id: 'c12-grua-parada', name: 'Grúa parada', count: 80, keepPct: 0.84,
+    id: 'c12-grua-parada', name: 'Grúa parada', count: 80, keepPct: 0.83,
     mood: 'cave', camYaw: 20,
     map: [
 '..###########..',
@@ -18667,13 +18671,13 @@ const CHAPTER12 = [
   {
     file: 'chapter12/05-c12-plaza-de-neon.json',
     latch: { A: true, B: true },
-    id: 'c12-plaza-de-neon', name: 'Plaza de neón', count: 80, keepPct: 0.83,
+    id: 'c12-plaza-de-neon', name: 'Plaza de neón', count: 80, keepPct: 0.84,
     mood: 'dusk', camYaw: -16,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -18695,20 +18699,20 @@ const CHAPTER12 = [
 '...#44a.a44#...',
 '...#C44a444#...',
 '...###4C4###...',
-'....B44444W....',
-'....4444444....',
-'....BC444CW....',
-'....4444444....',
+'...#Z44444W#...',
+'...##44444##...',
+'...#ZC444CW#...',
+'...#4444444#...',
 '...###444###...',
 '...##Y444Y##...',
 '...............',
 '...##JJJJJ##...',
 '...#C44444C#...',
 '...###4C4###...',
-'...#Z44444Z#...',
-'...##44444##...',
-'...#ZC444CZ#...',
-'...#4444444#...',
+'....B44444Z....',
+'....4444444....',
+'....BC444CZ....',
+'....4444444....',
 '...###444###...',
 '...#4C444C4#...',
 '...#444R444#...',
@@ -18725,9 +18729,9 @@ const CHAPTER12 = [
 '......BBBB4#...',
 '......BBBB4#...',
 '...#4444444#...',
-'....B44444Y....',
+'....Z44444Y....',
 '....4444444....',
-'....BC444CY....',
+'....ZC444CY....',
 '....4444444....',
 '...###444###...',
 '...#4444444#...',
@@ -18756,10 +18760,10 @@ const CHAPTER12 = [
 '......0C0#.....',
 '......000#.....',
 '...#0000000#...',
-'....Z00000W....',
-'....0000000....',
-'....ZC000CW....',
-'....0000000....',
+'...#B00000W#...',
+'...##00000##...',
+'...#BC000CW#...',
+'...#0000000#...',
 '...###000###...',
 '...#0C000C0#...',
 '...#00YYY00#...',
@@ -18772,10 +18776,10 @@ const CHAPTER12 = [
 '......BBBB0#...',
 '......BBBB0#...',
 '...#0000000#...',
-'...#B00000W#...',
-'...##00000##...',
-'...#BC000CW#...',
-'...#0000000#...',
+'....Z00000W....',
+'....0000000....',
+'....ZC000CW....',
+'....0000000....',
 '...###000###...',
 '...#0C000C0#...',
 '...##0000K##...',
@@ -18783,9 +18787,9 @@ const CHAPTER12 = [
 '...##K0000##...',
 '...#C00000C#...',
 '...###0C0###...',
-'....Z00000Z....',
+'....B00000Z....',
 '....0000000....',
-'....ZC000CZ....',
+'....BC000CZ....',
 '....0000000....',
 '...###000###...',
 '...#0C000CX#...',
@@ -18815,40 +18819,24 @@ const CHAPTER12 = [
 '.#00000000000#.',
 '.#00000000000#.',
 '...###0C0###...',
-'....B00000B....',
-'....0000000....',
-'....BC000CB....',
-'....0000000....',
-'...###000###...',
-'...#0000000#...',
-'...#0C0#0C0#...',
-'...#000#000#...',
-'...#000#000#...',
-'...#0C0#0C0#...',
-'...#0000000#...',
-'...###0C0###...',
-'...#0C000C0#...',
-'...#00III00#...',
-'...#C0III00<#..',
-'...#00III00#...',
-'..#>00III0C#...',
-'...#00III00#...',
-'...#0000000#...',
-'...#Z00000W#...',
+'...#Z00000B#...',
 '...##00000##...',
-'...#ZC000CW#...',
+'...#ZC000CB#...',
 '...#0000000#...',
 '...#0000000#...',
 '...#0C000C0#...',
 '...#000P000#...',
 '...#########...',
     ],
+    tips: [
+      { z: 82, text: 'El chorro de aire sube la burbuja a la repisa' },
+    ],
   },
   {
     file: 'chapter12/06-c12-conductos.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c12-conductos', name: 'Conductos', count: 80, keepPct: 0.82,
+    id: 'c12-conductos', name: 'Conductos', count: 80, keepPct: 0.83,
     mood: 'cave', camYaw: 22,
     map: [
 '..###########..',
@@ -19013,7 +19001,7 @@ const CHAPTER12 = [
   {
     file: 'chapter12/07-c12-mirador-roto.json',
     latch: { A: true, B: true },
-    id: 'c12-mirador-roto', name: 'Mirador roto', count: 80, keepPct: 0.82,
+    id: 'c12-mirador-roto', name: 'Mirador roto', count: 80, keepPct: 0.84,
     mood: 'dusk', camYaw: -24,
     map: [
 '..###########..',
@@ -19182,7 +19170,7 @@ const CHAPTER12 = [
   {
     file: 'chapter12/08-c12-sala-de-los-relojes.json',
     latch: { A: true, B: true },
-    id: 'c12-sala-de-los-relojes', name: 'Sala de los relojes', count: 80, keepPct: 0.81,
+    id: 'c12-sala-de-los-relojes', name: 'Sala de los relojes', count: 80, keepPct: 0.84,
     mood: 'cave', camYaw: 18,
     map: [
 '..###########..',
@@ -19210,20 +19198,20 @@ const CHAPTER12 = [
 '...#44a.a44#...',
 '...#C44a444#...',
 '...###4C4###...',
-'....B44444B....',
-'....4444444....',
-'....BC444CB....',
-'....4444444....',
+'...#Z44444B#...',
+'...##44444##...',
+'...#ZC444CB#...',
+'...#4444444#...',
 '...###444###...',
 '...##Y444Y##...',
 '...............',
 '...##JJJJJ##...',
 '...#C44444C#...',
 '...###4C4###...',
-'...#Z44444W#...',
-'...##44444##...',
-'...#ZC444CW#...',
-'...#4444444#...',
+'....B44444W....',
+'....4444444....',
+'....BC444CW....',
+'....4444444....',
 '...###444###...',
 '...#4C444C4#...',
 '...#444R444#...',
@@ -19240,9 +19228,9 @@ const CHAPTER12 = [
 '......BBBB4#...',
 '......BBBB4#...',
 '...#4444444#...',
-'....B44444Z....',
+'....Z44444Z....',
 '....4444444....',
-'....BC444CZ....',
+'....ZC444CZ....',
 '....4444444....',
 '...###444###...',
 '...###444###...',
@@ -19252,9 +19240,9 @@ const CHAPTER12 = [
 '...#0000000#...',
 '...#0b000C0#...',
 '...###0C0###...',
-'....B00000Y....',
+'....Z00000Y....',
 '....0000000....',
-'....BC000CY....',
+'....ZC000CY....',
 '....0000000....',
 '...###000###...',
 '...#0000000#...',
@@ -19271,26 +19259,26 @@ const CHAPTER12 = [
 '......0C0#.....',
 '......000#.....',
 '...#0000000#...',
-'....Z00000B....',
-'....0000000....',
-'....ZC000CB....',
-'....0000000....',
+'...#B00000B#...',
+'...##00000##...',
+'...#BC000CB#...',
+'...#0000000#...',
 '...###000###...',
 '...#0C000C0#...',
-'...#00YYY00#...',
-'...#00YYY00#...',
-'...#00YYY00#...',
-'...#000Q000#...',
+'...#00III00#...',
+'...#00III00#...',
+'...#00III00#...',
+'...#0000000#...',
 '...###0C0###...',
 '...#0C000CB#...',
 '......BBBB0#...',
 '......BBBB0#...',
 '......BBBB0#...',
 '...#0000000#...',
-'...#B00000W#...',
-'...##00000##...',
-'...#BC000CW#...',
-'...#0000000#...',
+'....Z00000W....',
+'....0000000....',
+'....ZC000CW....',
+'....0000000....',
 '...###000###...',
 '...#0C000C0#...',
 '...##0000K##...',
@@ -19298,15 +19286,18 @@ const CHAPTER12 = [
 '...##K0000##...',
 '...#C00000C#...',
 '...###0C0###...',
-'....Z00000W....',
+'....B00000W....',
 '....0000000....',
-'....ZC000CW....',
+'....BC000CW....',
 '....0000000....',
 '...###000###...',
-'...#0C000CX#...',
-'...#00W0W00#...',
-'...#X00000X#...',
-'...#0O000C0#...',
+'...#0C000C0#...',
+'...#00III00#...',
+'...#C0III00<#..',
+'...#00III00#...',
+'..#>00III0C#...',
+'...#00III00#...',
+'...#0000000#...',
 '...###0C0###...',
 '...#0C000C0#...',
 '...#IIIIIIj#...',
@@ -19330,28 +19321,9 @@ const CHAPTER12 = [
 '.#00000000000#.',
 '.#00000000000#.',
 '...###0C0###...',
-'....B00000Y....',
-'....0000000....',
-'....BC000CY....',
-'....0000000....',
-'...###000###...',
-'...#0000000#...',
-'...#0C0#0C0#...',
-'...#000#000#...',
-'...#000#000#...',
-'...#0C0#0C0#...',
-'...#0000000#...',
-'...###0C0###...',
-'...#0C000C0#...',
-'...#00III00#...',
-'...#C0III00<#..',
-'...#00III00#...',
-'..#>00III0C#...',
-'...#00III00#...',
-'...#0000000#...',
-'...#Z00000B#...',
+'...#Z00000Y#...',
 '...##00000##...',
-'...#ZC000CB#...',
+'...#ZC000CY#...',
 '...#0000000#...',
 '...#0000000#...',
 '...#0C000C0#...',
@@ -19363,13 +19335,13 @@ const CHAPTER12 = [
     file: 'chapter12/09-c12-laberinto-de-la-ciudadela.json',
     need: { A: 12 },
     latch: { A: true },
-    id: 'c12-laberinto-de-la-ciudadela', name: 'Laberinto de la ciudadela', count: 80, keepPct: 0.8,
+    id: 'c12-laberinto-de-la-ciudadela', name: 'Laberinto de la ciudadela', count: 80, keepPct: 0.81,
     mood: 'cave', camYaw: -26,
     map: [
 '..###########..',
 '..#4444444T4#..',
-'..#G44444444#..',
-'..####444444#..',
+'..#444444444#..',
+'..#444444444#..',
 '..#4C44444C4#..',
 '..#444444444#..',
 '...#4C444C4#...',
@@ -19528,7 +19500,7 @@ const CHAPTER12 = [
   {
     file: 'chapter12/10-c12-corazon-de-la-ciudadela.json',
     latch: { A: true, B: true },
-    id: 'c12-corazon-de-la-ciudadela', name: 'Corazón de la ciudadela', count: 80, keepPct: 0.78,
+    id: 'c12-corazon-de-la-ciudadela', name: 'Corazón de la ciudadela', count: 80, keepPct: 0.79,
     mood: 'dungeon', camYaw: 0,
     map: [
 '..###########..',

@@ -44,7 +44,7 @@ def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=1, m
 
 
 def floor1():
-    lv = Level('c8-primeras-rachas', 'Primeras rachas', w=W, mood='bright', cam_yaw=-12, keep=0.78)
+    lv = Level('c8-primeras-rachas', 'Primeras rachas', w=W, mood='bright', cam_yaw=-12, keep=0.81)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Z', mix=P.ice_slalom)
     lv.tip('La racha empuja: cruza apretado y pegado al muro', back=-10)
@@ -59,12 +59,12 @@ def floor1():
     section(lv, P.loop, right='Y')
     lv.add(P.spinner_room(lv))
     lv.add(P.seesaw_bridge(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor2():
-    lv = Level('c8-puertas-de-escarcha', 'Puertas de escarcha', w=W, mood='cave', cam_yaw=16, keep=0.76)
+    lv = Level('c8-puertas-de-escarcha', 'Puertas de escarcha', w=W, mood='cave', cam_yaw=16, keep=0.78)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Z', mix=P.blizzard)
     section(lv, P.switch_gate, right='Y')
@@ -83,7 +83,7 @@ def floor2():
 
 
 def floor3():
-    lv = Level('c8-torre-de-nieve', 'Torre de nieve', w=W, mood='dusk', cam_yaw=-20, keep=0.75)
+    lv = Level('c8-torre-de-nieve', 'Torre de nieve', w=W, mood='dusk', cam_yaw=-20, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Y', mix=P.ice_slalom)
     section(lv, P.bubble_tower, right='Z')
@@ -95,6 +95,7 @@ def floor3():
     section(lv, P.gauntlet, right='Z')
     section(lv, P.pit, right='B')
     section(lv, P.loop, right='W', mix=P.void_ledge)
+    lv.tip('Aquí no muerde nada: lo que se te lleva es el borde', back=-8)
     lv.add(P.seesaw_bridge(lv))
     lv.add(P.spinner_room(lv))
     lv.add(P.treasure_room(lv, gem=True))
@@ -102,7 +103,7 @@ def floor3():
 
 
 def floor4():
-    lv = Level('c8-vientos-cruzados', 'Vientos cruzados', w=W, mood='cave', cam_yaw=22, keep=0.75)
+    lv = Level('c8-vientos-cruzados', 'Vientos cruzados', w=W, mood='cave', cam_yaw=22, keep=0.83)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='B', mix=P.cold_spikes)
     section(lv, P.switch_gate, right='Z')
@@ -121,7 +122,7 @@ def floor4():
 
 
 def floor5():
-    lv = Level('c8-pozo-blanco', 'Pozo blanco', w=W, mood='bright', cam_yaw=-18, keep=0.74)
+    lv = Level('c8-pozo-blanco', 'Pozo blanco', w=W, mood='bright', cam_yaw=-18, keep=0.81)
     lv.add(P.start_room(lv))
     section(lv, P.pit, right='Y', mix=P.blizzard)
     section(lv, P.rail_puzzle, right='Z')
@@ -135,12 +136,12 @@ def floor5():
     section(lv, P.loop, right='W', mix=P.void_ledge)
     lv.add(P.void_ledge(lv))
     lv.add(P.spinner_room(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor6():
-    lv = Level('c8-cristales', 'Cristales', w=W, mood='cave', cam_yaw=14, keep=0.74)
+    lv = Level('c8-cristales', 'Cristales', w=W, mood='cave', cam_yaw=14, keep=0.84)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Z', mix=P.ice_slalom)
     section(lv, P.switch_gate, right='Y')
@@ -159,7 +160,7 @@ def floor6():
 
 
 def floor7():
-    lv = Level('c8-cornisas-del-viento', 'Cornisas del viento', w=W, mood='dusk', cam_yaw=-24, keep=0.72)
+    lv = Level('c8-cornisas-del-viento', 'Cornisas del viento', w=W, mood='dusk', cam_yaw=-24, keep=0.84)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Y')
     # las tablas van de remate, nunca como tramo de paso
@@ -181,7 +182,7 @@ def floor7():
 
 
 def floor8():
-    lv = Level('c8-sala-de-las-corrientes', 'Sala de las corrientes', w=W, mood='cave', cam_yaw=18, keep=0.72)
+    lv = Level('c8-sala-de-las-corrientes', 'Sala de las corrientes', w=W, mood='cave', cam_yaw=18, keep=0.84)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='B', mix=P.ice_slalom)
     section(lv, P.switch_gate, right='Y')
@@ -201,7 +202,7 @@ def floor8():
 
 
 def floor9():
-    lv = Level('c8-laberinto-blanco', 'Laberinto blanco', w=W, mood='cave', cam_yaw=-26, keep=0.72)
+    lv = Level('c8-laberinto-blanco', 'Laberinto blanco', w=W, mood='cave', cam_yaw=-26, keep=0.81)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Y', mix=P.blizzard)
     section(lv, P.rail_puzzle, right='Z')
@@ -216,12 +217,12 @@ def floor9():
     section(lv, P.loop, right='Y', mix=P.void_ledge)
     lv.add(P.spinner_room(lv))
     lv.add(P.seesaw_bridge(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor10():
-    lv = Level('c8-ojo-de-la-ventisca', 'Ojo de la ventisca', w=W, mood='dungeon', cam_yaw=0, keep=0.7)
+    lv = Level('c8-ojo-de-la-ventisca', 'Ojo de la ventisca', w=W, mood='dungeon', cam_yaw=0, keep=0.81)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Z', mix=P.ice_slalom)
     section(lv, P.switch_gate, right='Y')

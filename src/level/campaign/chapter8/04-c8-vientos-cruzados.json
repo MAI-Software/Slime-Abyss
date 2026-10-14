@@ -7,7 +7,7 @@
   "id": "c8-vientos-cruzados",
   "name": "Vientos cruzados",
   "count": 80,
-  "keepPct": 0.75,
+  "keepPct": 0.83,
   "mood": "cave",
   "camYaw": 22,
   "tiles": [

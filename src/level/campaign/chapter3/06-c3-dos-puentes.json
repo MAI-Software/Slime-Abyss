@@ -6,7 +6,7 @@
   "id": "c3-dos-puentes",
   "name": "Dos puentes",
   "count": 80,
-  "keepPct": 0.6,
+  "keepPct": 0.8,
   "mood": "cave",
   "camYaw": -20,
   "tips": [

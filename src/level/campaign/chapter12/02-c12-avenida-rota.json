@@ -7,9 +7,15 @@
   "id": "c12-avenida-rota",
   "name": "Avenida rota",
   "count": 80,
-  "keepPct": 0.85,
+  "keepPct": 0.84,
   "mood": "cave",
   "camYaw": 16,
+  "tips": [
+    {
+      "z": 112,
+      "text": "El cilindro te lanza hacia donde empujas"
+    }
+  ],
   "tiles": [
     "..###########..",
     "..#0000000T0#..",

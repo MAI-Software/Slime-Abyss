@@ -7,7 +7,7 @@
   "id": "c5-pozo-doble",
   "name": "Pozo doble",
   "count": 80,
-  "keepPct": 0.6,
+  "keepPct": 0.81,
   "mood": "dungeon",
   "camYaw": -18,
   "tips": [

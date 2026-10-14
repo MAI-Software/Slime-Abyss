@@ -6,7 +6,7 @@
   "id": "c2-puente-de-viento",
   "name": "Puente de viento",
   "count": 80,
-  "keepPct": 0.7,
+  "keepPct": 0.75,
   "mood": "dusk",
   "camYaw": 0,
   "tips": [

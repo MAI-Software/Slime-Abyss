@@ -7,7 +7,7 @@
   "id": "c11-almacen-alto",
   "name": "Almacén alto",
   "count": 80,
-  "keepPct": 0.81,
+  "keepPct": 0.85,
   "mood": "cave",
   "camYaw": 22,
   "tiles": [

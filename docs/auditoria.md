@@ -29,11 +29,16 @@ plano: 155 / 150 / 150 / 166 / 165 / 166. Los seis últimos capítulos duran lo 
 en sí —los pisos no deben crecer sin parar— pero significa que de la mitad para adelante el juego
 solo puede crecer en exigencia, y ahí es donde hay que apretar.
 
-**Dos saltos bruscos dentro de un capítulo** (más de 50 s de un piso al siguiente):
+**Cinco saltos bruscos dentro de un capítulo** (más de 45 s de un piso al siguiente, en orden
+de juego):
 
-* `c3-dos-puentes` 78 s → `c3-gran-grieta` 131 s. Es el piso 10, el remate del capítulo: vale.
-* `c4-pozos-y-rampas` 65 s → `c4-railes-y-pozos` 137 s. **Esto no vale**: el doble de piso a mitad
-  de capítulo, sin ser el final.
+| capítulo | salto | ¿vale? |
+|---|---|---|
+| 3 | piso 9 → 10: 64 s → 131 s | sí, es el remate del capítulo |
+| 4 | piso 5 → 6: 65 s → 138 s | **no**, el doble de piso a mitad de capítulo |
+| 5 | piso 8 → 9: 74 s → 126 s | justo antes del final, pasa |
+| 11 | piso 1 → 2: 141 s → 194 s | **no**, es el segundo piso del capítulo |
+| 12 | piso 4 → 5: 156 s → 208 s | **no**, y el 5 era el piso más largo del juego |
 
 ## 2. La tercera estrella (el porcentaje de limo)
 
@@ -146,3 +151,32 @@ el siguiente paso es comprimirlo (Draco) y llevarlo a ~1,5 MB, a cambio de carga
 6. **Una mecánica nueva para la segunda mitad.** Es lo único que mueve de verdad las notas planas de
    los capítulos 8-12, y lo que hace que el jugador sienta que el juego sigue creciendo.
 7. **El ascensor**, si se quiere recuperar: hace falta una plataforma que suba a los 80 limitos.
+
+---
+
+# Lo arreglado el 14 de octubre
+
+| punto de la lista | qué se hizo |
+|---|---|
+| 1. pistas en 6-12 | +10 pistas: el hielo que resbala, el borde que se lleva al limo, la placa que cuenta los limitos APOYADOS (en el 9 y recordada en el 10), la racha, la espiral que marea y el cilindro (recordado en el 11 y en el 12) |
+| 2. tercera estrella | listón nuevo por piso: **15 a 20 puntos por debajo de lo que saca el autopiloto en ese piso concreto** (20 en el tutorial, 17 en la arena, 15 de la mitad para el final). Antes era una escalera fija por capítulo que no sabía si el piso era duro o blando |
+| 3. capítulo 1 | 52 monedas sembradas en las filas que no tenían nada, encima del camino de la ruta. **Relleno 0,67 → 0,57**, monedas por piso 28,5 → 33,7. De las 71 que se sembraron, 19 cayeron donde el limo no llega a pisar (la ruta son puntos sueltos y el limo no va en línea recta entre ellos): esas se quitaron |
+| 4. gemas | 3 por capítulo (4 en el 6): rubí 9, zafiro 9, esmeralda 9, diamante 9, que es justo lo que pide `GEMS_PER_KIND`. De 57 gemas a 36. La gema no da estrella: es coleccionable y puntuación aparte |
+| 5. saltos | fuera la sección de relleno de los tres pisos más largos: **c11 piso 2 194→185 s, c12 piso 5 208→173 s, c12 piso 8 198→170 s**. El piso 8 del 12 además repetía casi clavada la lista del piso 5 y ahora lleva ventisca y pasillo de hielo |
+| 6. mecánica nueva para la segunda mitad | pendiente: es lo único que mueve las notas planas de 83-86 |
+| 7. ascensor | pendiente: hace falta una plataforma que suba a los 80 limitos |
+
+**El salto del capítulo 4 (piso 5 → 6) sigue ahí**: los capítulos 1 al 5 están escritos a mano
+casilla a casilla, no con el kit, así que tocarlos es cirugía y se hace aparte.
+
+**Aviso sobre las medidas**: el autopiloto no da el mismo resultado exacto en cada pasada. En los
+pisos justos la diferencia llega a 6-10 puntos de limo (`c6-torres-de-arena` dio 88 %, 94 % y 98 %
+en tres pasadas seguidas). Para decidir si un piso está mal hay que verlo fallar dos veces.
+
+**Lo que NO se ha tocado del capítulo 1, a propósito**: su nota sigue siendo la más baja del juego
+(26-48) y eso está bien. Lo que la hunde es variedad 3-5 familias y peligro 0,02-0,12, o sea, que
+es un tutorial. Subirle la nota sería hacerlo difícil. Lo que sí era un defecto —que estuviera
+vacío— está arreglado.
+
+Todo lo de arriba está comprobado con el autopiloto: los 120 pisos siguen pasando con todas las
+monedas.

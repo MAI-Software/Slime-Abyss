@@ -41,9 +41,10 @@ def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=1, m
 
 
 def floor1():
-    lv = Level('c10-cinta-de-montaje', 'Cinta de montaje', w=W, mood='cave', cam_yaw=-10, keep=0.84)
+    lv = Level('c10-cinta-de-montaje', 'Cinta de montaje', w=W, mood='cave', cam_yaw=-10, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.loop_rail, right='Z')
+    lv.tip('La espiral da dos vueltas: sales mareado', back=-14)
     lv.tip('La vagoneta hace el rizo: agárrate', back=-12)
     section(lv, P.cold_spikes, right='Y', mix=P.ice_slalom)
     section(lv, P.weight_gate, right='B', mix=P.crack_ledge)
@@ -55,12 +56,12 @@ def floor1():
     section(lv, P.pit, right='Z')
     lv.add(P.spinner_room(lv))
     lv.add(P.seesaw_bridge(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor2():
-    lv = Level('c10-sala-de-calderas', 'Sala de calderas', w=W, mood='dusk', cam_yaw=16, keep=0.82)
+    lv = Level('c10-sala-de-calderas', 'Sala de calderas', w=W, mood='dusk', cam_yaw=16, keep=0.79)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='B', mix=P.fire_hall)
     section(lv, P.loop_rail, right='Z')
@@ -77,11 +78,12 @@ def floor2():
 
 
 def floor3():
-    lv = Level('c10-engranajes', 'Engranajes', w=W, mood='cave', cam_yaw=-18, keep=0.81)
+    lv = Level('c10-engranajes', 'Engranajes', w=W, mood='cave', cam_yaw=-18, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.spinner_room, right='Y', mix=P.ice_slalom)
     section(lv, P.loop_rail, right='Z')
     section(lv, P.weight_gate, right='B', mix=P.crack_ledge)
+    lv.tip('La placa cuenta los limitos apoyados, no los apretados', back=-14)
     section(lv, P.cold_spikes, right='W', mix=P.crack_ledge)
     section(lv, P.loop, right='Y', mix=P.void_ledge)
     section(lv, P.bubble_tower, right='Z', mix=P.void_ledge)
@@ -96,7 +98,7 @@ def floor3():
 
 
 def floor4():
-    lv = Level('c10-tuberias', 'Tuberías', w=W, mood='dusk', cam_yaw=20, keep=0.81)
+    lv = Level('c10-tuberias', 'Tuberías', w=W, mood='dusk', cam_yaw=20, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Z', mix=P.blizzard)
     section(lv, P.switch_gate, right='Y')
@@ -116,7 +118,7 @@ def floor5():
     """El horno es el piso más largo del capítulo, y en un piso largo los roces pequeños suman:
     aquí el adorno de al lado de las monedas es bloque de hielo o planta (no hace daño) y solo
     hay un tramo de pinchos. Con roca agrietada a los dos lados se quedaba en el 88 %."""
-    lv = Level('c10-horno', 'Horno', w=W, mood='dusk', cam_yaw=-14, keep=0.80)
+    lv = Level('c10-horno', 'Horno', w=W, mood='dusk', cam_yaw=-14, keep=0.84)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, left='Z', right='W', mix=lambda lv: P.fire_hall(lv, oil=False))
     section(lv, P.loop_rail, left='Z', right='W')
@@ -131,12 +133,12 @@ def floor5():
     lv.add(P.spinner_room(lv))
     lv.add(P.void_ledge(lv))
     lv.add(P.seesaw_bridge(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor6():
-    lv = Level('c10-almacen', 'Almacén', w=W, mood='cave', cam_yaw=22, keep=0.80)
+    lv = Level('c10-almacen', 'Almacén', w=W, mood='cave', cam_yaw=22, keep=0.84)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='W', mix=P.ice_slalom)
     section(lv, P.rail_puzzle, right='Z')
@@ -154,7 +156,7 @@ def floor6():
 
 
 def floor7():
-    lv = Level('c10-cadena-de-vias', 'Cadena de vías', w=W, mood='cave', cam_yaw=-24, keep=0.78)
+    lv = Level('c10-cadena-de-vias', 'Cadena de vías', w=W, mood='cave', cam_yaw=-24, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.loop_rail, right='Y')
     section(lv, P.weight_gate, right='Z', mix=P.ice_slalom)
@@ -172,7 +174,7 @@ def floor7():
 
 
 def floor8():
-    lv = Level('c10-sala-de-control', 'Sala de control', w=W, mood='cave', cam_yaw=18, keep=0.78)
+    lv = Level('c10-sala-de-control', 'Sala de control', w=W, mood='cave', cam_yaw=18, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='B', mix=P.blizzard)
     section(lv, P.switch_gate, right='Y')
@@ -189,7 +191,7 @@ def floor8():
 
 
 def floor9():
-    lv = Level('c10-laberinto-de-acero', 'Laberinto de acero', w=W, mood='cave', cam_yaw=-26, keep=0.78)
+    lv = Level('c10-laberinto-de-acero', 'Laberinto de acero', w=W, mood='cave', cam_yaw=-26, keep=0.84)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Y', mix=P.ice_slalom)
     section(lv, P.rail_puzzle, right='Z')
@@ -203,12 +205,12 @@ def floor9():
     section(lv, P.pit, right='Y')
     lv.add(P.spinner_room(lv))
     lv.add(P.seesaw_bridge(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor10():
-    lv = Level('c10-corazon-de-la-maquina', 'Corazón de la máquina', w=W, mood='dungeon', cam_yaw=0, keep=0.76)
+    lv = Level('c10-corazon-de-la-maquina', 'Corazón de la máquina', w=W, mood='dungeon', cam_yaw=0, keep=0.81)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Z', mix=P.blizzard)
     section(lv, P.loop_rail, right='Y')

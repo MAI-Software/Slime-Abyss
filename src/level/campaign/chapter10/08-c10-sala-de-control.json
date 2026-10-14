@@ -7,7 +7,7 @@
   "id": "c10-sala-de-control",
   "name": "Sala de control",
   "count": 80,
-  "keepPct": 0.78,
+  "keepPct": 0.85,
   "mood": "cave",
   "camYaw": 18,
   "tiles": [

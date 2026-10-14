@@ -6,7 +6,7 @@
   "id": "c3-saltos-fragiles",
   "name": "Saltos frágiles",
   "count": 80,
-  "keepPct": 0.6,
+  "keepPct": 0.8,
   "mood": "dusk",
   "camYaw": 0,
   "tips": [

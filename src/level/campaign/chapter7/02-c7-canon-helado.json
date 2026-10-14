@@ -7,10 +7,14 @@
   "id": "c7-canon-helado",
   "name": "Canon helado",
   "count": 80,
-  "keepPct": 0.78,
+  "keepPct": 0.85,
   "mood": "dusk",
   "camYaw": 14,
   "tips": [
+    {
+      "z": 133,
+      "text": "El hielo resbala: deja de empujar antes de la curva"
+    },
     {
       "z": 121,
       "text": "Congelado vuelas de una pieza y caes en la diana"

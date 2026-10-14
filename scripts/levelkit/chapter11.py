@@ -52,17 +52,17 @@ def floor1():
     section(lv, P.pit, right='Z')
     lv.add(P.spinner_room(lv))
     lv.add(P.seesaw_bridge(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor2():
-    lv = Level('c11-andamios', 'Andamios', w=W, mood='dusk', cam_yaw=16, keep=0.83)
+    lv = Level('c11-andamios', 'Andamios', w=W, mood='dusk', cam_yaw=16, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='B', mix=P.ice_slalom)
     section(lv, P.rail_puzzle, right='Z')
-    section(lv, P.loop, right='W', mix=P.void_ledge)
     section(lv, P.roller_gap, right='Y')
+    lv.tip('El cilindro te lanza hacia donde empujas', back=-10)
     section(lv, P.rail_ride, right='W')
     section(lv, P.loop_rail, right='Z')
     section(lv, P.bubble_tower, right='B')
@@ -75,7 +75,7 @@ def floor2():
 
 
 def floor3():
-    lv = Level('c11-grua', 'Grúa', w=W, mood='cave', cam_yaw=-20, keep=0.82)
+    lv = Level('c11-grua', 'Grúa', w=W, mood='cave', cam_yaw=-20, keep=0.80)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Y', mix=P.blizzard)
     section(lv, P.switch_gate, right='Z')
@@ -94,7 +94,7 @@ def floor3():
 
 
 def floor4():
-    lv = Level('c11-sala-de-turbinas', 'Sala de turbinas', w=W, mood='dusk', cam_yaw=20, keep=0.82)
+    lv = Level('c11-sala-de-turbinas', 'Sala de turbinas', w=W, mood='dusk', cam_yaw=20, keep=0.83)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Z', mix=P.ice_slalom)
     section(lv, P.weight_gate, right='W')
@@ -118,6 +118,7 @@ def floor5():
     section(lv, P.rail_puzzle, right='B')
     section(lv, P.pit, right='Y')
     section(lv, P.loop, right='Z', mix=P.void_ledge)
+    lv.tip('Aquí el borde es la trampa: el vacío no avisa', back=-8)
     section(lv, P.rail_ride, right='W')
     section(lv, P.bubble_tower, right='W')
     section(lv, P.loop_rail, right='B')
@@ -126,12 +127,12 @@ def floor5():
     section(lv, P.gauntlet, right='W')
     lv.add(P.spinner_room(lv))
     lv.add(P.seesaw_bridge(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor6():
-    lv = Level('c11-almacen-alto', 'Almacén alto', w=W, mood='cave', cam_yaw=22, keep=0.81)
+    lv = Level('c11-almacen-alto', 'Almacén alto', w=W, mood='cave', cam_yaw=22, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Y', mix=P.ice_slalom)
     section(lv, P.switch_gate, right='Z')
@@ -150,7 +151,7 @@ def floor6():
 
 
 def floor7():
-    lv = Level('c11-cornisas-altas', 'Cornisas altas', w=W, mood='dusk', cam_yaw=-24, keep=0.79)
+    lv = Level('c11-cornisas-altas', 'Cornisas altas', w=W, mood='dusk', cam_yaw=-24, keep=0.84)
     lv.add(P.start_room(lv))
     section(lv, P.loop_rail, right='Z')
     section(lv, P.weight_gate, right='W', mix=P.ice_slalom)
@@ -169,7 +170,7 @@ def floor7():
 
 
 def floor8():
-    lv = Level('c11-sala-de-maquinas', 'Sala de máquinas', w=W, mood='cave', cam_yaw=18, keep=0.79)
+    lv = Level('c11-sala-de-maquinas', 'Sala de máquinas', w=W, mood='cave', cam_yaw=18, keep=0.84)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='B', mix=P.blizzard)
     section(lv, P.rail_puzzle, right='Y')
@@ -187,7 +188,7 @@ def floor8():
 
 
 def floor9():
-    lv = Level('c11-laberinto-alto', 'Laberinto alto', w=W, mood='cave', cam_yaw=-26, keep=0.79)
+    lv = Level('c11-laberinto-alto', 'Laberinto alto', w=W, mood='cave', cam_yaw=-26, keep=0.81)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Z', mix=P.ice_slalom)
     section(lv, P.switch_gate, right='W')
@@ -201,12 +202,12 @@ def floor9():
     section(lv, P.pit, right='B')
     lv.add(P.spinner_room(lv))
     lv.add(P.seesaw_bridge(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor10():
-    lv = Level('c11-cima-de-la-torre', 'Cima de la torre', w=W, mood='dungeon', cam_yaw=0, keep=0.77)
+    lv = Level('c11-cima-de-la-torre', 'Cima de la torre', w=W, mood='dungeon', cam_yaw=0, keep=0.80)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Y', mix=P.blizzard)
     section(lv, P.weight_gate, right='Z')

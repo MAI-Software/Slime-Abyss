@@ -9,7 +9,7 @@
   "id": "c9-cornisas-del-nucleo",
   "name": "Cornisas del núcleo",
   "count": 80,
-  "keepPct": 0.75,
+  "keepPct": 0.85,
   "mood": "dusk",
   "camYaw": -24,
   "tiles": [

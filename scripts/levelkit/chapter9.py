@@ -38,9 +38,10 @@ def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=1, m
 
 
 def floor1():
-    lv = Level('c9-placa-de-hielo', 'Placa de hielo', w=W, mood='bright', cam_yaw=-12, keep=0.81)
+    lv = Level('c9-placa-de-hielo', 'Placa de hielo', w=W, mood='bright', cam_yaw=-12, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.weight_gate, right='Z', mix=P.ice_slalom)
+    lv.tip('Encima de la placa, suéltate: cuenta los limitos apoyados', back=-16)
     lv.tip('La placa pide casi todo el limo: llega entero', back=-10)
     section(lv, P.cold_spikes, right='Y')
     section(lv, P.loop, right='B', mix=P.void_ledge)
@@ -53,12 +54,12 @@ def floor1():
     section(lv, P.blizzard, right='Y')
     lv.add(P.spinner_room(lv))
     lv.add(P.seesaw_bridge(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor2():
-    lv = Level('c9-vias-del-nucleo', 'Vías del núcleo', w=W, mood='cave', cam_yaw=18, keep=0.79)
+    lv = Level('c9-vias-del-nucleo', 'Vías del núcleo', w=W, mood='cave', cam_yaw=18, keep=0.76)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Z', mix=P.blizzard)
     section(lv, P.rail_puzzle, right='Y')
@@ -76,7 +77,7 @@ def floor2():
 
 
 def floor3():
-    lv = Level('c9-galeria-de-escarcha', 'Galería de escarcha', w=W, mood='dusk', cam_yaw=-20, keep=0.78)
+    lv = Level('c9-galeria-de-escarcha', 'Galería de escarcha', w=W, mood='dusk', cam_yaw=-20, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Y', mix=P.ice_slalom)
     section(lv, P.weight_gate, right='Z')
@@ -95,11 +96,12 @@ def floor3():
 
 
 def floor4():
-    lv = Level('c9-puertas-del-nucleo', 'Puertas del núcleo', w=W, mood='cave', cam_yaw=22, keep=0.78)
+    lv = Level('c9-puertas-del-nucleo', 'Puertas del núcleo', w=W, mood='cave', cam_yaw=22, keep=0.83)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='B', mix=P.ice_slalom)
     section(lv, P.switch_gate, right='Z')
     section(lv, P.blizzard, right='Y', mix=P.cold_spikes)
+    lv.tip('La racha empuja: cruza apretado y pegado al muro', back=-8)
     section(lv, P.cannon_hall, right='W', mix=P.crack_ledge)
     section(lv, P.bubble_tower, right='B', mix=P.void_ledge)
     section(lv, P.loop, right='Y', mix=P.void_ledge)
@@ -114,7 +116,7 @@ def floor4():
 
 
 def floor5():
-    lv = Level('c9-pozo-del-nucleo', 'Pozo del núcleo', w=W, mood='bright', cam_yaw=-16, keep=0.77)
+    lv = Level('c9-pozo-del-nucleo', 'Pozo del núcleo', w=W, mood='bright', cam_yaw=-16, keep=0.83)
     lv.add(P.start_room(lv))
     section(lv, P.pit, right='Y', mix=P.blizzard)
     section(lv, P.weight_gate, right='Z')
@@ -128,12 +130,12 @@ def floor5():
     section(lv, P.loop, right='Z', mix=P.ice_slalom)
     lv.add(P.crack_ledge(lv))
     lv.add(P.spinner_room(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor6():
-    lv = Level('c9-cristal-mayor', 'Cristal mayor', w=W, mood='cave', cam_yaw=14, keep=0.77)
+    lv = Level('c9-cristal-mayor', 'Cristal mayor', w=W, mood='cave', cam_yaw=14, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Z', mix=P.ice_slalom)
     section(lv, P.rail_puzzle, right='Y')
@@ -151,7 +153,7 @@ def floor6():
 
 
 def floor7():
-    lv = Level('c9-cornisas-del-nucleo', 'Cornisas del núcleo', w=W, mood='dusk', cam_yaw=-24, keep=0.75)
+    lv = Level('c9-cornisas-del-nucleo', 'Cornisas del núcleo', w=W, mood='dusk', cam_yaw=-24, keep=0.85)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Y')
     section(lv, P.weight_gate, right='Z', mix=P.ice_slalom)
@@ -171,7 +173,7 @@ def floor7():
 
 
 def floor8():
-    lv = Level('c9-sala-de-los-ecos', 'Sala de los ecos', w=W, mood='cave', cam_yaw=20, keep=0.75)
+    lv = Level('c9-sala-de-los-ecos', 'Sala de los ecos', w=W, mood='cave', cam_yaw=20, keep=0.81)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='B', mix=P.blizzard)
     section(lv, P.switch_gate, right='Y')
@@ -189,7 +191,7 @@ def floor8():
 
 
 def floor9():
-    lv = Level('c9-laberinto-del-nucleo', 'Laberinto del núcleo', w=W, mood='cave', cam_yaw=-26, keep=0.75)
+    lv = Level('c9-laberinto-del-nucleo', 'Laberinto del núcleo', w=W, mood='cave', cam_yaw=-26, keep=0.83)
     lv.add(P.start_room(lv))
     section(lv, P.blizzard, right='Y', mix=P.ice_slalom)
     section(lv, P.rail_puzzle, right='Z')
@@ -203,12 +205,12 @@ def floor9():
     section(lv, P.loop, right='Z', mix=P.void_ledge)
     lv.add(P.spinner_room(lv))
     lv.add(P.seesaw_bridge(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor10():
-    lv = Level('c9-corazon-de-hielo', 'Corazón de hielo', w=W, mood='dungeon', cam_yaw=0, keep=0.73)
+    lv = Level('c9-corazon-de-hielo', 'Corazón de hielo', w=W, mood='dungeon', cam_yaw=0, keep=0.81)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='Z', mix=P.blizzard)
     section(lv, P.weight_gate, right='Y')

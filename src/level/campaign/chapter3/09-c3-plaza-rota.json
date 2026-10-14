@@ -6,7 +6,7 @@
   "id": "c3-plaza-rota",
   "name": "Plaza rota",
   "count": 80,
-  "keepPct": 0.55,
+  "keepPct": 0.8,
   "mood": "dungeon",
   "camYaw": -18,
   "tips": [

@@ -7,7 +7,7 @@
   "id": "c10-almacen",
   "name": "Almacén",
   "count": 80,
-  "keepPct": 0.8,
+  "keepPct": 0.84,
   "mood": "cave",
   "camYaw": 22,
   "tiles": [

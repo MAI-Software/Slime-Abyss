@@ -153,7 +153,10 @@ subir a los 80 limitos de una vez.
 
 Media de filas por piso: 67 / 82 / 91 / 110 / 110 / 124 / 142 / 169 / 174 / 180 / 163 / 149.
 
-**Techo: 180 filas y 80 monedas por piso.** El capítulo 9 llegó a 192 filas y el 10 a 225, con
+**Techo: 180 filas y 80 monedas por piso**, y ningún piso por encima de 180 s de autopiloto
+(un salto de más de 45 s respecto al piso anterior solo vale en el último piso del capítulo).
+
+**Techo de tamaño.** El capítulo 9 llegó a 192 filas y el 10 a 225, con
 112 monedas: tres minutos de piso para un autopiloto perfecto, y mucho más para una persona.
 Un piso largo no es un piso difícil, solo es un piso largo. Si un piso pasa del techo, lo que
 se quita son las secciones REPETIDAS (la misma mecánica dos veces en el mismo piso), nunca la
@@ -163,7 +166,9 @@ Lo que sube con el capítulo no es el tamaño, es la exigencia:
 
 | Palanca | Cómo se aprieta |
 |---|---|
-| `keep` (limo que hay que conservar) | 0,80→0,70 en el cap. 1-8; 0,81→0,73 en el 9; 0,84→0,76 en el 10; 0,85→0,77 en el 11; 0,86→0,78 en el 12 |
+| `keep` (limo para la 3ª estrella) | **15 a 20 puntos por debajo de lo que saca el autopiloto EN ESE PISO**: 20 en el cap. 1-3, 17 en el 4-6, 15 del 7 al 12 |
+| gemas | 3 por capítulo (4 en el 6): cada color pide las 9 de su tema, que es `GEMS_PER_KIND` |
+| pistas | cada mecánica se explica en el piso donde se estrena y se recuerda un capítulo después |
 | peligro de borde (`crack_ledge`, `void_ledge`) | dos secciones más por piso en los capítulos tardíos |
 | puzles | del capítulo 6 en adelante, NINGÚN piso sin puzle: ni uno de solo esquivar |
 | variedad | las secciones de un piso son todas distintas; `loop` suelto es relleno |

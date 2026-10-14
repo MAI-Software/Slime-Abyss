@@ -3,7 +3,7 @@
   "id": "c3-viento-y-grietas",
   "name": "Viento y grietas",
   "count": 80,
-  "keepPct": 0.5,
+  "keepPct": 0.8,
   "mood": "cave",
   "camYaw": 15,
   "need": {

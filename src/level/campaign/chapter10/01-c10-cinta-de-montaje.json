@@ -9,10 +9,14 @@
   "id": "c10-cinta-de-montaje",
   "name": "Cinta de montaje",
   "count": 80,
-  "keepPct": 0.84,
+  "keepPct": 0.85,
   "mood": "cave",
   "camYaw": -10,
   "tips": [
+    {
+      "z": 165,
+      "text": "La espiral da dos vueltas: sales mareado"
+    },
     {
       "z": 163,
       "text": "La vagoneta hace el rizo: agárrate"
@@ -21,8 +25,8 @@
   "tiles": [
     "..###########..",
     "..#0000000T0#..",
-    "..#G00000000#..",
-    "..####000000#..",
+    "..#000000000#..",
+    "..#000000000#..",
     "..#0C00000C0#..",
     "..#000000000#..",
     "...#0C000C0#...",

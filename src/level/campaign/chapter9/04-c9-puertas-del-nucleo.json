@@ -7,9 +7,15 @@
   "id": "c9-puertas-del-nucleo",
   "name": "Puertas del núcleo",
   "count": 80,
-  "keepPct": 0.78,
+  "keepPct": 0.83,
   "mood": "cave",
   "camYaw": 22,
+  "tips": [
+    {
+      "z": 128,
+      "text": "La racha empuja: cruza apretado y pegado al muro"
+    }
+  ],
   "tiles": [
     "..###########..",
     "..#0000000T0#..",

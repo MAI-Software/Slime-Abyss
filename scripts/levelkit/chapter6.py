@@ -41,7 +41,7 @@ def section(lv, feature=None, left=None, right=None, wedge=False, neck_rows=1, m
 
 
 def floor1():
-    lv = Level('c6-gota-de-jabon', 'Gota de jabón', w=W, mood='bright', cam_yaw=-8, keep=0.85)
+    lv = Level('c6-gota-de-jabon', 'Gota de jabón', w=W, mood='bright', cam_yaw=-8, keep=0.81)
     lv.add(P.start_room(lv))
     section(lv, right='O')
     section(lv, P.loop, right='Y', mix=P.ice_pass)
@@ -56,7 +56,7 @@ def floor1():
     lv.add(P.spinner_room(lv))
     lv.add(P.rail_puzzle(lv))
     lv.add(P.neck(lv, rows=2))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
@@ -102,7 +102,7 @@ def floor3():
 
 
 def floor4():
-    lv = Level('c6-espuma-y-grietas', 'Espuma y grietas', w=W, mood='cave', cam_yaw=10, keep=0.75)
+    lv = Level('c6-espuma-y-grietas', 'Espuma y grietas', w=W, mood='cave', cam_yaw=10, keep=0.82)
     lv.add(P.start_room(lv))
     section(lv, P.room, right='B', mix=P.crack_ledge)
     section(lv, P.bubble_tower, right='B')
@@ -119,7 +119,7 @@ def floor4():
 
 
 def floor5():
-    lv = Level('c6-pozos-de-espuma', 'Pozos de espuma', w=W, mood='dusk', cam_yaw=-12, keep=0.75)
+    lv = Level('c6-pozos-de-espuma', 'Pozos de espuma', w=W, mood='dusk', cam_yaw=-12, keep=0.79)
     lv.add(P.start_room(lv))
     section(lv, P.pit, right='B', mix=P.ice_pass)
     section(lv, P.loop, right='Y', mix=P.void_ledge)
@@ -156,7 +156,7 @@ def floor6():
 
 
 def floor7():
-    lv = Level('c6-saltos-de-espuma', 'Saltos de espuma', w=W, mood='bright', cam_yaw=-20, keep=0.7)
+    lv = Level('c6-saltos-de-espuma', 'Saltos de espuma', w=W, mood='bright', cam_yaw=-20, keep=0.81)
     lv.add(P.start_room(lv))
     section(lv, P.gauntlet, right='B', mix=P.ice_pass)
     section(lv, P.loop, right='Y', mix=P.void_ledge)
@@ -172,7 +172,7 @@ def floor7():
 
 
 def floor8():
-    lv = Level('c6-canaveral', 'Cañaveral', w=W, mood='dusk', cam_yaw=14, keep=0.75)
+    lv = Level('c6-canaveral', 'Cañaveral', w=W, mood='dusk', cam_yaw=14, keep=0.79)
     lv.add(P.start_room(lv))
     section(lv, P.room, right='W', mix=P.fire_hall)
     section(lv, P.loop, right='Y', mix=P.ice_pass, wind='w')
@@ -191,7 +191,7 @@ def floor8():
 
 
 def floor9():
-    lv = Level('c6-laberinto-de-vidrio', 'Laberinto de vidrio', w=W, mood='cave', cam_yaw=-22, keep=0.75)
+    lv = Level('c6-laberinto-de-vidrio', 'Laberinto de vidrio', w=W, mood='cave', cam_yaw=-22, keep=0.82)
     lv.add(P.start_room(lv))
     section(lv, P.loop, right='B', mix=P.ice_pass, wind='e')
     section(lv, P.rail_puzzle, right='Y')
@@ -202,12 +202,12 @@ def floor9():
     lv.add(P.crack_ledge(lv))
     lv.add(P.void_ledge(lv))
     lv.add(P.spinner_room(lv))
-    lv.add(P.treasure_room(lv, gem=True))
+    lv.add(P.treasure_room(lv))
     return lv
 
 
 def floor10():
-    lv = Level('c6-corazon-del-oasis', 'Corazón del oasis', w=W, mood='dungeon', cam_yaw=0, keep=0.7)
+    lv = Level('c6-corazon-del-oasis', 'Corazón del oasis', w=W, mood='dungeon', cam_yaw=0, keep=0.82)
     lv.add(P.start_room(lv))
     section(lv, P.room, right='W', mix=P.ice_pass, wind='w')
     section(lv, P.loop, right='W', mix=P.fire_hall)

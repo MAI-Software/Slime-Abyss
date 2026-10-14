@@ -7,9 +7,15 @@
   "id": "c8-torre-de-nieve",
   "name": "Torre de nieve",
   "count": 80,
-  "keepPct": 0.75,
+  "keepPct": 0.85,
   "mood": "dusk",
   "camYaw": -20,
+  "tips": [
+    {
+      "z": 26,
+      "text": "Aquí no muerde nada: lo que se te lleva es el borde"
+    }
+  ],
   "tiles": [
     "..###########..",
     "..#0000000T0#..",

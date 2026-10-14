@@ -9,7 +9,7 @@
   "id": "c12-torres-caidas",
   "name": "Torres caídas",
   "count": 80,
-  "keepPct": 0.84,
+  "keepPct": 0.8,
   "mood": "dusk",
   "camYaw": -20,
   "tiles": [

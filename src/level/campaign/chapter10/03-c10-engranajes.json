@@ -9,9 +9,15 @@
   "id": "c10-engranajes",
   "name": "Engranajes",
   "count": 80,
-  "keepPct": 0.81,
+  "keepPct": 0.85,
   "mood": "cave",
   "camYaw": -18,
+  "tips": [
+    {
+      "z": 148,
+      "text": "La placa cuenta los limitos apoyados, no los apretados"
+    }
+  ],
   "tiles": [
     "..###########..",
     "..#0000000T0#..",

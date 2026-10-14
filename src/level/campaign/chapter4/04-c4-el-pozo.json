@@ -6,7 +6,7 @@
   "id": "c4-el-pozo",
   "name": "El pozo",
   "count": 80,
-  "keepPct": 0.85,
+  "keepPct": 0.83,
   "mood": "cave",
   "camYaw": 0,
   "tips": [
