@@ -63,7 +63,6 @@ def floor2():
     section(lv, P.rail_puzzle, right='Z')
     section(lv, P.roller_gap, right='Y')
     lv.tip('El cilindro te lanza hacia donde empujas', back=-10)
-    section(lv, P.rail_ride, right='W')
     section(lv, P.loop_rail, right='Z')
     section(lv, P.bubble_tower, right='B')
     section(lv, P.cannon_hall, right='W', mix=P.crack_ledge)
@@ -172,7 +171,6 @@ def floor7():
 def floor8():
     lv = Level('c11-sala-de-maquinas', 'Sala de máquinas', w=W, mood='cave', cam_yaw=18, keep=0.84)
     lv.add(P.start_room(lv))
-    section(lv, P.loop, right='B', mix=P.blizzard)
     section(lv, P.rail_puzzle, right='Y')
     section(lv, P.cannon_hall, right='Z')
     section(lv, P.rail_ride, right='W')

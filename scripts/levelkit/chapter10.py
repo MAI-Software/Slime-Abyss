@@ -140,7 +140,6 @@ def floor5():
 def floor6():
     lv = Level('c10-almacen', 'Almacén', w=W, mood='cave', cam_yaw=22, keep=0.84)
     lv.add(P.start_room(lv))
-    section(lv, P.loop, right='W', mix=P.ice_slalom)
     section(lv, P.rail_puzzle, right='Z')
     section(lv, P.loop_rail, right='Y', mix=P.void_ledge)
     section(lv, P.blizzard, right='B', mix=P.cold_spikes)
@@ -149,7 +148,6 @@ def floor6():
     section(lv, P.cannon_hall, right='Y')
     section(lv, P.gauntlet, right='W')
     section(lv, P.pit, right='Z')
-    section(lv, P.cold_spikes, right='B')
     lv.add(P.spinner_room(lv))
     lv.add(P.treasure_room(lv))
     return lv
@@ -199,7 +197,6 @@ def floor9():
     section(lv, P.cold_spikes, right='W', mix=P.void_ledge)
     section(lv, P.bubble_tower, right='Y', mix=P.crack_ledge)
     section(lv, P.cannon_hall, right='Z')
-    section(lv, P.loop, right='B', mix=P.void_ledge)
     section(lv, P.fire_hall, right='W')
     section(lv, P.gauntlet, right='Z')
     section(lv, P.pit, right='Y')

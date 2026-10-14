@@ -166,8 +166,22 @@ el siguiente paso es comprimirlo (Draco) y llevarlo a ~1,5 MB, a cambio de carga
 | 6. mecánica nueva para la segunda mitad | pendiente: es lo único que mueve las notas planas de 83-86 |
 | 7. ascensor | pendiente: hace falta una plataforma que suba a los 80 limitos |
 
-**El salto del capítulo 4 (piso 5 → 6) sigue ahí**: los capítulos 1 al 5 están escritos a mano
-casilla a casilla, no con el kit, así que tocarlos es cirugía y se hace aparte.
+## El ritmo de cada capítulo (segunda tanda)
+
+Los capítulos 4 y 5 no se tocaron casilla a casilla: **se reordenaron los pisos por duración**,
+dejando fijo el que enseña (lleva las pistas de la mecánica nueva) y el remate del capítulo.
+
+| capítulo | antes | ahora | salto mayor |
+|---|---|---|---|
+| 4 | 108 · 80 · 116 · 76 · **65 · 138** · 145 · 110 · 137 · 134 | 120 · 66 · 81 · 79 · 122 · 116 · 131 · 138 · 145 · 111 | +73 → **+43** |
+| 5 | 111 · 90 · 113 · 100 · 127 · 96 · 120 · **74 · 126** · 125 | 111 · 73 · 112 · 100 · 131 · 98 · 121 · 89 · 126 · 125 | +52 → **+39** |
+
+Y **ningún piso pasa ya de 180 s**: los que se pasaban pierden su sección de relleno — c9 piso 9
+185 → 167 s, c10 piso 6 **202 → 181 s** (era el más largo del juego), c10 piso 9 191 → 179 s, c11
+piso 2 194 → 165 s y c11 piso 8 202 → 172 s. Solo queda uno al filo: `c10-almacen`, 181 s.
+
+Queda **un solo salto** por encima de 45 s en todo el juego, el del capítulo 3 (piso 9 → 10, +67),
+y ese se queda: es el remate del capítulo.
 
 **Aviso sobre las medidas**: el autopiloto no da el mismo resultado exacto en cada pasada. En los
 pisos justos la diferencia llega a 6-10 puntos de limo (`c6-torres-de-arena` dio 88 %, 94 % y 98 %

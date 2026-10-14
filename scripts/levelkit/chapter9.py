@@ -198,7 +198,6 @@ def floor9():
     section(lv, P.cold_spikes, right='B', mix=P.crack_ledge)
     section(lv, P.bubble_tower, right='W', mix=P.crack_ledge)
     section(lv, P.cannon_hall, right='Y', mix=P.void_ledge)
-    section(lv, P.loop, right='Z', mix=P.void_ledge)
     section(lv, P.gauntlet, right='B')
     section(lv, P.blizzard, right='W')
     section(lv, P.pit, right='Y')
