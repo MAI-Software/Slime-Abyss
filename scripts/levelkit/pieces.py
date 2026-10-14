@@ -518,6 +518,69 @@ def rail_ride(lv, rows=3):
     return Piece(out, marks)
 
 
+def charge_rail(lv, rows=4):
+    """Vía rápida: la chispa electrifica al limo y la vagoneta corre un 70 % más. Si se pierde la
+    carga por el camino (fuego, aire frío o jabón), el viaje vuelve a ser el de siempre."""
+    c, out, marks = lv.c, [], []
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c] = T.CHARGE                                            # la chispa, antes de la estación
+    r[c - 3] = T.COIN; r[c + 3] = T.COIN
+    marks.append({'kind': 'coins', 'row': 0, 'l': c - 3, 'r': c + 3})
+    marks.append({'kind': 'walk', 'row': 0, 'col': c, 't': 5})
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c] = T.STATION
+    out.append(r)
+    marks.append({'kind': 'station', 'row': len(out) - 1, 'col': c, 't': 6, 'wait': 9})
+    for _ in range(rows):
+        r = _row(lv); lv.fill(r, c - 4, c + 4, T.WALL); r[c] = T.RAIL
+        out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c] = T.STATION
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.COIN; r[c + 2] = T.COIN
+    marks.append({'kind': 'walk', 'row': len(out), 'col': c, 't': 6})
+    marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+    out.append(r)
+    return Piece(out, marks)
+
+
+def generator_gate(lv, channel='A', rows=4):
+    """Generador: el limo electrificado lo arranca y la puerta se queda abierta 12 segundos.
+    O sea: coger la chispa, arrancarlo y cruzar antes de que se cierre. La puerta de este canal
+    NO se queda echada (`latch` False): si se acaba la cuerda, hay que volver a por otra chispa."""
+    c, out, marks = lv.c, [], []
+    gen = T.GENERATOR_A if channel == 'A' else T.GENERATOR_B
+    door = T.DOOR_A if channel == 'A' else T.DOOR_B
+    lv.latch[channel] = False
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c - 2] = T.CHARGE                                        # la chispa a un lado
+    marks.append({'kind': 'walk', 'row': 0, 'col': c - 2, 't': 5})
+    out.append(r)
+    r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+    r[c + 2] = gen                                             # y el generador al otro
+    r[c - 3] = T.COIN
+    marks.append({'kind': 'walk', 'row': len(out), 'col': c + 2, 't': 6})
+    marks.append({'kind': 'coin', 'row': len(out), 'col': c - 3})
+    out.append(r)
+    r = _row(lv); lv.fill(r, c - 4, c + 4, T.WALL); lv.fill(r, c - 1, c + 1, door)
+    out.append(r)                                              # la puerta que aguanta el generador
+    marks.append({'kind': 'walk', 'row': len(out) - 1, 'col': c, 't': 8})
+    for k in range(rows):
+        r = _row(lv); _walls(lv, r, c - 4, c + 4); lv.fill(r, c - 3, c + 3, lv.floor)
+        if k == 1:
+            r[c - 2] = T.COIN; r[c + 2] = T.COIN
+            marks.append({'kind': 'coins', 'row': len(out), 'l': c - 2, 'r': c + 2})
+        out.append(r)
+    return Piece(out, marks)
+
+
+def generator_gate_b(lv):
+    """El generador en el canal B, para los pisos cuya puerta de peso ya usa el A."""
+    return generator_gate(lv, channel='B')
+
+
 def ice_pass(lv, wind=None, spikes=False):
     """Paso de hielo: se resbala, con pinchos a los lados y, si se pide, un ventilador
     metido en el muro que empuja mientras se cruza. Dos mecánicas en la misma casilla."""

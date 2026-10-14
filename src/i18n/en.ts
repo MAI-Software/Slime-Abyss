@@ -84,6 +84,7 @@ export const en: Dict = {
     burning: 'On fire {s}',
     frozen: 'Frozen {s}',
     bubble: 'Bubble {s}',
+    charged: 'Charged {s}',
     dizzy: 'Dizzy · {s}',
   },
   toast: {

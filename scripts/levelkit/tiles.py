@@ -36,6 +36,8 @@ SPINNER = 'E'
 ROLLER = 'K'
 COLD = 'Q'
 CANNON, TARGET = 'N', 'x'
+CHARGE = '*'                    # chispa: electrifica al limo
+GENERATOR_A, GENERATOR_B = 'M', 'V'   # los arranca el limo electrificado
 FAN = {'n': '^', 's': 'v', 'e': '>', 'w': '<'}
 FAN_UP = 'A'
 

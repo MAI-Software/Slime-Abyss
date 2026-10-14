@@ -83,6 +83,7 @@ export const es = {
     burning: 'En llamas {s}',
     frozen: 'Congelado {s}',
     bubble: 'Burbuja {s}',
+    charged: 'Electrificado {s}',
     dizzy: 'Mareado · {s}',
   },
   toast: {

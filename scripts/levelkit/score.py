@@ -36,6 +36,7 @@ FAMILY = {
     'E': 'disco', 'N': 'cañón', 'x': 'cañón', 'H': 'agujeros', 'U': 'agujeros', 'K': 'cilindros',
     '-': 'balancines', '|': 'balancines', 'g': 'picos', 'h': 'picos', 'i': 'picos', 'j': 'picos',
     'n': 'rampas', 'u': 'rampas', 'e': 'rampas', 'o': 'rampas',
+    '*': 'electricidad', 'M': 'electricidad', 'V': 'electricidad',
 }
 DANGER = set('FXY.aB')                     # hace daño, se lleva limo o es vacío
 #: nota que se le pide a cada capítulo (la dificultad tiene que subir)
@@ -135,7 +136,7 @@ def measure(ch, L, pts):
     # puzles: cosas que hay que resolver, no solo esquivar
     puzzles = (len({(s2, j // 6) for s2, i, j, f in mech if f == 'puertas'})
                + len({(s2, j // 8) for s2, i, j, f in mech if f == 'raíles'})
-               + len({(s2, j // 6) for s2, i, j, f in mech if f in ('cañón', 'jabón', 'agujeros')}))
+               + len({(s2, j // 6) for s2, i, j, f in mech if f in ('cañón', 'jabón', 'agujeros', 'electricidad')}))
     return {
         'filas': rows, 'largo': round(length), 'variedad': len(fams), 'familias': sorted(fams),
         'combos': len(combos), 'peligro': round(exposure, 2), 'decisiones': decisions,

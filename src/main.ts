@@ -423,6 +423,8 @@ const STATE_ICONS: Record<Exclude<SlimeState, 'normal'> | 'dizzy', string> = {
   // espiral: el limo dando vueltas
   dizzy: '<path d="M12 12a2 2 0 1 0 2 2"/><path d="M14 14a4 4 0 1 1-4-4"/><path d="M10 10a6.5 6.5 0 1 1 6.5 6.5"/>',
   oiled: '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
+  // rayo: el limo electrificado
+  charged: '<path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12z"/>',
   burning: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
   // burbuja: pompa con su brillo
   bubble: '<circle cx="12" cy="12" r="8"/><circle cx="9" cy="9" r="1.6"/>',
@@ -1234,6 +1236,7 @@ const STATE_GAUGE: Record<Exclude<SlimeState, 'normal'>, [string, string]> = {
   burning: ['#ffb15c', '#e0461a'],
   frozen: ['#e6f8ff', '#6cc4ec'],
   bubble: ['#eafaff', '#7dd3fc'],
+  charged: ['#fff3a8', '#f5b301'],
 };
 function updateGaugeColors() {
   const st = slime?.state ?? 'normal';

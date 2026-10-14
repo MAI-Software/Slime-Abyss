@@ -127,11 +127,16 @@ export type SlimeEvent =
     cualquiera --jabón--> bubble (20 s: flota, no rompe la roca agrietada, plana con las corrientes
                                   y los ventiladores de techo la suben a las zonas altas)
     bubble  --fuego o aire frío--> revienta y vuelve a normal
+    cualquiera --chispa--> charged (18 s: corre más en los raíles y arranca los generadores)
+    charged --aire frío, fuego o jabón--> lo que toque (la carga se va)
 */
-export type SlimeState = 'normal' | 'oiled' | 'burning' | 'frozen' | 'bubble';
+export type SlimeState = 'normal' | 'oiled' | 'burning' | 'frozen' | 'bubble' | 'charged';
 export const BURN_TIME = 12;
 export const FREEZE_TIME = 30;
 export const BUBBLE_TIME = 20;
+export const CHARGE_TIME = 18;
+/** lo que corre de más la vagoneta con el limo electrificado dentro */
+const CHARGED_RIDE = 1.7;
 /** Burbuja: pesa una cuarta parte, la corriente la lleva entera y el ventilador de techo la eleva. */
 const BUBBLE_GRAV = 0.25;
 const BUBBLE_WIND_ACC = 10;
@@ -183,6 +188,7 @@ const STATE_LOOK: Record<SlimeState, { color: number; emissive: number; rim: [nu
   burning: { color: 0xff6a1a, emissive: 0xd23a00, rim: [1.0, 0.75, 0.2], wobble: 1.3 },
   frozen: { color: 0xbfe9ff, emissive: 0x3f8fc2, rim: [0.85, 0.97, 1.0], wobble: 0 },
   bubble: { color: 0xd7f4ff, emissive: 0x63c7ff, rim: [0.95, 0.99, 1.0], wobble: 1.5 },
+  charged: { color: 0x37bdff, emissive: 0xb88600, rim: [1.0, 0.88, 0.3], wobble: 1.6 },
 };
 
 export interface Group {
@@ -605,10 +611,11 @@ export class Slime {
   poke() { for (const f of this.faces) f.poke(); }
 
   private setState(to: SlimeState) {
-    if (to === this.state && to !== 'frozen' && to !== 'burning' && to !== 'bubble') return;
+    if (to === this.state && to !== 'frozen' && to !== 'burning' && to !== 'bubble' && to !== 'charged') return;
     const from = this.state;
     this.state = to;
-    this.stateT = to === 'burning' ? BURN_TIME : to === 'frozen' ? FREEZE_TIME : to === 'bubble' ? BUBBLE_TIME : 0;
+    this.stateT = to === 'burning' ? BURN_TIME : to === 'frozen' ? FREEZE_TIME : to === 'bubble' ? BUBBLE_TIME
+      : to === 'charged' ? CHARGE_TIME : 0;
     if (from !== to) this.events.push({ type: 'state', from, to });
   }
 
@@ -1095,7 +1102,8 @@ export class Slime {
     for (let r = this.rides.length - 1; r >= 0; r--) {
       const ride = this.rides[r];
       const p = ride.path;
-      ride.speed = Math.min(RIDE_SPEED, ride.speed + RIDE_ACCEL * h);
+      const tope = RIDE_SPEED * (this.state === 'charged' ? CHARGED_RIDE : 1);
+      ride.speed = Math.min(tope, ride.speed + RIDE_ACCEL * h);
       ride.s = Math.min(p.total, ride.s + ride.speed * h);
       let k = 0;
       while (k < p.dist.length - 2 && p.dist[k + 1] < ride.s) k++;
@@ -1524,6 +1532,14 @@ export class Slime {
           this.vz[i] -= slope[1] * SEESAW_SLIDE * dt;
         }
       }
+      // chispa: electrifica un rato. Y electrificado, al pisar un generador lo arranca
+      if (under && w.isCharge(ci, cj, st) && y < under.base + 1.6 && this.state !== 'charged') this.setState('charged');
+      if (under && this.state === 'charged' && y < under.base + 1.6 && w.generatorAt(ci, cj, st)) {
+        if (w.fireGenerator(w.index(ci, cj, st))) {
+          this.events.push({ type: 'pad', x: ci + 0.5, y: under.base + 0.6, z: cj + 0.5 });
+          for (const f of this.faces) f.cheer(0.6);
+        }
+      }
       // aire frío: congela (o apaga las llamas)
       if (under && w.isCold(ci, cj, st) && y < under.base + 1.6) {
         if (this.state === 'burning') this.setState('normal');
@@ -1829,7 +1845,10 @@ export class Slime {
     const k = 1 - Math.exp(-dt * 6);
     this.material.color.lerp(this.tmpColor.setHex(look.color), k);
     this.material.emissive.lerp(this.tmpColor.setHex(look.emissive), k);
-    const flicker = this.state === 'burning' ? 0.5 + Math.sin(this.uniforms.uTime.value * 23) * 0.15 + Math.random() * 0.1 : 0.3;
+    // el electrificado late deprisa: es lo que lo distingue del congelado de un vistazo
+    const flicker = this.state === 'burning' ? 0.5 + Math.sin(this.uniforms.uTime.value * 23) * 0.15 + Math.random() * 0.1
+      : this.state === 'charged' ? 0.5 + Math.sin(this.uniforms.uTime.value * 30) * 0.22
+      : 0.3;
     this.material.emissiveIntensity += (flicker - this.material.emissiveIntensity) * k;
     const metal = this.state === 'normal' ? this.body.metalness ?? 0 : 0;
     this.material.metalness += (metal - this.material.metalness) * k;

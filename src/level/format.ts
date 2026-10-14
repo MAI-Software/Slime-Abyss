@@ -18,7 +18,8 @@ export type CellKind =
   | 'coin' | 'wedge' | 'spike' | 'gem' | 'relic'
   | 'oil' | 'plant' | 'iceblock' | 'fan' | 'coldjet' | 'roller'
   | 'station' | 'rail' | 'crack'
-  | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner' | 'cannon' | 'target' | 'seesaw' | 'bowl' | 'soap' | 'fanup';
+  | 'ramp' | 'slab' | 'hole' | 'exit' | 'spinner' | 'cannon' | 'target' | 'seesaw' | 'bowl' | 'soap' | 'fanup'
+  | 'charge' | 'generator';
 
 export interface TileDef {
   char: string;
@@ -88,6 +89,11 @@ export const TILES: readonly TileDef[] = [
   { char: 'b', kind: 'soap', label: 'Pastilla de jabón (burbuja)', color: '#7dd3fc' },
   // ventilador hacia arriba: solo empuja a la burbuja, que sube hasta las zonas altas
   { char: 'A', kind: 'fanup', label: 'Ventilador hacia arriba (sube la burbuja)', color: '#3d4a66' },
+  // electricidad del tramo tecnológico: la chispa carga al limo un rato, y cargado corre más en
+  // los raíles y arranca los generadores, que mantienen su puerta abierta mientras duran
+  { char: '*', kind: 'charge', label: 'Chispa (electrifica al limo)', color: '#fde047' },
+  { char: 'M', kind: 'generator', label: 'Generador A (lo arranca el limo electrificado)', channel: 'A', color: '#f59e0b' },
+  { char: 'V', kind: 'generator', label: 'Generador B (lo arranca el limo electrificado)', channel: 'B', color: '#22c55e' },
   { char: 'K', kind: 'roller', label: 'Cilindro (te lanza hacia donde empujas)', raise: 1.0, color: '#7dd3fc' },
   // Raíles: el trozo que pisa una estación se hace bola y rueda por la vía hasta la otra estación.
   // La vía (casillas '=' seguidas, puede girar y subir) no se pisa: hace de valla para el limo a pie.

@@ -210,16 +210,23 @@ function drawLabel(c: HTMLCanvasElement, text: string, color: string) {
   g.fillText(text, 128, 68);
 }
 
+/** lo que aguanta abierta la puerta un generador arrancado por el limo electrificado */
+export const GENERATOR_TIME = 12;
+
 interface SwitchState {
   channel: Channel;
   need: number;
   latch: boolean;
+  /** segundos que le quedan al generador; mientras corren, la puerta está abierta */
+  hold: number;
   count: number;
   pressed: boolean;
   label: THREE.Sprite;
   labelCanvas: HTMLCanvasElement;
   lastText: string;
   buttons: THREE.Object3D[];
+  /** de dónde cuelga el cartel: botones del interruptor y generadores del canal */
+  anchors: THREE.Vector3[];
 }
 
 interface DoorState {
@@ -252,6 +259,9 @@ export class World {
   private switches = new Map<Channel, SwitchState>();
   private doors: DoorState[] = [];
   private pads = new Map<number, Pad>();
+  /** casillas con chispa (electrifican) y generadores por casilla */
+  private chargeCells = new Set<number>();
+  private generators = new Map<number, { channel: Channel; ring: THREE.Mesh; core: THREE.Mesh; lit: number }>();
   private coins: Coin[] = [];
   private coinAt = new Map<number, Coin>();
   readonly rollers: { x: number; z: number; y: number; mesh: THREE.Mesh }[] = [];
@@ -798,6 +808,15 @@ export class World {
             this.add('cold_vent', x, c.base, z);
             this.coldCells.push(idx);
             break;
+          case 'charge':
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            this.addCharge(x, c.base, z);
+            this.chargeCells.add(idx);
+            break;
+          case 'generator':
+            solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
+            this.addGenerator(idx, x, c.base, z, c.channel ?? 'A');
+            break;
           case 'station':
             solids.push({ i, j, top: c.base, color: checker, set: 'floor' });
             break;
@@ -846,9 +865,10 @@ export class World {
     for (const [ch, sw] of this.switches) {
       sw.need = this.def.need?.[ch] ?? 1;
       sw.latch = !!this.def.latch?.[ch];
-      const cx = sw.buttons.reduce((a, p) => a + p.parent!.position.x, 0) / sw.buttons.length;
-      const cz = sw.buttons.reduce((a, p) => a + p.parent!.position.z, 0) / sw.buttons.length;
-      sw.label.position.set(cx, sw.buttons[0].parent!.position.y + 1.6, cz);
+      if (!sw.anchors.length) continue;
+      const cx = sw.anchors.reduce((a, p) => a + p.x, 0) / sw.anchors.length;
+      const cz = sw.anchors.reduce((a, p) => a + p.z, 0) / sw.anchors.length;
+      sw.label.position.set(cx, sw.anchors[0].y + 1.6, cz);
       this.updateLabel(sw);
     }
   }
@@ -1276,6 +1296,74 @@ export class World {
     this.rollers.push({ x, z, y, mesh });
   }
 
+  /** Chispa: un poste con una bola que brilla. Al tocarla el limo se electrifica. */
+  private addCharge(x: number, y: number, z: number) {
+    const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.7, 10),
+      new THREE.MeshStandardMaterial({ color: 0x2b3550, roughness: 0.6, metalness: 0.4 }));
+    poste.position.set(x, y + 0.35, z);
+    const bola = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 12),
+      new THREE.MeshStandardMaterial({ color: 0xfde047, emissive: 0xfacc15, emissiveIntensity: 1.4, roughness: 0.25 }));
+    bola.position.set(x, y + 0.92, z);
+    for (const m of [poste, bola]) {
+      m.castShadow = true;
+      this.ownedGeometries.push(m.geometry);
+      this.ownedMaterials.push(m.material as THREE.Material);
+      this.storyGroups[this.buildStory].add(m);
+    }
+    const aro = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.035, 6, 20),
+      new THREE.MeshStandardMaterial({ color: 0xfde047, emissive: 0xfacc15, emissiveIntensity: 1.1 }));
+    aro.rotation.x = Math.PI / 2;
+    aro.position.set(x, y + 0.92, z);
+    this.ownedGeometries.push(aro.geometry);
+    this.ownedMaterials.push(aro.material as THREE.Material);
+    this.storyGroups[this.buildStory].add(aro);
+  }
+
+  /** Generador: caja con una turbina. Apagado está gris; arrancado gira y se enciende. */
+  private addGenerator(idx: number, x: number, y: number, z: number, ch: Channel) {
+    const caja = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.16, 0.78),
+      new THREE.MeshStandardMaterial({ color: 0x3a4460, roughness: 0.55, metalness: 0.5 }));
+    caja.position.set(x, y + 0.08, z);
+    caja.castShadow = caja.receiveShadow = true;
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 10),
+      new THREE.MeshStandardMaterial({ color: CHANNEL_COLOR[ch], emissive: CHANNEL_COLOR[ch], emissiveIntensity: 0.15, roughness: 0.3 }));
+    core.position.set(x, y + 0.26, z);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.055, 8, 22),
+      new THREE.MeshStandardMaterial({ color: CHANNEL_COLOR[ch], emissive: CHANNEL_COLOR[ch], emissiveIntensity: 0.15, roughness: 0.35, metalness: 0.4 }));
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(x, y + 0.26, z);
+    for (const m of [caja, core, ring]) {
+      this.ownedGeometries.push(m.geometry);
+      this.ownedMaterials.push(m.material as THREE.Material);
+      this.storyGroups[this.buildStory].add(m);
+    }
+    const sw = this.ensureSwitch(ch);
+    sw.anchors.push(new THREE.Vector3(x, y, z));
+    this.generators.set(idx, { channel: ch, ring, core, lit: 0 });
+  }
+
+  /** ¿hay chispa en esta casilla? */
+  isCharge(i: number, j: number, s = 0) {
+    return this.chargeCells.has(this.index(i, j, s));
+  }
+
+  /** El generador de esta casilla, si lo hay. */
+  generatorAt(i: number, j: number, s = 0) {
+    return this.generators.get(this.index(i, j, s)) ?? null;
+  }
+
+  /** Lo arranca el limo electrificado: su puerta se queda abierta GENERATOR_TIME segundos. */
+  fireGenerator(idx: number) {
+    const g = this.generators.get(idx);
+    if (!g) return false;
+    const sw = this.switches.get(g.channel);
+    if (!sw) return false;
+    const nuevo = sw.hold <= 0;
+    sw.hold = GENERATOR_TIME;
+    g.lit = 1;
+    return nuevo;
+  }
+
   spinnerAt(x: number, z: number, y: number) {
     for (const s of this.spinners) {
       const dx = x - s.x, dz = z - s.z;
@@ -1657,8 +1745,8 @@ export class World {
     return m;
   }
 
-  private addSwitch(i: number, j: number, c: Cell) {
-    const ch = c.channel!;
+  /** El estado de un canal, creándolo si hace falta (lo pide el interruptor y el generador). */
+  private ensureSwitch(ch: Channel) {
     let sw = this.switches.get(ch);
     if (!sw) {
       const canvas = document.createElement('canvas');
@@ -1672,14 +1760,21 @@ export class World {
       label.scale.set(1.2, 0.6, 1);
       label.renderOrder = 10;
       this.group.add(label);
-      sw = { channel: ch, need: 1, latch: false, count: 0, pressed: false, label, labelCanvas: canvas, lastText: '', buttons: [] };
+      sw = { channel: ch, need: 1, latch: false, hold: 0, count: 0, pressed: false, label, labelCanvas: canvas, lastText: '', buttons: [], anchors: [] };
       this.switches.set(ch, sw);
     }
+    return sw;
+  }
+
+  private addSwitch(i: number, j: number, c: Cell) {
+    const ch = c.channel!;
+    const sw = this.ensureSwitch(ch);
     const obj = this.add('switch', i + 0.5, c.base, j + 0.5, { cloneMaterials: true });
     const button = Assets.child(obj, 'switch_button');
     this.tint(button, CHANNEL_COLOR[ch]);
     button.userData.restY = button.position.y;
     sw.buttons.push(button);
+    sw.anchors.push(new THREE.Vector3(i + 0.5, c.base, j + 0.5));
   }
 
   private addDoor(i: number, j: number, s: number, c: Cell) {
@@ -1725,7 +1820,7 @@ export class World {
   }
 
   private updateLabel(sw: SwitchState) {
-    const text = sw.pressed && sw.latch ? 'OK' : `${Math.min(sw.count, sw.need)}/${sw.need}`;
+    const text = sw.hold > 0 ? `${Math.ceil(sw.hold)}s` : sw.pressed && sw.latch ? 'OK' : `${Math.min(sw.count, sw.need)}/${sw.need}`;
     if (text === sw.lastText) return;
     sw.lastText = text;
     drawLabel(sw.labelCanvas, text, sw.pressed ? '#15803d' : CHANNEL_CSS[sw.channel]);
@@ -1740,13 +1835,25 @@ export class World {
 
     for (const sw of this.switches.values()) {
       sw.count = counts[sw.channel];
+      if (sw.hold > 0) sw.hold = Math.max(0, sw.hold - dt);
       const now = sw.count >= sw.need;
-      sw.pressed = sw.latch ? sw.pressed || now : now;
+      // el generador manda mientras le quede cuerda, aunque no haya nadie en el interruptor
+      sw.pressed = sw.hold > 0 || (sw.latch ? sw.pressed || now : now);
       for (const b of sw.buttons) {
         const target = b.userData.restY - (sw.pressed ? 0.07 : Math.min(sw.count / sw.need, 1) * 0.03);
         b.position.y += (target - b.position.y) * Math.min(1, dt * 12);
       }
       this.updateLabel(sw);
+    }
+
+    // generadores: giran y brillan mientras su canal tenga cuerda
+    for (const g of this.generators.values()) {
+      const sw = this.switches.get(g.channel);
+      const on = (sw?.hold ?? 0) > 0;
+      g.lit += ((on ? 1 : 0) - g.lit) * Math.min(1, dt * 4);
+      g.ring.rotation.z += dt * (0.4 + g.lit * 9);
+      (g.core.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.15 + g.lit * 1.6;
+      (g.ring.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.15 + g.lit * 1.2;
     }
 
     for (const door of this.doors) {

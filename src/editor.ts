@@ -31,7 +31,7 @@ export const BLOCK_GROUPS: readonly { id: string; tiles: readonly string[] }[] =
   { id: 'goals', tiles: ['P', 'T', 'C', 'G'] },
   { id: 'hazards', tiles: ['F', 'Y'] },
   { id: 'obstacles', tiles: ['W', 'Z', 'O', 'b'] },
-  { id: 'mechanisms', tiles: ['S', 'D', 'J', 'E', 'Q', '^', 'A', '-'] },
+  { id: 'mechanisms', tiles: ['S', 'D', 'J', 'E', 'Q', '^', 'A', '-', '*', 'M'] },
   { id: 'travel', tiles: ['R', '=', '@', '%', 'H', 'U', 'N', 'x'] },
 ];
 
@@ -41,7 +41,7 @@ export const BLOCK_GROUPS: readonly { id: string; tiles: readonly string[] }[] =
 */
 export const BLOCK_VARIANTS: readonly (readonly string[])[] = [
   ['n', 'e', 'u', 'o'], ['q', 'p', 'm', 'z'], ['g', 'h', 'i', 'j'], ['^', '>', 'v', '<'], ['F', 'X'], ['S', 's'], ['D', 'd'],
-  ['-', '|'],
+  ['-', '|'], ['M', 'V'],
 ];
 export const variantsOf = (ch: string): readonly string[] => BLOCK_VARIANTS.find((f) => f.includes(ch)) ?? [ch];
 export const familyOf = (ch: string) => variantsOf(ch)[0];
